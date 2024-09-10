@@ -2,7 +2,8 @@ import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
-
+import { ToggleTheme } from "~/common/components/ToggleTheme";
+import { ThemeProvider } from "~/providers/ThemeProvider";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
@@ -15,9 +16,25 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
+    <html
+      lang="en"
+      className={`${GeistSans.variable}`}
+      suppressHydrationWarning
+    >
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <body>
+          <TRPCReactProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <ToggleTheme />
+            </ThemeProvider>
+          </TRPCReactProvider>
+        </body>
       </body>
     </html>
   );
