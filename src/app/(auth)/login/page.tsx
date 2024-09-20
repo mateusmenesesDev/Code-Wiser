@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+import { Metadata } from 'next';
 import Image from "next/image";
 import Link from "next/link";
 import LoginForm from "~/features/auth/components/LoginForm";
 
 export const metadata: Metadata = {
-  title: "Login",
+  title: 'Login',
   description: "Login to your account at Code Wise for the best coding experience.",
 };
 
