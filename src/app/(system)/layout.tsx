@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
-import Header from '~/common/components/Header';
+import Header from '~/common/layout/Header';
+import Sidebar from '~/common/layout/SideBar';
 import '~/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -22,9 +23,12 @@ export default function Layout({
 	});
 
 	return (
-		<>
-			<Header />
-			{children}
-		</>
+		<div className="flex h-screen bg-background text-foreground">
+			<Sidebar />
+			<div className="flex-1 overflow-y-auto">
+				<Header />
+				<main className="p-6">{children}</main>
+			</div>
+		</div>
 	);
 }
