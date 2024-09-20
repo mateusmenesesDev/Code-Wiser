@@ -1,15 +1,15 @@
-import "~/styles/globals.css";
+import '~/styles/globals.css';
 
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 
 export default function Layout({
-  children,
+	children
 }: Readonly<{ children: React.ReactNode }>) {
-  const { userId } = auth()
-  if (userId) {
-    redirect('/')
-  }
+	const { userId } = auth();
+	if (userId) {
+		redirect('/');
+	}
 
-  return (<>{children}</>)
+	return <>{children}</>;
 }

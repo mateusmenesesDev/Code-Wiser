@@ -1,0 +1,65 @@
+{
+	"$schema": "https://biomejs.dev/schemas/1.9.2/schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"ignore": [
+			"node_modules",
+			"dist",
+			"build",
+			"public",
+			"scripts",
+			"src/generated",
+			"src/migrations",
+			"src/prisma",
+			"public/*",
+			".next/*"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"indentWidth": 2
+	},
+	"organizeImports": {
+		"enabled": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"a11y": {
+				"all": true
+			},
+			"correctness": {
+				"noUnusedImports": "error",
+				"noUnusedVariables": "error"
+			},
+			"style": {
+				"noUnusedTemplateLiteral": "error"
+			},
+			"nursery": {
+				"useSortedClasses": {
+					"fix": "unsafe",
+					"level": "error",
+					"options": {
+						"attributes": ["className", "classList"],
+						"functions": ["clsx", "cva", "twMerge", "tw", "cn"]
+					}
+				}
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+			"trailingCommas": "none",
+			"indentWidth": 2,
+			"indentStyle": "tab"
+		}
+	}
+}
