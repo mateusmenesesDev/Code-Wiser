@@ -10,7 +10,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<ClerkProvider>
-			<html lang="en" className={`${GeistSans.variable}`}>
+			<html lang="pt-BR" className={`${GeistSans.variable}`}>
 				<body>
 					<TRPCReactProvider>
 						<ThemeProvider
