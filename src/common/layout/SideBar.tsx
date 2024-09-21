@@ -1,6 +1,6 @@
 'use client';
 
-import { Code, Menu } from 'lucide-react';
+import { Code, CreditCard, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Badge } from '~/common/components/badge';
@@ -14,7 +14,7 @@ type SidebarProps = {
 
 export default function Sidebar({ className }: SidebarProps) {
 	const pathname = usePathname();
-
+	const userCredits = 100;
 	const SidebarContent = () => (
 		<div className="flex h-full flex-col shadow dark:shadow-primary/10">
 			<div className="p-4">
@@ -50,23 +50,37 @@ export default function Sidebar({ className }: SidebarProps) {
 					</Link>
 				))}
 			</nav>
+			<div className="mt-auto border-border border-t p-4">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center space-x-2 font-semibold text-primary text-sm">
+						<CreditCard className="h-4 w-4" />
+						<span>Credits: {userCredits}</span>
+					</div>
+					<Link href="/buy-credits">
+						<Button variant="default" size="sm">
+							Buy More
+						</Button>
+					</Link>
+				</div>
+			</div>
 		</div>
 	);
 
 	return (
 		<>
-			<Sheet>
-				<SheetTrigger asChild>
-					<Button variant="ghost" size="icon" className="mt-4 md:hidden">
-						<Menu className="h-5 w-5" />
-						<span className="sr-only">Toggle sidebar</span>
-					</Button>
-				</SheetTrigger>
-				<SheetContent side="left" className="w-64 p-0">
-					<SidebarContent />
-				</SheetContent>
-			</Sheet>
-
+			<div className="shadow-md md:shadow-none">
+				<Sheet>
+					<SheetTrigger asChild>
+						<Button variant="ghost" size="icon" className="mt-4 md:hidden">
+							<Menu className="h-5 w-5" />
+							<span className="sr-only">Toggle sidebar</span>
+						</Button>
+					</SheetTrigger>
+					<SheetContent side="left" className="w-64 p-0">
+						<SidebarContent />
+					</SheetContent>
+				</Sheet>
+			</div>
 			<div className={`hidden w-64 pt-2 md:block ${className}`}>
 				<SidebarContent />
 			</div>

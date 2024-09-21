@@ -17,6 +17,6 @@ export const menuItems = [
 		label: 'Messages',
 		comingSoon: true
 	},
-	{ href: '/profile', icon: User, label: 'Profile' },
-	{ href: '/settings', icon: Settings, label: 'Settings' }
+	{ href: '/profile', icon: User, label: 'Profile', comingSoon: true },
+	{ href: '/settings', icon: Settings, label: 'Settings', comingSoon: true }
 ];
