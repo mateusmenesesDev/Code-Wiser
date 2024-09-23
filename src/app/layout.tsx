@@ -1,9 +1,13 @@
 import '~/styles/globals.css';
 
 import { ClerkProvider } from '@clerk/nextjs';
+import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { GeistSans } from 'geist/font/sans';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { TRPCReactProvider } from '~/trpc/react';
+
+dayjs.extend(localizedFormat);
 
 export default function RootLayout({
 	children

@@ -1,10 +1,12 @@
 import {
 	BookOpen,
 	Layout,
+	MessageCircle,
 	MessageSquare,
 	Settings,
 	User,
-	Users
+	Users,
+	Users2
 } from 'lucide-react';
 
 export const menuItems = [
@@ -17,6 +19,8 @@ export const menuItems = [
 		label: 'Messages',
 		comingSoon: true
 	},
+	{ href: '/community', icon: Users2, label: 'Community', comingSoon: true },
+	{ href: '/forum', icon: MessageCircle, label: 'Forum', comingSoon: true },
 	{ href: '/profile', icon: User, label: 'Profile', comingSoon: true },
 	{ href: '/settings', icon: Settings, label: 'Settings', comingSoon: true }
 ];

@@ -31,7 +31,7 @@ export function UpcomingMeetings() {
 							</p>
 						</div>
 						<div className="text-muted-foreground text-sm">
-							{dayjs(meeting.dateTime).format('L LT')}
+							{dayjs(meeting.dateTime).format('lll')}
 						</div>
 					</div>
 				))}
