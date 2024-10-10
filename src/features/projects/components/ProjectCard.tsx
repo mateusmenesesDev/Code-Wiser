@@ -1,4 +1,4 @@
-import { CreditCard, Eye, Play, Users } from 'lucide-react';
+import { ArrowRight, CreditCard, Eye, Play, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '~/common/components/badge';
 import { Button } from '~/common/components/button';
@@ -10,18 +10,10 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
+import type { Project } from '../types/Projects.type';
 
 type ProjectCardProps = {
-	project: {
-		id: number;
-		title: string;
-		description: string;
-		category: string;
-		difficulty: string;
-		participants: number;
-		credits: number;
-		status?: 'Active' | 'Completed';
-	};
+	project: Project;
 };
 
 export function ProjectCard({ project }: ProjectCardProps) {
@@ -56,19 +48,33 @@ export function ProjectCard({ project }: ProjectCardProps) {
 			<CardFooter className="mt-auto flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
 				{project.status && (
 					<Badge
-						variant={project.status === 'Active' ? 'default' : 'secondary'}
+						variant={project.status === 'Started' ? 'default' : 'secondary'}
 						className="w-full text-center sm:w-auto"
 					>
 						{project.status}
 					</Badge>
 				)}
 				<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-					{project.status !== 'Active' && project.status !== 'Completed' && (
+					{project.status !== 'Started' && project.status !== 'Completed' && (
 						<Button size="sm" className="w-full sm:w-auto">
 							<Play className="mr-2 h-4 w-4" />
 							Start
 						</Button>
 					)}
+					{project.status === 'Started' && (
+						<Button
+							variant="default"
+							size="sm"
+							asChild
+							className="w-full sm:w-auto"
+						>
+							<Link href="#">
+								<ArrowRight className="mr-2 h-4 w-4" />
+								Continue
+							</Link>
+						</Button>
+					)}
+
 					<Button
 						variant="outline"
 						size="sm"
