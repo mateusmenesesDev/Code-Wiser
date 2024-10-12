@@ -20,6 +20,19 @@ export type Discussion = {
 	timestamp: string;
 };
 
+export type Resource = {
+	id: number;
+	title: string;
+	description: string;
+	link: string;
+};
+
+export type ProjectImage = {
+	id: number;
+	src: string;
+	alt: string;
+};
+
 export type Project = {
 	id: number;
 	title: string;
@@ -35,4 +48,6 @@ export type Project = {
 	details: ProjectDetails;
 	milestones: Milestone[];
 	discussions: Discussion[];
+	resources: Resource[];
+	images: ProjectImage[];
 };

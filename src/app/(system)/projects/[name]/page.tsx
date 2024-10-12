@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader } from '~/common/components/card';
+import { Card, CardContent } from '~/common/components/card';
 import { ProjectHeader } from '~/features/projects/components/ProjectHeader';
 import { ProjectMentor } from '~/features/projects/components/ProjectMentor';
 import { ProjectProgress } from '~/features/projects/components/ProjectProgress';
@@ -18,7 +18,7 @@ const project: Project = {
 	mentor: 'Alice Johnson',
 	participants: 3,
 	maxParticipants: 5,
-	status: 'Active', // Changed from string to one of the allowed values
+	status: 'Active',
 	credits: 50,
 	completionRate: 65,
 	details: {
@@ -75,6 +75,43 @@ const project: Project = {
 				'Has anyone started working on the product catalog component yet?',
 			timestamp: '2023-06-29T09:45:00Z'
 		}
+	],
+	resources: [
+		{
+			id: 1,
+			title: 'Project Repository',
+			description: 'GitHub repository for the project',
+			link: '#'
+		},
+		{
+			id: 2,
+			title: 'Project Documentation',
+			description: 'Detailed project documentation',
+			link: '#'
+		},
+		{
+			id: 3,
+			title: 'Recommended Tutorials',
+			description: 'Curated list of helpful tutorials',
+			link: '#'
+		},
+		{
+			id: 4,
+			title: 'Best Practices Guide',
+			description: 'Guide for best practices in this project',
+			link: '#'
+		},
+		{
+			id: 5,
+			title: 'Project Timeline',
+			description: 'Detailed project timeline',
+			link: '#'
+		}
+	],
+	images: [
+		{ id: 1, src: '/images/project1.jpg', alt: 'Project 1' },
+		{ id: 2, src: '/images/project2.jpg', alt: 'Project 2' },
+		{ id: 3, src: '/images/project3.jpg', alt: 'Project 3' }
 	]
 };
 
@@ -82,32 +119,33 @@ export default function ProjectPage() {
 	const [activeTab, setActiveTab] = useState('overview');
 
 	return (
-		<div className="container mx-auto bg-background px-4 py-8 text-foreground">
-			<Card className="mb-8">
-				<CardHeader className="p-0">
+		<div className="container mx-auto bg-background py-8 text-foreground">
+			<div className="px-4">
+				<Card className="mb-8">
 					<ProjectHeader
 						title={project.title}
 						description={project.description}
 					/>
-				</CardHeader>
-				<CardContent>
-					<ProjectStats
-						category={project.category}
-						difficulty={project.difficulty}
-						participants={project.participants}
-						maxParticipants={project.maxParticipants}
-						timeline={project.details.timeline}
-						credits={project.credits}
-					/>
-					<ProjectProgress completionRate={project.completionRate} />
-					<ProjectMentor mentor={project.mentor} />
-				</CardContent>
-			</Card>
-			<ProjectTabs
-				project={project}
-				activeTab={activeTab}
-				setActiveTab={setActiveTab}
-			/>
+					<CardContent>
+						<ProjectStats
+							category={project.category}
+							difficulty={project.difficulty}
+							participants={project.participants}
+							maxParticipants={project.maxParticipants}
+							timeline={project.details.timeline}
+							credits={project.credits}
+						/>
+						<ProjectProgress completionRate={project.completionRate} />
+						<ProjectMentor mentor={project.mentor} />
+					</CardContent>
+				</Card>
+
+				<ProjectTabs
+					project={project}
+					activeTab={activeTab}
+					setActiveTab={setActiveTab}
+				/>
+			</div>
 		</div>
 	);
 }
