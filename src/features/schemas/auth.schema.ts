@@ -23,7 +23,7 @@ export const userDbSchema = z.object({
 export const signInSchema = basicUserSchema
 	.omit({ name: true, lastName: true })
 	.extend({
-		password: passwordSchema
+		password: z.string()
 	});
 
 export const signUpSchema = basicUserSchema

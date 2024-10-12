@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
 	Select,
 	SelectContent,
@@ -25,18 +24,6 @@ export function ProjectTabs({
 	activeTab,
 	setActiveTab
 }: ProjectTabsProps) {
-	const [isMobile, setIsMobile] = useState(false);
-
-	// Check if the screen is mobile on component mount and window resize
-	useState(() => {
-		const checkMobile = () => {
-			setIsMobile(window.innerWidth < 768);
-		};
-		checkMobile();
-		window.addEventListener('resize', checkMobile);
-		return () => window.removeEventListener('resize', checkMobile);
-	}, []);
-
 	const tabOptions = [
 		{ value: 'overview', label: 'Overview' },
 		{ value: 'milestones', label: 'Milestones' },
@@ -47,7 +34,7 @@ export function ProjectTabs({
 
 	return (
 		<div className="space-y-4">
-			{isMobile ? (
+			<div className="md:hidden">
 				<Select value={activeTab} onValueChange={setActiveTab}>
 					<SelectTrigger className="w-full">
 						<SelectValue placeholder="Select a tab" />
@@ -60,7 +47,8 @@ export function ProjectTabs({
 						))}
 					</SelectContent>
 				</Select>
-			) : (
+			</div>
+			<div className="hidden md:block">
 				<Tabs value={activeTab} onValueChange={setActiveTab}>
 					<TabsList className="grid w-full grid-cols-5">
 						{tabOptions.map((option) => (
@@ -70,7 +58,7 @@ export function ProjectTabs({
 						))}
 					</TabsList>
 				</Tabs>
-			)}
+			</div>
 
 			<div className="mt-4">
 				{activeTab === 'overview' && (
