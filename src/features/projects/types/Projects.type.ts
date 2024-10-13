@@ -1,3 +1,6 @@
+import type { z } from 'zod';
+import type { projectSchema } from '../schemas/projects.schema';
+
 export type ProjectDetails = {
 	details: string;
 	technologies: string[];
@@ -42,12 +45,15 @@ export type Project = {
 	mentor: string;
 	participants: number;
 	maxParticipants: number;
-	status: 'Active' | 'Completed' | 'Inactive' | 'Started' | 'Not Started';
-	credits: number;
+	status: 'Not Started' | 'Started' | 'Completed';
 	completionRate: number;
-	details: ProjectDetails;
-	milestones: Milestone[];
-	discussions: Discussion[];
-	resources: Resource[];
-	images: ProjectImage[];
+	credits: number;
+	details: string;
+	startDate: Date;
+	endDate: Date;
+	technologies: string[];
+	learningOutcomes: { value: string }[];
+	milestones: { value: string }[];
 };
+
+export type ProjectFormData = z.infer<typeof projectSchema>;

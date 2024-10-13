@@ -10,8 +10,112 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String          @id @default(cuid())
+  email     String          @unique
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  projects  ProjectMember[]
+  Project   Project[]
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  link        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+}
+
+model Milestone {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  completed   Boolean
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+}
+
+model Discussion {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+}
+
+model Category {
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  name      String
+  approved  Boolean   @default(false)
+  projects  Project[]
+}
+
+enum DifficultyEnum {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum StatusEnum {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ProjectTypeEnum {
+  FREE
+  CREDITS
+  MENTORSHIP
+}
+
+model Technology {
+  id       String    @id @default(cuid())
+  name     String
+  projects Project[]
+  approved Boolean   @default(false)
+}
+
+model Project {
+  id               String          @id @default(cuid())
+  type             ProjectTypeEnum
+  title            String
+  description      String
+  details          String
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  resources        Resource[]
+  milestones       Milestone[]
+  discussions      Discussion[]
+  timeline         String
+  startDate        DateTime
+  endDate          DateTime
+  technologies     Technology[]
+  learningOutcomes String[]
+  status           StatusEnum
+  members          ProjectMember[]
+  authorId         String
+  author           User            @relation(fields: [authorId], references: [id])
+  category         Category        @relation(fields: [categoryId], references: [id])
+  categoryId       String
+  difficulty       DifficultyEnum
+  credits          Int
+  slug             String          @unique
+  approved         Boolean         @default(false)
+}
+
+model ProjectMember {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
 }

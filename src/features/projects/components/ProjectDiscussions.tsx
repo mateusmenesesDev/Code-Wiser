@@ -28,7 +28,6 @@ export function ProjectDiscussions({ discussions }: ProjectDiscussionsProps) {
 	const handleSendMessage = () => {
 		if (newMessage.trim()) {
 			// In a real application, you would send this message to your backend
-			console.log('Sending message:', newMessage);
 			setNewMessage('');
 		}
 	};

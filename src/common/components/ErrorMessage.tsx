@@ -1,4 +1,4 @@
-import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { useAnimate } from '~/common/hooks/useAnimate';
 import { cn } from '~/lib/utils';
 
 interface ErrorMessageProps {
@@ -6,10 +6,10 @@ interface ErrorMessageProps {
 }
 
 export function ErrorMessage({ message }: ErrorMessageProps) {
-	const [parent] = useAutoAnimate();
+	const [animateRef] = useAnimate<HTMLDivElement>();
 
 	return (
-		<div ref={parent}>
+		<div ref={animateRef}>
 			{message && <p className={cn('text-red-500 text-sm')}>{message}</p>}
 		</div>
 	);

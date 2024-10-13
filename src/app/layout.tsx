@@ -15,7 +15,6 @@ export default function RootLayout({
 	children
 }: Readonly<{ children: React.ReactNode }>) {
 	const { sessionClaims } = auth();
-	console.log(sessionClaims);
 	return (
 		<ClerkProvider>
 			<SyncActiveOrganization membership={sessionClaims?.membership} />
