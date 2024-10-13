@@ -1,8 +1,8 @@
-import type { Project } from '../types/Projects.type';
+import type { ProjectCard } from '../types/Projects.type';
 
-export const projects: Project[] = [
+export const projects: ProjectCard[] = [
 	{
-		id: 1,
+		id: '1',
 		title: 'E-commerce Platform',
 		description:
 			'Build a full-stack e-commerce platform with React and Node.js',
@@ -20,13 +20,19 @@ export const projects: Project[] = [
 		endDate: new Date('2023-08-31'),
 		technologies: ['React', 'Node.js', 'MongoDB'],
 		learningOutcomes: [
-			'Learn React',
-			'Understand Node.js',
-			'Work with databases'
-		]
+			{
+				id: '1',
+				title: 'Learn React',
+				completed: false
+			}
+		],
+		images: [],
+		discussions: [],
+		milestones: [],
+		resources: []
 	},
 	{
-		id: 2,
+		id: '2',
 		title: 'Machine Learning Image Classifier',
 		description: 'Develop an image classification model using TensorFlow',
 		category: 'Machine Learning',
@@ -42,13 +48,19 @@ export const projects: Project[] = [
 		endDate: new Date('2023-09-30'),
 		technologies: ['Python', 'TensorFlow', 'Keras'],
 		learningOutcomes: [
-			'Understand image classification',
-			'Learn TensorFlow',
-			'Apply machine learning concepts'
-		]
+			{
+				id: '1',
+				title: 'Understand image classification',
+				completed: false
+			}
+		],
+		images: [],
+		discussions: [],
+		milestones: [],
+		resources: []
 	},
 	{
-		id: 3,
+		id: '3',
 		title: 'Mobile Weather App',
 		description:
 			'Create a weather application for iOS and Android using React Native',
@@ -66,13 +78,19 @@ export const projects: Project[] = [
 		endDate: new Date('2023-06-30'),
 		technologies: ['React Native', 'JavaScript', 'API Integration'],
 		learningOutcomes: [
-			'Learn React Native',
-			'Understand mobile app development',
-			'Work with APIs'
-		]
+			{
+				id: '1',
+				title: 'Learn React Native',
+				completed: false
+			}
+		],
+		images: [],
+		discussions: [],
+		milestones: [],
+		resources: []
 	},
 	{
-		id: 4,
+		id: '4',
 		title: 'Blockchain Voting System',
 		description: 'Implement a secure voting system using blockchain technology',
 		category: 'Blockchain',
@@ -89,13 +107,24 @@ export const projects: Project[] = [
 		endDate: new Date('2023-11-30'),
 		technologies: ['Solidity', 'Ethereum', 'Web3.js'],
 		learningOutcomes: [
-			'Understand blockchain concepts',
-			'Learn Solidity',
-			'Develop smart contracts'
-		]
+			{
+				id: '1',
+				title: 'Understand blockchain concepts',
+				completed: false
+			},
+			{
+				id: '2',
+				title: 'Develop smart contracts',
+				completed: false
+			}
+		],
+		images: [],
+		discussions: [],
+		milestones: [],
+		resources: []
 	},
 	{
-		id: 5,
+		id: '5',
 		title: 'Task Management API',
 		description:
 			'Design and build a RESTful API for a task management application',
@@ -112,10 +141,16 @@ export const projects: Project[] = [
 		endDate: new Date('2023-05-31'),
 		technologies: ['Node.js', 'Express.js', 'MongoDB'],
 		learningOutcomes: [
-			'Design RESTful APIs',
-			'Work with databases',
-			'Implement authentication'
-		]
+			{
+				id: '1',
+				title: 'Design RESTful APIs',
+				completed: false
+			}
+		],
+		images: [],
+		discussions: [],
+		milestones: [],
+		resources: []
 	}
 ];
 

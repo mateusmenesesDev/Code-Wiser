@@ -6,7 +6,6 @@ interface ProjectStatsProps {
 	difficulty: string;
 	participants: number;
 	maxParticipants: number;
-	timeline: string;
 	credits: number;
 }
 
@@ -15,7 +14,6 @@ export function ProjectStats({
 	difficulty,
 	participants,
 	maxParticipants,
-	timeline,
 	credits
 }: ProjectStatsProps) {
 	return (
@@ -37,7 +35,7 @@ export function ProjectStats({
 			</div>
 			<div className="flex items-center text-muted-foreground text-sm">
 				<Calendar className="mr-1 h-4 w-4" />
-				<span>{timeline}</span>
+				<span>8 weeks</span>
 			</div>
 			<div className="flex items-center text-muted-foreground text-sm">
 				<CreditCard className="mr-1 h-4 w-4" />

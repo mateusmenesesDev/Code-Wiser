@@ -10,11 +10,11 @@ datasource db {
 }
 
 model User {
-  id        String          @id @default(cuid())
-  email     String          @unique
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  projects  ProjectMember[]
+  id        String              @id @default(cuid())
+  email     String              @unique
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  projects  ProjectEnrollment[]
   Project   Project[]
 }
 
@@ -65,10 +65,9 @@ enum DifficultyEnum {
   ADVANCED
 }
 
-enum StatusEnum {
-  PLANNED
-  IN_PROGRESS
-  COMPLETED
+enum ProjectStatusEnum {
+  ACTIVE
+  INACTIVE
 }
 
 enum ProjectTypeEnum {
@@ -84,14 +83,35 @@ model Technology {
   approved Boolean   @default(false)
 }
 
+enum TaskStatusEnum {
+  BACKLOG
+  IN_PROGRESS
+  CODE_REVIEW
+  UAT
+  DONE
+}
+
+model Task {
+  id          String             @id @default(cuid())
+  title       String
+  description String
+  status      TaskStatusEnum     @default(BACKLOG)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  projectId   String
+  project     Project            @relation(fields: [projectId], references: [id])
+  assigneeId  String?
+  assignee    ProjectEnrollment? @relation(fields: [assigneeId], references: [id])
+}
+
 model Project {
-  id               String          @id @default(cuid())
+  id               String              @id @default(cuid())
   type             ProjectTypeEnum
   title            String
   description      String
   details          String
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
   resources        Resource[]
   milestones       Milestone[]
   discussions      Discussion[]
@@ -100,22 +120,38 @@ model Project {
   endDate          DateTime
   technologies     Technology[]
   learningOutcomes String[]
-  status           StatusEnum
-  members          ProjectMember[]
+  status           ProjectStatusEnum
+  members          ProjectEnrollment[]
   authorId         String
-  author           User            @relation(fields: [authorId], references: [id])
-  category         Category        @relation(fields: [categoryId], references: [id])
+  author           User                @relation(fields: [authorId], references: [id])
+  category         Category            @relation(fields: [categoryId], references: [id])
   categoryId       String
   difficulty       DifficultyEnum
   credits          Int
-  slug             String          @unique
-  approved         Boolean         @default(false)
+  slug             String              @unique
+  approved         Boolean             @default(false)
+  tasks            Task[]
 }
 
-model ProjectMember {
-  id        String  @id @default(cuid())
+enum ProjectRoleEnum {
+  MENTEE
+  MENTOR
+}
+
+enum ProjectMemberStatusEnum {
+  ACTIVE
+  INACTIVE
+}
+
+model ProjectEnrollment {
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+  id        String                  @id @default(cuid())
   projectId String
-  project   Project @relation(fields: [projectId], references: [id])
+  project   Project                 @relation(fields: [projectId], references: [id])
   userId    String
-  user      User    @relation(fields: [userId], references: [id])
+  user      User                    @relation(fields: [userId], references: [id])
+  role      ProjectRoleEnum         @default(MENTEE)
+  status    ProjectMemberStatusEnum @default(ACTIVE)
+  tasks     Task[]
 }

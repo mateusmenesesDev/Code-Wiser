@@ -5,19 +5,23 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
+import type { Milestone } from '../types/Projects.type';
 
 interface ProjectOverviewProps {
-	project: {
-		details: string;
-		technologies: string[];
-		learningOutcomes: string[];
-		startDate: string;
-		endDate: string;
-		timeline: string;
-	};
+	details: string;
+	technologies: string[];
+	learningOutcomes: Milestone[];
+	startDate: Date;
+	endDate: Date;
 }
 
-export function ProjectOverview({ project }: ProjectOverviewProps) {
+export function ProjectOverview({
+	details,
+	technologies,
+	learningOutcomes,
+	startDate,
+	endDate
+}: ProjectOverviewProps) {
 	return (
 		<Card>
 			<CardHeader>
@@ -28,14 +32,14 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 					<h3 className="mb-2 font-semibold text-lg text-primary">
 						Project Details
 					</h3>
-					<p className="text-muted-foreground">{project.details}</p>
+					<p className="text-muted-foreground">{details}</p>
 				</div>
 				<div>
 					<h3 className="mb-2 font-semibold text-lg text-primary">
 						Technologies
 					</h3>
 					<div className="flex flex-wrap gap-2">
-						{project.technologies.map((tech) => (
+						{technologies.map((tech) => (
 							<Badge key={tech} variant="secondary">
 								{tech}
 							</Badge>
@@ -47,8 +51,8 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 						Learning Outcomes
 					</h3>
 					<ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-						{project.learningOutcomes.map((outcome) => (
-							<li key={outcome}>{outcome}</li>
+						{learningOutcomes.map((outcome) => (
+							<li key={outcome.id}>{outcome.title}</li>
 						))}
 					</ul>
 				</div>
@@ -58,7 +62,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 							Start Date
 						</h3>
 						<p className="text-muted-foreground">
-							{new Date(project.startDate).toLocaleDateString()}
+							{new Date(startDate).toLocaleDateString()}
 						</p>
 					</div>
 					<div className="flex-1">
@@ -66,14 +70,14 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 							End Date
 						</h3>
 						<p className="text-muted-foreground">
-							{new Date(project.endDate).toLocaleDateString()}
+							{new Date(endDate).toLocaleDateString()}
 						</p>
 					</div>
 					<div className="flex-1">
 						<h3 className="mb-2 font-semibold text-lg text-primary">
 							Duration
 						</h3>
-						<p className="text-muted-foreground">{project.timeline}</p>
+						<p className="text-muted-foreground">8 weeks</p>
 					</div>
 				</div>
 			</CardContent>

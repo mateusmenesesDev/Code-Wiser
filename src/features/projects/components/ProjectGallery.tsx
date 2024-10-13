@@ -8,13 +8,7 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
-
-interface ProjectImage {
-	id: number;
-	src: string;
-	alt: string;
-}
-
+import type { ProjectImage } from '../types/Projects.type';
 interface ProjectGalleryProps {
 	images: ProjectImage[];
 }

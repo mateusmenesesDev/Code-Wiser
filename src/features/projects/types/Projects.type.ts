@@ -11,33 +11,33 @@ export type ProjectDetails = {
 };
 
 export type Milestone = {
-	id: number;
+	id: string;
 	title: string;
 	completed: boolean;
 };
 
 export type Discussion = {
-	id: number;
+	id: string;
 	user: string;
 	message: string;
 	timestamp: string;
 };
 
 export type Resource = {
-	id: number;
+	id: string;
 	title: string;
 	description: string;
 	link: string;
 };
 
 export type ProjectImage = {
-	id: number;
+	id: string;
 	src: string;
 	alt: string;
 };
 
-export type Project = {
-	id: number;
+export type ProjectCard = {
+	id: string;
 	title: string;
 	description: string;
 	category: string;
@@ -45,15 +45,18 @@ export type Project = {
 	mentor: string;
 	participants: number;
 	maxParticipants: number;
-	status: 'Not Started' | 'Started' | 'Completed';
+	status: 'Started' | 'Completed' | 'Not Started';
 	completionRate: number;
 	credits: number;
 	details: string;
 	startDate: Date;
 	endDate: Date;
 	technologies: string[];
-	learningOutcomes: { value: string }[];
-	milestones: { value: string }[];
+	learningOutcomes: Milestone[];
+	milestones: Milestone[];
+	discussions: Discussion[];
+	resources: Resource[];
+	images: ProjectImage[];
 };
 
 export type ProjectFormData = z.infer<typeof projectSchema>;

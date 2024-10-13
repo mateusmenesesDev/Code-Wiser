@@ -10,13 +10,7 @@ import {
 } from '~/common/components/card';
 import { ScrollArea } from '~/common/components/scroll-area';
 import { Textarea } from '~/common/components/textarea';
-
-interface Discussion {
-	id: number;
-	user: string;
-	message: string;
-	timestamp: string;
-}
+import type { Discussion } from '../types/Projects.type';
 
 interface ProjectDiscussionsProps {
 	discussions: Discussion[];

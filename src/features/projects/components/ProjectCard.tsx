@@ -10,10 +10,10 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
-import type { Project } from '../types/Projects.type';
+import type { ProjectCard as TProjectCard } from '../types/Projects.type';
 
 type ProjectCardProps = {
-	project: Project;
+	project: TProjectCard;
 };
 
 export function ProjectCard({ project }: ProjectCardProps) {

@@ -4,12 +4,7 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
-
-interface Milestone {
-	id: number;
-	title: string;
-	completed: boolean;
-}
+import type { Milestone } from '../types/Projects.type';
 
 interface ProjectMilestonesProps {
 	milestones: Milestone[];

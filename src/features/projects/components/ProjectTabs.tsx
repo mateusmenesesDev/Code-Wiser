@@ -6,7 +6,7 @@ import {
 	SelectValue
 } from '~/common/components/select';
 import { Tabs, TabsList, TabsTrigger } from '~/common/components/tabs';
-import type { Project } from '../types/Projects.type';
+import type { ProjectCard } from '../types/Projects.type';
 import { ProjectDiscussions } from './ProjectDiscussions';
 import { ProjectGallery } from './ProjectGallery';
 import { ProjectMilestones } from './ProjectMilestones';
@@ -14,7 +14,7 @@ import { ProjectOverview } from './ProjectOverview';
 import { ProjectResources } from './ProjectResources';
 
 interface ProjectTabsProps {
-	project: Project;
+	project: ProjectCard;
 	activeTab: string;
 	setActiveTab: (tab: string) => void;
 }
@@ -61,9 +61,7 @@ export function ProjectTabs({
 			</div>
 
 			<div className="mt-4">
-				{activeTab === 'overview' && (
-					<ProjectOverview project={project.details} />
-				)}
+				{activeTab === 'overview' && <ProjectOverview {...project} />}
 				{activeTab === 'milestones' && (
 					<ProjectMilestones milestones={project.milestones} />
 				)}
