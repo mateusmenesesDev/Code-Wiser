@@ -1,6 +1,6 @@
 import type { Category, Prisma, Technology } from '@prisma/client';
 import slugify from 'slugify';
-import type { ProjectFormData } from '~/features/projects/types/Projects.type';
+import type { ProjectFormData } from '../types/Projects.type';
 
 export function createProjectData(
 	input: ProjectFormData,

@@ -1,5 +1,6 @@
 import {
 	BookOpen,
+	Check,
 	Layout,
 	MessageCircle,
 	MessageSquare,
@@ -12,6 +13,12 @@ import {
 export const MENU_ITEMS = [
 	{ href: '/', icon: Layout, label: 'Dashboard' },
 	{ href: '/projects', icon: BookOpen, label: 'Projects' },
+	{
+		href: '/projects/approval',
+		icon: Check,
+		label: 'Projects Approval',
+		orgPermission: 'org:project:read_approval' as const
+	},
 	{ href: '/mentors', icon: Users, label: 'Mentors', comingSoon: true },
 	{
 		href: '/messages',

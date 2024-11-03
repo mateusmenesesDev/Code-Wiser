@@ -85,11 +85,10 @@ model Project {
   description      String
   minParticipants  Int
   maxParticipants  Int
-  approved         Boolean               @default(false)
   timeline         String?
   credits          Int?
   type             ProjectTypeEnum
-  status           ProjectStatusEnum     @default(INACTIVE)
+  status           ProjectStatusEnum     @default(PENDING)
   difficulty       ProjectDifficultyEnum
   resources        Resource[]
   milestones       Milestone[]

@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { GeistSans } from 'geist/font/sans';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Toaster } from 'sonner';
 import { SyncActiveOrganization } from '~/features/auth/components/SyncActiveOrganizations';
 import { ThemeProvider } from '~/providers/ThemeProvider';
@@ -22,15 +23,17 @@ export default function RootLayout({
 			<html lang="pt-BR" className={`${GeistSans.variable}`}>
 				<body>
 					<TRPCReactProvider>
-						<ThemeProvider
-							attribute="class"
-							defaultTheme="light"
-							enableSystem
-							disableTransitionOnChange
-						>
-							{children}
-							<Toaster richColors />
-						</ThemeProvider>
+						<NuqsAdapter>
+							<ThemeProvider
+								attribute="class"
+								defaultTheme="light"
+								enableSystem
+								disableTransitionOnChange
+							>
+								{children}
+								<Toaster richColors />
+							</ThemeProvider>
+						</NuqsAdapter>
 					</TRPCReactProvider>
 				</body>
 			</html>

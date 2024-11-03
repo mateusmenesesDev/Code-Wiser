@@ -6,7 +6,7 @@ import {
 	SelectValue
 } from '~/common/components/select';
 import { Tabs, TabsList, TabsTrigger } from '~/common/components/tabs';
-import type { ProjectCard } from '../types/Projects.type';
+import type { ProjectByNameApiResponse } from '../types/Projects.type';
 import { ProjectDiscussions } from './ProjectDiscussions';
 import { ProjectGallery } from './ProjectGallery';
 import { ProjectMilestones } from './ProjectMilestones';
@@ -14,7 +14,7 @@ import { ProjectOverview } from './ProjectOverview';
 import { ProjectResources } from './ProjectResources';
 
 interface ProjectTabsProps {
-	project: ProjectCard;
+	project: ProjectByNameApiResponse;
 	activeTab: string;
 	setActiveTab: (tab: string) => void;
 }
@@ -31,6 +31,8 @@ export function ProjectTabs({
 		{ value: 'resources', label: 'Resources' },
 		{ value: 'gallery', label: 'Gallery' }
 	];
+
+	if (!project) return null;
 
 	return (
 		<div className="space-y-4">
@@ -66,10 +68,19 @@ export function ProjectTabs({
 					<ProjectMilestones milestones={project.milestones} />
 				)}
 				{activeTab === 'discussions' && (
-					<ProjectDiscussions discussions={project.discussions} />
+					<ProjectDiscussions
+						discussions={[
+							{
+								id: '1',
+								user: 'John Doe',
+								message: 'Hello, world!',
+								timestamp: new Date().toISOString()
+							}
+						]}
+					/>
 				)}
 				{activeTab === 'resources' && <ProjectResources />}
-				{activeTab === 'gallery' && <ProjectGallery images={project.images} />}
+				{activeTab === 'gallery' && <ProjectGallery images={[]} />}
 			</div>
 		</div>
 	);

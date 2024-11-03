@@ -1,22 +1,7 @@
-import type { Project } from '@prisma/client';
+import type { Milestone, Project } from '@prisma/client';
 import type { z } from 'zod';
 import type { RouterOutputs } from '~/trpc/react';
 import type { projectSchema } from '../schemas/projects.schema';
-
-export type ProjectDetails = {
-	details: string;
-	technologies: string[];
-	learningOutcomes: string[];
-	startDate: string;
-	endDate: string;
-	timeline: string;
-};
-
-export type Milestone = {
-	id: string;
-	title: string;
-	completed: boolean;
-};
 
 export type Discussion = {
 	id: string;
@@ -39,6 +24,9 @@ export type ProjectImage = {
 };
 
 export type ProjectApiResponse = RouterOutputs['project']['getAll'][0];
+export type ProjectByNameApiResponse = RouterOutputs['project']['getByName'];
+export type UserProjectApiResponse = RouterOutputs['project']['getEnrolled'][0];
+export type ProjectApprovalApiResponse = RouterOutputs['project']['getByName'];
 
 export type ProjectDatabase = Project;
 

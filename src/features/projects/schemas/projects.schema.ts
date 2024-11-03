@@ -20,7 +20,11 @@ export const projectSchema = z
 			.number(isRequired('Maximum participants is required'))
 			.min(1)
 			.nonnegative(),
-		credits: z.number().nonnegative().optional(),
+		credits: z
+			.number()
+			.nonnegative()
+			.nullish()
+			.transform((val) => (val === null ? undefined : val)),
 		technologies: z
 			.array(z.string(), isRequired('Technologies are required'))
 			.min(1),
@@ -38,9 +42,12 @@ export const projectSchema = z
 				z.object({ value: z.string() }),
 				isRequired('Milestones are required')
 			)
-			.min(1)
+			.optional()
 			.refine(
-				(data) => data.every((milestone) => milestone.value.trim() !== ''),
+				(data) => {
+					if (!data) return true;
+					return data.every((milestone) => milestone.value.trim() !== '');
+				},
 				{
 					message: 'Milestones cannot be empty'
 				}

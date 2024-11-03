@@ -1,3 +1,4 @@
+import type { LearningOutcome, Technology } from '@prisma/client';
 import { Badge } from '~/common/components/badge';
 import {
 	Card,
@@ -5,22 +6,17 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
-import type { Milestone } from '../types/Projects.type';
 
 interface ProjectOverviewProps {
-	details: string;
-	technologies: string[];
-	learningOutcomes: Milestone[];
-	startDate: Date;
-	endDate: Date;
+	description: string;
+	technologies: Technology[];
+	learningOutcomes: LearningOutcome[];
 }
 
 export function ProjectOverview({
-	details,
+	description,
 	technologies,
-	learningOutcomes,
-	startDate,
-	endDate
+	learningOutcomes
 }: ProjectOverviewProps) {
 	return (
 		<Card>
@@ -32,7 +28,7 @@ export function ProjectOverview({
 					<h3 className="mb-2 font-semibold text-lg text-primary">
 						Project Details
 					</h3>
-					<p className="text-muted-foreground">{details}</p>
+					<p className="text-muted-foreground">{description}</p>
 				</div>
 				<div>
 					<h3 className="mb-2 font-semibold text-lg text-primary">
@@ -40,8 +36,8 @@ export function ProjectOverview({
 					</h3>
 					<div className="flex flex-wrap gap-2">
 						{technologies.map((tech) => (
-							<Badge key={tech} variant="secondary">
-								{tech}
+							<Badge key={tech.id} variant="secondary">
+								{tech.name}
 							</Badge>
 						))}
 					</div>
@@ -52,27 +48,11 @@ export function ProjectOverview({
 					</h3>
 					<ul className="list-disc space-y-1 pl-5 text-muted-foreground">
 						{learningOutcomes.map((outcome) => (
-							<li key={outcome.id}>{outcome.title}</li>
+							<li key={outcome.id}>{outcome.value}</li>
 						))}
 					</ul>
 				</div>
 				<div className="flex flex-col gap-4 md:flex-row">
-					<div className="flex-1">
-						<h3 className="mb-2 font-semibold text-lg text-primary">
-							Start Date
-						</h3>
-						<p className="text-muted-foreground">
-							{new Date(startDate).toLocaleDateString()}
-						</p>
-					</div>
-					<div className="flex-1">
-						<h3 className="mb-2 font-semibold text-lg text-primary">
-							End Date
-						</h3>
-						<p className="text-muted-foreground">
-							{new Date(endDate).toLocaleDateString()}
-						</p>
-					</div>
 					<div className="flex-1">
 						<h3 className="mb-2 font-semibold text-lg text-primary">
 							Duration

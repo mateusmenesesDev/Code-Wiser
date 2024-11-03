@@ -9,28 +9,19 @@ import {
 	SelectValue
 } from '~/common/components/select';
 import { api } from '~/trpc/react';
+import { useProjectFilter } from '../hooks/useProjectFilter';
 
-interface ProjectFiltersProps {
-	searchTerm: string;
-	setSearchTerm: (value: string) => void;
-	categoryFilter: string;
-	setCategoryFilter: (value: string) => void;
-	difficultyFilter: string;
-	setDifficultyFilter: (value: string) => void;
-	costFilter: string;
-	setCostFilter: (value: string) => void;
-}
-
-export function ProjectFilters({
-	searchTerm,
-	setSearchTerm,
-	categoryFilter,
-	setCategoryFilter,
-	difficultyFilter,
-	setDifficultyFilter,
-	costFilter,
-	setCostFilter
-}: ProjectFiltersProps) {
+export function ProjectFilters() {
+	const {
+		searchTerm,
+		categoryFilter,
+		difficultyFilter,
+		costFilter,
+		setSearchTerm,
+		setCategoryFilter,
+		setDifficultyFilter,
+		setCostFilter
+	} = useProjectFilter();
 	const { data: categories } = api.project.getCategories.useQuery();
 
 	return (
@@ -40,12 +31,15 @@ export function ProjectFilters({
 				<Input
 					placeholder="Search projects"
 					className="pl-8"
-					value={searchTerm}
+					value={searchTerm ?? ''}
 					onChange={(e) => setSearchTerm(e.target.value)}
 				/>
 			</div>
 			<div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-				<Select value={categoryFilter} onValueChange={setCategoryFilter}>
+				<Select
+					value={categoryFilter ?? 'All'}
+					onValueChange={setCategoryFilter}
+				>
 					<SelectTrigger className="w-full sm:w-[140px] lg:w-[180px]">
 						<SelectValue placeholder="Category" />
 					</SelectTrigger>
@@ -58,7 +52,10 @@ export function ProjectFilters({
 						))}
 					</SelectContent>
 				</Select>
-				<Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+				<Select
+					value={difficultyFilter ?? 'All'}
+					onValueChange={setDifficultyFilter}
+				>
 					<SelectTrigger className="w-full sm:w-[140px] lg:w-[180px]">
 						<SelectValue placeholder="Difficulty" />
 					</SelectTrigger>
@@ -75,7 +72,7 @@ export function ProjectFilters({
 						</SelectItem>
 					</SelectContent>
 				</Select>
-				<Select value={costFilter} onValueChange={setCostFilter}>
+				<Select value={costFilter ?? 'All'} onValueChange={setCostFilter}>
 					<SelectTrigger className="w-full sm:w-[140px] lg:w-[180px]">
 						<SelectValue placeholder="Cost" />
 					</SelectTrigger>

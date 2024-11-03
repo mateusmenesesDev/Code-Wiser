@@ -1,5 +1,6 @@
 'use client';
 
+import { Protect } from '@clerk/nextjs';
 import { Code, CreditCard, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -10,6 +11,30 @@ import { Sheet, SheetContent, SheetTrigger } from '../components/sheet';
 
 type SidebarProps = {
 	className?: string;
+};
+const LinkItem = (item: (typeof MENU_ITEMS)[0], pathname: string) => {
+	return (
+		<Link
+			key={item.href}
+			href={item.href}
+			className={`flex items-center px-4 py-2 ${
+				pathname === item.href
+					? 'bg-primary/10 text-primary'
+					: item.comingSoon
+						? 'cursor-not-allowed text-muted-foreground'
+						: 'text-foreground hover:bg-accent hover:text-accent-foreground'
+			}`}
+			onClick={item.comingSoon ? (e) => e.preventDefault() : undefined}
+		>
+			<item.icon className="mr-3 h-5 w-5" />
+			{item.label}
+			{item.comingSoon && (
+				<Badge variant="outline" className="ml-auto text-xs">
+					Coming Soon
+				</Badge>
+			)}
+		</Link>
+	);
 };
 
 export default function Sidebar({ className }: SidebarProps) {
@@ -27,28 +52,15 @@ export default function Sidebar({ className }: SidebarProps) {
 				</Link>
 			</div>
 			<nav className="mt-4 flex-1">
-				{MENU_ITEMS.map((item) => (
-					<Link
-						key={item.href}
-						href={item.href}
-						className={`flex items-center px-4 py-2 ${
-							pathname === item.href
-								? 'bg-primary/10 text-primary'
-								: item.comingSoon
-									? 'cursor-not-allowed text-muted-foreground'
-									: 'text-foreground hover:bg-accent hover:text-accent-foreground'
-						}`}
-						onClick={item.comingSoon ? (e) => e.preventDefault() : undefined}
-					>
-						<item.icon className="mr-3 h-5 w-5" />
-						{item.label}
-						{item.comingSoon && (
-							<Badge variant="outline" className="ml-auto text-xs">
-								Coming Soon
-							</Badge>
-						)}
-					</Link>
-				))}
+				{MENU_ITEMS.map((item) =>
+					!item.orgPermission ? (
+						LinkItem(item, pathname)
+					) : (
+						<Protect key={item.href} permission={item.orgPermission}>
+							{LinkItem(item, pathname)}
+						</Protect>
+					)
+				)}
 			</nav>
 			<div className="mt-auto border-border border-t p-4">
 				<div className="flex items-center justify-between">

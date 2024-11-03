@@ -7,8 +7,11 @@ enum TaskStatusEnum {
 }
 
 enum ProjectStatusEnum {
-  ACTIVE
-  INACTIVE
+  PENDING
+  APPROVED
+  REJECTED
+  REQUESTED_CHANGES
+  SEND_FOR_APPROVAL
 }
 
 enum ProjectTypeEnum {

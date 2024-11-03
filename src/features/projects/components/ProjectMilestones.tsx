@@ -1,10 +1,10 @@
+import type { Milestone } from '@prisma/client';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
-import type { Milestone } from '../types/Projects.type';
 
 interface ProjectMilestonesProps {
 	milestones: Milestone[];

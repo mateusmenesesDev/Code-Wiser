@@ -26,7 +26,6 @@ export default function ProjectForm() {
 		resolver: zodResolver(projectSchema),
 		defaultValues: {
 			learningOutcomes: [{ value: '' }],
-			milestones: [{ value: '' }],
 			images: [],
 			technologies: [],
 			type: ProjectTypeEnum.FREE
@@ -43,17 +42,14 @@ export default function ProjectForm() {
 	});
 
 	const onSubmit = (data: ProjectFormData) => {
-		const projectMutationPromise = projectMutation.mutateAsync(data);
-		toast.promise(projectMutationPromise, {
+		toast.promise(projectMutation.mutateAsync(data), {
+			loading: 'Creating project...',
 			success: 'Project created successfully',
 			error:
 				projectMutation.error?.data?.code === 'CONFLICT'
-					? projectMutation.error.message
-					: 'Something went wrong',
-			loading: 'Creating project...'
+					? 'A project with this name already exists'
+					: 'Failed to create project'
 		});
-
-		console.error('error client', projectMutation.error?.data?.code);
 	};
 
 	return (

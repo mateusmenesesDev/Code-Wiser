@@ -22,10 +22,9 @@ export function createProjectData(
 			}))
 		},
 		milestones: {
-			create:
-				input.milestones?.map((milestone) => ({
-					title: milestone.value
-				})) ?? []
+			create: input.milestones?.map((milestone) => ({
+				title: milestone.value
+			}))
 		},
 		images: {
 			create: input.images?.map((image) => ({ url: image.file.name }))
