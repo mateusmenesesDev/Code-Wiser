@@ -12,7 +12,7 @@ import {
 	SelectValue
 } from '~/common/components/select';
 import { Textarea } from '~/common/components/textarea';
-import { categories } from '../../mocks/projectsData';
+import { useGetProjectCategories } from '../../hooks/useGetProjectCategories';
 import type { ProjectFormData } from '../../types/Projects.type';
 
 interface ProjectBasicInfoProps {
@@ -20,6 +20,10 @@ interface ProjectBasicInfoProps {
 }
 
 export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
+	const { data: categories, isLoading } = useGetProjectCategories({
+		approved: true
+	});
+
 	const {
 		register,
 		control,
@@ -48,9 +52,10 @@ export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
 			<div className="flex flex-col space-y-2">
 				<Label>Category</Label>
 				<GenericCombobox
+					disabled={isLoading}
 					control={control}
 					name="category"
-					options={categories}
+					options={categories?.map((category) => category.name) ?? []}
 					placeholder="Select category"
 					label="Category"
 				/>

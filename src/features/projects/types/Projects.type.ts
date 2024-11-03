@@ -1,4 +1,6 @@
+import type { Project } from '@prisma/client';
 import type { z } from 'zod';
+import type { RouterOutputs } from '~/trpc/react';
 import type { projectSchema } from '../schemas/projects.schema';
 
 export type ProjectDetails = {
@@ -35,6 +37,10 @@ export type ProjectImage = {
 	src: string;
 	alt: string;
 };
+
+export type ProjectApiResponse = RouterOutputs['project']['getAll'][0];
+
+export type ProjectDatabase = Project;
 
 export type ProjectCard = {
 	id: string;

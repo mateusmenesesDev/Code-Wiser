@@ -32,9 +32,11 @@ interface GenericComboboxProps<T extends FieldValues> {
 	placeholder: string;
 	label: string;
 	multiple?: boolean;
+	disabled?: boolean;
 }
 
 export function GenericCombobox<T extends FieldValues>({
+	disabled,
 	control,
 	name,
 	options,
@@ -73,7 +75,7 @@ export function GenericCombobox<T extends FieldValues>({
 				onChange(inputValue);
 			}
 			setOpen(false);
-			setInputValue(''); // Clear the input after adding
+			setInputValue('');
 		}
 	};
 
@@ -89,6 +91,7 @@ export function GenericCombobox<T extends FieldValues>({
 					role="combobox"
 					aria-expanded={open}
 					className="w-full justify-between"
+					disabled={disabled}
 				>
 					{displayValue || placeholder}
 					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

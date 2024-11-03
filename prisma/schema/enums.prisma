@@ -1,0 +1,45 @@
+enum TaskStatusEnum {
+  BACKLOG
+  IN_PROGRESS
+  CODE_REVIEW
+  UAT
+  DONE
+}
+
+enum ProjectStatusEnum {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProjectTypeEnum {
+  FREE
+  CREDITS
+  MENTORSHIP
+}
+
+enum DifficultyEnum {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ProjectRoleEnum {
+  MENTEE
+  MENTOR
+}
+
+enum ProjectEnrollmentStatusEnum {
+  PAUSED
+  CANCELLED
+  ACTIVE
+  COMPLETED
+}
+
+enum ResourceTypeEnum {
+  CODE
+  DOCUMENTATION
+  VIDEO
+  ARTICLE
+  RECOMMENDED
+  OTHER
+}

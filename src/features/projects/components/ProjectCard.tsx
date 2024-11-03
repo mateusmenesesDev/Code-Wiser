@@ -1,3 +1,4 @@
+import { ProjectEnrollmentStatusEnum } from '@prisma/client';
 import { ArrowRight, CreditCard, Eye, Play, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '~/common/components/badge';
@@ -10,13 +11,20 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
-import type { ProjectCard as TProjectCard } from '../types/Projects.type';
+import { cn } from '~/lib/utils';
+import type { ProjectApiResponse } from '../types/Projects.type';
 
 type ProjectCardProps = {
-	project: TProjectCard;
+	project: ProjectApiResponse;
+	userCredits: number;
+	status?: ProjectEnrollmentStatusEnum;
 };
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({
+	project,
+	userCredits,
+	status
+}: ProjectCardProps) {
 	return (
 		<Card className="flex flex-col">
 			<CardHeader>
@@ -32,36 +40,54 @@ export function ProjectCard({ project }: ProjectCardProps) {
 			</CardHeader>
 			<CardContent>
 				<div className="flex flex-wrap items-center gap-2">
-					<Badge variant="secondary">{project.category}</Badge>
+					<Badge variant="secondary">{project.category.name}</Badge>
 					<div className="flex items-center space-x-2 text-muted-foreground text-sm">
 						<Users className="h-4 w-4" />
-						<span>{project.participants} participants</span>
+						<span>{project.minParticipants} participants</span>
 					</div>
-					<div className="flex items-center space-x-2 text-muted-foreground text-sm">
+					<div
+						className={cn(
+							'flex items-center space-x-2 text-muted-foreground text-sm',
+							{
+								'text-destructive':
+									project.credits &&
+									project.credits > 0 &&
+									userCredits &&
+									userCredits < project.credits
+							}
+						)}
+					>
 						<CreditCard className="h-4 w-4" />
 						<span>
-							{project.credits > 0 ? `${project.credits} credits` : 'Free'}
+							{project.credits && project.credits > 0
+								? `${project.credits} credits`
+								: 'Free'}
 						</span>
 					</div>
 				</div>
 			</CardContent>
 			<CardFooter className="mt-auto flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
-				{project.status && (
+				{status && (
 					<Badge
-						variant={project.status === 'Started' ? 'default' : 'secondary'}
+						variant={
+							status === ProjectEnrollmentStatusEnum.ACTIVE
+								? 'default'
+								: 'secondary'
+						}
 						className="w-full text-center sm:w-auto"
 					>
-						{project.status}
+						{status}
 					</Badge>
 				)}
 				<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-					{project.status !== 'Started' && project.status !== 'Completed' && (
-						<Button size="sm" className="w-full sm:w-auto">
-							<Play className="mr-2 h-4 w-4" />
-							Start
-						</Button>
-					)}
-					{project.status === 'Started' && (
+					{status !== ProjectEnrollmentStatusEnum.ACTIVE &&
+						status !== ProjectEnrollmentStatusEnum.COMPLETED && (
+							<Button size="sm" className="w-full sm:w-auto">
+								<Play className="mr-2 h-4 w-4" />
+								Start
+							</Button>
+						)}
+					{status === ProjectEnrollmentStatusEnum.ACTIVE && (
 						<Button
 							variant="default"
 							size="sm"

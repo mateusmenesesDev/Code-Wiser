@@ -26,10 +26,8 @@ export function ProjectType({ form }: ProjectTypeProps) {
 			<div className="space-y-2">
 				<Label>Project Type</Label>
 				<RadioGroup
-					onValueChange={(value) =>
-						setValue('projectType', value as ProjectTypeEnum)
-					}
-					value={watch('projectType')}
+					onValueChange={(value) => setValue('type', value as ProjectTypeEnum)}
+					value={watch('type')}
 				>
 					<div className="flex items-center space-x-2">
 						<RadioGroupItem value={ProjectTypeEnum.FREE} id="free" />
@@ -47,11 +45,11 @@ export function ProjectType({ form }: ProjectTypeProps) {
 						<Label htmlFor="mentorship">Mentorship Based</Label>
 					</div>
 				</RadioGroup>
-				<ErrorMessage message={errors.projectType?.message} />
+				<ErrorMessage message={errors.type?.message} />
 			</div>
 
 			<div ref={animateRef}>
-				{watch('projectType') === ProjectTypeEnum.CREDITS && (
+				{watch('type') === ProjectTypeEnum.CREDITS && (
 					<div className="space-y-2">
 						<Label htmlFor="credits">Credits</Label>
 						<Input

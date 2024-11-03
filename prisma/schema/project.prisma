@@ -1,0 +1,119 @@
+model Resource {
+  id        String           @id @default(cuid())
+  title     String
+  link      String
+  type      ResourceTypeEnum
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  projectId String
+  project   Project          @relation(fields: [projectId], references: [id])
+}
+
+model Milestone {
+  id        String   @id @default(cuid())
+  title     String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+}
+
+model Discussion {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+}
+
+model Category {
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  name      String    @unique
+  approved  Boolean   @default(false)
+  projects  Project[]
+}
+
+model Technology {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  projects Project[]
+  approved Boolean   @default(false)
+}
+
+model Task {
+  id          String             @id @default(cuid())
+  title       String
+  description String
+  status      TaskStatusEnum     @default(BACKLOG)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  projectId   String
+  project     Project            @relation(fields: [projectId], references: [id])
+  assigneeId  String?
+  assignee    ProjectEnrollment? @relation(fields: [assigneeId], references: [id])
+}
+
+model ProjectImage {
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  url       String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+}
+
+model LearningOutcome {
+  id        String   @id @default(cuid())
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+}
+
+model Project {
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  id               String              @id @default(cuid())
+  title            String              @unique
+  slug             String              @unique
+  description      String
+  minParticipants  Int
+  maxParticipants  Int
+  approved         Boolean             @default(false)
+  timeline         String?
+  credits          Int?
+  type             ProjectTypeEnum
+  status           ProjectStatusEnum   @default(INACTIVE)
+  difficulty       DifficultyEnum
+  resources        Resource[]
+  milestones       Milestone[]
+  discussions      Discussion[]
+  technologies     Technology[]
+  learningOutcomes LearningOutcome[]
+  members          ProjectEnrollment[]
+  tasks            Task[]
+  images           ProjectImage[]
+  authorId         String
+  author           User                @relation(fields: [authorId], references: [id])
+  categoryId       String
+  category         Category            @relation(fields: [categoryId], references: [id])
+}
+
+model ProjectEnrollment {
+  createdAt DateTime                    @default(now())
+  updatedAt DateTime                    @updatedAt
+  id        String                      @id @default(cuid())
+  projectId String
+  project   Project                     @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User                        @relation(fields: [userId], references: [id])
+  role      ProjectRoleEnum             @default(MENTEE)
+  status    ProjectEnrollmentStatusEnum @default(ACTIVE)
+  tasks     Task[]
+}

@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { passwordSchema, userDbSchema } from '~/features/schemas/auth.schema';
-import { createTRPCRouter, publicProcedure } from '../../trpc';
+import {
+	createTRPCRouter,
+	protectedProcedure,
+	publicProcedure
+} from '../../trpc';
 import { createUser, deleteUser, updateUser } from './queries';
 
 export const userRouter = createTRPCRouter({
@@ -29,5 +33,12 @@ export const userRouter = createTRPCRouter({
 
 	delete: publicProcedure.input(z.string()).mutation(async ({ input }) => {
 		return await deleteUser(input);
+	}),
+
+	getCredits: protectedProcedure.query(async ({ ctx }) => {
+		return ctx.db.user.findUnique({
+			where: { id: ctx.session.userId },
+			select: { credits: true }
+		});
 	})
 });

@@ -1,8 +1,10 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ProjectTypeEnum } from '@prisma/client';
 import { useForm } from 'react-hook-form';
 import { Button } from '~/common/components/button';
+import { api } from '~/trpc/react';
 import { projectSchema } from '../../schemas/projects.schema';
 import type { ProjectFormData } from '../../types/Projects.type';
 import { ProjectBasicInfo } from './ProjectBasicInfo';
@@ -11,6 +13,7 @@ import { ProjectLearningOutcomes } from './ProjectLearningOutcomes';
 import { ProjectMilestones } from './ProjectMilestones';
 import { ProjectParticipants } from './ProjectParticipants';
 import { ProjectTechnologies } from './ProjectTechnologies';
+import { ProjectTimeline } from './ProjectTimeline';
 import { ProjectType } from './ProjectType';
 
 export default function ProjectForm() {
@@ -20,14 +23,22 @@ export default function ProjectForm() {
 			learningOutcomes: [{ value: '' }],
 			milestones: [{ value: '' }],
 			images: [],
-			technologies: []
+			technologies: [],
+			type: ProjectTypeEnum.FREE
 		},
 		mode: 'onChange'
 	});
 
+	const {
+		formState: { errors }
+	} = form;
+	console.log(errors);
+	const projectMutation = api.project.create.useMutation();
+
 	const onSubmit = (data: ProjectFormData) => {
 		console.log('Submitting project:', data);
-		// Here you would typically send the data to your backend
+		console.log('Project type:', data.type);
+		projectMutation.mutate(data);
 	};
 
 	return (
@@ -35,7 +46,7 @@ export default function ProjectForm() {
 			<ProjectBasicInfo form={form} />
 			<ProjectParticipants form={form} />
 			<ProjectType form={form} />
-			<ProjectTechnologies form={form} />
+			<ProjectTimeline form={form} /> <ProjectTechnologies form={form} />
 			<ProjectLearningOutcomes form={form} />
 			<ProjectMilestones form={form} />
 			<ProjectImages form={form} />

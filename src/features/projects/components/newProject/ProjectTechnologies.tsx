@@ -5,7 +5,7 @@ import { GenericCombobox } from '~/common/components/GenericCombobox';
 import { Badge } from '~/common/components/badge';
 import { Button } from '~/common/components/button';
 import { Label } from '~/common/components/label';
-import { technologies } from '../../mocks/projectsData';
+import { api } from '~/trpc/react';
 import type { ProjectFormData } from '../../types/Projects.type';
 
 interface ProjectTechnologiesProps {
@@ -13,6 +13,7 @@ interface ProjectTechnologiesProps {
 }
 
 export function ProjectTechnologies({ form }: ProjectTechnologiesProps) {
+	const { data: technologies } = api.project.getTechnologies.useQuery();
 	const {
 		control,
 		watch,
@@ -49,7 +50,7 @@ export function ProjectTechnologies({ form }: ProjectTechnologiesProps) {
 			<GenericCombobox
 				control={control}
 				name="technologies"
-				options={technologies}
+				options={technologies?.map((tech) => tech.name) || []}
 				placeholder="Select technologies"
 				label="Technologies"
 				multiple

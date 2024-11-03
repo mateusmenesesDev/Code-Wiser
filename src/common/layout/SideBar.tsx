@@ -4,7 +4,7 @@ import { Code, CreditCard, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Badge } from '~/common/components/badge';
-import { menuItems } from '~/common/constants/menuItem';
+import { MENU_ITEMS } from '~/common/constants/menuItem';
 import { Button } from '../components/button';
 import { Sheet, SheetContent, SheetTrigger } from '../components/sheet';
 
@@ -27,7 +27,7 @@ export default function Sidebar({ className }: SidebarProps) {
 				</Link>
 			</div>
 			<nav className="mt-4 flex-1">
-				{menuItems.map((item) => (
+				{MENU_ITEMS.map((item) => (
 					<Link
 						key={item.href}
 						href={item.href}

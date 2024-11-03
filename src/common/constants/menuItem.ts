@@ -9,7 +9,7 @@ import {
 	Users2
 } from 'lucide-react';
 
-export const menuItems = [
+export const MENU_ITEMS = [
 	{ href: '/', icon: Layout, label: 'Dashboard' },
 	{ href: '/projects', icon: BookOpen, label: 'Projects' },
 	{ href: '/mentors', icon: Users, label: 'Mentors', comingSoon: true },

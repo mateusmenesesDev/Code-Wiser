@@ -1,19 +1,13 @@
 import { DifficultyEnum, ProjectTypeEnum } from '@prisma/client';
 import { z } from 'zod';
-
-const isRequired = (message: string) => ({
-	errorMap: () => ({ message })
-});
+import { isRequired } from '~/features/schemas/utils';
 
 export const projectSchema = z
 	.object({
 		title: z.string().min(1, 'Title is required'),
 		description: z.string().min(1, 'Description is required'),
 		category: z.string(isRequired('Category is required')).min(1),
-		projectType: z.nativeEnum(
-			ProjectTypeEnum,
-			isRequired('Project type is required')
-		),
+		type: z.nativeEnum(ProjectTypeEnum, isRequired('Project type is required')),
 		difficulty: z.nativeEnum(
 			DifficultyEnum,
 			isRequired('Difficulty is required')
@@ -58,10 +52,11 @@ export const projectSchema = z
 					preview: z.string()
 				})
 			)
-			.optional()
+			.optional(),
+		timeline: z.string().optional()
 	})
 	.superRefine((data, ctx) => {
-		if (data.projectType === ProjectTypeEnum.CREDITS && !data.credits) {
+		if (data.type === ProjectTypeEnum.CREDITS && !data.credits) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				message: 'Credits are required for credit-based projects',
