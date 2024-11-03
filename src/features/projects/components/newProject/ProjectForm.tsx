@@ -1,7 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProjectTypeEnum } from '@prisma/client';
 import { useForm } from 'react-hook-form';
@@ -13,6 +11,7 @@ import type { ProjectFormData } from '../../types/Projects.type';
 
 import { Button } from '~/common/components/button';
 
+import { useRouter } from 'next/navigation';
 import { ProjectBasicInfo } from './ProjectBasicInfo';
 import { ProjectImages } from './ProjectImages';
 import { ProjectLearningOutcomes } from './ProjectLearningOutcomes';
@@ -23,8 +22,6 @@ import { ProjectTimeline } from './ProjectTimeline';
 import { ProjectType } from './ProjectType';
 
 export default function ProjectForm() {
-	const router = useRouter();
-
 	const form = useForm<ProjectFormData>({
 		resolver: zodResolver(projectSchema),
 		defaultValues: {
@@ -37,16 +34,26 @@ export default function ProjectForm() {
 		mode: 'onChange'
 	});
 
-	const projectMutation = api.project.create.useMutation();
+	const router = useRouter();
+
+	const projectMutation = api.project.create.useMutation({
+		onSuccess: () => {
+			router.push('/projects');
+		}
+	});
 
 	const onSubmit = (data: ProjectFormData) => {
-		toast.promise(projectMutation.mutateAsync(data), {
+		const projectMutationPromise = projectMutation.mutateAsync(data);
+		toast.promise(projectMutationPromise, {
 			success: 'Project created successfully',
-			error: 'Failed to create project',
+			error:
+				projectMutation.error?.data?.code === 'CONFLICT'
+					? projectMutation.error.message
+					: 'Something went wrong',
 			loading: 'Creating project...'
 		});
 
-		router.push('/projects');
+		console.error('error client', projectMutation.error?.data?.code);
 	};
 
 	return (
@@ -54,15 +61,17 @@ export default function ProjectForm() {
 			<ProjectBasicInfo form={form} />
 			<ProjectParticipants form={form} />
 			<ProjectType form={form} />
-			<ProjectTimeline form={form} /> <ProjectTechnologies form={form} />
+			<ProjectTimeline form={form} />
+			<ProjectTechnologies form={form} />
 			<ProjectLearningOutcomes form={form} />
 			<ProjectMilestones form={form} />
 			<ProjectImages form={form} />
 			<Button
 				type="submit"
+				disabled={projectMutation.isPending}
 				className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
 			>
-				Create Project
+				{projectMutation.isPending ? 'Creating...' : 'Create Project'}
 			</Button>
 		</form>
 	);
