@@ -41,7 +41,7 @@ export default function Sidebar({ className }: SidebarProps) {
 	const pathname = usePathname();
 	const userCredits = 100;
 	const SidebarContent = () => (
-		<div className="flex h-full flex-col shadow dark:shadow-primary/10">
+		<div className='flex h-full flex-col bg-card pt-2 shadow'>
 			<div className="p-4">
 				<Link
 					href="/"
@@ -93,7 +93,7 @@ export default function Sidebar({ className }: SidebarProps) {
 					</SheetContent>
 				</Sheet>
 			</div>
-			<div className={`hidden w-64 pt-2 md:block ${className}`}>
+			<div className={`hidden w-64 md:block ${className}`}>
 				<SidebarContent />
 			</div>
 		</>

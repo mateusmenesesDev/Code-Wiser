@@ -12,7 +12,7 @@ export default function Header() {
 	const isDashboard = pathname === '/';
 	const headerTitle = isDashboard ? 'Dashboard' : pathname.split('/')[1];
 	return (
-		<header className="bg-card text-card-foreground shadow dark:shadow-md dark:shadow-primary/10">
+		<header className="bg-card text-card-foreground shadow">
 			<div className="flex items-center justify-between p-4">
 				<h1 className="font-semibold text-2xl capitalize">{headerTitle}</h1>
 				<div className="flex items-center space-x-4">
