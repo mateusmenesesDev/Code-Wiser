@@ -122,4 +122,6 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 	});
 });
 
-export const protectedProcedure = t.procedure.use(isAuthed);
+export const protectedProcedure = t.procedure
+	.use(isAuthed)
+	.use(timingMiddleware);

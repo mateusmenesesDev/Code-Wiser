@@ -14,13 +14,13 @@ export const projectSchema = z
 		),
 		minParticipants: z
 			.number(isRequired('Minimum participants is required'))
-			.min(1),
+			.min(1)
+			.nonnegative(),
 		maxParticipants: z
 			.number(isRequired('Maximum participants is required'))
-			.min(1),
-		credits: z
-			.number(isRequired('Credits are required for credit-based projects'))
-			.optional(),
+			.min(1)
+			.nonnegative(),
+		credits: z.number().nonnegative().optional(),
 		technologies: z
 			.array(z.string(), isRequired('Technologies are required'))
 			.min(1),
@@ -56,12 +56,14 @@ export const projectSchema = z
 		timeline: z.string().optional()
 	})
 	.superRefine((data, ctx) => {
-		if (data.type === ProjectTypeEnum.CREDITS && !data.credits) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'Credits are required for credit-based projects',
-				path: ['credits']
-			});
+		if (data.type === ProjectTypeEnum.CREDITS) {
+			if (!data.credits || data.credits <= 0) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'Credits are required for credit-based projects',
+					path: ['credits']
+				});
+			}
 		}
 		if (data.minParticipants > data.maxParticipants) {
 			ctx.addIssue({

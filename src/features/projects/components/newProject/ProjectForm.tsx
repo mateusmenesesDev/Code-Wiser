@@ -1,12 +1,18 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProjectTypeEnum } from '@prisma/client';
 import { useForm } from 'react-hook-form';
-import { Button } from '~/common/components/button';
+import { toast } from 'sonner';
 import { api } from '~/trpc/react';
+
 import { projectSchema } from '../../schemas/projects.schema';
 import type { ProjectFormData } from '../../types/Projects.type';
+
+import { Button } from '~/common/components/button';
+
 import { ProjectBasicInfo } from './ProjectBasicInfo';
 import { ProjectImages } from './ProjectImages';
 import { ProjectLearningOutcomes } from './ProjectLearningOutcomes';
@@ -17,6 +23,8 @@ import { ProjectTimeline } from './ProjectTimeline';
 import { ProjectType } from './ProjectType';
 
 export default function ProjectForm() {
+	const router = useRouter();
+
 	const form = useForm<ProjectFormData>({
 		resolver: zodResolver(projectSchema),
 		defaultValues: {
@@ -29,16 +37,16 @@ export default function ProjectForm() {
 		mode: 'onChange'
 	});
 
-	const {
-		formState: { errors }
-	} = form;
-	console.log(errors);
 	const projectMutation = api.project.create.useMutation();
 
 	const onSubmit = (data: ProjectFormData) => {
-		console.log('Submitting project:', data);
-		console.log('Project type:', data.type);
-		projectMutation.mutate(data);
+		toast.promise(projectMutation.mutateAsync(data), {
+			success: 'Project created successfully',
+			error: 'Failed to create project',
+			loading: 'Creating project...'
+		});
+
+		router.push('/projects');
 	};
 
 	return (

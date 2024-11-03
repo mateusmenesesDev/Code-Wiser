@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { GeistSans } from 'geist/font/sans';
+import { Toaster } from 'sonner';
 import { SyncActiveOrganization } from '~/features/auth/components/SyncActiveOrganizations';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { TRPCReactProvider } from '~/trpc/react';
@@ -28,6 +29,7 @@ export default function RootLayout({
 							disableTransitionOnChange
 						>
 							{children}
+							<Toaster richColors />
 						</ThemeProvider>
 					</TRPCReactProvider>
 				</body>
