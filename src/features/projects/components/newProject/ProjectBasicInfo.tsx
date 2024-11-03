@@ -1,4 +1,4 @@
-import { DifficultyEnum } from '@prisma/client';
+import { ProjectDifficultyEnum } from '@prisma/client';
 import type { UseFormReturn } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
 import { GenericCombobox } from '~/common/components/GenericCombobox';
@@ -31,7 +31,7 @@ export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
 		setValue
 	} = form;
 
-	const handleDifficultyChange = (value: DifficultyEnum) => {
+	const handleDifficultyChange = (value: ProjectDifficultyEnum) => {
 		setValue('difficulty', value);
 	};
 
@@ -69,11 +69,15 @@ export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
 						<SelectValue placeholder="Select difficulty" />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value={DifficultyEnum.BEGINNER}>Beginner</SelectItem>
-						<SelectItem value={DifficultyEnum.INTERMEDIATE}>
+						<SelectItem value={ProjectDifficultyEnum.BEGINNER}>
+							Beginner
+						</SelectItem>
+						<SelectItem value={ProjectDifficultyEnum.INTERMEDIATE}>
 							Intermediate
 						</SelectItem>
-						<SelectItem value={DifficultyEnum.ADVANCED}>Advanced</SelectItem>
+						<SelectItem value={ProjectDifficultyEnum.ADVANCED}>
+							Advanced
+						</SelectItem>
 					</SelectContent>
 				</Select>
 				<ErrorMessage message={errors.difficulty?.message} />

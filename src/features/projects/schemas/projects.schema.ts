@@ -1,4 +1,4 @@
-import { DifficultyEnum, ProjectTypeEnum } from '@prisma/client';
+import { ProjectDifficultyEnum, ProjectTypeEnum } from '@prisma/client';
 import { z } from 'zod';
 import { isRequired } from '~/features/schemas/utils';
 
@@ -9,7 +9,7 @@ export const projectSchema = z
 		category: z.string(isRequired('Category is required')).min(1),
 		type: z.nativeEnum(ProjectTypeEnum, isRequired('Project type is required')),
 		difficulty: z.nativeEnum(
-			DifficultyEnum,
+			ProjectDifficultyEnum,
 			isRequired('Difficulty is required')
 		),
 		minParticipants: z

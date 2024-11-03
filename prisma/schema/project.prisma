@@ -77,20 +77,20 @@ model LearningOutcome {
 }
 
 model Project {
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  id               String              @id @default(cuid())
-  title            String              @unique
-  slug             String              @unique
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  id               String                @id @default(cuid())
+  title            String                @unique
+  slug             String                @unique
   description      String
   minParticipants  Int
   maxParticipants  Int
-  approved         Boolean             @default(false)
+  approved         Boolean               @default(false)
   timeline         String?
   credits          Int?
   type             ProjectTypeEnum
-  status           ProjectStatusEnum   @default(INACTIVE)
-  difficulty       DifficultyEnum
+  status           ProjectStatusEnum     @default(INACTIVE)
+  difficulty       ProjectDifficultyEnum
   resources        Resource[]
   milestones       Milestone[]
   discussions      Discussion[]
@@ -100,9 +100,9 @@ model Project {
   tasks            Task[]
   images           ProjectImage[]
   authorId         String
-  author           User                @relation(fields: [authorId], references: [id])
+  author           User                  @relation(fields: [authorId], references: [id])
   categoryId       String
-  category         Category            @relation(fields: [categoryId], references: [id])
+  category         Category              @relation(fields: [categoryId], references: [id])
 }
 
 model ProjectEnrollment {

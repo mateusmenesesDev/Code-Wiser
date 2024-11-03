@@ -1,3 +1,4 @@
+import { ProjectDifficultyEnum } from '@prisma/client';
 import { Search } from 'lucide-react';
 import { Input } from '~/common/components/input';
 import {
@@ -63,9 +64,15 @@ export function ProjectFilters({
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="All">All Difficulties</SelectItem>
-						<SelectItem value="Beginner">Beginner</SelectItem>
-						<SelectItem value="Intermediate">Intermediate</SelectItem>
-						<SelectItem value="Advanced">Advanced</SelectItem>
+						<SelectItem value={ProjectDifficultyEnum.BEGINNER}>
+							Beginner
+						</SelectItem>
+						<SelectItem value={ProjectDifficultyEnum.INTERMEDIATE}>
+							Intermediate
+						</SelectItem>
+						<SelectItem value={ProjectDifficultyEnum.ADVANCED}>
+							Advanced
+						</SelectItem>
 					</SelectContent>
 				</Select>
 				<Select value={costFilter} onValueChange={setCostFilter}>
