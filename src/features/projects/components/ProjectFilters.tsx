@@ -7,6 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '~/common/components/select';
+import { api } from '~/trpc/react';
 
 interface ProjectFiltersProps {
 	searchTerm: string;
@@ -29,6 +30,8 @@ export function ProjectFilters({
 	costFilter,
 	setCostFilter
 }: ProjectFiltersProps) {
+	const { data: categories } = api.project.getCategories.useQuery();
+
 	return (
 		<div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
 			<div className="relative flex-grow">
@@ -47,15 +50,11 @@ export function ProjectFilters({
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="All">All Categories</SelectItem>
-						<SelectItem value="Web Development">Web Development</SelectItem>
-						<SelectItem value="Mobile Development">
-							Mobile Development
-						</SelectItem>
-						<SelectItem value="Machine Learning">Machine Learning</SelectItem>
-						<SelectItem value="Blockchain">Blockchain</SelectItem>
-						<SelectItem value="Backend Development">
-							Backend Development
-						</SelectItem>
+						{categories?.map((category) => (
+							<SelectItem key={category.id} value={category.name}>
+								{category.name}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
 				<Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
