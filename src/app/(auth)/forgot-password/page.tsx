@@ -20,14 +20,14 @@ export const metadata: Metadata = {
 
 export default function ForgotPasswordPage() {
 	return (
-		<div className="flex min-h-screen bg-gradient-to-br from-purple-100 to-white">
+		<div className="flex min-h-screen">
 			<div className="flex w-full flex-col justify-center px-4 py-12 sm:px-6 lg:w-1/2 lg:px-20 xl:px-24">
 				<div className="mx-auto w-full max-w-sm lg:w-96">
 					<div className="mb-11 text-center">
-						<h2 className="mt-6 font-extrabold text-3xl text-gray-900">
+						<h2 className="mt-6 font-extrabold text-3xl text-primary">
 							Forgot your password?
 						</h2>
-						<p className="mt-2 text-gray-600 text-sm">
+						<p className="mt-2 text-balance text-muted-foreground">
 							No worries, we&apos;ll send you reset instructions.
 						</p>
 					</div>

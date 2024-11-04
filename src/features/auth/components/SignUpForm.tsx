@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Label } from '@radix-ui/react-label';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
+import { ErrorMessage } from '~/common/components/ErrorMessage';
 import { Alert, AlertDescription } from '~/common/components/alert';
 import { Button } from '~/common/components/button';
 import {
@@ -13,7 +14,6 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/card';
-import { ErrorMessage } from '~/common/components/ErrorMessage';
 import { GoogleIcon } from '~/common/components/icons/GoogleIcon';
 import { Input, PasswordInput } from '~/common/components/input';
 import {
@@ -59,7 +59,7 @@ export default function SignUpForm() {
 		await signUpWithEmail(data);
 	};
 
-	if (!isVerifying) {
+	if (isVerifying) {
 		return (
 			<form onSubmit={handleSubmitCode(onVerify)}>
 				<Card className="w-[350px]">
