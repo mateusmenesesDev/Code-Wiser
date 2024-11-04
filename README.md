@@ -1,29 +1,41 @@
-# Create T3 App
+# Project Management Platform
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+A cutting-edge project management platform designed to accelerate developer growth, providing a unique opportunity for coders to improve their skills rapidly with the guidance of experienced mentors, and featuring a robust set of tools for project planning, collaboration, and tracking, all built on top of the scalable and maintainable T3 Stack.
 
-## What's next? How do I make an app with this?
+## Features
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- 🎨 Modern UI with beautiful dark mode
+- 👥 Project collaboration and management
+- 📊 Project progress tracking
+- 🔍 Project discovery and filtering
+- ✅ Project approval workflow
+- 💳 Credits-based project system
+- 👨‍🏫 Mentor assignment system
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Tech Stack
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+This project is built using the [T3 Stack](https://create.t3.gg/), featuring:
 
-## Learn More
+- **Framework**: [Next.js 14](https://nextjs.org) with App Router
+- **Authentication**: [Clerk](https://clerk.com)
+- **Database**: [PostgreSQL](https://www.postgresql.org) with [Prisma](https://prisma.io)
+- **API**: [tRPC](https://trpc.io) for end-to-end typesafe APIs
+- **Styling**: [Tailwind CSS](https://tailwindcss.com) with custom design system
+- **UI Components**: Custom components with [shadcn/ui](https://ui.shadcn.com)
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+## Getting Started
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+1. Clone the repository:
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+```bash
+git clone
+npm install
+```
 
-## How do I deploy this?
+2. Update the `.env` file with your own values.
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+3. Start the development server:
+
+```bash
+npm run dev
+```
