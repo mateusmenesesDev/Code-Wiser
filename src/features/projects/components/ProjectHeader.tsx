@@ -1,27 +1,17 @@
-import { Button } from '~/common/components/button';
-import {
-	CardDescription,
-	CardHeader,
-	CardTitle
-} from '~/common/components/card';
+'use client';
 
 interface ProjectHeaderProps {
 	title: string;
-	description: string;
 }
 
-export function ProjectHeader({ title, description }: ProjectHeaderProps) {
+export function ProjectHeader({ title }: ProjectHeaderProps) {
 	return (
-		<CardHeader>
-			<div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+		<header className="border-b bg-background px-6 py-3">
+			<div className="flex items-center justify-between">
 				<div>
-					<CardTitle className="mb-2 text-3xl text-primary">{title}</CardTitle>
-					<CardDescription>{description}</CardDescription>
+					<h1 className="font-semibold text-xl">{title}</h1>
 				</div>
-				<Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-					Join Project
-				</Button>
 			</div>
-		</CardHeader>
+		</header>
 	);
 }

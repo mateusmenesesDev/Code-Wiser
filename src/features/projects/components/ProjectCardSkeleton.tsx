@@ -34,7 +34,6 @@ export function ProjectCardSkeleton() {
 					{/* Credits Info */}
 					<Skeleton className="h-5 w-24 bg-gradient-to-r from-card-foreground/5 via-card-foreground/10 to-card-foreground/5 dark:from-card-foreground/5 dark:via-card-foreground/10 dark:to-card-foreground/5" />
 				</div>
-				\
 			</CardContent>
 
 			{/* Footer Section */}

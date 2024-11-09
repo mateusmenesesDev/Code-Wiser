@@ -67,7 +67,7 @@ export default function ProjectApprovalPage({
 	};
 
 	return (
-		<div className="container mx-auto bg-background px-4 py-8 text-foreground">
+		<div className="mx-auto bg-background px-4 py-8 text-foreground">
 			<h1 className="mb-8 font-bold text-3xl text-primary">
 				Project Approval Dashboard
 			</h1>
@@ -133,7 +133,9 @@ export default function ProjectApprovalPage({
 						</Button>
 						<Button
 							variant="outline"
-							onClick={() => router.push(`/projects/edit/${project.title}`)}
+							onClick={() =>
+								router.push(`/projects/${project.title}/edit/backlog`)
+							}
 						>
 							<Pencil className="mr-2 h-4 w-4" />
 							Edit Project

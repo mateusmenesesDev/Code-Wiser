@@ -6,4 +6,6 @@ model User {
   projects  ProjectEnrollment[]
   Project   Project[]
   credits   Int                 @default(0)
+
+  ProjectTemplate ProjectTemplate[]
 }

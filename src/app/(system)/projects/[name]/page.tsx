@@ -21,13 +21,10 @@ export default function ProjectPage({ params }: { params: { name: string } }) {
 	if (!project) return <div>Project not found</div>;
 
 	return (
-		<div className="container mx-auto bg-background py-8 text-foreground">
+		<div className="mx-auto bg-background py-8 text-foreground">
 			<div className="px-4">
 				<Card className="mb-8">
-					<ProjectHeader
-						title={project.title}
-						description={project.description}
-					/>
+					<ProjectHeader title={project.title} />
 					<CardContent>
 						<ProjectStats
 							category={project.category.name}
