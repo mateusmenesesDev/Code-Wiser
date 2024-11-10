@@ -4,6 +4,5 @@ export * from './board/ColumnHeader';
 export * from './board/KanbanBoard';
 export * from './board/ScrumBoard';
 export * from './layout/ProjectHeader';
-export * from './layout/ProjectLayout';
 export * from './task/TaskCard';
 export * from './task/TaskList';

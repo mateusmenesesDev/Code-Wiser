@@ -33,7 +33,7 @@ export default function ProjectEditLayout({
 
 	// Handle tab changes
 	const handleTabChange = (value: string) => {
-		router.push(`/projects/${params.name}/edit/${value}`);
+		router.push(`/projects/templates/${params.slug}/edit/${value}`);
 	};
 
 	return (
