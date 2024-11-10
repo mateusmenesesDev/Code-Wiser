@@ -25,13 +25,11 @@ export default function ProjectEditLayout({
 	const pathname = usePathname();
 	const project = mockProject;
 
-	// Get current tab from pathname
 	const getCurrentTab = () => {
 		const tab = pathname.split('/').pop();
 		return tab || 'board';
 	};
 
-	// Handle tab changes
 	const handleTabChange = (value: string) => {
 		router.push(`/projects/templates/${params.slug}/edit/${value}`);
 	};

@@ -12,6 +12,13 @@ import {
 } from '~/common/components/dropdown-menu';
 import { ScrollArea } from '~/common/components/scroll-area';
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from '~/common/components/select';
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -23,9 +30,11 @@ import type { Project } from '../../types';
 
 interface BacklogViewProps {
 	project: Project;
+	isTemplatePage?: boolean;
 }
 
-export function BacklogView({ project }: BacklogViewProps) {
+export function BacklogView({ project, isTemplatePage }: BacklogViewProps) {
+	console.log(project);
 	return (
 		<div className="h-full w-full p-6">
 			<ScrollArea className="h-[calc(100vh-8rem)]">
@@ -39,12 +48,22 @@ export function BacklogView({ project }: BacklogViewProps) {
 								<TableHead className="min-w-[500px]">Task</TableHead>
 								<TableHead className="w-[100px]">Priority</TableHead>
 								<TableHead className="w-[200px]">Tags</TableHead>
-								<TableHead className="w-[100px]">Status</TableHead>
-								<TableHead className="w-[200px]">Assignee</TableHead>
+								{project.methodology === 'scrum' && (
+									<>
+										<TableHead className="w-[150px]">Sprint</TableHead>
+										<TableHead className="w-[150px]">Epic</TableHead>
+									</>
+								)}
+								{!isTemplatePage && (
+									<>
+										<TableHead className="w-[100px]">Status</TableHead>
+										<TableHead className="w-[200px]">Assignee</TableHead>
+									</>
+								)}
 								<TableHead className="w-[70px]" />
 							</TableRow>
 						</TableHeader>
-						<TableBody>
+						<TableBody className="min-w-full table-fixed">
 							{project.backlog.map((task) => (
 								<TableRow key={task.id} className="group">
 									<TableCell className="w-[50px]">
@@ -85,32 +104,85 @@ export function BacklogView({ project }: BacklogViewProps) {
 											))}
 										</div>
 									</TableCell>
-									<TableCell className="w-[100px]">
-										<Badge
-											variant="outline"
-											className="w-[80px] justify-center"
-										>
-											{task.status}
-										</Badge>
-									</TableCell>
-									<TableCell className="w-[200px]">
-										{task.assigneeId ? (
-											<div className="flex items-center gap-2">
-												<div className="h-6 w-6 rounded-full bg-muted" />
-												<span className="truncate text-sm">
-													{task.assigneeId}
-												</span>
-											</div>
-										) : (
-											<Button
-												variant="ghost"
-												size="sm"
-												className="h-6 px-2 text-xs"
-											>
-												Assign
-											</Button>
-										)}
-									</TableCell>
+									{project.methodology === 'scrum' && (
+										<>
+											<TableCell className="w-[150px]">
+												<Select defaultValue={String(task.sprintId)}>
+													<SelectTrigger className="h-7 w-[120px]">
+														<SelectValue placeholder="Add to Sprint" />
+													</SelectTrigger>
+													<SelectContent>
+														{project.sprints?.map((sprint) => (
+															<SelectItem
+																key={sprint.id}
+																value={String(sprint.id)}
+															>
+																{sprint.title}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</TableCell>
+											<TableCell className="w-[150px]">
+												{task.epicId ? (
+													<Badge
+														variant="outline"
+														className="w-[120px] justify-center"
+													>
+														{project.epics?.find(
+															(epic) => epic.id === task.epicId
+														)?.title || task.epicId}
+													</Badge>
+												) : (
+													<Select>
+														<SelectTrigger className="h-7 w-[120px]">
+															<SelectValue placeholder="Add to Epic" />
+														</SelectTrigger>
+														<SelectContent>
+															{project.epics?.map((epic) => (
+																<SelectItem
+																	key={epic.id}
+																	value={String(epic.id)}
+																>
+																	{epic.title}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												)}
+											</TableCell>
+										</>
+									)}
+									{!isTemplatePage && (
+										<>
+											<TableCell className="w-[100px]">
+												<Badge
+													variant="outline"
+													className="w-[80px] justify-center"
+												>
+													{task.status}
+												</Badge>
+											</TableCell>
+											<TableCell className="w-[200px]">
+												{task.assigneeId ? (
+													<div className="flex items-center gap-2">
+														<div className="h-6 w-6 rounded-full bg-muted" />
+														<span className="truncate text-sm">
+															{task.assigneeId}
+														</span>
+													</div>
+												) : (
+													<Button
+														variant="ghost"
+														size="sm"
+														className="h-6 px-2 text-xs"
+													>
+														Assign
+													</Button>
+												)}
+											</TableCell>
+										</>
+									)}
 									<TableCell className="w-[70px]">
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>

@@ -15,7 +15,8 @@ export const mockProject: Project = {
 			status: 'TODO',
 			tags: ['backend', 'database'],
 			createdAt: new Date(),
-			updatedAt: new Date()
+			updatedAt: new Date(),
+			sprintId: 1
 		},
 		{
 			id: 'task2',
