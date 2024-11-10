@@ -2,8 +2,6 @@ import { Prisma, ProjectStatusEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { projectSchema } from '~/features/projects/schemas/projects.schema';
-import { upsertCategory } from '~/server/api/routers/projectBase/actions/categoryActions';
-import { upsertTechnologies } from '~/server/api/routers/projectBase/actions/technologyActions';
 import { protectedProcedure } from '~/server/api/trpc';
 import { createProjectTemplateData } from '../actions/projectTemplateActions';
 
@@ -14,11 +12,6 @@ export const projectTemplateMutations = {
 			const { userId } = ctx.session;
 			try {
 				return await ctx.db.$transaction(async (prisma) => {
-					await Promise.all([
-						upsertCategory(prisma, input.category),
-						upsertTechnologies(prisma, input.technologies)
-					]);
-
 					const projectTemplate = await prisma.projectTemplate.create({
 						data: createProjectTemplateData(input, userId)
 					});
