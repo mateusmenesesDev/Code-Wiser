@@ -22,12 +22,11 @@ export const projects: ProjectCard[] = [
 		learningOutcomes: [
 			{
 				projectTemplateId: '1',
-				completed: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
 				projectId: '1',
 				id: '1',
-				title: 'Learn React'
+				value: 'Learn React'
 			}
 		],
 		images: [],
@@ -54,8 +53,7 @@ export const projects: ProjectCard[] = [
 		learningOutcomes: [
 			{
 				id: '1',
-				title: 'Understand image classification',
-				completed: false,
+				value: 'Understand image classification',
 				createdAt: new Date(),
 				updatedAt: new Date(),
 				projectId: '2',
@@ -88,8 +86,7 @@ export const projects: ProjectCard[] = [
 		learningOutcomes: [
 			{
 				id: '1',
-				title: 'Learn React Native',
-				completed: false,
+				value: 'Learn React Native',
 				createdAt: new Date(),
 				updatedAt: new Date(),
 				projectId: '3',
@@ -121,8 +118,7 @@ export const projects: ProjectCard[] = [
 		learningOutcomes: [
 			{
 				id: '1',
-				title: 'Understand blockchain concepts',
-				completed: false,
+				value: 'Understand blockchain concepts',
 				createdAt: new Date(),
 				updatedAt: new Date(),
 				projectId: '4',
@@ -130,8 +126,7 @@ export const projects: ProjectCard[] = [
 			},
 			{
 				id: '2',
-				title: 'Develop smart contracts',
-				completed: false,
+				value: 'Develop smart contracts',
 				createdAt: new Date(),
 				updatedAt: new Date(),
 				projectId: '4',
@@ -163,8 +158,7 @@ export const projects: ProjectCard[] = [
 		learningOutcomes: [
 			{
 				id: '1',
-				title: 'Design RESTful APIs',
-				completed: false,
+				value: 'Design RESTful APIs',
 				createdAt: new Date(),
 				updatedAt: new Date(),
 				projectId: '5',

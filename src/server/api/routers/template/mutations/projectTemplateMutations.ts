@@ -19,11 +19,15 @@ export const projectTemplateMutations = {
 						upsertTechnologies(prisma, input.technologies)
 					]);
 
-					return prisma.projectTemplate.create({
+					const projectTemplate = await prisma.projectTemplate.create({
 						data: createProjectTemplateData(input, userId)
 					});
+
+					return projectTemplate.slug;
 				});
 			} catch (error) {
+				console.error('Create project template error:', error);
+
 				if (error instanceof Prisma.PrismaClientKnownRequestError) {
 					if (error.code === 'P2002') {
 						throw new TRPCError({
@@ -32,12 +36,16 @@ export const projectTemplateMutations = {
 							cause: error
 						});
 					}
+					if (error.code === 'P2011') {
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: 'Missing required fields',
+							cause: error
+						});
+					}
 				}
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: 'An unexpected error occurred',
-					cause: error
-				});
+
+				throw error;
 			}
 		}),
 
@@ -49,12 +57,18 @@ export const projectTemplateMutations = {
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await ctx.db.projectTemplate.update({
+			const updated = await ctx.db.projectTemplate.update({
 				where: { title: input.projectName },
 				data: {
 					status: input.approval
+				},
+				select: {
+					title: true,
+					slug: true,
+					status: true
 				}
 			});
+			return updated;
 		}),
 
 	requestChanges: protectedProcedure

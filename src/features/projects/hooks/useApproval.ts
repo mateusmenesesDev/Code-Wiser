@@ -7,14 +7,14 @@ export const useApproval = () => {
 
 	const changeProjectApprovalMutation =
 		api.projectTemplate.changeApproval.useMutation({
-			onSuccess: ({ title, status }) => {
+			onSuccess: async ({ slug, status }) => {
 				toast.success(
 					status === ProjectStatusEnum.APPROVED
 						? 'Project approved successfully'
 						: 'Project rejected successfully'
 				);
-				utils.projectTemplate.getAll.invalidate();
-				utils.projectTemplate.getBySlug.invalidate({ slug: title });
+				await utils.projectTemplate.getAll.invalidate();
+				await utils.projectTemplate.getBySlug.invalidate({ slug });
 			},
 			onError: () => {
 				toast.error('Error updating project approval');

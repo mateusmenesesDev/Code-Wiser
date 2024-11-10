@@ -5,22 +5,22 @@ model ProjectTemplate {
   title            String                @unique
   slug             String                @unique
   description      String
-  tasks            Task[]
   minParticipants  Int
   maxParticipants  Int
   credits          Int?
   type             ProjectTypeEnum
   status           ProjectStatusEnum     @default(PENDING)
   difficulty       ProjectDifficultyEnum
-  categoryId       String
-  category         Category              @relation(fields: [categoryId], references: [id])
+  tasks            Task[]
   technologies     Technology[]
   learningOutcomes LearningOutcome[]
   milestones       Milestone[]
   images           ProjectImage[]
   projects         Project[]
-  authorId         String
-  author           User                  @relation(fields: [authorId], references: [id])
   resources        Resource[]
   expectedDuration String?
+  authorId         String
+  author           User                  @relation(fields: [authorId], references: [id])
+  categoryId       String
+  category         Category              @relation(fields: [categoryId], references: [id])
 }

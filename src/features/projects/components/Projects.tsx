@@ -28,7 +28,7 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 				<Protect permission="org:project:create">
 					<Button
 						className="w-full sm:w-auto"
-						onClick={() => router.push('/projects/new')}
+						onClick={() => router.push('/projects/templates/new')}
 					>
 						<PlusCircle className="mr-2 h-4 w-4" /> New Project
 					</Button>

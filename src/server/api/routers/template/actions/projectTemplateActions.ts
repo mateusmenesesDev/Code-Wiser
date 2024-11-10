@@ -8,10 +8,9 @@ export function createProjectTemplateData(
 ): Prisma.ProjectTemplateCreateInput {
 	return {
 		...input,
-		slug: slugify(input.title),
+		slug: slugify(input.title, { lower: true }),
 		author: { connect: { id: userId } },
 		category: { connect: { name: input.category } },
-		difficulty: input.difficulty,
 		credits: input.credits ?? 0,
 		technologies: {
 			connect: input.technologies.map((tech) => ({ name: tech }))

@@ -20,11 +20,7 @@ export const projectSchema = z
 			.number(isRequired('Maximum participants is required'))
 			.min(1)
 			.nonnegative(),
-		credits: z
-			.number()
-			.nonnegative()
-			.nullish()
-			.transform((val) => (val === null ? undefined : val)),
+		credits: z.number().optional(),
 		technologies: z
 			.array(z.string(), isRequired('Technologies are required'))
 			.min(1),

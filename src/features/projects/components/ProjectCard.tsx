@@ -144,8 +144,8 @@ export function ProjectCard({
 							<Link
 								href={
 									approvalPage
-										? `/projects/approval/${project.slug}`
-										: `/projects/${project.slug}`
+										? `/projects/templates/${project.slug}/approval`
+										: `/projects/templates/${project.slug}`
 								}
 							>
 								<Eye className="mr-2 h-4 w-4" />

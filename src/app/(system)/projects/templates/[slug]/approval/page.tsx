@@ -112,10 +112,7 @@ export default function ProjectApprovalPage({
 								/>
 							</TabsContent>
 							<TabsContent value="category" className="mt-4">
-								<ProjectApprovalCategory
-									category={project.category}
-									approved={project.category.approved}
-								/>
+								<ProjectApprovalCategory category={project.category} />
 							</TabsContent>
 						</Tabs>
 					</CardContent>
@@ -134,7 +131,7 @@ export default function ProjectApprovalPage({
 						<Button
 							variant="outline"
 							onClick={() =>
-								router.push(`/projects/${project.title}/edit/backlog`)
+								router.push(`/projects/templates/${project.slug}/edit/backlog`)
 							}
 						>
 							<Pencil className="mr-2 h-4 w-4" />

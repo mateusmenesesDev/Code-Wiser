@@ -1,4 +1,4 @@
-import type { Milestone, Project } from '@prisma/client';
+import type { LearningOutcome, Milestone, Project } from '@prisma/client';
 import type { z } from 'zod';
 import type { RouterOutputs } from '~/trpc/react';
 import type { projectSchema } from '../schemas/projects.schema';
@@ -49,7 +49,7 @@ export type ProjectCard = {
 	startDate: Date;
 	endDate: Date;
 	technologies: string[];
-	learningOutcomes: Milestone[];
+	learningOutcomes: LearningOutcome[];
 	milestones: Milestone[];
 	discussions: Discussion[];
 	resources: Resource[];

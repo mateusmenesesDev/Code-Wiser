@@ -38,6 +38,9 @@ export default function ProjectForm() {
 	const projectMutation = api.projectTemplate.create.useMutation({
 		onSuccess: () => {
 			router.push('/projects');
+		},
+		onError: (error) => {
+			console.log(error.message);
 		}
 	});
 

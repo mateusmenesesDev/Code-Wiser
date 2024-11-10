@@ -1,5 +1,5 @@
 import Projects from '~/features/projects/components/Projects';
 
-export default function ApprovalPage() {
+export default function ProjectsTemplatesPage() {
 	return <Projects approvalPage />;
 }

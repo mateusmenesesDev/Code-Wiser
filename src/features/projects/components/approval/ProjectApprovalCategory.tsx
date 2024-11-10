@@ -5,19 +5,19 @@ import { useApproval } from '../../hooks/useApproval';
 
 type ProjectApprovalCategoryProps = {
 	category: Category;
-	approved: boolean;
 };
 
 export function ProjectApprovalCategory({
-	category,
-	approved
+	category
 }: ProjectApprovalCategoryProps) {
 	const { changeCategoryApprovalMutation } = useApproval();
+	const { mutate: changeCategoryApproval, isPending } =
+		changeCategoryApprovalMutation;
 
 	const handleApproveCategory = () => {
-		changeCategoryApprovalMutation.mutate({
+		changeCategoryApproval({
 			categoryName: category.name,
-			approval: !approved
+			approval: !category.approved
 		});
 	};
 
@@ -28,6 +28,8 @@ export function ProjectApprovalCategory({
 				<Switch
 					id={`approve-category-${category.id}`}
 					onCheckedChange={handleApproveCategory}
+					checked={category.approved}
+					disabled={isPending}
 				/>
 				<Label htmlFor={`approve-category-${category.id}`}>Approve</Label>
 			</div>

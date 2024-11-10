@@ -1,6 +1,6 @@
 import {
 	BookOpen,
-	Check,
+	Briefcase,
 	Layout,
 	MessageCircle,
 	MessageSquare,
@@ -14,10 +14,10 @@ export const MENU_ITEMS = [
 	{ href: '/', icon: Layout, label: 'Dashboard' },
 	{ href: '/projects', icon: BookOpen, label: 'Projects' },
 	{
-		href: '/projects/approval',
-		icon: Check,
-		label: 'Projects Approval',
-		orgPermission: 'org:project:read_approval' as const
+		href: '/projects/templates',
+		icon: Briefcase,
+		label: 'Projects Template',
+		orgPermission: 'org:project:edit_template' as const
 	},
 	{ href: '/mentors', icon: Users, label: 'Mentors', comingSoon: true },
 	{
