@@ -22,10 +22,10 @@ import {
 } from '~/common/components/dialog';
 import { cn } from '~/lib/utils';
 import { useApproval } from '../hooks/useApproval';
-import type { ProjectApiResponse } from '../types/Projects.type';
+import type { ProjectTemplateApiResponse } from '../types/Projects.type';
 
 type ProjectCardProps = {
-	project: ProjectApiResponse;
+	project: ProjectTemplateApiResponse;
 	approvalPage?: boolean;
 	userCredits: number;
 	status?: ProjectEnrollmentStatusEnum;
@@ -144,8 +144,8 @@ export function ProjectCard({
 							<Link
 								href={
 									approvalPage
-										? `/projects/approval/${project.title}`
-										: `/projects/${project.title}`
+										? `/projects/approval/${project.slug}`
+										: `/projects/${project.slug}`
 								}
 							>
 								<Eye className="mr-2 h-4 w-4" />

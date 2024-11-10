@@ -12,11 +12,11 @@ export function ProjectTimeline({ form }: ProjectTimelineProps) {
 
 	return (
 		<div className="space-y-2">
-			<Label htmlFor="timeline">Project Timeline (Optional)</Label>
+			<Label htmlFor="expectedDuration">Project Duration (Optional)</Label>
 			<Input
-				id="timeline"
+				id="expectedDuration"
 				placeholder="e.g., 2 weeks, 1 month"
-				{...register('timeline')}
+				{...register('expectedDuration')}
 			/>
 		</div>
 	);

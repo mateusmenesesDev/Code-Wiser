@@ -21,6 +21,7 @@ export const projects: ProjectCard[] = [
 		technologies: ['React', 'Node.js', 'MongoDB'],
 		learningOutcomes: [
 			{
+				projectTemplateId: '1',
 				completed: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
@@ -57,7 +58,8 @@ export const projects: ProjectCard[] = [
 				completed: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
-				projectId: '2'
+				projectId: '2',
+				projectTemplateId: '1'
 			}
 		],
 		images: [],
@@ -90,7 +92,8 @@ export const projects: ProjectCard[] = [
 				completed: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
-				projectId: '3'
+				projectId: '3',
+				projectTemplateId: '1'
 			}
 		],
 		images: [],
@@ -122,7 +125,8 @@ export const projects: ProjectCard[] = [
 				completed: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
-				projectId: '4'
+				projectId: '4',
+				projectTemplateId: '1'
 			},
 			{
 				id: '2',
@@ -130,7 +134,8 @@ export const projects: ProjectCard[] = [
 				completed: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
-				projectId: '4'
+				projectId: '4',
+				projectTemplateId: '1'
 			}
 		],
 		images: [],
@@ -162,7 +167,8 @@ export const projects: ProjectCard[] = [
 				completed: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
-				projectId: '5'
+				projectId: '5',
+				projectTemplateId: '1'
 			}
 		],
 		images: [],

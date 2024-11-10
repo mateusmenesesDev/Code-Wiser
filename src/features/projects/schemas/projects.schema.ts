@@ -60,7 +60,7 @@ export const projectSchema = z
 				})
 			)
 			.optional(),
-		timeline: z.string().optional()
+		expectedDuration: z.string().optional()
 	})
 	.superRefine((data, ctx) => {
 		if (data.type === ProjectTypeEnum.CREDITS) {

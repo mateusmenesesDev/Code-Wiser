@@ -6,10 +6,10 @@ import {
 } from '~/common/components/avatar';
 import { Badge } from '~/common/components/badge';
 import { Separator } from '~/common/components/separator';
-import type { ProjectApprovalApiResponse } from '../../types/Projects.type';
+import type { ProjectTemplateApprovalApiResponse } from '../../types/Projects.type';
 
 type ProjectApprovalDetailsProps = {
-	project: ProjectApprovalApiResponse;
+	project: ProjectTemplateApprovalApiResponse;
 };
 
 export function ProjectApprovalDetails({
@@ -56,12 +56,12 @@ export function ProjectApprovalDetails({
 						)}
 					</div>
 				</div>
-				{project.timeline && (
+				{project.expectedDuration && (
 					<div>
 						<h3 className="mb-2 font-semibold text-lg">Duration</h3>
 						<div className="flex items-center">
 							<Calendar className="mr-2 h-4 w-4" />
-							<span>{project.timeline}</span>
+							<span>{project.expectedDuration}</span>
 						</div>
 					</div>
 				)}

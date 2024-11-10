@@ -1,21 +1,21 @@
-import type { Category, Prisma, Technology } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import slugify from 'slugify';
 import type { ProjectFormData } from '~/features/projects/types/Projects.type';
 
-export function createProjectData(
+export function createProjectTemplateData(
 	input: ProjectFormData,
-	userId: string,
-	category: Category,
-	technologies: Technology[]
-): Prisma.ProjectCreateInput {
+	userId: string
+): Prisma.ProjectTemplateCreateInput {
 	return {
 		...input,
 		slug: slugify(input.title),
 		author: { connect: { id: userId } },
-		category: { connect: { id: category.id } },
+		category: { connect: { name: input.category } },
 		difficulty: input.difficulty,
 		credits: input.credits ?? 0,
-		technologies: { connect: technologies.map((tech) => ({ id: tech.id })) },
+		technologies: {
+			connect: input.technologies.map((tech) => ({ name: tech }))
+		},
 		learningOutcomes: {
 			create: input.learningOutcomes.map((outcome) => ({
 				value: outcome.value

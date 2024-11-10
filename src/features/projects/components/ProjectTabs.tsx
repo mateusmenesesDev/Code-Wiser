@@ -6,7 +6,7 @@ import {
 	SelectValue
 } from '~/common/components/select';
 import { Tabs, TabsList, TabsTrigger } from '~/common/components/tabs';
-import type { ProjectByNameApiResponse } from '../types/Projects.type';
+import type { ProjectTemplateBySlugApiResponse } from '../types/Projects.type';
 import { ProjectDiscussions } from './ProjectDiscussions';
 import { ProjectGallery } from './ProjectGallery';
 import { ProjectMilestones } from './ProjectMilestones';
@@ -14,7 +14,7 @@ import { ProjectOverview } from './ProjectOverview';
 import { ProjectResources } from './ProjectResources';
 
 interface ProjectTabsProps {
-	project: ProjectByNameApiResponse;
+	project: ProjectTemplateBySlugApiResponse;
 	activeTab: string;
 	setActiveTab: (tab: string) => void;
 }

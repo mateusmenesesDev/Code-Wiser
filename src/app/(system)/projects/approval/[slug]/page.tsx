@@ -31,13 +31,13 @@ import { ProjectRequestChanges } from '~/features/projects/components/approval/P
 import { useApproval } from '~/features/projects/hooks/useApproval';
 
 export default function ProjectApprovalPage({
-	params
-}: { params: { name: string } }) {
+	params: { slug }
+}: { params: { slug: string } }) {
 	const router = useRouter();
 	const [isRequestChangesOpen, setIsRequestChangesOpen] = useState(false);
 
-	const { data: project } = api.project.getByName.useQuery({
-		name: decodeURIComponent(params.name)
+	const { data: project } = api.projectTemplate.getBySlug.useQuery({
+		slug
 	});
 
 	const { changeProjectApprovalMutation, requestChangesMutation } =

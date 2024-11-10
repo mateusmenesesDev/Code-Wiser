@@ -13,7 +13,7 @@ interface ProjectTechnologiesProps {
 }
 
 export function ProjectTechnologies({ form }: ProjectTechnologiesProps) {
-	const { data: technologies } = api.project.getTechnologies.useQuery({
+	const { data: technologies } = api.projectBase.getTechnologies.useQuery({
 		approved: true
 	});
 	const {

@@ -1,11 +1,11 @@
 import type {
-	ProjectApiResponse,
+	ProjectTemplateApiResponse,
 	UserProjectApiResponse
 } from '../types/Projects.type';
 import { ProjectCard } from './ProjectCard';
 
 type ProjectListProps = {
-	projects: ProjectApiResponse[];
+	projects: ProjectTemplateApiResponse[];
 	userProjects: UserProjectApiResponse[];
 	userCredits: number;
 };

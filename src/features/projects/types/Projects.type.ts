@@ -23,10 +23,13 @@ export type ProjectImage = {
 	alt: string;
 };
 
-export type ProjectApiResponse = RouterOutputs['project']['getAll'][0];
-export type ProjectByNameApiResponse = RouterOutputs['project']['getByName'];
+export type ProjectTemplateApiResponse =
+	RouterOutputs['projectTemplate']['getAll'][0];
+export type ProjectTemplateBySlugApiResponse =
+	RouterOutputs['projectTemplate']['getBySlug'];
 export type UserProjectApiResponse = RouterOutputs['project']['getEnrolled'][0];
-export type ProjectApprovalApiResponse = RouterOutputs['project']['getByName'];
+export type ProjectTemplateApprovalApiResponse =
+	RouterOutputs['projectTemplate']['getBySlug'];
 
 export type ProjectDatabase = Project;
 

@@ -9,11 +9,13 @@ import { ProjectStats } from '~/features/projects/components/ProjectStats';
 import { ProjectTabs } from '~/features/projects/components/ProjectTabs';
 import { api } from '~/trpc/react';
 
-export default function ProjectPage({ params }: { params: { name: string } }) {
+export default function ProjectPage({
+	params: { slug }
+}: { params: { slug: string } }) {
 	const [activeTab, setActiveTab] = useState('overview');
 
-	const { data: project, isLoading } = api.project.getByName.useQuery({
-		name: decodeURIComponent(params.name)
+	const { data: project, isLoading } = api.projectTemplate.getBySlug.useQuery({
+		slug
 	});
 
 	if (isLoading) return <div>Loading...</div>;

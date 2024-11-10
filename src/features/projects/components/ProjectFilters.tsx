@@ -22,7 +22,7 @@ export function ProjectFilters() {
 		setDifficultyFilter,
 		setCostFilter
 	} = useProjectFilter();
-	const { data: categories } = api.project.getCategories.useQuery();
+	const { data: categories } = api.projectBase.getCategories.useQuery();
 
 	return (
 		<div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">

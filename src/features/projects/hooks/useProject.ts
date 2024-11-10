@@ -1,6 +1,6 @@
 import { api } from '~/trpc/react';
 
-import type { ProjectApiResponse } from '../types/Projects.type';
+import type { ProjectTemplateApiResponse } from '../types/Projects.type';
 
 import { useProjectFilter } from './useProjectFilter';
 
@@ -8,13 +8,16 @@ type FilterConfig = {
 	value: string | null;
 	defaultValue: string;
 	property:
-		| keyof ProjectApiResponse
-		| ((project: ProjectApiResponse) => string | number);
-	customComparison?: (project: ProjectApiResponse, value: string) => boolean;
+		| keyof ProjectTemplateApiResponse
+		| ((project: ProjectTemplateApiResponse) => string | number);
+	customComparison?: (
+		project: ProjectTemplateApiResponse,
+		value: string
+	) => boolean;
 };
 
 const createFilter = (
-	project: ProjectApiResponse,
+	project: ProjectTemplateApiResponse,
 	{ value, defaultValue, property, customComparison }: FilterConfig
 ) => {
 	if (value === defaultValue || !value) return true;
@@ -45,7 +48,7 @@ export function useProject(approved?: boolean) {
 		setCostFilter
 	} = useProjectFilter();
 
-	const projectsQuery = api.project.getAll.useQuery(
+	const projectsQuery = api.projectTemplate.getAll.useQuery(
 		approved ? { status: 'APPROVED' } : undefined
 	);
 	const userProjectsQuery = api.project.getEnrolled.useQuery();
