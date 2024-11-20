@@ -1,12 +1,13 @@
 'use client';
 
 import { Protect } from '@clerk/nextjs';
-import { Code, CreditCard, Menu } from 'lucide-react';
+import { CreditCard, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Badge } from '~/common/components/badge';
 import { MENU_ITEMS } from '~/common/constants/menuItem';
 import { Button } from '../components/button';
+import CodeWiseIcon from '../components/icons/CodeWiseIcon';
 import { Sheet, SheetContent, SheetTrigger } from '../components/sheet';
 
 type SidebarProps = {
@@ -41,14 +42,13 @@ export default function Sidebar({ className }: SidebarProps) {
 	const pathname = usePathname();
 	const userCredits = 100;
 	const SidebarContent = () => (
-		<div className='flex h-full flex-col bg-card pt-2 shadow'>
+		<div className="flex h-full flex-col bg-card pt-2 shadow">
 			<div className="p-4">
 				<Link
 					href="/"
 					className="flex items-center space-x-2 font-bold text-primary text-xl"
 				>
-					<Code />
-					<span>CodeWise</span>
+					<CodeWiseIcon />
 				</Link>
 			</div>
 			<nav className="mt-4 flex-1">

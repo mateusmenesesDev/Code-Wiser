@@ -1,0 +1,36 @@
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(5, 0)">
+    <defs>
+      <linearGradient id="diamondGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:hsl(262.1, 83.3%, 57.8%)"/>
+        <stop offset="100%" style="stop-color:hsl(262.1, 83.3%, 47.8%)"/>
+      </linearGradient>
+      <linearGradient id="diamondGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:hsl(265, 85%, 65%)"/>
+        <stop offset="100%" style="stop-color:hsl(285, 90%, 65%)"/>
+      </linearGradient>
+    </defs>
+
+    <!-- First diamond -->
+    <path d="M10 25L25 10L40 25L25 40Z" fill="url(#diamondGradient1)"/>
+    <!-- Second diamond -->
+    <path d="M20 25L35 10L50 25L35 40Z" fill="url(#diamondGradient2)" opacity="0.9"/>
+
+    <!-- Code symbols -->
+    <g>
+      <path d="M22 20L18 25L22 30M28 20L32 25L28 30" 
+            stroke="rgba(255,255,255,0.4)" 
+            stroke-width="2" 
+            stroke-linecap="round"/>
+      <path d="M37 20L33 30M41 20L45 25L41 30" 
+            stroke="rgba(255,255,255,0.4)" 
+            stroke-width="2" 
+            stroke-linecap="round"/>
+    </g>
+  </g>
+  
+  <text x="60" y="35" font-family="system-ui" font-weight="bold" font-size="24">
+    <tspan fill="hsl(262.1, 83.3%, 57.8%)">Code</tspan>
+    <tspan fill="hsl(265, 85%, 65%)">Wise</tspan>
+  </text>
+</svg> 
