@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { GeistSans } from 'geist/font/sans';
+import { Provider as JotaiProvider } from 'jotai';
 import type { Metadata } from 'next';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Toaster } from 'sonner';
@@ -30,24 +31,26 @@ export default function RootLayout({
 	const { sessionClaims } = auth();
 	return (
 		<ClerkProvider>
-			<SyncActiveOrganization membership={sessionClaims?.membership} />
-			<html lang="pt-BR" className={`${GeistSans.variable}`}>
-				<body>
-					<TRPCReactProvider>
-						<NuqsAdapter>
-							<ThemeProvider
-								attribute="class"
-								defaultTheme="light"
-								enableSystem
-								disableTransitionOnChange
-							>
-								{children}
-								<Toaster richColors />
-							</ThemeProvider>
-						</NuqsAdapter>
-					</TRPCReactProvider>
-				</body>
-			</html>
+			<JotaiProvider>
+				<SyncActiveOrganization membership={sessionClaims?.membership} />
+				<html lang="pt-BR" className={`${GeistSans.variable}`}>
+					<body>
+						<TRPCReactProvider>
+							<NuqsAdapter>
+								<ThemeProvider
+									attribute="class"
+									defaultTheme="light"
+									enableSystem
+									disableTransitionOnChange
+								>
+									{children}
+									<Toaster richColors />
+								</ThemeProvider>
+							</NuqsAdapter>
+						</TRPCReactProvider>
+					</body>
+				</html>
+			</JotaiProvider>
 		</ClerkProvider>
 	);
 }

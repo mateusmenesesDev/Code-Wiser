@@ -28,8 +28,8 @@ import {
 	DropdownMenuTrigger
 } from '~/common/components/dropdown-menu';
 import { Progress } from '~/common/components/progress';
+import { TaskCard } from '../../../tasks/components/TaskCard';
 import type { Sprint } from '../../types';
-import { TaskCard } from '../task/TaskCard';
 
 interface SprintCardProps {
 	sprint: Sprint;
@@ -61,7 +61,7 @@ export function SprintCard({ sprint }: SprintCardProps) {
 						</Badge>
 					</div>
 					<div className="flex items-center space-x-2">
-						<div className='flex items-center space-x-2 text-muted-foreground text-sm'>
+						<div className="flex items-center space-x-2 text-muted-foreground text-sm">
 							<Calendar className="h-4 w-4" />
 							<span>
 								{new Date(sprint.startDate).toLocaleDateString()} -{' '}
@@ -88,7 +88,7 @@ export function SprintCard({ sprint }: SprintCardProps) {
 				{sprint.goal && <CardDescription>Goal: {sprint.goal}</CardDescription>}
 				<div className="mt-2">
 					<Progress value={progress} className="h-2 w-full" />
-					<p className='mt-1 text-muted-foreground text-sm'>
+					<p className="mt-1 text-muted-foreground text-sm">
 						{completedTasks} of {sprint.tasks.length} tasks completed
 					</p>
 				</div>

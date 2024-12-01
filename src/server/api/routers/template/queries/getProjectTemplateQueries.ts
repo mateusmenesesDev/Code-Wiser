@@ -35,7 +35,10 @@ export const getProjectTemplateQueries = {
 						select: {
 							id: true
 						}
-					}
+					},
+					tasks: true,
+					epics: true,
+					sprints: true
 				}
 			});
 		})

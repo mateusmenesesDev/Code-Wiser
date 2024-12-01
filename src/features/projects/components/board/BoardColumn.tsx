@@ -3,8 +3,8 @@
 import { Draggable, Droppable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader } from '~/common/components/card';
 import { ScrollArea } from '~/common/components/scroll-area';
+import { TaskCard } from '../../../tasks/components/TaskCard';
 import type { Column } from '../../types';
-import { TaskCard } from '../task/TaskCard';
 import { ColumnHeader } from './ColumnHeader';
 
 interface BoardColumnProps {

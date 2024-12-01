@@ -10,20 +10,25 @@ import {
 	Settings
 } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from '~/common/components/button';
 import { Input } from '~/common/components/input';
 import { Tabs, TabsList, TabsTrigger } from '~/common/components/tabs';
-import { mockProject } from '~/features/projects/mocks/projectData';
+import { NewTaskDialog } from '~/features/tasks/components/NewTaskDialog';
+import { api } from '~/trpc/react';
 
 export default function ProjectEditLayout({
 	children
 }: {
 	children: React.ReactNode;
 }) {
+	const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
 	const params = useParams();
 	const router = useRouter();
 	const pathname = usePathname();
-	const project = mockProject;
+	const { data: project } = api.projectTemplate.getBySlug.useQuery({
+		slug: params.slug as string
+	});
 
 	const getCurrentTab = () => {
 		const tab = pathname.split('/').pop();
@@ -33,6 +38,10 @@ export default function ProjectEditLayout({
 	const handleTabChange = (value: string) => {
 		router.push(`/projects/templates/${params.slug}/edit/${value}`);
 	};
+
+	if (!project) {
+		return null;
+	}
 
 	return (
 		<div className="flex h-screen flex-col">
@@ -61,7 +70,7 @@ export default function ProjectEditLayout({
 										<LayoutDashboard className="mr-2 h-4 w-4" />
 										Board
 									</TabsTrigger>
-									{project.methodology === 'scrum' && (
+									{project.methodology === 'SCRUM' && (
 										<>
 											<TabsTrigger
 												value="sprints"
@@ -96,16 +105,22 @@ export default function ProjectEditLayout({
 										className="w-[200px] pl-9"
 									/>
 								</div>
-								<Button>
+								<Button onClick={() => setIsNewTaskDialogOpen(true)}>
 									<Plus className="mr-2 h-4 w-4" />
 									Add Task
 								</Button>
 							</div>
 						</div>
 					</div>
-					<div className="flex-1 overflow-auto">{children}</div>
+					<main className="flex-1 overflow-auto pt-8">{children}</main>
 				</Tabs>
 			</div>
+
+			<NewTaskDialog
+				isOpen={isNewTaskDialogOpen}
+				onClose={() => setIsNewTaskDialogOpen(false)}
+				projectTemplateName={project.title}
+			/>
 		</div>
 	);
 }

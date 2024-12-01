@@ -10,10 +10,18 @@ export function createProjectTemplateData(
 		...input,
 		slug: slugify(input.title, { lower: true }),
 		author: { connect: { id: userId } },
-		category: { connect: { name: input.category } },
+		category: {
+			connectOrCreate: {
+				where: { name: input.category },
+				create: { name: input.category }
+			}
+		},
 		credits: input.credits ?? 0,
 		technologies: {
-			connect: input.technologies.map((tech) => ({ name: tech }))
+			connectOrCreate: input.technologies.map((tech) => ({
+				where: { name: tech },
+				create: { name: tech }
+			}))
 		},
 		learningOutcomes: {
 			create: input.learningOutcomes.map((outcome) => ({

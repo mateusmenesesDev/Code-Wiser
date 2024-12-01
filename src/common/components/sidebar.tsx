@@ -16,7 +16,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger
 } from '~/common/components//tooltip';
-import { useIsMobile } from '~/hooks/use-mobile';
+import { useIsMobile } from '~/common/hooks/use-mobile';
 import { cn } from '~/lib/utils';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar:state';

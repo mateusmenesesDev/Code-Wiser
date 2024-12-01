@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronRight, MoreHorizontal, Tag } from 'lucide-react';
+import { useParams } from 'next/navigation';
 import { Badge } from '~/common/components/badge';
 import { Button } from '~/common/components/button';
 import { Checkbox } from '~/common/components/checkbox';
@@ -26,17 +27,25 @@ import {
 	TableHeader,
 	TableRow
 } from '~/common/components/table';
-import type { Project } from '../../types';
+import { api } from '~/trpc/react';
 
 interface BacklogViewProps {
-	project: Project;
 	isTemplatePage?: boolean;
 }
 
-export function BacklogView({ project, isTemplatePage }: BacklogViewProps) {
-	console.log(project);
+export function BacklogView({ isTemplatePage }: BacklogViewProps) {
+	const { slug } = useParams();
+
+	const { data: project, isLoading } = api.projectTemplate.getBySlug.useQuery({
+		slug: slug as string
+	});
+
+	if (isLoading) return <div>Loading...</div>;
+
+	if (!project) return null;
+
 	return (
-		<div className="h-full w-full p-6">
+		<div className="h-full w-full">
 			<ScrollArea className="h-[calc(100vh-8rem)]">
 				<div className="rounded-md border">
 					<Table>
@@ -48,7 +57,7 @@ export function BacklogView({ project, isTemplatePage }: BacklogViewProps) {
 								<TableHead className="min-w-[500px]">Task</TableHead>
 								<TableHead className="w-[100px]">Priority</TableHead>
 								<TableHead className="w-[200px]">Tags</TableHead>
-								{project.methodology === 'scrum' && (
+								{project.methodology === 'SCRUM' && (
 									<>
 										<TableHead className="w-[150px]">Sprint</TableHead>
 										<TableHead className="w-[150px]">Epic</TableHead>
@@ -64,7 +73,7 @@ export function BacklogView({ project, isTemplatePage }: BacklogViewProps) {
 							</TableRow>
 						</TableHeader>
 						<TableBody className="min-w-full table-fixed">
-							{project.backlog.map((task) => (
+							{project.tasks.map((task) => (
 								<TableRow key={task.id} className="group">
 									<TableCell className="w-[50px]">
 										<Checkbox />
@@ -83,9 +92,9 @@ export function BacklogView({ project, isTemplatePage }: BacklogViewProps) {
 									<TableCell className="w-[100px]">
 										<Badge
 											variant={
-												task.priority === 'HIGH'
+												task.priority === 'HIGHEST'
 													? 'destructive'
-													: task.priority === 'MEDIUM'
+													: task.priority === 'HIGH'
 														? 'default'
 														: 'secondary'
 											}
@@ -104,10 +113,10 @@ export function BacklogView({ project, isTemplatePage }: BacklogViewProps) {
 											))}
 										</div>
 									</TableCell>
-									{project.methodology === 'scrum' && (
+									{project.methodology === 'SCRUM' && (
 										<>
 											<TableCell className="w-[150px]">
-												<Select defaultValue={String(task.sprintId)}>
+												<Select defaultValue={String(task.title)}>
 													<SelectTrigger className="h-7 w-[120px]">
 														<SelectValue placeholder="Add to Sprint" />
 													</SelectTrigger>

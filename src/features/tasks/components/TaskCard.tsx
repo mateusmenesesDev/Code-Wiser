@@ -16,7 +16,7 @@ import {
 	DropdownMenuTrigger
 } from '~/common/components/dropdown-menu';
 import { cn } from '~/lib/utils';
-import type { Task } from '../../types';
+import type { Task } from '../../projects/types';
 
 interface TaskCardProps {
 	task: Task;

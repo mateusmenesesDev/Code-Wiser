@@ -16,8 +16,8 @@ import {
 	TabsList,
 	TabsTrigger
 } from '~/common/components/tabs';
+import { TaskCard } from '../../../tasks/components/TaskCard';
 import type { Project } from '../../types';
-import { TaskCard } from '../task/TaskCard';
 import { ColumnHeader } from './ColumnHeader';
 
 interface ScrumBoardProps {

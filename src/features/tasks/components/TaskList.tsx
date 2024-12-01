@@ -9,7 +9,7 @@ import {
 	type DroppableProvided
 } from 'react-beautiful-dnd';
 import { ScrollArea } from '~/common/components/scroll-area';
-import type { Task } from '../../types';
+import type { Task } from '../../projects/types';
 import { TaskCard } from './TaskCard';
 
 interface TaskListProps {

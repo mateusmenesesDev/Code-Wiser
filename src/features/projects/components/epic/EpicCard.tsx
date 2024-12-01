@@ -26,8 +26,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger
 } from '~/common/components/dropdown-menu';
+import { TaskCard } from '../../../tasks/components/TaskCard';
 import type { Epic } from '../../types';
-import { TaskCard } from '../task/TaskCard';
 
 interface EpicCardProps {
 	epic: Epic;

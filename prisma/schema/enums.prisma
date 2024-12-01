@@ -6,6 +6,26 @@ enum TaskStatusEnum {
   DONE
 }
 
+enum TaskPriorityEnum {
+  LOWEST
+  LOW
+  MEDIUM
+  HIGH
+  HIGHEST
+}
+
+enum TaskTypeEnum {
+  USER_STORY
+  TASK
+  SUBTASK
+  BUG
+}
+
+enum ProjectMethodologyEnum {
+  SCRUM
+  KANBAN
+}
+
 enum ProjectStatusEnum {
   PENDING
   APPROVED
