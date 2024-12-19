@@ -28,6 +28,7 @@ import {
 	TableRow
 } from '~/common/components/table';
 import { api } from '~/trpc/react';
+import { PriorityCell } from './PriorityCell';
 
 interface BacklogViewProps {
 	isTemplatePage?: boolean;
@@ -111,18 +112,10 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 										</div>
 									</TableCell>
 									<TableCell className="w-[100px]">
-										<Badge
-											variant={
-												task.priority === 'HIGHEST'
-													? 'destructive'
-													: task.priority === 'HIGH'
-														? 'default'
-														: 'secondary'
-											}
-											className="w-[70px] justify-center"
-										>
-											{task.priority ?? '-'}
-										</Badge>
+										<PriorityCell
+											priority={task.priority ?? '-'}
+											taskId={task.id}
+										/>
 									</TableCell>
 									<TableCell className="w-[200px]">
 										<div className="flex flex-wrap gap-1">
