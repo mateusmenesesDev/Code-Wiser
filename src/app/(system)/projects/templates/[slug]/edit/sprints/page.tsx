@@ -1,10 +1,16 @@
 'use client';
 
+import { useParams } from 'next/navigation';
 import { SprintPlanning } from '~/features/projects/components/sprint/SprintPlanning';
-import { mockProject } from '~/features/projects/mocks/projectData';
+import { api } from '~/trpc/react';
 
 export default function SprintsPage() {
-	const project = mockProject;
+	const params = useParams();
+	const sprints = api.sprint.getSprints.useQuery({
+		projectSlug: params.slug as string
+	});
 
-	return <SprintPlanning project={project} />;
+	if (!sprints.data) return null;
+
+	return <SprintPlanning sprints={sprints.data} />;
 }

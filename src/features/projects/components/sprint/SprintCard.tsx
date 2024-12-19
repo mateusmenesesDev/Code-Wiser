@@ -8,7 +8,6 @@ import {
 	PlusCircle
 } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '~/common/components/badge';
 import { Button } from '~/common/components/button';
 import {
 	Card,
@@ -28,11 +27,11 @@ import {
 	DropdownMenuTrigger
 } from '~/common/components/dropdown-menu';
 import { Progress } from '~/common/components/progress';
+import type { RouterOutputs } from '~/trpc/react';
 import { TaskCard } from '../../../tasks/components/TaskCard';
-import type { Sprint } from '../../types';
 
 interface SprintCardProps {
-	sprint: Sprint;
+	sprint: RouterOutputs['sprint']['getSprints'][number];
 }
 
 export function SprintCard({ sprint }: SprintCardProps) {
@@ -54,18 +53,18 @@ export function SprintCard({ sprint }: SprintCardProps) {
 							<ChevronRight className="h-4 w-4" />
 						)}
 						<CardTitle>{sprint.title}</CardTitle>
-						<Badge
-							variant={sprint.status === 'active' ? 'default' : 'secondary'}
-						>
-							{sprint.status}
-						</Badge>
 					</div>
 					<div className="flex items-center space-x-2">
 						<div className="flex items-center space-x-2 text-muted-foreground text-sm">
 							<Calendar className="h-4 w-4" />
 							<span>
-								{new Date(sprint.startDate).toLocaleDateString()} -{' '}
-								{new Date(sprint.endDate).toLocaleDateString()}
+								{sprint.startDate
+									? new Date(sprint.startDate).toLocaleDateString()
+									: 'N/A'}
+								-{' '}
+								{sprint.endDate
+									? new Date(sprint.endDate).toLocaleDateString()
+									: 'N/A'}
 							</span>
 						</div>
 						<DropdownMenu>
@@ -85,7 +84,9 @@ export function SprintCard({ sprint }: SprintCardProps) {
 						</DropdownMenu>
 					</div>
 				</div>
-				{sprint.goal && <CardDescription>Goal: {sprint.goal}</CardDescription>}
+				{sprint.description && (
+					<CardDescription>Goal: {sprint.description}</CardDescription>
+				)}
 				<div className="mt-2">
 					<Progress value={progress} className="h-2 w-full" />
 					<p className="mt-1 text-muted-foreground text-sm">

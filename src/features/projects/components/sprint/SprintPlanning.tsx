@@ -5,15 +5,15 @@ import { useState } from 'react';
 import { Button } from '~/common/components/button';
 import { Card } from '~/common/components/card';
 import { ScrollArea } from '~/common/components/scroll-area';
-import type { Project } from '../../types';
+import type { RouterOutputs } from '~/trpc/react';
 import { NewSprintDialog } from './NewSprintDialog';
 import { SprintCard } from './SprintCard';
 
 interface SprintPlanningProps {
-	project: Project;
+	sprints: RouterOutputs['sprint']['getSprints'];
 }
 
-export function SprintPlanning({ project }: SprintPlanningProps) {
+export function SprintPlanning({ sprints }: SprintPlanningProps) {
 	const [isNewSprintDialogOpen, setIsNewSprintDialogOpen] = useState(false);
 
 	return (
@@ -34,7 +34,7 @@ export function SprintPlanning({ project }: SprintPlanningProps) {
 			<Card>
 				<ScrollArea className="h-[calc(100vh-12rem)]">
 					<div className="space-y-4 p-4">
-						{project.sprints.map((sprint) => (
+						{sprints.map((sprint) => (
 							<SprintCard key={sprint.id} sprint={sprint} />
 						))}
 					</div>

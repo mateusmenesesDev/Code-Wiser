@@ -16,10 +16,10 @@ import {
 	DropdownMenuTrigger
 } from '~/common/components/dropdown-menu';
 import { cn } from '~/lib/utils';
-import type { Task } from '../../projects/types';
+import type { RouterOutputs } from '~/trpc/react';
 
 interface TaskCardProps {
-	task: Task;
+	task: RouterOutputs['sprint']['getSprints'][number]['tasks'][number];
 	className?: string;
 }
 

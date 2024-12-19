@@ -1,3 +1,4 @@
+import type { Sprint } from '@prisma/client';
 import { z } from 'zod';
 
 export const TaskPriorityEnum = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
@@ -26,16 +27,6 @@ export interface Column {
 	title: string;
 	tasks: Task[];
 	limit?: number; // WIP limit for kanban
-}
-
-export interface Sprint {
-	id: number;
-	title: string;
-	goal?: string;
-	startDate: Date;
-	endDate: Date;
-	status: 'planning' | 'active' | 'completed';
-	tasks: Task[];
 }
 
 export interface Epic {

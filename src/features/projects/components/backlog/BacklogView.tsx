@@ -54,6 +54,10 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 								<TableHead className="w-[50px]">
 									<Checkbox />
 								</TableHead>
+								{!isTemplatePage && (
+									<TableHead className="w-[200px]">Assignee</TableHead>
+								)}
+
 								<TableHead className="min-w-[500px]">Task</TableHead>
 								<TableHead className="w-[100px]">Priority</TableHead>
 								<TableHead className="w-[200px]">Tags</TableHead>
@@ -64,10 +68,7 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 									</>
 								)}
 								{!isTemplatePage && (
-									<>
-										<TableHead className="w-[100px]">Status</TableHead>
-										<TableHead className="w-[200px]">Assignee</TableHead>
-									</>
+									<TableHead className="w-[100px]">Status</TableHead>
 								)}
 								<TableHead className="w-[70px]" />
 							</TableRow>
@@ -78,6 +79,26 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 									<TableCell className="w-[50px]">
 										<Checkbox />
 									</TableCell>
+									{!isTemplatePage && (
+										<TableCell className="w-[200px]">
+											{task.assigneeId ? (
+												<div className="flex items-center gap-2">
+													<div className="h-6 w-6 rounded-full bg-muted" />
+													<span className="truncate text-sm">
+														{task.assigneeId}
+													</span>
+												</div>
+											) : (
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-6 px-2 text-xs"
+												>
+													Assign
+												</Button>
+											)}
+										</TableCell>
+									)}
 									<TableCell className="min-w-[500px]">
 										<div className="flex items-center gap-2">
 											<ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
@@ -100,7 +121,7 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 											}
 											className="w-[70px] justify-center"
 										>
-											{task.priority}
+											{task.priority ?? '-'}
 										</Badge>
 									</TableCell>
 									<TableCell className="w-[200px]">
@@ -116,21 +137,44 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 									{project.methodology === 'SCRUM' && (
 										<>
 											<TableCell className="w-[150px]">
-												<Select defaultValue={String(task.title)}>
-													<SelectTrigger className="h-7 w-[120px]">
-														<SelectValue placeholder="Add to Sprint" />
-													</SelectTrigger>
-													<SelectContent>
-														{project.sprints?.map((sprint) => (
-															<SelectItem
-																key={sprint.id}
-																value={String(sprint.id)}
-															>
-																{sprint.title}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+												{task.sprintId ? (
+													<Badge
+														variant="outline"
+														className="w-[120px] justify-center"
+													>
+														{project.sprints?.find(
+															(sprint) => sprint.id === task.sprintId
+														)?.title || 'Sprint'}
+													</Badge>
+												) : project.sprints && project.sprints.length > 0 ? (
+													<Select
+														onValueChange={() => {
+															// TODO: Add sprint connection mutation
+														}}
+													>
+														<SelectTrigger className="h-7 w-[120px]">
+															<SelectValue placeholder="Add to Sprint" />
+														</SelectTrigger>
+														<SelectContent>
+															{project.sprints.map((sprint) => (
+																<SelectItem key={sprint.id} value={sprint.id}>
+																	{sprint.title}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												) : (
+													<Button
+														variant="outline"
+														size="sm"
+														className="h-7 w-[120px]"
+														onClick={() => {
+															// TODO: Navigate to sprints page or open create sprint dialog
+														}}
+													>
+														Create Sprint
+													</Button>
+												)}
 											</TableCell>
 											<TableCell className="w-[150px]">
 												{task.epicId ? (
@@ -140,57 +184,49 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 													>
 														{project.epics?.find(
 															(epic) => epic.id === task.epicId
-														)?.title || task.epicId}
+														)?.title || 'Epic'}
 													</Badge>
-												) : (
-													<Select>
+												) : project.epics && project.epics.length > 0 ? (
+													<Select
+														onValueChange={() => {
+															// TODO: Add epic connection mutation
+														}}
+													>
 														<SelectTrigger className="h-7 w-[120px]">
 															<SelectValue placeholder="Add to Epic" />
 														</SelectTrigger>
 														<SelectContent>
-															{project.epics?.map((epic) => (
-																<SelectItem
-																	key={epic.id}
-																	value={String(epic.id)}
-																>
+															{project.epics.map((epic) => (
+																<SelectItem key={epic.id} value={epic.id}>
 																	{epic.title}
 																</SelectItem>
 															))}
 														</SelectContent>
 													</Select>
+												) : (
+													<Button
+														variant="outline"
+														size="sm"
+														className="h-7 w-[120px]"
+														onClick={() => {
+															// TODO: Navigate to epics page or open create epic dialog
+														}}
+													>
+														Create Epic
+													</Button>
 												)}
 											</TableCell>
 										</>
 									)}
 									{!isTemplatePage && (
-										<>
-											<TableCell className="w-[100px]">
-												<Badge
-													variant="outline"
-													className="w-[80px] justify-center"
-												>
-													{task.status}
-												</Badge>
-											</TableCell>
-											<TableCell className="w-[200px]">
-												{task.assigneeId ? (
-													<div className="flex items-center gap-2">
-														<div className="h-6 w-6 rounded-full bg-muted" />
-														<span className="truncate text-sm">
-															{task.assigneeId}
-														</span>
-													</div>
-												) : (
-													<Button
-														variant="ghost"
-														size="sm"
-														className="h-6 px-2 text-xs"
-													>
-														Assign
-													</Button>
-												)}
-											</TableCell>
-										</>
+										<TableCell className="w-[100px]">
+											<Badge
+												variant="outline"
+												className="w-[80px] justify-center"
+											>
+												{task.status}
+											</Badge>
+										</TableCell>
 									)}
 									<TableCell className="w-[70px]">
 										<DropdownMenu>
@@ -205,8 +241,6 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem>Edit</DropdownMenuItem>
-												<DropdownMenuItem>Move to Sprint</DropdownMenuItem>
-												<DropdownMenuItem>Add to Epic</DropdownMenuItem>
 												<DropdownMenuItem className="text-destructive">
 													Delete
 												</DropdownMenuItem>
