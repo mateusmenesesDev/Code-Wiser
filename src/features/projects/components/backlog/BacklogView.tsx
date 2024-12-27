@@ -47,7 +47,7 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 
 	return (
 		<div className="h-full w-full">
-			<ScrollArea className="h-[calc(100vh-8rem)]">
+			<ScrollArea className="h-[calc(100vh-15rem)]">
 				<div className="rounded-md border">
 					<Table>
 						<TableHeader>
