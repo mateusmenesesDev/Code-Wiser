@@ -48,8 +48,9 @@ export function ProjectRequestChanges({
 				<DialogHeader>
 					<DialogTitle>Request Changes</DialogTitle>
 					<DialogDescription>
-						Request changes for project "{projectTitle}". The author will be
-						notified of your feedback.
+						Request changes for project{' '}
+						<strong className="underline">{projectTitle}</strong>. The author
+						will be notified of your feedback.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={form.handleSubmit(handleSubmit)}>
