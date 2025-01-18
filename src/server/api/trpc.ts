@@ -82,6 +82,10 @@ export const createTRPCRouter = t.router;
  * network latency that would occur in production but not in local development.
  */
 const timingMiddleware = t.middleware(async ({ next, path }) => {
+	if (process.env.NODE_ENV !== 'development') {
+		return next();
+	}
+
 	const start = Date.now();
 
 	if (t._config.isDev) {
