@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { api } from '~/trpc/react';
 
-import { Badge } from '~/common/components/badge';
-import { Button } from '~/common/components/button';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
@@ -14,13 +14,13 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import {
 	Tabs,
 	TabsContent,
 	TabsList,
 	TabsTrigger
-} from '~/common/components/tabs';
+} from '~/common/components/ui/tabs';
 
 import { ProjectStatusEnum } from '@prisma/client';
 import { ProjectApprovalCategory } from '~/features/projects/components/approval/ProjectApprovalCategory';

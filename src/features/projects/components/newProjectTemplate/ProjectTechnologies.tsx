@@ -1,10 +1,10 @@
 import { X } from 'lucide-react';
 import type { UseFormReturn } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
-import { GenericCombobox } from '~/common/components/GenericCombobox';
-import { Badge } from '~/common/components/badge';
-import { Button } from '~/common/components/button';
-import { Label } from '~/common/components/label';
+import { GenericCombobox } from '~/common/components/ui/GenericCombobox';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
+import { Label } from '~/common/components/ui/label';
 import { api } from '~/trpc/react';
 import type { ProjectFormData } from '../../types/Projects.type';
 

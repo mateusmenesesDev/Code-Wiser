@@ -2,7 +2,7 @@ import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage
-} from '~/common/components/avatar';
+} from '~/common/components/ui/avatar';
 
 interface ProjectMentorProps {
 	mentor: string;

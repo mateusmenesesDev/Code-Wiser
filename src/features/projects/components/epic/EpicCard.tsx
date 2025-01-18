@@ -7,30 +7,30 @@ import {
 	PlusCircle
 } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '~/common/components/badge';
-import { Button } from '~/common/components/button';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import {
 	Collapsible,
 	CollapsibleContent
-} from '~/common/components/collapsible';
+} from '~/common/components/ui/collapsible';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger
-} from '~/common/components/dropdown-menu';
+} from '~/common/components/ui/dropdown-menu';
 import { TaskCard } from '../../../tasks/components/TaskCard';
-import type { Epic } from '../../types';
+import type { EpicWithTasks } from '../../types';
 
 interface EpicCardProps {
-	epic: Epic;
+	epic: EpicWithTasks;
 }
 
 export function EpicCard({ epic }: EpicCardProps) {
@@ -47,9 +47,6 @@ export function EpicCard({ epic }: EpicCardProps) {
 							<ChevronRight className="h-4 w-4" />
 						)}
 						<CardTitle>{epic.title}</CardTitle>
-						<Badge variant={epic.status === 'active' ? 'default' : 'secondary'}>
-							{epic.status}
-						</Badge>
 					</div>
 					<div className="flex items-center space-x-2">
 						<Badge variant="outline">{epic.tasks.length} tasks</Badge>

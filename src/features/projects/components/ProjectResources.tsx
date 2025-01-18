@@ -1,11 +1,11 @@
 import { Award, BookOpen, Clock, GitBranch, Star } from 'lucide-react';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 
 export function ProjectResources() {
 	return (

@@ -5,17 +5,17 @@ import { MailIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { Alert, AlertDescription } from '~/common/components/alert';
-import { Button } from '~/common/components/button';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
-import { Input, PasswordInput } from '~/common/components/input';
+import { Alert, AlertDescription } from '~/common/components/ui/alert';
+import { Button } from '~/common/components/ui/button';
+import { Input, PasswordInput } from '~/common/components/ui/input';
 import {
 	InputOTP,
 	InputOTPGroup,
 	InputOTPSeparator,
 	InputOTPSlot
-} from '~/common/components/input-otp';
-import { Label } from '~/common/components/label';
+} from '~/common/components/ui/input-otp';
+import { Label } from '~/common/components/ui/label';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import {
 	forgotPasswordSchema,

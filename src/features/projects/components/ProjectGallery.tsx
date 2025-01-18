@@ -1,13 +1,13 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import type { ProjectImage } from '../types/Projects.type';
 interface ProjectGalleryProps {
 	images: ProjectImage[];

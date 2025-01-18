@@ -4,8 +4,8 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue
-} from '~/common/components/select';
-import { Tabs, TabsList, TabsTrigger } from '~/common/components/tabs';
+} from '~/common/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '~/common/components/ui/tabs';
 import type { ProjectTemplateBySlugApiResponse } from '../types/Projects.type';
 import { ProjectDiscussions } from './ProjectDiscussions';
 import { ProjectGallery } from './ProjectGallery';

@@ -1,13 +1,13 @@
 'use client';
 
 import { PlusCircle } from 'lucide-react';
-import { Badge } from '~/common/components/badge';
-import { Button } from '~/common/components/button';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger
-} from '~/common/components/tooltip';
+} from '~/common/components/ui/tooltip';
 
 interface ColumnHeaderProps {
 	title: string;

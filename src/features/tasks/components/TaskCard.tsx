@@ -1,20 +1,20 @@
 'use client';
 
 import { Clock, MoreHorizontal, Tag } from 'lucide-react';
-import { Badge } from '~/common/components/badge';
-import { Button } from '~/common/components/button';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger
-} from '~/common/components/dropdown-menu';
+} from '~/common/components/ui/dropdown-menu';
 import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 

@@ -2,7 +2,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
@@ -10,7 +10,7 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import ForgotPasswordForm from '~/features/auth/components/ForgotPasswordForm';
 
 export const metadata: Metadata = {

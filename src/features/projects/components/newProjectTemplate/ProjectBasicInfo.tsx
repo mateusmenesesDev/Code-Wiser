@@ -1,17 +1,17 @@
 import { ProjectDifficultyEnum } from '@prisma/client';
 import type { UseFormReturn } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
-import { GenericCombobox } from '~/common/components/GenericCombobox';
-import { Input } from '~/common/components/input';
-import { Label } from '~/common/components/label';
+import { GenericCombobox } from '~/common/components/ui/GenericCombobox';
+import { Input } from '~/common/components/ui/input';
+import { Label } from '~/common/components/ui/label';
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue
-} from '~/common/components/select';
-import { Textarea } from '~/common/components/textarea';
+} from '~/common/components/ui/select';
+import { Textarea } from '~/common/components/ui/textarea';
 import { useGetProjectCategories } from '../../hooks/useGetProjectCategories';
 import type { ProjectFormData } from '../../types/Projects.type';
 

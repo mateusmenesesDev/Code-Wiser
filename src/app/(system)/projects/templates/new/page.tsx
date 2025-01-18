@@ -6,7 +6,7 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import ProjectForm from '~/features/projects/components/newProjectTemplate/ProjectTemplateForm';
 
 export default function NewProjectPage() {

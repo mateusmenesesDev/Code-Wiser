@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import Link from 'next/link';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
@@ -8,7 +8,7 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import { upcomingMeetings } from '../mocks/dashboardData';
 
 export function UpcomingMeetings() {

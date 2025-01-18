@@ -1,16 +1,16 @@
-import { Badge } from '~/common/components/badge';
+import { Badge } from '~/common/components/ui/badge';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import {
 	Tabs,
 	TabsContent,
 	TabsList,
 	TabsTrigger
-} from '~/common/components/tabs';
+} from '~/common/components/ui/tabs';
 
 export function RecentActivity() {
 	return (

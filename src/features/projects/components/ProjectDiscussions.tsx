@@ -1,15 +1,15 @@
 import { Send } from 'lucide-react';
 import { useState } from 'react';
-import { Avatar, AvatarFallback } from '~/common/components/avatar';
-import { Button } from '~/common/components/button';
+import { Avatar, AvatarFallback } from '~/common/components/ui/avatar';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
-import { ScrollArea } from '~/common/components/scroll-area';
-import { Textarea } from '~/common/components/textarea';
+} from '~/common/components/ui/card';
+import { ScrollArea } from '~/common/components/ui/scroll-area';
+import { Textarea } from '~/common/components/ui/textarea';
 import type { Discussion } from '../types/Projects.type';
 
 interface ProjectDiscussionsProps {

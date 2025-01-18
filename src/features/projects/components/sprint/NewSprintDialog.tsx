@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Dialog,
 	DialogContent,
@@ -11,7 +11,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle
-} from '~/common/components/dialog';
+} from '~/common/components/ui/dialog';
 import {
 	Form,
 	FormControl,
@@ -19,9 +19,9 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage
-} from '~/common/components/form';
-import { Input } from '~/common/components/input';
-import { Textarea } from '~/common/components/textarea';
+} from '~/common/components/ui/form';
+import { Input } from '~/common/components/ui/input';
+import { Textarea } from '~/common/components/ui/textarea';
 
 const sprintSchema = z.object({
 	title: z.string().min(1, 'Title is required'),

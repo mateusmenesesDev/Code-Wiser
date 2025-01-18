@@ -5,17 +5,17 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import { PanelLeft } from 'lucide-react';
 import * as React from 'react';
 
-import { Button } from '~/common/components//button';
-import { Input } from '~/common/components//input';
-import { Separator } from '~/common/components//separator';
-import { Sheet, SheetContent } from '~/common/components//sheet';
-import { Skeleton } from '~/common/components//skeleton';
+import { Button } from '~/common/components/ui/button';
+import { Input } from '~/common/components/ui/input';
+import { Separator } from '~/common/components/ui/separator';
+import { Sheet, SheetContent } from '~/common/components/ui/sheet';
+import { Skeleton } from '~/common/components/ui/skeleton';
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger
-} from '~/common/components//tooltip';
+} from '~/common/components/ui/tooltip';
 import { useIsMobile } from '~/common/hooks/use-mobile';
 import { cn } from '~/lib/utils';
 

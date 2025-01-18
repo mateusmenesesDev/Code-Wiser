@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
-import Header from '~/common/layout/Header';
-import Sidebar from '~/common/layout/SideBar';
+import Header from '~/common/components/layout/Header';
+import Sidebar from '~/common/components/layout/SideBar';
 import '~/styles/globals.css';
 
 export default function Layout({

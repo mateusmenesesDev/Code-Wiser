@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Dialog,
 	DialogContent,
@@ -9,9 +9,9 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle
-} from '~/common/components/dialog';
-import { Label } from '~/common/components/label';
-import { Textarea } from '~/common/components/textarea';
+} from '~/common/components/ui/dialog';
+import { Label } from '~/common/components/ui/label';
+import { Textarea } from '~/common/components/ui/textarea';
 
 const requestChangesSchema = z.object({
 	feedback: z.string().min(1, 'Feedback is required')

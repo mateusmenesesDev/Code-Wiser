@@ -1,9 +1,9 @@
 import { ProjectTypeEnum } from '@prisma/client';
 import type { UseFormReturn } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
-import { Input } from '~/common/components/input';
-import { Label } from '~/common/components/label';
-import { RadioGroup, RadioGroupItem } from '~/common/components/radio-group';
+import { Input } from '~/common/components/ui/input';
+import { Label } from '~/common/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '~/common/components/ui/radio-group';
 import { useAnimate } from '~/common/hooks/useAnimate';
 import type { ProjectFormData } from '../../types/Projects.type';
 

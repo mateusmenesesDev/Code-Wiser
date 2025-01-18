@@ -4,7 +4,7 @@ import { Protect } from '@clerk/nextjs';
 import { PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import { useProject } from '../hooks/useProject';
 import { ProjectCard } from './ProjectCard';
 import { ProjectCardSkeleton } from './ProjectCardSkeleton';

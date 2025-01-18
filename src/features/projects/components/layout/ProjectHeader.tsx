@@ -1,14 +1,14 @@
 'use client';
 
 import { MoreHorizontal, Plus, Search, Star } from 'lucide-react';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger
-} from '~/common/components/dropdown-menu';
-import { Input } from '~/common/components/input';
+} from '~/common/components/ui/dropdown-menu';
+import { Input } from '~/common/components/ui/input';
 
 export function ProjectHeader() {
 	return (

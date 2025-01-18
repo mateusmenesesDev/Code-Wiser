@@ -4,14 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import {
 	Form,
 	FormControl,
@@ -20,11 +20,11 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage
-} from '~/common/components/form';
-import { Input } from '~/common/components/input';
-import { RadioGroup, RadioGroupItem } from '~/common/components/radio-group';
-import { Separator } from '~/common/components/separator';
-import { Textarea } from '~/common/components/textarea';
+} from '~/common/components/ui/form';
+import { Input } from '~/common/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '~/common/components/ui/radio-group';
+import { Separator } from '~/common/components/ui/separator';
+import { Textarea } from '~/common/components/ui/textarea';
 import type { Project } from '../../types';
 
 const projectFormSchema = z.object({

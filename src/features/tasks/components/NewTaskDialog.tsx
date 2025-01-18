@@ -6,7 +6,7 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle
-} from '~/common/components/dialog';
+} from '~/common/components/ui/dialog';
 import NewTaskForm from './NewTaskForm';
 
 interface NewTaskDialogProps {

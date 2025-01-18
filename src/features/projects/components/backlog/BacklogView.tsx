@@ -2,23 +2,23 @@
 
 import { ChevronRight, MoreHorizontal, Tag } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { Badge } from '~/common/components/badge';
-import { Button } from '~/common/components/button';
-import { Checkbox } from '~/common/components/checkbox';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
+import { Checkbox } from '~/common/components/ui/checkbox';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger
-} from '~/common/components/dropdown-menu';
-import { ScrollArea } from '~/common/components/scroll-area';
+} from '~/common/components/ui/dropdown-menu';
+import { ScrollArea } from '~/common/components/ui/scroll-area';
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue
-} from '~/common/components/select';
+} from '~/common/components/ui/select';
 import {
 	Table,
 	TableBody,
@@ -26,7 +26,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow
-} from '~/common/components/table';
+} from '~/common/components/ui/table';
 import { api } from '~/trpc/react';
 import { PriorityCell } from './PriorityCell';
 

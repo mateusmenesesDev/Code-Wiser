@@ -3,8 +3,8 @@ import {
 	CardContent,
 	CardFooter,
 	CardHeader
-} from '~/common/components/card';
-import { Skeleton } from '~/common/components/skeleton';
+} from '~/common/components/ui/card';
+import { Skeleton } from '~/common/components/ui/skeleton';
 
 export function ProjectCardSkeleton() {
 	return (

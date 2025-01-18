@@ -4,11 +4,15 @@ import { Protect } from '@clerk/nextjs';
 import { CreditCard, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Badge } from '~/common/components/badge';
+import CodeWiseIcon from '~/common/components/icons/CodeWiseIcon';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
+import {
+	Sheet,
+	SheetContent,
+	SheetTrigger
+} from '~/common/components/ui/sheet';
 import { MENU_ITEMS } from '~/common/constants/menuItem';
-import { Button } from '../components/button';
-import CodeWiseIcon from '../components/icons/CodeWiseIcon';
-import { Sheet, SheetContent, SheetTrigger } from '../components/sheet';
 
 type SidebarProps = {
 	className?: string;

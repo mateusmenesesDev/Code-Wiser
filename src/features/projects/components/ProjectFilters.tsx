@@ -1,13 +1,13 @@
 import { ProjectDifficultyEnum } from '@prisma/client';
 import { Search } from 'lucide-react';
-import { Input } from '~/common/components/input';
+import { Input } from '~/common/components/ui/input';
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue
-} from '~/common/components/select';
+} from '~/common/components/ui/select';
 import { api } from '~/trpc/react';
 import { useProjectFilter } from '../hooks/useProjectFilter';
 

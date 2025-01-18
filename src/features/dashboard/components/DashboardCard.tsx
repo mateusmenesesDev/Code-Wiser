@@ -4,7 +4,7 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 
 export type DashboardCardProps = {
 	title: string;

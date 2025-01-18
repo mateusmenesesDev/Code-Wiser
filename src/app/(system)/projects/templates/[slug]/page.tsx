@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent } from '~/common/components/card';
+import { Card, CardContent } from '~/common/components/ui/card';
 import { ProjectHeader } from '~/features/projects/components/ProjectHeader';
 import { ProjectMentor } from '~/features/projects/components/ProjectMentor';
 import { ProjectProgress } from '~/features/projects/components/ProjectProgress';

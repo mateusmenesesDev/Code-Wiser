@@ -1,12 +1,12 @@
 import { TaskPriorityEnum } from '@prisma/client';
-import { Badge } from '~/common/components/badge';
+import { Badge } from '~/common/components/ui/badge';
 
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger
-} from '~/common/components/dropdown-menu';
+} from '~/common/components/ui/dropdown-menu';
 import { useTask } from '~/features/tasks/hooks/useTask';
 
 const getPriorityVariant = (priority: TaskPriorityEnum | string) => {

@@ -3,12 +3,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { Alert, AlertDescription } from '~/common/components/alert';
-import { Button } from '~/common/components/button';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
 import { GoogleIcon } from '~/common/components/icons/GoogleIcon';
-import { Input } from '~/common/components/input';
-import { Label } from '~/common/components/label';
+import { Alert, AlertDescription } from '~/common/components/ui/alert';
+import { Button } from '~/common/components/ui/button';
+import { Input } from '~/common/components/ui/input';
+import { Label } from '~/common/components/ui/label';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { signInSchema } from '~/features/schemas/auth.schema';
 

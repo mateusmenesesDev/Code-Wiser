@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Badge } from '~/common/components/badge';
-import { Button } from '~/common/components/button';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
@@ -8,8 +8,8 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
-import { Progress } from '~/common/components/progress';
+} from '~/common/components/ui/card';
+import { Progress } from '~/common/components/ui/progress';
 import { activeProjects } from '../mocks/dashboardData';
 
 export function ActiveProjects() {

@@ -3,9 +3,9 @@ import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage
-} from '~/common/components/avatar';
-import { Badge } from '~/common/components/badge';
-import { Separator } from '~/common/components/separator';
+} from '~/common/components/ui/avatar';
+import { Badge } from '~/common/components/ui/badge';
+import { Separator } from '~/common/components/ui/separator';
 import type { ProjectTemplateApprovalApiResponse } from '../../types/Projects.type';
 
 type ProjectApprovalDetailsProps = {

@@ -5,23 +5,23 @@ import { Label } from '@radix-ui/react-label';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
-import { Alert, AlertDescription } from '~/common/components/alert';
-import { Button } from '~/common/components/button';
+import { GoogleIcon } from '~/common/components/icons/GoogleIcon';
+import { Alert, AlertDescription } from '~/common/components/ui/alert';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardFooter,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
-import { GoogleIcon } from '~/common/components/icons/GoogleIcon';
-import { Input, PasswordInput } from '~/common/components/input';
+} from '~/common/components/ui/card';
+import { Input, PasswordInput } from '~/common/components/ui/input';
 import {
 	InputOTP,
 	InputOTPGroup,
 	InputOTPSeparator,
 	InputOTPSlot
-} from '~/common/components/input-otp';
+} from '~/common/components/ui/input-otp';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import {
 	signUpSchema,

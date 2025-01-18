@@ -1,4 +1,4 @@
-import { Progress } from '~/common/components/progress';
+import { Progress } from '~/common/components/ui/progress';
 
 interface ProjectProgressProps {
 	completionRate: number;

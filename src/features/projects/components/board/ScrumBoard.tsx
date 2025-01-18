@@ -2,20 +2,20 @@
 
 import { Calendar } from 'lucide-react';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
-import { Badge } from '~/common/components/badge';
+import { Badge } from '~/common/components/ui/badge';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
-import { ScrollArea } from '~/common/components/scroll-area';
+} from '~/common/components/ui/card';
+import { ScrollArea } from '~/common/components/ui/scroll-area';
 import {
 	Tabs,
 	TabsContent,
 	TabsList,
 	TabsTrigger
-} from '~/common/components/tabs';
+} from '~/common/components/ui/tabs';
 import { TaskCard } from '../../../tasks/components/TaskCard';
 import type { Project } from '../../types';
 import { ColumnHeader } from './ColumnHeader';

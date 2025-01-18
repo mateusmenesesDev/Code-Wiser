@@ -3,8 +3,8 @@
 import { UserButton } from '@clerk/nextjs';
 import { Bell } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { ToggleTheme } from '../components/ToggleTheme';
-import { Button } from '../components/button';
+import { Button } from '~/common/components/ui/button';
+import { ToggleTheme } from '../ToggleTheme';
 
 export default function Header() {
 	const pathname = usePathname();

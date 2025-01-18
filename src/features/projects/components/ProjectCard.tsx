@@ -2,8 +2,8 @@ import { ProjectEnrollmentStatusEnum, ProjectStatusEnum } from '@prisma/client';
 import { ArrowRight, Check, CreditCard, Eye, Play, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Badge } from '~/common/components/badge';
-import { Button } from '~/common/components/button';
+import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
@@ -11,7 +11,7 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import {
 	Dialog,
 	DialogContent,
@@ -19,7 +19,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle
-} from '~/common/components/dialog';
+} from '~/common/components/ui/dialog';
 import { cn } from '~/lib/utils';
 import { useApproval } from '../hooks/useApproval';
 import type { ProjectTemplateApiResponse } from '../types/Projects.type';

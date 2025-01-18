@@ -1,11 +1,11 @@
 import type { LearningOutcome, Technology } from '@prisma/client';
-import { Badge } from '~/common/components/badge';
+import { Badge } from '~/common/components/ui/badge';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 
 interface ProjectOverviewProps {
 	description: string;

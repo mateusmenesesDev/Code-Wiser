@@ -2,9 +2,9 @@
 
 import { PlusCircle } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '~/common/components/button';
-import { Card } from '~/common/components/card';
-import { ScrollArea } from '~/common/components/scroll-area';
+import { Button } from '~/common/components/ui/button';
+import { Card } from '~/common/components/ui/card';
+import { ScrollArea } from '~/common/components/ui/scroll-area';
 import type { RouterOutputs } from '~/trpc/react';
 import { NewSprintDialog } from './NewSprintDialog';
 import { SprintCard } from './SprintCard';

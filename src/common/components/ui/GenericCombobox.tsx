@@ -9,7 +9,7 @@ import {
 	useController
 } from 'react-hook-form';
 
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Command,
 	CommandEmpty,
@@ -17,12 +17,12 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList
-} from '~/common/components/command';
+} from '~/common/components/ui/command';
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger
-} from '~/common/components/popover';
+} from '~/common/components/ui/popover';
 import { cn } from '~/lib/utils';
 
 interface GenericComboboxProps<T extends FieldValues> {

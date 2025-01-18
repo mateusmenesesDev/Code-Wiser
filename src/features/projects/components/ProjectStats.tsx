@@ -1,5 +1,5 @@
 import { Calendar, CreditCard, Users } from 'lucide-react';
-import { Badge } from '~/common/components/badge';
+import { Badge } from '~/common/components/ui/badge';
 
 interface ProjectStatsProps {
 	category: string;

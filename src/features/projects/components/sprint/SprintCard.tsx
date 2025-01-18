@@ -8,25 +8,25 @@ import {
 	PlusCircle
 } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle
-} from '~/common/components/card';
+} from '~/common/components/ui/card';
 import {
 	Collapsible,
 	CollapsibleContent
-} from '~/common/components/collapsible';
+} from '~/common/components/ui/collapsible';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger
-} from '~/common/components/dropdown-menu';
-import { Progress } from '~/common/components/progress';
+} from '~/common/components/ui/dropdown-menu';
+import { Progress } from '~/common/components/ui/progress';
 import type { RouterOutputs } from '~/trpc/react';
 import { TaskCard } from '../../../tasks/components/TaskCard';
 

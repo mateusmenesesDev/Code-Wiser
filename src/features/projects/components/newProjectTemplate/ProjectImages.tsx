@@ -2,8 +2,8 @@ import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
 import type { UseFormReturn } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
-import { Button } from '~/common/components/button';
-import { Label } from '~/common/components/label';
+import { Button } from '~/common/components/ui/button';
+import { Label } from '~/common/components/ui/label';
 import type { ProjectFormData } from '../../types/Projects.type';
 
 interface ProjectImagesProps {

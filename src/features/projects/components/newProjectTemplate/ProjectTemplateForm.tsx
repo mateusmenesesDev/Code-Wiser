@@ -9,7 +9,7 @@ import { api } from '~/trpc/react';
 import { projectSchema } from '../../schemas/projects.schema';
 import type { ProjectFormData } from '../../types/Projects.type';
 
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 
 import { useRouter } from 'next/navigation';
 import { ProjectBasicInfo } from './ProjectBasicInfo';

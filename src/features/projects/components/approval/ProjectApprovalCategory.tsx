@@ -1,6 +1,6 @@
 import type { Category } from '@prisma/client';
-import { Label } from '~/common/components/label';
-import { Switch } from '~/common/components/switch';
+import { Label } from '~/common/components/ui/label';
+import { Switch } from '~/common/components/ui/switch';
 import { useApproval } from '../../hooks/useApproval';
 
 type ProjectApprovalCategoryProps = {

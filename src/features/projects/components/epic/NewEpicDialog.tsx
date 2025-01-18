@@ -1,9 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Dialog,
 	DialogContent,
@@ -11,7 +11,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle
-} from '~/common/components/dialog';
+} from '~/common/components/ui/dialog';
 import {
 	Form,
 	FormControl,
@@ -19,39 +19,48 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage
-} from '~/common/components/form';
-import { Input } from '~/common/components/input';
-import { Textarea } from '~/common/components/textarea';
-
-const epicSchema = z.object({
-	title: z.string().min(1, 'Title is required'),
-	description: z.string().min(1, 'Description is required')
-});
-
-type EpicFormValues = z.infer<typeof epicSchema>;
+} from '~/common/components/ui/form';
+import { Input } from '~/common/components/ui/input';
+import { Textarea } from '~/common/components/ui/textarea';
+import { epicSchema } from '~/features/epics/schemas/epics.schema';
+import { useTemplate } from '~/features/templates/hook/useTemplate';
+import type { Epic } from '~/features/templates/types/Template.type';
 
 interface NewEpicDialogProps {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
+	isOpen: boolean;
+	onClose: () => void;
+	projectId: string;
 }
 
-export function NewEpicDialog({ open, onOpenChange }: NewEpicDialogProps) {
-	const form = useForm<EpicFormValues>({
-		resolver: zodResolver(epicSchema),
-		defaultValues: {
-			title: '',
-			description: ''
-		}
+export function NewEpicDialog({
+	isOpen,
+	onClose,
+	projectId
+}: NewEpicDialogProps) {
+	const form = useForm<Epic>({
+		resolver: zodResolver(epicSchema)
 	});
 
-	const onSubmit = (data: EpicFormValues) => {
-		console.log(data);
-		onOpenChange(false);
+	useEffect(() => {
+		form.reset({
+			projectTemplateId: projectId
+		});
+	}, [form, projectId]);
+
+	const { createEpic } = useTemplate();
+
+	const onSubmit = (values: Epic) => {
+		createEpic.mutate({
+			title: values.title,
+			description: values.description,
+			projectTemplateId: projectId
+		});
+		onClose();
 		form.reset();
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={isOpen} onOpenChange={onClose}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Create New Epic</DialogTitle>

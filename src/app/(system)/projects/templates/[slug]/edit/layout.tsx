@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button } from '~/common/components/button';
-import { Input } from '~/common/components/input';
-import { Tabs, TabsList, TabsTrigger } from '~/common/components/tabs';
+import { Button } from '~/common/components/ui/button';
+import { Input } from '~/common/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '~/common/components/ui/tabs';
 import { NewTaskDialog } from '~/features/tasks/components/NewTaskDialog';
 import { api } from '~/trpc/react';
 

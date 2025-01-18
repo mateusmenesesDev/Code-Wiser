@@ -1,10 +1,10 @@
-import { Input } from '~/common/components/input';
+import { Input } from '~/common/components/ui/input';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskPriorityEnum, TaskTypeEnum } from '@prisma/client';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
-import { Button } from '~/common/components/button';
+import { Button } from '~/common/components/ui/button';
 import {
 	Form,
 	FormControl,
@@ -12,15 +12,15 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage
-} from '~/common/components/form';
+} from '~/common/components/ui/form';
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue
-} from '~/common/components/select';
-import { Textarea } from '~/common/components/textarea';
+} from '~/common/components/ui/select';
+import { Textarea } from '~/common/components/ui/textarea';
 import { useDialog } from '~/common/hooks/useDialog';
 import { useTask } from '../hooks/useTask';
 import { createTaskSchema } from '../schemas/task.schema';

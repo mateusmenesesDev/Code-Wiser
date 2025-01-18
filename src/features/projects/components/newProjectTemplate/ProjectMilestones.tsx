@@ -1,9 +1,9 @@
 import { Minus, PlusCircle } from 'lucide-react';
 import { type UseFormReturn, useFieldArray } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
-import { Button } from '~/common/components/button';
-import { Input } from '~/common/components/input';
-import { Label } from '~/common/components/label';
+import { Button } from '~/common/components/ui/button';
+import { Input } from '~/common/components/ui/input';
+import { Label } from '~/common/components/ui/label';
 import type { ProjectFormData } from '../../types/Projects.type';
 
 interface ProjectMilestonesProps {
