@@ -1,4 +1,4 @@
-import type { z } from 'zod';
-import type { epicSchema } from '~/features/epics/schemas/epics.schema';
+import type { RouterOutputs } from '~/trpc/react';
 
-export type Epic = z.infer<typeof epicSchema>;
+export type ProjectTemplateApprovalApiResponse =
+	RouterOutputs['projectTemplate']['getBySlug'];

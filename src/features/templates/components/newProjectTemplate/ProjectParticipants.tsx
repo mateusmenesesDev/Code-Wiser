@@ -2,7 +2,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
-import type { ProjectFormData } from '../../types/Projects.type';
+import type { ProjectFormData } from '../../../projects/types/Projects.type';
 
 interface ProjectParticipantsProps {
 	form: UseFormReturn<ProjectFormData>;

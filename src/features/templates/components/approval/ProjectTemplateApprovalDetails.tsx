@@ -6,15 +6,15 @@ import {
 } from '~/common/components/ui/avatar';
 import { Badge } from '~/common/components/ui/badge';
 import { Separator } from '~/common/components/ui/separator';
-import type { ProjectTemplateApprovalApiResponse } from '../../types/Projects.type';
+import type { ProjectTemplateApprovalApiResponse } from '../../types/Template.type';
 
-type ProjectApprovalDetailsProps = {
+type ProjectTemplateApprovalDetailsProps = {
 	project: ProjectTemplateApprovalApiResponse;
 };
 
-export function ProjectApprovalDetails({
+export function ProjectTemplateApprovalDetails({
 	project
-}: ProjectApprovalDetailsProps) {
+}: ProjectTemplateApprovalDetailsProps) {
 	if (!project) return null;
 
 	return (

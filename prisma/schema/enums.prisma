@@ -66,3 +66,9 @@ enum ResourceTypeEnum {
   RECOMMENDED
   OTHER
 }
+
+enum EpicStatusEnum {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}

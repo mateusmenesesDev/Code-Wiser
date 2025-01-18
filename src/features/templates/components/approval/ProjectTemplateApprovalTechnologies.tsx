@@ -1,15 +1,15 @@
 import type { Technology } from '@prisma/client';
 import { Label } from '~/common/components/ui/label';
 import { Switch } from '~/common/components/ui/switch';
-import { useApproval } from '../../hooks/useApproval';
+import { useApproval } from '../../hook/useApproval';
 
-type ProjectApprovalTechnologiesProps = {
+type ProjectTemplateApprovalTechnologiesProps = {
 	technologies: Technology[];
 };
 
-export function ProjectApprovalTechnologies({
+export function ProjectTemplateApprovalTechnologies({
 	technologies
-}: ProjectApprovalTechnologiesProps) {
+}: ProjectTemplateApprovalTechnologiesProps) {
 	const { changeTechnologyApprovalMutation } = useApproval();
 
 	const handleApproveTechnology = (technology: Technology) => {

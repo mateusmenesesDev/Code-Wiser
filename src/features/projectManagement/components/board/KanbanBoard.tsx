@@ -1,7 +1,7 @@
 'use client';
 
 import { DragDropContext } from 'react-beautiful-dnd';
-import type { Project } from '../../types';
+import type { Project } from '../../../projects/types';
 import { BoardColumn } from './BoardColumn';
 
 interface KanbanBoardProps {

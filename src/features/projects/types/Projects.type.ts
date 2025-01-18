@@ -28,8 +28,6 @@ export type ProjectTemplateApiResponse =
 export type ProjectTemplateBySlugApiResponse =
 	RouterOutputs['projectTemplate']['getBySlug'];
 export type UserProjectApiResponse = RouterOutputs['project']['getEnrolled'][0];
-export type ProjectTemplateApprovalApiResponse =
-	RouterOutputs['projectTemplate']['getBySlug'];
 
 export type ProjectDatabase = Project;
 

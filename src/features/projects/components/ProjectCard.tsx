@@ -21,7 +21,7 @@ import {
 	DialogTitle
 } from '~/common/components/ui/dialog';
 import { cn } from '~/lib/utils';
-import { useApproval } from '../hooks/useApproval';
+import { useApproval } from '../../templates/hook/useApproval';
 import type { ProjectTemplateApiResponse } from '../types/Projects.type';
 
 type ProjectCardProps = {

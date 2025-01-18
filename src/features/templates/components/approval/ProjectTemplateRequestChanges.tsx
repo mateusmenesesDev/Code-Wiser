@@ -19,7 +19,7 @@ const requestChangesSchema = z.object({
 
 type RequestChangesFormData = z.infer<typeof requestChangesSchema>;
 
-type ProjectRequestChangesProps = {
+type ProjectTemplateRequestChangesProps = {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (feedback: string) => void;
@@ -27,13 +27,13 @@ type ProjectRequestChangesProps = {
 	isLoading?: boolean;
 };
 
-export function ProjectRequestChanges({
+export function ProjectTemplateRequestChanges({
 	isOpen,
 	onClose,
 	onSubmit,
 	projectTitle,
 	isLoading
-}: ProjectRequestChangesProps) {
+}: ProjectTemplateRequestChangesProps) {
 	const form = useForm<RequestChangesFormData>({
 		resolver: zodResolver(requestChangesSchema)
 	});

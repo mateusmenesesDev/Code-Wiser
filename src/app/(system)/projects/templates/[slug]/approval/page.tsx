@@ -1,8 +1,11 @@
 'use client';
 
 import { CheckCircle2, Pencil, XCircle } from 'lucide-react';
+
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+import { ProjectStatusEnum } from '@prisma/client';
 import { api } from '~/trpc/react';
 
 import { Badge } from '~/common/components/ui/badge';
@@ -22,12 +25,12 @@ import {
 	TabsTrigger
 } from '~/common/components/ui/tabs';
 
-import { ProjectStatusEnum } from '@prisma/client';
-import { ProjectApprovalCategory } from '~/features/projects/components/approval/ProjectApprovalCategory';
-import { ProjectApprovalDetails } from '~/features/projects/components/approval/ProjectApprovalDetails';
-import { ProjectApprovalTechnologies } from '~/features/projects/components/approval/ProjectApprovalTechnologies';
-import { ProjectRequestChanges } from '~/features/projects/components/approval/ProjectRequestChanges';
-import { useApproval } from '~/features/projects/hooks/useApproval';
+import { ProjectTemplateApprovalCategory } from '~/features/templates/components/approval/ProjectTemplateApprovalCategory';
+import { ProjectTemplateApprovalDetails } from '~/features/templates/components/approval/ProjectTemplateApprovalDetails';
+import { ProjectTemplateApprovalTechnologies } from '~/features/templates/components/approval/ProjectTemplateApprovalTechnologies';
+import { ProjectTemplateRequestChanges } from '~/features/templates/components/approval/ProjectTemplateRequestChanges';
+
+import { useApproval } from '~/features/templates/hook/useApproval';
 
 export default function ProjectApprovalPage({
 	params: { slug }
@@ -101,15 +104,15 @@ export default function ProjectApprovalPage({
 							<TabsTrigger value="category">Category</TabsTrigger>
 						</TabsList>
 						<TabsContent value="details" className="mt-4">
-							<ProjectApprovalDetails project={project} />
+							<ProjectTemplateApprovalDetails project={project} />
 						</TabsContent>
 						<TabsContent value="technologies" className="mt-4">
-							<ProjectApprovalTechnologies
+							<ProjectTemplateApprovalTechnologies
 								technologies={project.technologies}
 							/>
 						</TabsContent>
 						<TabsContent value="category" className="mt-4">
-							<ProjectApprovalCategory category={project.category} />
+							<ProjectTemplateApprovalCategory category={project.category} />
 						</TabsContent>
 					</Tabs>
 				</CardContent>
@@ -155,7 +158,7 @@ export default function ProjectApprovalPage({
 				</CardFooter>
 			</Card>
 
-			<ProjectRequestChanges
+			<ProjectTemplateRequestChanges
 				isOpen={isRequestChangesOpen}
 				onClose={() => setIsRequestChangesOpen(false)}
 				onSubmit={handleRequestChanges}

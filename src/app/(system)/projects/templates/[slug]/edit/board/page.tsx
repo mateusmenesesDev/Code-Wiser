@@ -1,7 +1,7 @@
 'use client';
 
-import { KanbanBoard } from '~/features/projects/components/board/KanbanBoard';
-import { ScrumBoard } from '~/features/projects/components/board/ScrumBoard';
+import { KanbanBoard } from '~/features/projectManagement/components/board/KanbanBoard';
+import { ScrumBoard } from '~/features/projectManagement/components/board/ScrumBoard';
 import { mockProject } from '~/features/projects/mocks/projectData';
 
 export default function BoardPage() {

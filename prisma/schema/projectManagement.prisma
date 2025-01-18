@@ -35,6 +35,7 @@ model Epic {
   title       String
   description String?
 
+  status    EpicStatusEnum?
   progress  Int?
   startDate DateTime?
   endDate   DateTime?

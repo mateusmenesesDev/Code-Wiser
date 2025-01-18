@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectSettings } from '~/features/projects/components/settings/ProjectSettings';
+import { ProjectSettings } from '~/features/projectManagement/components/settings/ProjectSettings';
 import { mockProject } from '~/features/projects/mocks/projectData';
 
 export default function SettingsPage() {

@@ -23,8 +23,8 @@ import {
 import { Input } from '~/common/components/ui/input';
 import { Textarea } from '~/common/components/ui/textarea';
 import { epicSchema } from '~/features/epics/schemas/epics.schema';
+import type { Epic } from '~/features/epics/types/Epic.type';
 import { useTemplate } from '~/features/templates/hook/useTemplate';
-import type { Epic } from '~/features/templates/types/Template.type';
 
 interface NewEpicDialogProps {
 	isOpen: boolean;

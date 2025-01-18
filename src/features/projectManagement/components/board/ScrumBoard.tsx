@@ -16,8 +16,8 @@ import {
 	TabsList,
 	TabsTrigger
 } from '~/common/components/ui/tabs';
+import type { Project } from '../../../projects/types';
 import { TaskCard } from '../../../tasks/components/TaskCard';
-import type { Project } from '../../types';
 import { ColumnHeader } from './ColumnHeader';
 
 interface ScrumBoardProps {
@@ -45,8 +45,11 @@ export function ScrumBoard({ project }: ScrumBoardProps) {
 											<CardTitle>{sprint.title}</CardTitle>
 											<div className="mt-1 flex items-center text-muted-foreground text-sm">
 												<Calendar className="mr-2 h-4 w-4" />
-												{new Date(sprint.startDate).toLocaleDateString()} -{' '}
-												{new Date(sprint.endDate).toLocaleDateString()}
+												{sprint.startDate &&
+													new Date(sprint.startDate).toLocaleDateString()}
+												-{' '}
+												{sprint.endDate &&
+													new Date(sprint.endDate).toLocaleDateString()}
 											</div>
 										</div>
 										<Badge

@@ -25,7 +25,7 @@ import { Input } from '~/common/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '~/common/components/ui/radio-group';
 import { Separator } from '~/common/components/ui/separator';
 import { Textarea } from '~/common/components/ui/textarea';
-import type { Project } from '../../types';
+import type { Project } from '~/features/projects/types';
 
 const projectFormSchema = z.object({
 	title: z.string().min(1, 'Title is required'),

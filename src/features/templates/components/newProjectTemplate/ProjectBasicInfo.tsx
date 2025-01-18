@@ -12,8 +12,8 @@ import {
 	SelectValue
 } from '~/common/components/ui/select';
 import { Textarea } from '~/common/components/ui/textarea';
-import { useGetProjectCategories } from '../../hooks/useGetProjectCategories';
-import type { ProjectFormData } from '../../types/Projects.type';
+import { useGetProjectCategories } from '../../../projects/hooks/useGetProjectCategories';
+import type { ProjectFormData } from '../../../projects/types/Projects.type';
 
 interface ProjectBasicInfoProps {
 	form: UseFormReturn<ProjectFormData>;

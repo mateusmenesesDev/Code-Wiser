@@ -6,8 +6,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { api } from '~/trpc/react';
 
-import { projectSchema } from '../../schemas/projects.schema';
-import type { ProjectFormData } from '../../types/Projects.type';
+import { projectSchema } from '../../../projects/schemas/projects.schema';
+import type { ProjectFormData } from '../../../projects/types/Projects.type';
 
 import { Button } from '~/common/components/ui/button';
 

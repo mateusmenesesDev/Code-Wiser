@@ -4,33 +4,31 @@ import { ErrorMessage } from '~/common/components/ErrorMessage';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
-import type { ProjectFormData } from '../../types/Projects.type';
+import type { ProjectFormData } from '../../../projects/types/Projects.type';
 
-interface ProjectLearningOutcomesProps {
+interface ProjectMilestonesProps {
 	form: UseFormReturn<ProjectFormData>;
 }
 
-export function ProjectLearningOutcomes({
-	form
-}: ProjectLearningOutcomesProps) {
+export function ProjectMilestones({ form }: ProjectMilestonesProps) {
 	const {
 		control,
 		register,
 		formState: { errors }
 	} = form;
 	const { fields, append, remove } = useFieldArray({
-		name: 'learningOutcomes',
+		name: 'milestones',
 		control
 	});
 
 	return (
 		<div className="space-y-2">
-			<Label>Learning Outcomes</Label>
+			<Label>Milestones</Label>
 			{fields.map((field, index) => (
 				<div key={field.id} className="flex items-center space-x-2">
 					<Input
-						{...register(`learningOutcomes.${index}.value`)}
-						placeholder={`Learning outcome ${index + 1}`}
+						{...register(`milestones.${index}.value`)}
+						placeholder={`Milestone ${index + 1}`}
 					/>
 					<Button
 						type="button"
@@ -49,9 +47,9 @@ export function ProjectLearningOutcomes({
 				onClick={() => append({ value: '' })}
 			>
 				<PlusCircle className="mr-2 h-4 w-4" />
-				Add Learning Outcome
+				Add Milestone
 			</Button>
-			<ErrorMessage message={errors.learningOutcomes?.root?.message} />
+			<ErrorMessage message={errors.milestones?.root?.message} />
 		</div>
 	);
 }

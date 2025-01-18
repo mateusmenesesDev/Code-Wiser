@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { SprintPlanning } from '~/features/projects/components/sprint/SprintPlanning';
+import { SprintPlanning } from '~/features/projectManagement/components/sprint/SprintPlanning';
 import { api } from '~/trpc/react';
 
 export default function SprintsPage() {

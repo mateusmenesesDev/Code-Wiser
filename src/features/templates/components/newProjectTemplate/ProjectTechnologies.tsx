@@ -6,7 +6,7 @@ import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Label } from '~/common/components/ui/label';
 import { api } from '~/trpc/react';
-import type { ProjectFormData } from '../../types/Projects.type';
+import type { ProjectFormData } from '../../../projects/types/Projects.type';
 
 interface ProjectTechnologiesProps {
 	form: UseFormReturn<ProjectFormData>;

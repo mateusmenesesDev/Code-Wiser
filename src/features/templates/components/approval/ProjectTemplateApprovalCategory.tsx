@@ -1,15 +1,15 @@
 import type { Category } from '@prisma/client';
 import { Label } from '~/common/components/ui/label';
 import { Switch } from '~/common/components/ui/switch';
-import { useApproval } from '../../hooks/useApproval';
+import { useApproval } from '../../hook/useApproval';
 
-type ProjectApprovalCategoryProps = {
+type ProjectTemplateApprovalCategoryProps = {
 	category: Category;
 };
 
-export function ProjectApprovalCategory({
+export function ProjectTemplateApprovalCategory({
 	category
-}: ProjectApprovalCategoryProps) {
+}: ProjectTemplateApprovalCategoryProps) {
 	const { changeCategoryApprovalMutation } = useApproval();
 	const { mutate: changeCategoryApproval, isPending } =
 		changeCategoryApprovalMutation;
