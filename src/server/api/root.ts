@@ -1,10 +1,10 @@
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 import { projectRouter } from './routers/project';
 import { projectBaseRouter } from './routers/projectBase';
+import { sprintRouter } from './routers/sprint/sprintRouter';
 import { taskRouter } from './routers/task/taskRouter';
 import { projectTemplateRouter } from './routers/template';
 import { userRouter } from './routers/user';
-import { sprintRouter } from './routers/sprint/sprintRouter';
 
 /**
  * This is the primary router for your server.
