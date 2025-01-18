@@ -2,7 +2,6 @@
 
 import { Calendar } from 'lucide-react';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
-import { Badge } from '~/common/components/ui/badge';
 import {
 	Card,
 	CardContent,
@@ -52,17 +51,6 @@ export function ScrumBoard({ project }: ScrumBoardProps) {
 													new Date(sprint.endDate).toLocaleDateString()}
 											</div>
 										</div>
-										<Badge
-											variant={
-												sprint.status === 'active'
-													? 'default'
-													: sprint.status === 'completed'
-														? 'secondary'
-														: 'outline'
-											}
-										>
-											{sprint.status}
-										</Badge>
 									</div>
 								</CardHeader>
 								<CardContent>

@@ -1,3 +1,4 @@
+import { EpicStatusEnum } from '@prisma/client';
 import { type RouterOutputs, api } from '~/trpc/react';
 
 type getEpicsOutput = RouterOutputs['projectTemplate']['epic']['getEpics'][0];
@@ -26,7 +27,8 @@ export const useTemplate = () => {
 						projectId: null,
 						startDate: null,
 						endDate: null,
-						tasks: []
+						tasks: [],
+						status: EpicStatusEnum.PLANNED
 					};
 					if (!old) return [completedNewEpic];
 

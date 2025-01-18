@@ -1,5 +1,6 @@
 'use client';
 
+import type { Task } from '@prisma/client';
 import {
 	DragDropContext,
 	Draggable,
@@ -9,7 +10,6 @@ import {
 	type DroppableProvided
 } from 'react-beautiful-dnd';
 import { ScrollArea } from '~/common/components/ui/scroll-area';
-import type { Task } from '../../projects/types';
 import { TaskCard } from './TaskCard';
 
 interface TaskListProps {

@@ -1,3 +1,4 @@
+import { EpicStatusEnum, TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import type { Project } from '../types';
 
 export const mockProject: Project = {
@@ -12,21 +13,34 @@ export const mockProject: Project = {
 			title: 'Design Database Schema',
 			description: 'Create the initial database schema for the project',
 			priority: 'HIGH',
-			status: 'TODO',
+			status: TaskStatusEnum.BACKLOG,
 			tags: ['backend', 'database'],
 			createdAt: new Date(),
 			updatedAt: new Date(),
-			sprintId: 1
+			sprintId: '1',
+			projectTemplateId: '1',
+			type: TaskTypeEnum.TASK,
+			dueDate: new Date(),
+			assigneeId: '1',
+			projectId: '1',
+			epicId: '1'
 		},
 		{
 			id: 'task2',
 			title: 'Setup Authentication',
 			description: 'Implement user authentication using NextAuth.js',
 			priority: 'HIGH',
-			status: 'TODO',
+			status: TaskStatusEnum.BACKLOG,
 			tags: ['backend', 'auth'],
 			createdAt: new Date(),
-			updatedAt: new Date()
+			updatedAt: new Date(),
+			sprintId: '1',
+			projectTemplateId: '1',
+			type: TaskTypeEnum.TASK,
+			dueDate: new Date(),
+			assigneeId: '1',
+			projectId: '1',
+			epicId: '1'
 		}
 	],
 	columns: [
@@ -37,22 +51,26 @@ export const mockProject: Project = {
 	],
 	sprints: [
 		{
-			id: 1,
+			id: '1',
 			title: 'Sprint 1',
-			goal: 'Basic project structure and authentication',
+			description: 'Basic project structure and authentication',
 			startDate: new Date('2024-01-01'),
 			endDate: new Date('2024-01-14'),
-			status: 'active',
-			tasks: []
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			projectId: '1',
+			projectTemplateId: '1'
 		},
 		{
-			id: 2,
+			id: '2',
 			title: 'Sprint 2',
-			goal: 'Implement core project management features',
+			description: 'Implement core project management features',
 			startDate: new Date('2024-01-15'),
 			endDate: new Date('2024-01-28'),
-			status: 'planning',
-			tasks: []
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			projectId: '1',
+			projectTemplateId: '1'
 		}
 	],
 	scrumBoard: [
@@ -66,19 +84,27 @@ export const mockProject: Project = {
 			id: 'epic1',
 			title: 'User Authentication',
 			description: 'Implement complete user authentication system',
-			status: 'active',
 			createdAt: new Date(),
-			tasks: [],
-			progress: 0
+			updatedAt: new Date(),
+			projectId: '1',
+			projectTemplateId: '1',
+			startDate: new Date(),
+			endDate: new Date(),
+			progress: 0,
+			status: EpicStatusEnum.PLANNED
 		},
 		{
 			id: 'epic2',
 			title: 'Project Management',
 			description: 'Core project management features',
-			status: 'active',
 			createdAt: new Date(),
-			tasks: [],
-			progress: 0
+			updatedAt: new Date(),
+			projectId: '1',
+			projectTemplateId: '1',
+			startDate: new Date(),
+			endDate: new Date(),
+			progress: 0,
+			status: EpicStatusEnum.PLANNED
 		}
 	]
 };
