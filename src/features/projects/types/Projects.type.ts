@@ -1,6 +1,6 @@
 import type { LearningOutcome, Milestone, Project } from '@prisma/client';
 import type { z } from 'zod';
-import type { RouterOutputs } from '~/trpc/react';
+import type { RouterInputs, RouterOutputs } from '~/trpc/react';
 import type { projectSchema } from '../schemas/projects.schema';
 
 export type Discussion = {
@@ -27,6 +27,9 @@ export type ProjectTemplateApiResponse =
 	RouterOutputs['projectTemplate']['getAll'][0];
 export type ProjectTemplateBySlugApiResponse =
 	RouterOutputs['projectTemplate']['getBySlug'];
+export type CreateProjectTemplateApiInput =
+	RouterInputs['projectTemplate']['create'];
+
 export type UserProjectApiResponse = RouterOutputs['project']['getEnrolled'][0];
 
 export type ProjectDatabase = Project;
