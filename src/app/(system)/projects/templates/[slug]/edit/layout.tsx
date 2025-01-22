@@ -3,7 +3,6 @@
 import {
 	Calendar,
 	Layers,
-	LayoutDashboard,
 	ListTodo,
 	Plus,
 	Search,
@@ -61,13 +60,6 @@ export default function ProjectEditLayout({
 								>
 									<ListTodo className="mr-2 h-4 w-4" />
 									Backlog
-								</TabsTrigger>
-								<TabsTrigger
-									value="board"
-									className="relative h-10 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pt-2 pb-3 font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
-								>
-									<LayoutDashboard className="mr-2 h-4 w-4" />
-									Board
 								</TabsTrigger>
 								{project.methodology === 'SCRUM' && (
 									<>

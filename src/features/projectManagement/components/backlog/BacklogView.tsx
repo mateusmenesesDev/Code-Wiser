@@ -30,11 +30,7 @@ import {
 import { api } from '~/trpc/react';
 import { PriorityCell } from './PriorityCell';
 
-interface BacklogViewProps {
-	isTemplatePage?: boolean;
-}
-
-export function BacklogView({ isTemplatePage }: BacklogViewProps) {
+export function BacklogView() {
 	const { slug } = useParams();
 
 	const { data: project, isLoading } = api.projectTemplate.getBySlug.useQuery({
@@ -55,9 +51,7 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 								<TableHead className="w-[50px]">
 									<Checkbox />
 								</TableHead>
-								{!isTemplatePage && (
-									<TableHead className="w-[200px]">Assignee</TableHead>
-								)}
+								<TableHead className="w-[200px]">Assignee</TableHead>
 
 								<TableHead className="min-w-[500px]">Task</TableHead>
 								<TableHead className="w-[100px]">Priority</TableHead>
@@ -68,9 +62,7 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 										<TableHead className="w-[150px]">Epic</TableHead>
 									</>
 								)}
-								{!isTemplatePage && (
-									<TableHead className="w-[100px]">Status</TableHead>
-								)}
+								<TableHead className="w-[100px]">Status</TableHead>
 								<TableHead className="w-[70px]" />
 							</TableRow>
 						</TableHeader>
@@ -80,26 +72,24 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 									<TableCell className="w-[50px]">
 										<Checkbox />
 									</TableCell>
-									{!isTemplatePage && (
-										<TableCell className="w-[200px]">
-											{task.assigneeId ? (
-												<div className="flex items-center gap-2">
-													<div className="h-6 w-6 rounded-full bg-muted" />
-													<span className="truncate text-sm">
-														{task.assigneeId}
-													</span>
-												</div>
-											) : (
-												<Button
-													variant="ghost"
-													size="sm"
-													className="h-6 px-2 text-xs"
-												>
-													Assign
-												</Button>
-											)}
-										</TableCell>
-									)}
+									<TableCell className="w-[200px]">
+										{task.assigneeId ? (
+											<div className="flex items-center gap-2">
+												<div className="h-6 w-6 rounded-full bg-muted" />
+												<span className="truncate text-sm">
+													{task.assigneeId}
+												</span>
+											</div>
+										) : (
+											<Button
+												variant="ghost"
+												size="sm"
+												className="h-6 px-2 text-xs"
+											>
+												Assign
+											</Button>
+										)}
+									</TableCell>
 									<TableCell className="min-w-[500px]">
 										<div className="flex items-center gap-2">
 											<ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
@@ -211,16 +201,14 @@ export function BacklogView({ isTemplatePage }: BacklogViewProps) {
 											</TableCell>
 										</>
 									)}
-									{!isTemplatePage && (
-										<TableCell className="w-[100px]">
-											<Badge
-												variant="outline"
-												className="w-[80px] justify-center"
-											>
-												{task.status}
-											</Badge>
-										</TableCell>
-									)}
+									<TableCell className="w-[100px]">
+										<Badge
+											variant="outline"
+											className="w-[80px] justify-center"
+										>
+											{task.status}
+										</Badge>
+									</TableCell>
 									<TableCell className="w-[70px]">
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
