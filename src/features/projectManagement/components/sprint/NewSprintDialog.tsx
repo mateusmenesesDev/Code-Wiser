@@ -1,8 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import dayjs from 'dayjs';
+import { useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { Button } from '~/common/components/ui/button';
 import {
 	Dialog,
@@ -22,36 +23,48 @@ import {
 } from '~/common/components/ui/form';
 import { Input } from '~/common/components/ui/input';
 import { Textarea } from '~/common/components/ui/textarea';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { useSprintTemplate } from '../../hooks/sprintTemplate.hook';
+import {
+	newSprintSchema,
+	newSprintTemplateSchema
+} from '../../schemas/sprint.schema';
+import type { NewSprint, NewSprintTemplate } from '../../types/Sprint.type';
 
-const sprintSchema = z.object({
-	title: z.string().min(1, 'Title is required'),
-	goal: z.string().optional(),
-	startDate: z.string().min(1, 'Start date is required'),
-	endDate: z.string().min(1, 'End date is required')
-});
-
-type SprintFormValues = z.infer<typeof sprintSchema>;
-
-interface NewSprintDialogProps {
+type NewSprintDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-}
+};
 
 export function NewSprintDialog({ open, onOpenChange }: NewSprintDialogProps) {
-	const form = useForm<SprintFormValues>({
-		resolver: zodResolver(sprintSchema),
+	const isTemplate = useIsTemplate();
+	const params = useParams();
+	const projectSlug = decodeURIComponent(params.slug as string);
+
+	const { createSprintTemplate } = useSprintTemplate(projectSlug);
+	const form = useForm<NewSprintTemplate | NewSprint>({
+		resolver: zodResolver(
+			isTemplate ? newSprintTemplateSchema : newSprintSchema
+		),
 		defaultValues: {
-			title: '',
-			goal: '',
-			startDate: '',
-			endDate: ''
+			projectSlug
 		}
 	});
 
-	const onSubmit = (data: SprintFormValues) => {
-		console.log(data);
+	const onSubmit = (data: NewSprintTemplate | NewSprint) => {
+		if (isTemplate) {
+			createSprintTemplate.mutate({
+				...data,
+				startDate: data.startDate
+					? dayjs(data.startDate).format('YYYY-MM-DD')
+					: undefined,
+				endDate: data.endDate
+					? dayjs(data.endDate).format('YYYY-MM-DD')
+					: undefined
+			});
+		}
+
 		onOpenChange(false);
-		form.reset();
 	};
 
 	return (
@@ -80,7 +93,7 @@ export function NewSprintDialog({ open, onOpenChange }: NewSprintDialogProps) {
 						/>
 						<FormField
 							control={form.control}
-							name="goal"
+							name="description"
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>Goal (Optional)</FormLabel>
@@ -91,34 +104,36 @@ export function NewSprintDialog({ open, onOpenChange }: NewSprintDialogProps) {
 								</FormItem>
 							)}
 						/>
-						<div className="grid grid-cols-2 gap-4">
-							<FormField
-								control={form.control}
-								name="startDate"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Start Date</FormLabel>
-										<FormControl>
-											<Input type="date" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="endDate"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>End Date</FormLabel>
-										<FormControl>
-											<Input type="date" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
+						{!isTemplate && (
+							<div className="grid grid-cols-2 gap-4">
+								<FormField
+									control={form.control}
+									name="startDate"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Start Date</FormLabel>
+											<FormControl>
+												<Input type="date" {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="endDate"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>End Date</FormLabel>
+											<FormControl>
+												<Input type="date" {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+						)}
 						<DialogFooter>
 							<Button type="submit">Create Sprint</Button>
 						</DialogFooter>

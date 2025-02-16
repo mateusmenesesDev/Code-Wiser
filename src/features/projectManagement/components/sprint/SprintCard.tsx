@@ -27,14 +27,17 @@ import {
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
 import { Progress } from '~/common/components/ui/progress';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import type { RouterOutputs } from '~/trpc/react';
 import { TaskCard } from '../../../tasks/components/TaskCard';
 
 interface SprintCardProps {
-	sprint: RouterOutputs['sprint']['getSprints'][number];
+	sprint: RouterOutputs['projectTemplate']['sprint']['getAllSprints'][number];
+	isTemplate?: boolean;
 }
 
 export function SprintCard({ sprint }: SprintCardProps) {
+	const isTemplate = useIsTemplate();
 	const [isOpen, setIsOpen] = useState(false);
 
 	const completedTasks = sprint.tasks.filter(
@@ -55,18 +58,20 @@ export function SprintCard({ sprint }: SprintCardProps) {
 						<CardTitle>{sprint.title}</CardTitle>
 					</div>
 					<div className="flex items-center space-x-2">
-						<div className="flex items-center space-x-2 text-muted-foreground text-sm">
-							<Calendar className="h-4 w-4" />
-							<span>
-								{sprint.startDate
-									? new Date(sprint.startDate).toLocaleDateString()
-									: 'N/A'}
-								-{' '}
-								{sprint.endDate
-									? new Date(sprint.endDate).toLocaleDateString()
-									: 'N/A'}
-							</span>
-						</div>
+						{!isTemplate && (
+							<div className="flex items-center space-x-2 text-muted-foreground text-sm">
+								<Calendar className="h-4 w-4" />
+								<span>
+									{sprint.startDate
+										? new Date(sprint.startDate).toLocaleDateString()
+										: 'N/A'}
+									-{' '}
+									{sprint.endDate
+										? new Date(sprint.endDate).toLocaleDateString()
+										: 'N/A'}
+								</span>
+							</div>
+						)}
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="ghost" size="sm">
@@ -75,8 +80,12 @@ export function SprintCard({ sprint }: SprintCardProps) {
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem>Edit Sprint</DropdownMenuItem>
-								<DropdownMenuItem>Start Sprint</DropdownMenuItem>
-								<DropdownMenuItem>Complete Sprint</DropdownMenuItem>
+								{!isTemplate && (
+									<>
+										<DropdownMenuItem>Start Sprint</DropdownMenuItem>
+										<DropdownMenuItem>Complete Sprint</DropdownMenuItem>
+									</>
+								)}
 								<DropdownMenuItem className="text-destructive">
 									Delete Sprint
 								</DropdownMenuItem>

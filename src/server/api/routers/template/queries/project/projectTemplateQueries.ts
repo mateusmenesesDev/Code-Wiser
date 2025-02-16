@@ -24,26 +24,33 @@ export const projectTemplateQueries = {
 	getBySlug: protectedProcedure
 		.input(z.object({ slug: z.string() }))
 		.query(async ({ ctx, input }) => {
-			return await ctx.db.projectTemplate.findUnique({
-				where: { slug: input.slug },
-				include: {
-					technologies: true,
-					category: true,
-					learningOutcomes: true,
-					milestones: true,
-					author: {
-						select: {
-							id: true
-						}
-					},
-					tasks: true,
-					epics: {
-						include: {
-							tasks: true
-						}
-					},
-					sprints: true
-				}
-			});
+			try {
+				const projectTemplate = await ctx.db.projectTemplate.findUnique({
+					where: { slug: input.slug },
+					include: {
+						technologies: true,
+						category: true,
+						learningOutcomes: true,
+						milestones: true,
+						author: {
+							select: {
+								id: true
+							}
+						},
+						tasks: true,
+						epics: {
+							include: {
+								tasks: true
+							}
+						},
+						sprints: true
+					}
+				});
+
+				return projectTemplate;
+			} catch (error) {
+				console.error(error);
+				throw error;
+			}
 		})
 };

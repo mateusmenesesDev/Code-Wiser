@@ -1,20 +1,20 @@
 'use client';
 
 import { PlusCircle } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '~/common/components/ui/button';
 import { Card } from '~/common/components/ui/card';
 import { ScrollArea } from '~/common/components/ui/scroll-area';
+import { useDialog } from '~/common/hooks/useDialog';
 import type { RouterOutputs } from '~/trpc/react';
 import { NewSprintDialog } from './NewSprintDialog';
 import { SprintCard } from './SprintCard';
 
 interface SprintPlanningProps {
-	sprints: RouterOutputs['sprint']['getSprints'];
+	sprints: RouterOutputs['projectTemplate']['sprint']['getAllSprints'];
 }
 
 export function SprintPlanning({ sprints }: SprintPlanningProps) {
-	const [isNewSprintDialogOpen, setIsNewSprintDialogOpen] = useState(false);
+	const { setIsDialogOpen, isDialogOpen } = useDialog();
 
 	return (
 		<div className="py-6">
@@ -25,7 +25,7 @@ export function SprintPlanning({ sprints }: SprintPlanningProps) {
 						Plan and manage your project sprints
 					</p>
 				</div>
-				<Button onClick={() => setIsNewSprintDialogOpen(true)}>
+				<Button onClick={() => setIsDialogOpen(true)}>
 					<PlusCircle className="mr-2 h-4 w-4" />
 					New Sprint
 				</Button>
@@ -41,10 +41,7 @@ export function SprintPlanning({ sprints }: SprintPlanningProps) {
 				</ScrollArea>
 			</Card>
 
-			<NewSprintDialog
-				open={isNewSprintDialogOpen}
-				onOpenChange={setIsNewSprintDialogOpen}
-			/>
+			<NewSprintDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
 		</div>
 	);
 }
