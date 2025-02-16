@@ -6,7 +6,7 @@ import { api } from '~/trpc/react';
 
 export default function SprintsPage() {
 	const params = useParams();
-	const sprints = api.projectTemplate.sprint.getAllSprints.useQuery({
+	const sprints = api.sprint.getAllByProjectTemplateSlug.useQuery({
 		projectTemplateSlug: params.slug as string
 	});
 

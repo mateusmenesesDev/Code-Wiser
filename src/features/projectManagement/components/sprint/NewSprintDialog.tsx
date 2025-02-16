@@ -25,11 +25,8 @@ import { Input } from '~/common/components/ui/input';
 import { Textarea } from '~/common/components/ui/textarea';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useSprintTemplate } from '../../hooks/sprintTemplate.hook';
-import {
-	newSprintSchema,
-	newSprintTemplateSchema
-} from '../../schemas/sprint.schema';
-import type { NewSprint, NewSprintTemplate } from '../../types/Sprint.type';
+import { newSprintSchema } from '../../schemas/sprint.schema';
+import type { NewSprint } from '../../types/Sprint.type';
 
 type NewSprintDialogProps = {
 	open: boolean;
@@ -42,28 +39,22 @@ export function NewSprintDialog({ open, onOpenChange }: NewSprintDialogProps) {
 	const projectSlug = decodeURIComponent(params.slug as string);
 
 	const { createSprintTemplate } = useSprintTemplate(projectSlug);
-	const form = useForm<NewSprintTemplate | NewSprint>({
-		resolver: zodResolver(
-			isTemplate ? newSprintTemplateSchema : newSprintSchema
-		),
-		defaultValues: {
-			projectSlug
-		}
+	const form = useForm<NewSprint>({
+		resolver: zodResolver(newSprintSchema)
 	});
 
-	const onSubmit = (data: NewSprintTemplate | NewSprint) => {
-		if (isTemplate) {
-			createSprintTemplate.mutate({
-				...data,
-				startDate: data.startDate
-					? dayjs(data.startDate).format('YYYY-MM-DD')
-					: undefined,
-				endDate: data.endDate
-					? dayjs(data.endDate).format('YYYY-MM-DD')
-					: undefined
-			});
-		}
-
+	const onSubmit = (data: NewSprint) => {
+		createSprintTemplate.mutate({
+			...data,
+			projectSlug: isTemplate ? undefined : projectSlug,
+			projectTemplateSlug: isTemplate ? projectSlug : undefined,
+			startDate: data.startDate
+				? dayjs(data.startDate).format('YYYY-MM-DD')
+				: undefined,
+			endDate: data.endDate
+				? dayjs(data.endDate).format('YYYY-MM-DD')
+				: undefined
+		});
 		onOpenChange(false);
 	};
 

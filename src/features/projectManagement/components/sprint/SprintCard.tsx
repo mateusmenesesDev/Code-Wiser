@@ -32,7 +32,7 @@ import type { RouterOutputs } from '~/trpc/react';
 import { TaskCard } from '../../../tasks/components/TaskCard';
 
 interface SprintCardProps {
-	sprint: RouterOutputs['projectTemplate']['sprint']['getAllSprints'][number];
+	sprint: RouterOutputs['sprint']['getAllByProjectSlug'][number];
 	isTemplate?: boolean;
 }
 
