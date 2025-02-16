@@ -8,6 +8,7 @@ import {
 	PlusCircle
 } from 'lucide-react';
 import { useState } from 'react';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Button } from '~/common/components/ui/button';
 import {
 	Card,
@@ -30,6 +31,7 @@ import { Progress } from '~/common/components/ui/progress';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import type { RouterOutputs } from '~/trpc/react';
 import { TaskCard } from '../../../tasks/components/TaskCard';
+import { useSprint } from '../../hooks/sprint.hook';
 
 interface SprintCardProps {
 	sprint: RouterOutputs['sprint']['getAllByProjectSlug'][number];
@@ -44,6 +46,19 @@ export function SprintCard({ sprint }: SprintCardProps) {
 		(task) => task.status === 'DONE'
 	).length;
 	const progress = (completedTasks / sprint.tasks.length) * 100 || 0;
+
+	const projectSlug = isTemplate
+		? (sprint.projectTemplateSlug as string)
+		: (sprint.projectSlug as string);
+
+	const { deleteSprint } = useSprint({
+		projectSlug,
+		isTemplate
+	});
+
+	const handleDelete = () => {
+		deleteSprint.mutate({ id: sprint.id });
+	};
 
 	return (
 		<Card>
@@ -86,9 +101,15 @@ export function SprintCard({ sprint }: SprintCardProps) {
 										<DropdownMenuItem>Complete Sprint</DropdownMenuItem>
 									</>
 								)}
-								<DropdownMenuItem className="text-destructive">
-									Delete Sprint
-								</DropdownMenuItem>
+								<ConfirmationDialog
+									title="Delete Sprint"
+									description="Are you sure you want to delete this sprint?"
+									onConfirm={handleDelete}
+								>
+									<div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-destructive text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+										Delete Sprint
+									</div>
+								</ConfirmationDialog>
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>

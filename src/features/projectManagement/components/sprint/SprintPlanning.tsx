@@ -10,7 +10,7 @@ import { NewSprintDialog } from './NewSprintDialog';
 import { SprintCard } from './SprintCard';
 
 interface SprintPlanningProps {
-	sprints: RouterOutputs['projectTemplate']['sprint']['getAllSprints'];
+	sprints: RouterOutputs['sprint']['getAllByProjectSlug'];
 }
 
 export function SprintPlanning({ sprints }: SprintPlanningProps) {

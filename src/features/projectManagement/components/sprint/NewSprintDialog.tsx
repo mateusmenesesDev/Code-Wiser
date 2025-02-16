@@ -24,7 +24,7 @@ import {
 import { Input } from '~/common/components/ui/input';
 import { Textarea } from '~/common/components/ui/textarea';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
-import { useSprintTemplate } from '../../hooks/sprintTemplate.hook';
+import { useSprint } from '../../hooks/sprint.hook';
 import { newSprintSchema } from '../../schemas/sprint.schema';
 import type { NewSprint } from '../../types/Sprint.type';
 
@@ -38,13 +38,23 @@ export function NewSprintDialog({ open, onOpenChange }: NewSprintDialogProps) {
 	const params = useParams();
 	const projectSlug = decodeURIComponent(params.slug as string);
 
-	const { createSprintTemplate } = useSprintTemplate(projectSlug);
+	const { createSprint } = useSprint({
+		projectSlug: projectSlug,
+		isTemplate: isTemplate
+	});
 	const form = useForm<NewSprint>({
-		resolver: zodResolver(newSprintSchema)
+		resolver: zodResolver(newSprintSchema),
+		defaultValues: {
+			projectSlug: isTemplate ? undefined : projectSlug,
+			projectTemplateSlug: isTemplate ? projectSlug : undefined
+		}
 	});
 
+	console.log(form.formState.errors);
+
 	const onSubmit = (data: NewSprint) => {
-		createSprintTemplate.mutate({
+		console.log('this is the data', data);
+		createSprint.mutate({
 			...data,
 			projectSlug: isTemplate ? undefined : projectSlug,
 			projectTemplateSlug: isTemplate ? projectSlug : undefined,

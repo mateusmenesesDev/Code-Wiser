@@ -16,9 +16,6 @@ export const sprintMutations = {
 				projectTemplateSlug
 			} = input;
 
-			console.log(projectSlug);
-			console.log(projectTemplateSlug);
-
 			if (!projectSlug && !projectTemplateSlug) {
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
