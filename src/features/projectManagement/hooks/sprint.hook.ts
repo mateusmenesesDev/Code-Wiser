@@ -11,7 +11,6 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 
 	const createSprint = api.sprint.create.useMutation({
 		onMutate: async (newSprint) => {
-			console.log('this is the new sprint', newSprint);
 			const newSprintWithPrismaFields = {
 				...newSprint,
 				createdAt: new Date(),
@@ -44,28 +43,36 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 			return { previousSprints };
 		},
 		onSettled: () => {
-			utils.sprint.getAllByProjectSlug.invalidate();
-			if (isTemplate) {
-				utils.sprint.getAllByProjectTemplateSlug.invalidate();
-			} else {
-				utils.sprint.getAllByProjectSlug.invalidate();
-			}
-		},
-		onSuccess: () => {
-			toast.success('Sprint created successfully');
+			const routeFunction = isTemplate
+				? utils.sprint.getAllByProjectTemplateSlug
+				: utils.sprint.getAllByProjectSlug;
+
+			routeFunction.invalidate();
 		},
 		onError: (error, _newSprint, ctx) => {
+			const routeFunction = isTemplate
+				? utils.sprint.getAllByProjectTemplateSlug
+				: utils.sprint.getAllByProjectSlug;
+
 			toast.error(error.message);
-			utils.sprint.getAllByProjectSlug.setData(
-				{ projectSlug: projectSlug },
+			routeFunction.setData(
+				{ projectTemplateSlug: projectSlug },
 				ctx?.previousSprints
 			);
 		}
 	});
 
-	const getAllSprints = api.sprint.getAllByProjectSlug.useQuery({
-		projectSlug: projectSlug
-	});
+	const getAllSprints = () => {
+		if (isTemplate) {
+			return api.sprint.getAllByProjectTemplateSlug.useQuery({
+				projectTemplateSlug: projectSlug
+			});
+		}
+
+		return api.sprint.getAllByProjectSlug.useQuery({
+			projectSlug: projectSlug
+		});
+	};
 
 	const deleteSprint = api.sprint.delete.useMutation({
 		onMutate: async ({ id }) => {
@@ -86,7 +93,6 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 			return { previousSprints };
 		},
 		onSuccess: () => {
-			toast.success('Sprint deleted successfully');
 			if (isTemplate) {
 				utils.sprint.getAllByProjectTemplateSlug.invalidate();
 			} else {
