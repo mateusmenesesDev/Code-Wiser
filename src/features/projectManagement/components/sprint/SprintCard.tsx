@@ -27,6 +27,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
+import { Input } from '~/common/components/ui/input';
 import { Progress } from '~/common/components/ui/progress';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import type { RouterOutputs } from '~/trpc/react';
@@ -41,6 +42,8 @@ interface SprintCardProps {
 export function SprintCard({ sprint }: SprintCardProps) {
 	const isTemplate = useIsTemplate();
 	const [isOpen, setIsOpen] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
+	const [title, setTitle] = useState(sprint.title);
 
 	const completedTasks = sprint.tasks.filter(
 		(task) => task.status === 'DONE'
@@ -51,13 +54,32 @@ export function SprintCard({ sprint }: SprintCardProps) {
 		? (sprint.projectTemplateSlug as string)
 		: (sprint.projectSlug as string);
 
-	const { deleteSprint } = useSprint({
+	const { deleteSprint, updateSprint } = useSprint({
 		projectSlug,
 		isTemplate
 	});
 
 	const handleDelete = () => {
 		deleteSprint.mutate({ id: sprint.id });
+	};
+
+	const handleTitleSubmit = (e?: React.FormEvent) => {
+		console.log('this is the title', title);
+		e?.preventDefault();
+		if (title.trim() === '') return;
+
+		updateSprint.mutate({
+			id: sprint.id,
+			title: title.trim()
+		});
+		setIsEditing(false);
+	};
+
+	const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Escape') {
+			setTitle(sprint.title);
+			setIsEditing(false);
+		}
 	};
 
 	return (
@@ -70,7 +92,32 @@ export function SprintCard({ sprint }: SprintCardProps) {
 						) : (
 							<ChevronRight className="h-4 w-4" />
 						)}
-						<CardTitle>{sprint.title}</CardTitle>
+						{isEditing ? (
+							<form
+								onSubmit={handleTitleSubmit}
+								onClick={(e) => e.stopPropagation()}
+								onKeyDown={(e) => e.stopPropagation()}
+							>
+								<Input
+									value={title}
+									onChange={(e) => setTitle(e.target.value)}
+									onBlur={handleTitleSubmit}
+									onKeyDown={handleTitleKeyDown}
+									className="h-7 w-[200px]"
+									autoFocus
+								/>
+							</form>
+						) : (
+							<CardTitle
+								onClick={(e) => {
+									e.stopPropagation();
+									setIsEditing(true);
+								}}
+								className="cursor-text hover:underline"
+							>
+								{sprint.title}
+							</CardTitle>
+						)}
 					</div>
 					<div className="flex items-center space-x-2">
 						{!isTemplate && (
@@ -94,7 +141,6 @@ export function SprintCard({ sprint }: SprintCardProps) {
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<DropdownMenuItem>Edit Sprint</DropdownMenuItem>
 								{!isTemplate && (
 									<>
 										<DropdownMenuItem>Start Sprint</DropdownMenuItem>

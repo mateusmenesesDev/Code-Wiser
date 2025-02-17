@@ -50,10 +50,7 @@ export function NewSprintDialog({ open, onOpenChange }: NewSprintDialogProps) {
 		}
 	});
 
-	console.log(form.formState.errors);
-
 	const onSubmit = (data: NewSprint) => {
-		console.log('this is the data', data);
 		createSprint.mutate({
 			...data,
 			projectSlug: isTemplate ? undefined : projectSlug,

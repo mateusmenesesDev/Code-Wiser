@@ -1,9 +1,30 @@
 import { toast } from 'sonner';
 import { api } from '~/trpc/react';
+import type { NewSprint, UpdateSprint } from '../types/Sprint.type';
 
 type UseSprintProps = {
 	projectSlug: string;
 	isTemplate: boolean;
+};
+
+const getPrismaFields = (
+	sprint: NewSprint | UpdateSprint,
+	isTemplate: boolean,
+	projectSlug: string
+) => {
+	return {
+		...sprint,
+		title: sprint.title || '',
+		createdAt: new Date(),
+		updatedAt: new Date(),
+		projectTemplateSlug: isTemplate ? projectSlug : null,
+		projectSlug: isTemplate ? null : projectSlug,
+		description: sprint.description || null,
+		startDate: sprint.startDate ? new Date(sprint.startDate) : null,
+		endDate: sprint.endDate ? new Date(sprint.endDate) : null,
+		id: '',
+		tasks: []
+	};
 };
 
 export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
@@ -11,20 +32,12 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 
 	const createSprint = api.sprint.create.useMutation({
 		onMutate: async (newSprint) => {
-			const newSprintWithPrismaFields = {
-				...newSprint,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				projectTemplateSlug: isTemplate
-					? (newSprint.projectTemplateSlug ?? null)
-					: null,
-				projectSlug: isTemplate ? null : (newSprint.projectSlug ?? null),
-				description: newSprint.description || null,
-				startDate: newSprint.startDate ? new Date(newSprint.startDate) : null,
-				endDate: newSprint.endDate ? new Date(newSprint.endDate) : null,
-				id: '',
-				tasks: []
-			};
+			const newSprintWithPrismaFields = getPrismaFields(
+				newSprint,
+				isTemplate,
+				projectSlug
+			);
+
 			const routeFunction = isTemplate
 				? utils.sprint.getAllByProjectTemplateSlug
 				: utils.sprint.getAllByProjectSlug;
@@ -108,9 +121,51 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 		}
 	});
 
+	const updateSprint = api.sprint.update.useMutation({
+		onMutate: async (updatedSprint) => {
+			const routeFunction = isTemplate
+				? utils.sprint.getAllByProjectTemplateSlug
+				: utils.sprint.getAllByProjectSlug;
+
+			const previousSprints = routeFunction.getData({
+				projectTemplateSlug: projectSlug
+			});
+
+			const updatedSprintWithPrismaFields = getPrismaFields(
+				updatedSprint,
+				isTemplate,
+				projectSlug
+			);
+
+			routeFunction.setData({ projectTemplateSlug: projectSlug }, (old) => {
+				if (!old) return [];
+				return old.map((s) =>
+					s.id === updatedSprint.id ? updatedSprintWithPrismaFields : s
+				);
+			});
+
+			return { previousSprints };
+		},
+		onSettled: () => {
+			const routeFunction = isTemplate
+				? utils.sprint.getAllByProjectTemplateSlug
+				: utils.sprint.getAllByProjectSlug;
+
+			routeFunction.invalidate();
+		},
+		onError: (error, _updatedSprint, ctx) => {
+			toast.error(error.message);
+			utils.sprint.getAllByProjectSlug.setData(
+				{ projectSlug: projectSlug },
+				ctx?.previousSprints
+			);
+		}
+	});
+
 	return {
 		createSprint,
 		getAllSprints,
-		deleteSprint
+		deleteSprint,
+		updateSprint
 	};
 };

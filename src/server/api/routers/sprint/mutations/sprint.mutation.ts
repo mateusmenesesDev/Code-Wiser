@@ -1,6 +1,9 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { newSprintSchema } from '~/features/projectManagement/schemas/sprint.schema';
+import {
+	newSprintSchema,
+	updateSprintSchema
+} from '~/features/projectManagement/schemas/sprint.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 
 export const sprintMutations = {
@@ -55,5 +58,16 @@ export const sprintMutations = {
 			const { id } = input;
 
 			await ctx.db.sprint.delete({ where: { id } });
+		}),
+
+	update: protectedProcedure
+		.input(updateSprintSchema)
+		.mutation(async ({ ctx, input }) => {
+			const { id, ...data } = input;
+
+			await ctx.db.sprint.update({
+				where: { id },
+				data
+			});
 		})
 };
