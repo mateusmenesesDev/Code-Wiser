@@ -19,7 +19,7 @@ import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 
 interface TaskCardProps {
-	task: RouterOutputs['sprint']['getSprints'][number]['tasks'][number];
+	task: RouterOutputs['sprint']['getAllByProjectSlug'][number]['tasks'][number];
 	className?: string;
 }
 

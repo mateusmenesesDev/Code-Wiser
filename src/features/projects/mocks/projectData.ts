@@ -58,8 +58,8 @@ export const mockProject: Project = {
 			endDate: new Date('2024-01-14'),
 			createdAt: new Date(),
 			updatedAt: new Date(),
-			projectId: '1',
-			projectTemplateId: '1'
+			projectTemplateSlug: '1',
+			projectSlug: '1'
 		},
 		{
 			id: '2',
@@ -69,8 +69,8 @@ export const mockProject: Project = {
 			endDate: new Date('2024-01-28'),
 			createdAt: new Date(),
 			updatedAt: new Date(),
-			projectId: '1',
-			projectTemplateId: '1'
+			projectTemplateSlug: '1',
+			projectSlug: '1'
 		}
 	],
 	scrumBoard: [
@@ -86,8 +86,8 @@ export const mockProject: Project = {
 			description: 'Implement complete user authentication system',
 			createdAt: new Date(),
 			updatedAt: new Date(),
-			projectId: '1',
 			projectTemplateId: '1',
+			projectId: '1',
 			startDate: new Date(),
 			endDate: new Date(),
 			progress: 0,
@@ -99,8 +99,8 @@ export const mockProject: Project = {
 			description: 'Core project management features',
 			createdAt: new Date(),
 			updatedAt: new Date(),
-			projectId: '1',
 			projectTemplateId: '1',
+			projectId: '1',
 			startDate: new Date(),
 			endDate: new Date(),
 			progress: 0,

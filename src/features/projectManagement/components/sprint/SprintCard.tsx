@@ -64,9 +64,12 @@ export function SprintCard({ sprint }: SprintCardProps) {
 	};
 
 	const handleTitleSubmit = (e?: React.FormEvent) => {
-		console.log('this is the title', title);
 		e?.preventDefault();
-		if (title.trim() === '') return;
+		if (title.trim() === '') {
+			setTitle(sprint.title);
+			setIsEditing(false);
+			return;
+		}
 
 		updateSprint.mutate({
 			id: sprint.id,
@@ -163,12 +166,14 @@ export function SprintCard({ sprint }: SprintCardProps) {
 				{sprint.description && (
 					<CardDescription>Goal: {sprint.description}</CardDescription>
 				)}
-				<div className="mt-2">
-					<Progress value={progress} className="h-2 w-full" />
-					<p className="mt-1 text-muted-foreground text-sm">
-						{completedTasks} of {sprint.tasks.length} tasks completed
-					</p>
-				</div>
+				{!isTemplate && (
+					<div className="mt-2">
+						<Progress value={progress} className="h-2 w-full" />
+						<p className="mt-1 text-muted-foreground text-sm">
+							{completedTasks} of {sprint.tasks.length} tasks completed
+						</p>
+					</div>
+				)}
 			</CardHeader>
 			<Collapsible open={isOpen} onOpenChange={setIsOpen}>
 				<CollapsibleContent>

@@ -20,7 +20,6 @@ export function NewTaskDialog({
 	onClose,
 	projectTemplateName
 }: NewTaskDialogProps) {
-	console.log('this is the project template name', projectTemplateName);
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
 			<DialogContent>
