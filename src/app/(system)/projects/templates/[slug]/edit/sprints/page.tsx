@@ -10,8 +10,6 @@ export default function SprintsPage() {
 		projectTemplateSlug: params.slug as string
 	});
 
-	console.log(sprints.data);
-
 	if (!sprints.data) return null;
 
 	return <SprintPlanning sprints={sprints.data} />;

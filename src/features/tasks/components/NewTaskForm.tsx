@@ -54,8 +54,6 @@ export default function NewTaskForm({
 		setIsDialogOpen(false);
 	};
 
-	console.log(form.formState.errors);
-
 	return (
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

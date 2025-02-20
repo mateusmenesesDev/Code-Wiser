@@ -5,7 +5,6 @@ export const epicTemplateMutations = {
 	createEpic: protectedProcedure
 		.input(epicSchema)
 		.mutation(async ({ ctx, input }) => {
-			console.log('input', input);
 			return await ctx.db.epic.create({
 				data: {
 					...input,

@@ -51,9 +51,8 @@ export function ProjectSettings({ project }: ProjectSettingsProps) {
 		}
 	});
 
-	function onSubmit(data: ProjectFormValues) {
+	function onSubmit(_data: ProjectFormValues) {
 		toast.success('Project settings updated');
-		console.log(data);
 	}
 
 	return (
