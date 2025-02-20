@@ -22,11 +22,11 @@ export function useTask({
 
 	const updateTaskMutation = api.task.updateTask.useMutation({
 		onMutate: (taskUpdate) => {
-			utils.task.invalidate();
-
 			const apiFunction = isTemplate
 				? utils.projectTemplate.getBySlug
 				: utils.project.getBySlug;
+
+			apiFunction.cancel();
 
 			const previousData = apiFunction.getData({
 				slug: projectSlug as string
@@ -34,7 +34,6 @@ export function useTask({
 
 			apiFunction.setData({ slug: projectSlug as string }, (old) => {
 				if (!old) return old;
-
 				return {
 					...old,
 					tasks: old.tasks.map((task) => {
@@ -52,6 +51,44 @@ export function useTask({
 			return { previousData };
 		},
 		onError: (_error, _taskUpdate, ctx) => {
+			const apiFunction = isTemplate
+				? utils.projectTemplate.getBySlug
+				: utils.project.getBySlug;
+
+			apiFunction.setData({ slug: projectSlug as string }, ctx?.previousData);
+		},
+		onSuccess: () => {
+			const apiFunction = isTemplate
+				? utils.projectTemplate.getBySlug
+				: utils.project.getBySlug;
+
+			apiFunction.invalidate();
+		}
+	});
+
+	const deleteTaskMutation = api.task.delete.useMutation({
+		onMutate: ({ taskId }) => {
+			const apiFunction = isTemplate
+				? utils.projectTemplate.getBySlug
+				: utils.project.getBySlug;
+
+			apiFunction.cancel();
+
+			const previousData = apiFunction.getData({
+				slug: projectSlug as string
+			});
+
+			apiFunction.setData({ slug: projectSlug as string }, (old) => {
+				if (!old) return old;
+				return {
+					...old,
+					tasks: old.tasks.filter((task) => task.id !== taskId)
+				};
+			});
+
+			return { previousData };
+		},
+		onError: (_error, _taskId, ctx) => {
 			const apiFunction = isTemplate
 				? utils.projectTemplate.getBySlug
 				: utils.project.getBySlug;
@@ -94,12 +131,15 @@ export function useTask({
 	const updateTask = (updateTaskInput: UpdateTaskInput) =>
 		updateTaskMutation.mutate(updateTaskInput);
 
+	const deleteTask = (taskId: string) => deleteTaskMutation.mutate({ taskId });
+
 	return {
 		createTask,
 		updateTaskPriority,
 		updateTaskPriorityMutation,
 		updateTask,
 		getAllTasksByProjectSlug,
-		getAllTasksByProjectTemplateSlug
+		getAllTasksByProjectTemplateSlug,
+		deleteTask
 	};
 }

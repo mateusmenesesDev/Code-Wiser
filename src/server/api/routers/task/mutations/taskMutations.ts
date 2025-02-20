@@ -75,5 +75,12 @@ export const taskMutations = {
 				data: { ...rest }
 			});
 			return task;
+		}),
+
+	delete: protectedProcedure
+		.input(z.object({ taskId: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			const { taskId } = input;
+			await ctx.db.task.delete({ where: { id: taskId } });
 		})
 };

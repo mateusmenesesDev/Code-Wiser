@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronRight, MoreHorizontal, Tag, X } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Tag } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Checkbox } from '~/common/components/ui/checkbox';
@@ -25,61 +25,7 @@ import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useTask } from '~/features/tasks/hooks/useTask';
 import { api } from '~/trpc/react';
 import { PriorityCell } from './PriorityCell';
-
-function SprintEpicCell({
-	type,
-	value,
-	items,
-	onUpdate
-}: {
-	type: 'sprint' | 'epic';
-	value: string | null;
-	items: Array<{ id: string; title: string }>;
-	onUpdate: (id: string | null) => void;
-}) {
-	const [isOpen, setIsOpen] = useState(false);
-	const selectedItem = items.find((item) => item.id === value);
-
-	return (
-		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="ghost"
-					size="sm"
-					className="h-7 w-[120px] justify-between gap-1 text-xs"
-				>
-					{selectedItem ? (
-						<>
-							<span className="truncate">{selectedItem.title}</span>
-							<X
-								className="h-3 w-3 shrink-0 opacity-50"
-								onClick={(e) => {
-									e.stopPropagation();
-									onUpdate(null);
-								}}
-							/>
-						</>
-					) : (
-						`Add to ${type === 'sprint' ? 'Sprint' : 'Epic'}`
-					)}
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start" className="w-[200px]">
-				{items.map((item) => (
-					<DropdownMenuItem
-						key={item.id}
-						onClick={() => {
-							onUpdate(item.id);
-							setIsOpen(false);
-						}}
-					>
-						{item.title}
-					</DropdownMenuItem>
-				))}
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
-}
+import { SprintEpicCell } from './SprintEpicCell';
 
 export function BacklogView() {
 	const isTemplate = useIsTemplate();
@@ -93,7 +39,7 @@ export function BacklogView() {
 				slug: slug as string
 			});
 
-	const { updateTask } = useTask({
+	const { updateTask, deleteTask } = useTask({
 		isTemplate,
 		projectSlug: slug as string
 	});
@@ -259,11 +205,21 @@ export function BacklogView() {
 													<MoreHorizontal className="h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
-												<DropdownMenuItem>Edit</DropdownMenuItem>
-												<DropdownMenuItem className="text-destructive">
-													Delete
+											<DropdownMenuContent align="end" className="p-0">
+												<DropdownMenuItem className="p-0">
+													<Button variant="ghost" className="w-full">
+														Edit
+													</Button>
 												</DropdownMenuItem>
+												<ConfirmationDialog
+													title="Delete Task"
+													description="Are you sure you want to delete this task?"
+													onConfirm={() => deleteTask(task.id)}
+												>
+													<Button variant="destructive" className="w-full">
+														Delete
+													</Button>
+												</ConfirmationDialog>
 											</DropdownMenuContent>
 										</DropdownMenu>
 									</TableCell>
