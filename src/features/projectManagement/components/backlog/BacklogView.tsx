@@ -22,6 +22,7 @@ import {
 	TableHeader,
 	TableRow
 } from '~/common/components/ui/table';
+import { useAnimate } from '~/common/hooks/useAnimate';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useTask } from '~/features/tasks/hooks/useTask';
 import { api } from '~/trpc/react';
@@ -32,6 +33,7 @@ export function BacklogView() {
 	const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 	const isTemplate = useIsTemplate();
 	const { slug } = useParams();
+	const [parent] = useAnimate();
 
 	const { data: project, isLoading } = isTemplate
 		? api.projectTemplate.getBySlug.useQuery({
@@ -67,7 +69,7 @@ export function BacklogView() {
 	if (!project) return null;
 
 	return (
-		<div className="h-full w-full">
+		<div className="h-full w-full" ref={parent}>
 			{selectedTasks.length > 0 && (
 				<div className="mb-4 flex items-center justify-between">
 					<span className="text-muted-foreground text-sm">
@@ -111,7 +113,9 @@ export function BacklogView() {
 										<TableHead className="w-[150px]">Epic</TableHead>
 									</>
 								)}
-								<TableHead className="w-[100px]">Status</TableHead>
+								{!isTemplate && (
+									<TableHead className="w-[100px]">Status</TableHead>
+								)}
 								<TableHead className="w-[70px]" />
 							</TableRow>
 						</TableHeader>
@@ -231,14 +235,16 @@ export function BacklogView() {
 											</TableCell>
 										</>
 									)}
-									<TableCell className="w-[100px]">
-										<Badge
-											variant="outline"
-											className="w-[80px] justify-center"
-										>
-											{task.status}
-										</Badge>
-									</TableCell>
+									{!isTemplate && (
+										<TableCell className="w-[100px]">
+											<Badge
+												variant="outline"
+												className="w-[80px] justify-center"
+											>
+												{task.status}
+											</Badge>
+										</TableCell>
+									)}
 									<TableCell className="w-[70px]">
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
