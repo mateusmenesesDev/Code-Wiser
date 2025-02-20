@@ -33,9 +33,8 @@ export default function NewTaskForm({
 }) {
 	const { createTask } = useTask();
 	const { setIsDialogOpen } = useDialog();
-	console.log('this is the project template name 2', projectTemplateName);
+
 	const handleAddTask = async (data: CreateTask) => {
-		console.log('this is the data 2', data);
 		await createTask.mutateAsync({
 			...data,
 			tags: data.tags?.split(',')
@@ -50,7 +49,6 @@ export default function NewTaskForm({
 	});
 
 	const onSubmit: SubmitHandler<CreateTask> = async (data: CreateTask) => {
-		console.log('this is the data 2', data);
 		await handleAddTask(data);
 		form.reset();
 		setIsDialogOpen(false);

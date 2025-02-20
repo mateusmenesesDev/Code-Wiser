@@ -9,10 +9,10 @@ import {
 	Settings
 } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '~/common/components/ui/tabs';
+import { useDialog } from '~/common/hooks/useDialog';
 import { NewTaskDialog } from '~/features/tasks/components/NewTaskDialog';
 import { api } from '~/trpc/react';
 
@@ -21,7 +21,7 @@ export default function ProjectEditLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+	const { setIsDialogOpen } = useDialog();
 	const params = useParams();
 	const router = useRouter();
 	const pathname = usePathname();
@@ -96,7 +96,7 @@ export default function ProjectEditLayout({
 									className="w-[200px] pl-9"
 								/>
 							</div>
-							<Button onClick={() => setIsNewTaskDialogOpen(true)}>
+							<Button onClick={() => setIsDialogOpen(true)}>
 								<Plus className="mr-2 h-4 w-4" />
 								Add Task
 							</Button>
@@ -106,11 +106,7 @@ export default function ProjectEditLayout({
 				<main className="flex-1 overflow-auto pt-8">{children}</main>
 			</Tabs>
 
-			<NewTaskDialog
-				isOpen={isNewTaskDialogOpen}
-				onClose={() => setIsNewTaskDialogOpen(false)}
-				projectTemplateName={project.title}
-			/>
+			<NewTaskDialog projectTemplateName={project.title} />
 		</div>
 	);
 }

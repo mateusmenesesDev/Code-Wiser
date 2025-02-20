@@ -7,21 +7,18 @@ import {
 	DialogHeader,
 	DialogTitle
 } from '~/common/components/ui/dialog';
+import { useDialog } from '~/common/hooks/useDialog';
 import NewTaskForm from './NewTaskForm';
 
 interface NewTaskDialogProps {
-	isOpen: boolean;
-	onClose: () => void;
 	projectTemplateName: string;
 }
 
-export function NewTaskDialog({
-	isOpen,
-	onClose,
-	projectTemplateName
-}: NewTaskDialogProps) {
+export function NewTaskDialog({ projectTemplateName }: NewTaskDialogProps) {
+	const { isDialogOpen, setIsDialogOpen } = useDialog();
+
 	return (
-		<Dialog open={isOpen} onOpenChange={onClose}>
+		<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Add New Task</DialogTitle>
