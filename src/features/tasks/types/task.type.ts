@@ -1,5 +1,6 @@
 import { TaskPriorityEnum, TaskTypeEnum } from '@prisma/client';
 import { z } from 'zod';
+import type { updateTaskSchema } from '../schemas/task.schema';
 
 export const taskSchema = z.object({
 	title: z.string().min(1, 'Title is required'),
@@ -11,3 +12,4 @@ export const taskSchema = z.object({
 });
 
 export type CreateTask = z.infer<typeof taskSchema>;
+export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;

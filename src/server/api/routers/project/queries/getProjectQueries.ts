@@ -29,7 +29,10 @@ export const getProjectQueries = {
 						select: {
 							id: true
 						}
-					}
+					},
+					tasks: true,
+					sprints: true,
+					epics: true
 				}
 			});
 		}),

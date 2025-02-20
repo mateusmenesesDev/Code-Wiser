@@ -1,7 +1,8 @@
 'use client';
 
-import { ChevronRight, MoreHorizontal, Tag } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Tag, X } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Checkbox } from '~/common/components/ui/checkbox';
@@ -13,13 +14,6 @@ import {
 } from '~/common/components/ui/dropdown-menu';
 import { ScrollArea } from '~/common/components/ui/scroll-area';
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue
-} from '~/common/components/ui/select';
-import {
 	Table,
 	TableBody,
 	TableCell,
@@ -27,14 +21,81 @@ import {
 	TableHeader,
 	TableRow
 } from '~/common/components/ui/table';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { useTask } from '~/features/tasks/hooks/useTask';
 import { api } from '~/trpc/react';
 import { PriorityCell } from './PriorityCell';
 
+function SprintEpicCell({
+	type,
+	value,
+	items,
+	onUpdate
+}: {
+	type: 'sprint' | 'epic';
+	value: string | null;
+	items: Array<{ id: string; title: string }>;
+	onUpdate: (id: string | null) => void;
+}) {
+	const [isOpen, setIsOpen] = useState(false);
+	const selectedItem = items.find((item) => item.id === value);
+
+	return (
+		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="sm"
+					className="h-7 w-[120px] justify-between gap-1 text-xs"
+				>
+					{selectedItem ? (
+						<>
+							<span className="truncate">{selectedItem.title}</span>
+							<X
+								className="h-3 w-3 shrink-0 opacity-50"
+								onClick={(e) => {
+									e.stopPropagation();
+									onUpdate(null);
+								}}
+							/>
+						</>
+					) : (
+						`Add to ${type === 'sprint' ? 'Sprint' : 'Epic'}`
+					)}
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start" className="w-[200px]">
+				{items.map((item) => (
+					<DropdownMenuItem
+						key={item.id}
+						onClick={() => {
+							onUpdate(item.id);
+							setIsOpen(false);
+						}}
+					>
+						{item.title}
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
 export function BacklogView() {
+	const isTemplate = useIsTemplate();
 	const { slug } = useParams();
 
-	const { data: project, isLoading } = api.projectTemplate.getBySlug.useQuery({
-		slug: slug as string
+	const { data: project, isLoading } = isTemplate
+		? api.projectTemplate.getBySlug.useQuery({
+				slug: slug as string
+			})
+		: api.project.getBySlug.useQuery({
+				slug: slug as string
+			});
+
+	const { updateTask } = useTask({
+		isTemplate,
+		projectSlug: slug as string
 	});
 
 	if (isLoading) return <div>Loading...</div>;
@@ -51,7 +112,9 @@ export function BacklogView() {
 								<TableHead className="w-[50px]">
 									<Checkbox />
 								</TableHead>
-								<TableHead className="w-[200px]">Assignee</TableHead>
+								{!isTemplate && (
+									<TableHead className="w-[200px]">Assignee</TableHead>
+								)}
 
 								<TableHead className="min-w-[500px]">Task</TableHead>
 								<TableHead className="w-[100px]">Priority</TableHead>
@@ -72,24 +135,26 @@ export function BacklogView() {
 									<TableCell className="w-[50px]">
 										<Checkbox />
 									</TableCell>
-									<TableCell className="w-[200px]">
-										{task.assigneeId ? (
-											<div className="flex items-center gap-2">
-												<div className="h-6 w-6 rounded-full bg-muted" />
-												<span className="truncate text-sm">
-													{task.assigneeId}
-												</span>
-											</div>
-										) : (
-											<Button
-												variant="ghost"
-												size="sm"
-												className="h-6 px-2 text-xs"
-											>
-												Assign
-											</Button>
-										)}
-									</TableCell>
+									{!isTemplate && (
+										<TableCell className="w-[200px]">
+											{task.assigneeId ? (
+												<div className="flex items-center gap-2">
+													<div className="h-6 w-6 rounded-full bg-muted" />
+													<span className="truncate text-sm">
+														{task.assigneeId}
+													</span>
+												</div>
+											) : (
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-6 px-2 text-xs"
+												>
+													Assign
+												</Button>
+											)}
+										</TableCell>
+									)}
 									<TableCell className="min-w-[500px]">
 										<div className="flex items-center gap-2">
 											<ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
@@ -105,6 +170,8 @@ export function BacklogView() {
 										<PriorityCell
 											priority={task.priority ?? '-'}
 											taskId={task.id}
+											isTemplate={isTemplate}
+											projectSlug={slug as string}
 										/>
 									</TableCell>
 									<TableCell className="w-[200px]">
@@ -120,32 +187,18 @@ export function BacklogView() {
 									{project.methodology === 'SCRUM' && (
 										<>
 											<TableCell className="w-[150px]">
-												{task.sprintId ? (
-													<Badge
-														variant="outline"
-														className="w-[120px] justify-center"
-													>
-														{project.sprints?.find(
-															(sprint) => sprint.id === task.sprintId
-														)?.title || 'Sprint'}
-													</Badge>
-												) : project.sprints && project.sprints.length > 0 ? (
-													<Select
-														onValueChange={() => {
-															// TODO: Add sprint connection mutation
-														}}
-													>
-														<SelectTrigger className="h-7 w-[120px]">
-															<SelectValue placeholder="Add to Sprint" />
-														</SelectTrigger>
-														<SelectContent>
-															{project.sprints.map((sprint) => (
-																<SelectItem key={sprint.id} value={sprint.id}>
-																	{sprint.title}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
+												{project.sprints && project.sprints.length > 0 ? (
+													<SprintEpicCell
+														type="sprint"
+														value={task.sprintId}
+														items={project.sprints}
+														onUpdate={(sprintId) =>
+															updateTask({
+																taskId: task.id,
+																sprintId: sprintId ?? undefined
+															})
+														}
+													/>
 												) : (
 													<Button
 														variant="outline"
@@ -160,32 +213,18 @@ export function BacklogView() {
 												)}
 											</TableCell>
 											<TableCell className="w-[150px]">
-												{task.epicId ? (
-													<Badge
-														variant="outline"
-														className="w-[120px] justify-center"
-													>
-														{project.epics?.find(
-															(epic) => epic.id === task.epicId
-														)?.title || 'Epic'}
-													</Badge>
-												) : project.epics && project.epics.length > 0 ? (
-													<Select
-														onValueChange={() => {
-															// TODO: Add epic connection mutation
-														}}
-													>
-														<SelectTrigger className="h-7 w-[120px]">
-															<SelectValue placeholder="Add to Epic" />
-														</SelectTrigger>
-														<SelectContent>
-															{project.epics.map((epic) => (
-																<SelectItem key={epic.id} value={epic.id}>
-																	{epic.title}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
+												{project.epics && project.epics.length > 0 ? (
+													<SprintEpicCell
+														type="epic"
+														value={task.epicId}
+														items={project.epics}
+														onUpdate={(epicId) =>
+															updateTask({
+																taskId: task.id,
+																epicId: epicId ?? undefined
+															})
+														}
+													/>
 												) : (
 													<Button
 														variant="outline"

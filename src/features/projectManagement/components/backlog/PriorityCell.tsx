@@ -26,12 +26,19 @@ const getPriorityVariant = (priority: TaskPriorityEnum | string) => {
 
 export function PriorityCell({
 	priority,
-	taskId
+	taskId,
+	isTemplate,
+	projectSlug
 }: {
 	priority: TaskPriorityEnum | string;
 	taskId: string;
+	isTemplate: boolean;
+	projectSlug: string;
 }) {
-	const { updateTaskPriority } = useTask();
+	const { updateTask } = useTask({
+		isTemplate,
+		projectSlug
+	});
 
 	return (
 		<DropdownMenu>
@@ -47,7 +54,12 @@ export function PriorityCell({
 				{Object.values(TaskPriorityEnum).map((priority) => (
 					<DropdownMenuItem
 						key={priority}
-						onClick={() => updateTaskPriority(taskId, priority)}
+						onClick={() =>
+							updateTask({
+								taskId,
+								priority
+							})
+						}
 					>
 						<Badge
 							variant={getPriorityVariant(priority)}
