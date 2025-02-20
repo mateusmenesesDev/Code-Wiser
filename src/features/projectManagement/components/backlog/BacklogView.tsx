@@ -2,6 +2,7 @@
 
 import { ChevronRight, MoreHorizontal, Tag } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -28,6 +29,7 @@ import { PriorityCell } from './PriorityCell';
 import { SprintEpicCell } from './SprintEpicCell';
 
 export function BacklogView() {
+	const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 	const isTemplate = useIsTemplate();
 	const { slug } = useParams();
 
@@ -39,10 +41,26 @@ export function BacklogView() {
 				slug: slug as string
 			});
 
-	const { updateTask, deleteTask } = useTask({
+	const { updateTask, deleteTask, bulkDeleteTasks } = useTask({
 		isTemplate,
 		projectSlug: slug as string
 	});
+
+	const handleSelectAll = (checked: boolean) => {
+		if (checked) {
+			setSelectedTasks(project?.tasks.map((t) => t.id) ?? []);
+		} else {
+			setSelectedTasks([]);
+		}
+	};
+
+	const handleSelectTask = (taskId: string, checked: boolean) => {
+		if (checked) {
+			setSelectedTasks((prev) => [...prev, taskId]);
+		} else {
+			setSelectedTasks((prev) => prev.filter((id) => id !== taskId));
+		}
+	};
 
 	if (isLoading) return <div>Loading...</div>;
 
@@ -50,13 +68,35 @@ export function BacklogView() {
 
 	return (
 		<div className="h-full w-full">
+			{selectedTasks.length > 0 && (
+				<div className="mb-4 flex items-center justify-between">
+					<span className="text-muted-foreground text-sm">
+						{selectedTasks.length} task(s) selected
+					</span>
+					<ConfirmationDialog
+						title="Delete Tasks"
+						description={`Are you sure you want to delete ${selectedTasks.length} task(s)?`}
+						onConfirm={() => {
+							bulkDeleteTasks(selectedTasks);
+							setSelectedTasks([]);
+						}}
+					>
+						<Button variant="destructive" size="sm">
+							Delete Selected
+						</Button>
+					</ConfirmationDialog>
+				</div>
+			)}
 			<ScrollArea className="h-[calc(100vh-15rem)]">
 				<div className="rounded-md border">
 					<Table>
 						<TableHeader>
 							<TableRow>
 								<TableHead className="w-[50px]">
-									<Checkbox />
+									<Checkbox
+										checked={selectedTasks.length === project?.tasks.length}
+										onCheckedChange={handleSelectAll}
+									/>
 								</TableHead>
 								{!isTemplate && (
 									<TableHead className="w-[200px]">Assignee</TableHead>
@@ -79,7 +119,12 @@ export function BacklogView() {
 							{project.tasks.map((task) => (
 								<TableRow key={task.id} className="group">
 									<TableCell className="w-[50px]">
-										<Checkbox />
+										<Checkbox
+											checked={selectedTasks.includes(task.id)}
+											onCheckedChange={(checked) =>
+												handleSelectTask(task.id, checked as boolean)
+											}
+										/>
 									</TableCell>
 									{!isTemplate && (
 										<TableCell className="w-[200px]">

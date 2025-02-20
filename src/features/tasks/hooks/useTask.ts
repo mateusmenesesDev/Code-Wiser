@@ -133,6 +133,44 @@ export function useTask({
 
 	const deleteTask = (taskId: string) => deleteTaskMutation.mutate({ taskId });
 
+	const bulkDeleteTasksMutation = api.task.bulkDelete.useMutation({
+		onMutate: ({ taskIds }) => {
+			const apiFunction = isTemplate
+				? utils.projectTemplate.getBySlug
+				: utils.project.getBySlug;
+
+			apiFunction.cancel();
+
+			const previousData = apiFunction.getData({
+				slug: projectSlug as string
+			});
+
+			apiFunction.setData({ slug: projectSlug as string }, (old) => {
+				if (!old) return old;
+				return {
+					...old,
+					tasks: old.tasks.filter((task) => !taskIds.includes(task.id))
+				};
+			});
+
+			return { previousData };
+		},
+		onError: (_error, _vars, ctx) => {
+			const apiFunction = isTemplate
+				? utils.projectTemplate.getBySlug
+				: utils.project.getBySlug;
+
+			apiFunction.setData({ slug: projectSlug as string }, ctx?.previousData);
+		},
+		onSuccess: () => {
+			const apiFunction = isTemplate
+				? utils.projectTemplate.getBySlug
+				: utils.project.getBySlug;
+
+			apiFunction.invalidate();
+		}
+	});
+
 	return {
 		createTask,
 		updateTaskPriority,
@@ -140,6 +178,8 @@ export function useTask({
 		updateTask,
 		getAllTasksByProjectSlug,
 		getAllTasksByProjectTemplateSlug,
-		deleteTask
+		deleteTask,
+		bulkDeleteTasks: (taskIds: string[]) =>
+			bulkDeleteTasksMutation.mutate({ taskIds })
 	};
 }

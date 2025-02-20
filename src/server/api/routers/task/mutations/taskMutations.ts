@@ -82,5 +82,21 @@ export const taskMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { taskId } = input;
 			await ctx.db.task.delete({ where: { id: taskId } });
+		}),
+
+	bulkDelete: protectedProcedure
+		.input(
+			z.object({
+				taskIds: z.array(z.string())
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			return ctx.db.task.deleteMany({
+				where: {
+					id: {
+						in: input.taskIds
+					}
+				}
+			});
 		})
 };
