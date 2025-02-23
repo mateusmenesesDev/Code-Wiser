@@ -10,6 +10,7 @@ export const projectTemplateMutations = {
 		.input(projectSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { userId } = ctx.session;
+			console.log('userId', userId);
 			try {
 				return await ctx.db.$transaction(async (prisma) => {
 					const projectTemplate = await prisma.projectTemplate.create({

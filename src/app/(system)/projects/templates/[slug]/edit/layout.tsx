@@ -12,8 +12,7 @@ import { useParams, usePathname, useRouter } from 'next/navigation';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '~/common/components/ui/tabs';
-import { useDialog } from '~/common/hooks/useDialog';
-import { NewTaskDialog } from '~/features/tasks/components/NewTaskDialog';
+import { TaskDialog } from '~/features/tasks/components/TaskDialog';
 import { api } from '~/trpc/react';
 
 export default function ProjectEditLayout({
@@ -21,7 +20,6 @@ export default function ProjectEditLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const { setIsDialogOpen } = useDialog();
 	const params = useParams();
 	const router = useRouter();
 	const pathname = usePathname();
@@ -96,17 +94,21 @@ export default function ProjectEditLayout({
 									className="w-[200px] pl-9"
 								/>
 							</div>
-							<Button onClick={() => setIsDialogOpen(true)}>
-								<Plus className="mr-2 h-4 w-4" />
-								Add Task
-							</Button>
+							<TaskDialog
+								projectSlug={params.slug as string}
+								isTemplate={true}
+								trigger={
+									<Button>
+										<Plus className="mr-2 h-4 w-4" />
+										Create Task
+									</Button>
+								}
+							/>
 						</div>
 					</div>
 				</div>
 				<main className="flex-1 overflow-auto pt-8">{children}</main>
 			</Tabs>
-
-			<NewTaskDialog projectTemplateName={project.title} />
 		</div>
 	);
 }

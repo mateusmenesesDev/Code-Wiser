@@ -10,7 +10,6 @@ import { Checkbox } from '~/common/components/ui/checkbox';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuItem,
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
 import { ScrollArea } from '~/common/components/ui/scroll-area';
@@ -24,6 +23,7 @@ import {
 } from '~/common/components/ui/table';
 import { useAnimate } from '~/common/hooks/useAnimate';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { TaskDialog } from '~/features/tasks/components/TaskDialog';
 import { useTask } from '~/features/tasks/hooks/useTask';
 import { api } from '~/trpc/react';
 import { PriorityCell } from './PriorityCell';
@@ -257,11 +257,16 @@ export function BacklogView() {
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end" className="p-0">
-												<DropdownMenuItem className="p-0">
-													<Button variant="ghost" className="w-full">
-														Edit
-													</Button>
-												</DropdownMenuItem>
+												<TaskDialog
+													task={task}
+													isTemplate={isTemplate}
+													projectSlug={slug as string}
+													trigger={
+														<Button variant="ghost" className="w-full">
+															Edit
+														</Button>
+													}
+												/>
 												<ConfirmationDialog
 													title="Delete Task"
 													description="Are you sure you want to delete this task?"

@@ -1,10 +1,7 @@
-import { TaskPriorityEnum } from '@prisma/client';
 import { z } from 'zod';
 import {
 	createTaskSchema,
-	updateTaskEpicSchema,
-	updateTaskSchema,
-	updateTaskSprintSchema
+	updateTaskSchema
 } from '~/features/tasks/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 
@@ -12,15 +9,34 @@ export const taskMutations = {
 	create: protectedProcedure
 		.input(createTaskSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { projectTemplateName, epicId, sprintId, ...rest } = input;
+			const {
+				projectTemplateSlug,
+				projectSlug,
+				epicId,
+				sprintId,
+				assigneeId,
+				...rest
+			} = input;
+			const projectConnection = projectTemplateSlug
+				? {
+						projectTemplate: {
+							connect: {
+								slug: projectTemplateSlug
+							}
+						}
+					}
+				: {
+						project: {
+							connect: {
+								slug: projectSlug
+							}
+						}
+					};
 			const task = await ctx.db.task.create({
 				data: {
 					...rest,
-					projectTemplate: {
-						connect: {
-							title: projectTemplateName
-						}
-					},
+					...projectConnection,
+					assignee: assigneeId ? { connect: { id: assigneeId } } : undefined,
 					epic: epicId ? { connect: { id: epicId } } : undefined,
 					sprint: sprintId ? { connect: { id: sprintId } } : undefined
 				}
@@ -28,45 +44,7 @@ export const taskMutations = {
 			return task;
 		}),
 
-	updatePriority: protectedProcedure
-		.input(
-			z.object({
-				taskId: z.string(),
-				priority: z.nativeEnum(TaskPriorityEnum)
-			})
-		)
-		.mutation(async ({ ctx, input }) => {
-			const { taskId, priority } = input;
-			const task = await ctx.db.task.update({
-				where: { id: taskId },
-				data: { priority }
-			});
-			return task;
-		}),
-
-	updateTaskSprint: protectedProcedure
-		.input(updateTaskSprintSchema)
-		.mutation(async ({ ctx, input }) => {
-			const { taskId, sprintId } = input;
-			const task = await ctx.db.task.update({
-				where: { id: taskId },
-				data: { sprint: { connect: { id: sprintId } } }
-			});
-			return task;
-		}),
-
-	updateTaskEpic: protectedProcedure
-		.input(updateTaskEpicSchema)
-		.mutation(async ({ ctx, input }) => {
-			const { taskId, epicId } = input;
-			const task = await ctx.db.task.update({
-				where: { id: taskId },
-				data: { epic: { connect: { id: epicId } } }
-			});
-			return task;
-		}),
-
-	updateTask: protectedProcedure
+	update: protectedProcedure
 		.input(updateTaskSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { taskId, ...rest } = input;

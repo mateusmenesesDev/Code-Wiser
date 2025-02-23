@@ -23,7 +23,10 @@ export const mockProject: Project = {
 			dueDate: new Date(),
 			assigneeId: '1',
 			projectId: '1',
-			epicId: '1'
+			epicId: '1',
+			blocked: false,
+			blockedReason: null,
+			storyPoints: 10
 		},
 		{
 			id: 'task2',
@@ -40,7 +43,10 @@ export const mockProject: Project = {
 			dueDate: new Date(),
 			assigneeId: '1',
 			projectId: '1',
-			epicId: '1'
+			epicId: '1',
+			blocked: false,
+			blockedReason: null,
+			storyPoints: 10
 		}
 	],
 	columns: [
