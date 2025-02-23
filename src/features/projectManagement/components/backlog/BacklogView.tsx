@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronRight, MoreHorizontal, Tag } from 'lucide-react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
@@ -30,6 +30,15 @@ import { PriorityCell } from './PriorityCell';
 import { SprintEpicCell } from './SprintEpicCell';
 
 export function BacklogView() {
+	const router = useRouter();
+	const handleNavigation = (route: string) => {
+		if (isTemplate) {
+			router.push(`/projects/templates/${slug}/edit/${route}`);
+		} else {
+			router.push(`/projects/${slug}/edit/${route}`);
+		}
+	};
+
 	const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 	const isTemplate = useIsTemplate();
 	const { slug } = useParams();
@@ -200,7 +209,7 @@ export function BacklogView() {
 														size="sm"
 														className="h-7 w-[120px]"
 														onClick={() => {
-															// TODO: Navigate to sprints page or open create sprint dialog
+															handleNavigation('sprints');
 														}}
 													>
 														Create Sprint
@@ -226,7 +235,7 @@ export function BacklogView() {
 														size="sm"
 														className="h-7 w-[120px]"
 														onClick={() => {
-															// TODO: Navigate to epics page or open create epic dialog
+															handleNavigation('epics');
 														}}
 													>
 														Create Epic
