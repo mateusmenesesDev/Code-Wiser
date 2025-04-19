@@ -37,6 +37,7 @@ import {
 import { Switch } from '~/common/components/ui/switch';
 import { Textarea } from '~/common/components/ui/textarea';
 import { cn } from '~/lib/utils';
+import { api } from '~/trpc/react';
 import { useTask } from '../hooks/useTask';
 import { createTaskSchema, updateTaskSchema } from '../schemas/task.schema';
 import type { CreateTaskInput, UpdateTaskInput } from '../types/task.type';
@@ -101,6 +102,20 @@ export function TaskDialog({
 		form.reset();
 		setOpen(false);
 	};
+
+	const sprints = isTemplate
+		? api.sprint.getAllByProjectTemplateSlug.useQuery(
+				{
+					projectTemplateSlug: projectSlug
+				},
+				{ enabled: isTemplate }
+			)
+		: api.sprint.getAllByProjectSlug.useQuery(
+				{
+					projectSlug: projectSlug
+				},
+				{ enabled: !isTemplate }
+			);
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -391,13 +406,11 @@ export function TaskDialog({
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent>
-														<SelectItem value="none">No Sprint</SelectItem>
-														{/* TODO: Add sprints */}
-														{/* {sprints.map((sprint) => (
+														{sprints.data?.map((sprint) => (
 															<SelectItem key={sprint.id} value={sprint.id}>
 																{sprint.title}
 															</SelectItem>
-														))} */}
+														))}
 													</SelectContent>
 												</Select>
 											</FormItem>
