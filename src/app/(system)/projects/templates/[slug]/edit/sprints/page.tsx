@@ -1,16 +1,12 @@
-'use client';
-
-import { useParams } from 'next/navigation';
 import { SprintPlanning } from '~/features/projectManagement/components/sprint/SprintPlanning';
-import { api } from '~/trpc/react';
+import { api } from '~/trpc/server';
 
-export default function SprintsPage() {
-	const params = useParams();
-	const sprints = api.sprint.getAllByProjectTemplateSlug.useQuery({
-		projectTemplateSlug: params.slug as string
+export default async function SprintsPage({
+	params
+}: { params: { slug: string } }) {
+	const sprints = await api.sprint.getAllByProjectTemplateSlug({
+		projectTemplateSlug: params.slug
 	});
 
-	if (!sprints.data) return null;
-
-	return <SprintPlanning sprints={sprints.data} />;
+	return <SprintPlanning sprints={sprints} />;
 }
