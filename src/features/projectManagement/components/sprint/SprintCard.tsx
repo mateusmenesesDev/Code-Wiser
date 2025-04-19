@@ -30,6 +30,7 @@ import {
 import { Input } from '~/common/components/ui/input';
 import { Progress } from '~/common/components/ui/progress';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { TaskDialog } from '~/features/tasks/components/TaskDialog';
 import type { RouterOutputs } from '~/trpc/react';
 import { TaskCard } from '../../../tasks/components/TaskCard';
 import { useSprint } from '../../hooks/sprint.hook';
@@ -182,10 +183,16 @@ export function SprintCard({ sprint }: SprintCardProps) {
 							{sprint.tasks.map((task) => (
 								<TaskCard key={task.id} task={task} />
 							))}
-							<Button variant="ghost" className="w-full" size="sm">
-								<PlusCircle className="mr-2 h-4 w-4" />
-								Add Task
-							</Button>
+							<TaskDialog
+								isTemplate={isTemplate}
+								projectSlug={projectSlug}
+								trigger={
+									<Button variant="outline" className="w-full">
+										<PlusCircle className="mr-2 h-4 w-4" />
+										Add Task
+									</Button>
+								}
+							/>
 						</div>
 					</CardContent>
 				</CollapsibleContent>
