@@ -1,4 +1,5 @@
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
+import { epicRouter } from './routers/epic/epic.router';
 import { projectRouter } from './routers/project';
 import { projectBaseRouter } from './routers/projectBase';
 import { sprintRouter } from './routers/sprint/sprint.router';
@@ -17,7 +18,8 @@ export const appRouter = createTRPCRouter({
 	projectBase: projectBaseRouter,
 	projectTemplate: projectTemplateRouter,
 	task: taskRouter,
-	sprint: sprintRouter
+	sprint: sprintRouter,
+	epic: epicRouter
 });
 
 // export type definition of API

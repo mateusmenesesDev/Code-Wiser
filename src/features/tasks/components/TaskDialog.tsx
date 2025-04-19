@@ -117,6 +117,22 @@ export function TaskDialog({
 				{ enabled: !isTemplate }
 			);
 
+	const epics = isTemplate
+		? api.epic.getAllEpicsByProjectTemplateSlug.useQuery(
+				{
+					projectTemplateSlug: projectSlug
+				},
+				{ enabled: isTemplate }
+			)
+		: api.epic.getAllEpicsByProjectId.useQuery(
+				{
+					projectId: projectSlug
+				},
+				{ enabled: !isTemplate }
+			);
+
+	console.log(epics.data);
+
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -406,6 +422,7 @@ export function TaskDialog({
 														</SelectTrigger>
 													</FormControl>
 													<SelectContent>
+														<SelectItem value="none">No Sprint</SelectItem>
 														{sprints.data?.map((sprint) => (
 															<SelectItem key={sprint.id} value={sprint.id}>
 																{sprint.title}
@@ -436,12 +453,11 @@ export function TaskDialog({
 													</FormControl>
 													<SelectContent>
 														<SelectItem value="none">No Epic</SelectItem>
-														{/* TODO: Add epics */}
-														{/* {epics.map((epic) => (
+														{epics.data?.map((epic) => (
 															<SelectItem key={epic.id} value={epic.id}>
 																{epic.title}
 															</SelectItem>
-														))} */}
+														))}
 													</SelectContent>
 												</Select>
 											</FormItem>

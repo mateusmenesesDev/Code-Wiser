@@ -1,9 +1,25 @@
 import { z } from 'zod';
 
 export const epicSchema = z.object({
+	id: z.string(),
 	title: z.string().min(1, 'Title is required'),
 	description: z.string().optional(),
-	projectTemplateId: z.string().min(1, 'Project Template ID is required')
+	projectTemplateId: z.string().optional(),
+	projectId: z.string().optional()
 });
 
-export type Epic = z.infer<typeof epicSchema>;
+export const newEpicSchema = epicSchema
+	.omit({ id: true })
+	.superRefine((data, ctx) => {
+		if (!data.projectTemplateId && !data.projectId) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'Either projectTemplateId or projectId must be provided'
+			});
+		}
+	});
+
+export const updateEpicSchema = epicSchema.partial().refine((data) => data.id, {
+	message: 'Id is required',
+	path: ['id']
+});
