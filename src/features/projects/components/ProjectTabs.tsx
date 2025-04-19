@@ -25,11 +25,19 @@ export function ProjectTabs({
 	setActiveTab
 }: ProjectTabsProps) {
 	const tabOptions = [
-		{ value: 'overview', label: 'Overview' },
-		{ value: 'milestones', label: 'Milestones' },
-		{ value: 'discussions', label: 'Discussions' },
-		{ value: 'resources', label: 'Resources' },
-		{ value: 'gallery', label: 'Gallery' }
+		{ value: 'overview', label: 'Overview', isEnabled: true },
+		{
+			value: 'milestones',
+			label: 'Milestones',
+			isEnabled: (project?.milestones?.length ?? 0) > 0
+		},
+		{
+			value: 'discussions',
+			label: 'Discussions',
+			isEnabled: false
+		},
+		{ value: 'resources', label: 'Resources', isEnabled: false },
+		{ value: 'gallery', label: 'Gallery', isEnabled: false }
 	];
 
 	if (!project) return null;
@@ -42,27 +50,33 @@ export function ProjectTabs({
 						<SelectValue placeholder="Select a tab" />
 					</SelectTrigger>
 					<SelectContent>
-						{tabOptions.map((option) => (
-							<SelectItem key={option.value} value={option.value}>
-								{option.label}
-							</SelectItem>
-						))}
+						{tabOptions.map(
+							(option) =>
+								option.isEnabled && (
+									<SelectItem key={option.value} value={option.value}>
+										{option.label}
+									</SelectItem>
+								)
+						)}
 					</SelectContent>
 				</Select>
 			</div>
 			<div className="hidden md:block">
 				<Tabs value={activeTab} onValueChange={setActiveTab}>
 					<TabsList className="grid w-full grid-cols-5">
-						{tabOptions.map((option) => (
-							<TabsTrigger key={option.value} value={option.value}>
-								{option.label}
-							</TabsTrigger>
-						))}
+						{tabOptions.map(
+							(option) =>
+								option.isEnabled && (
+									<TabsTrigger key={option.value} value={option.value}>
+										{option.label}
+									</TabsTrigger>
+								)
+						)}
 					</TabsList>
 				</Tabs>
 			</div>
 
-			<div className="mt-4">
+			<div>
 				{activeTab === 'overview' && <ProjectOverview {...project} />}
 				{activeTab === 'milestones' && (
 					<ProjectMilestones milestones={project.milestones} />
