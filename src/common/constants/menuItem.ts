@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export const MENU_ITEMS = [
-	{ href: '/', icon: Layout, label: 'Dashboard' },
+	{ href: '/', icon: Layout, label: 'Dashboard', comingSoon: true },
 	{ href: '/projects', icon: BookOpen, label: 'Projects' },
 	{
 		href: '/projects/templates',
