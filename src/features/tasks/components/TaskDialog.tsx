@@ -210,34 +210,35 @@ export function TaskDialog({
 							{/* Sidebar - Right Column */}
 							<div className="col-span-2 space-y-6">
 								<div className="space-y-4">
-									<FormField
-										control={form.control}
-										name="assigneeId"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel className="font-medium text-muted-foreground text-sm">
-													Assignee
-												</FormLabel>
-												<Select
-													onValueChange={field.onChange}
-													value={field.value || 'none'}
-												>
-													<FormControl>
-														<SelectTrigger>
-															<SelectValue placeholder="Unassigned" />
-														</SelectTrigger>
-													</FormControl>
-													<SelectContent>
-														<SelectItem value="none">
-															<div className="flex items-center gap-2">
-																<Avatar className="h-6 w-6">
-																	<AvatarFallback>UN</AvatarFallback>
-																</Avatar>
-																Unassigned
-															</div>
-														</SelectItem>
-														{/* TODO: Add users */}
-														{/* {users?.map((user) => (
+									{!isTemplate && (
+										<FormField
+											control={form.control}
+											name="assigneeId"
+											render={({ field }) => (
+												<FormItem>
+													<FormLabel className="font-medium text-muted-foreground text-sm">
+														Assignee
+													</FormLabel>
+													<Select
+														onValueChange={field.onChange}
+														value={field.value || 'none'}
+													>
+														<FormControl>
+															<SelectTrigger>
+																<SelectValue placeholder="Unassigned" />
+															</SelectTrigger>
+														</FormControl>
+														<SelectContent>
+															<SelectItem value="none">
+																<div className="flex items-center gap-2">
+																	<Avatar className="h-6 w-6">
+																		<AvatarFallback>UN</AvatarFallback>
+																	</Avatar>
+																	Unassigned
+																</div>
+															</SelectItem>
+															{/* TODO: Add users */}
+															{/* {users?.map((user) => (
 															<SelectItem key={user.id} value={user.id}>
 																<div className="flex items-center gap-2">
 																	<Avatar className="h-6 w-6">
@@ -250,56 +251,63 @@ export function TaskDialog({
 																</div>
 															</SelectItem>
 														))} */}
-													</SelectContent>
-												</Select>
-											</FormItem>
-										)}
-									/>
-
-									<FormField
-										control={form.control}
-										name="dueDate"
-										render={({ field }) => (
-											<FormItem className="flex flex-col">
-												<FormLabel>Due Date</FormLabel>
-												<Popover>
-													<PopoverTrigger asChild>
-														<FormControl>
-															<Button
-																variant={'outline'}
-																className={cn(
-																	'w-[240px] pl-3 text-left font-normal',
-																	!field.value && 'text-muted-foreground'
-																)}
-															>
-																{field.value ? (
-																	dayjs(field.value).format('MMM D, YYYY')
-																) : (
-																	<span>Pick a date</span>
-																)}
-																<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-															</Button>
-														</FormControl>
-													</PopoverTrigger>
-													<PopoverContent className="w-auto p-0" align="start">
-														<Calendar
-															mode="single"
-															selected={
-																field.value ? new Date(field.value) : undefined
-															}
-															onSelect={field.onChange}
-															disabled={(date) =>
-																date > new Date() ||
-																date < new Date('1900-01-01')
-															}
-															initialFocus
-														/>
-													</PopoverContent>
-												</Popover>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
+														</SelectContent>
+													</Select>
+												</FormItem>
+											)}
+										/>
+									)}
+									{!isTemplate && (
+										<FormField
+											control={form.control}
+											name="dueDate"
+											render={({ field }) => (
+												<FormItem className="flex flex-col">
+													<FormLabel>Due Date</FormLabel>
+													<Popover>
+														<PopoverTrigger asChild>
+															<FormControl>
+																<Button
+																	variant={'outline'}
+																	className={cn(
+																		'w-[240px] pl-3 text-left font-normal',
+																		!field.value && 'text-muted-foreground'
+																	)}
+																>
+																	{field.value ? (
+																		dayjs(field.value).format('MMM D, YYYY')
+																	) : (
+																		<span>Pick a date</span>
+																	)}
+																	<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+																</Button>
+															</FormControl>
+														</PopoverTrigger>
+														<PopoverContent
+															className="w-auto p-0"
+															align="start"
+														>
+															<Calendar
+																mode="single"
+																selected={
+																	field.value
+																		? new Date(field.value)
+																		: undefined
+																}
+																onSelect={field.onChange}
+																disabled={(date) =>
+																	date > new Date() ||
+																	date < new Date('1900-01-01')
+																}
+																initialFocus
+															/>
+														</PopoverContent>
+													</Popover>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+									)}
 									<FormField
 										control={form.control}
 										name="status"
