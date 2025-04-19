@@ -148,7 +148,7 @@ export function TaskDialog({
 											<Input
 												{...field}
 												className="border-0 bg-transparent font-semibold text-xl placeholder:text-muted-foreground/50 focus-visible:ring-0"
-												placeholder="Task summary"
+												placeholder="Task title"
 											/>
 										</FormControl>
 										<FormMessage />
