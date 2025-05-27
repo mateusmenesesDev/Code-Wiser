@@ -1,7 +1,8 @@
-import { ProjectEnrollmentStatusEnum, ProjectStatusEnum } from '@prisma/client';
-import { ArrowRight, Check, CreditCard, Eye, Play, Users } from 'lucide-react';
+import { ProjectStatusEnum } from '@prisma/client';
+import { Check, CreditCard, Eye, Loader2, Play, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -22,29 +23,45 @@ import {
 } from '~/common/components/ui/dialog';
 import { cn } from '~/lib/utils';
 import { useApproval } from '../../templates/hook/useApproval';
+import { useProjectMutations } from '../hooks/useProjectMutations';
 import type { ProjectTemplateApiResponse } from '../types/Projects.type';
 
 type ProjectCardProps = {
-	project: ProjectTemplateApiResponse;
+	projectTemplate: ProjectTemplateApiResponse;
 	approvalPage?: boolean;
 	userCredits: number;
-	status?: ProjectEnrollmentStatusEnum;
+	status?: ProjectStatusEnum;
+	isEnrolled?: boolean;
 };
 
 export function ProjectCard({
-	project,
+	projectTemplate,
 	userCredits,
-	status,
-	approvalPage = false
+	approvalPage = false,
+	isEnrolled = false
 }: ProjectCardProps) {
 	const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
 	const { changeProjectApprovalMutation } = useApproval();
+	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
 
 	const handleApprove = (approval: boolean) => {
 		changeProjectApprovalMutation.mutate({
-			projectName: project.title,
+			projectName: projectTemplate.title,
 			approval: approval ? 'APPROVED' : 'REQUESTED_CHANGES'
 		});
+	};
+
+	const handleCreateProject = async () => {
+		toast.promise(
+			createProjectAsync({
+				projectTemplateId: projectTemplate.id
+			}),
+			{
+				loading: 'Creating project...',
+				success: 'Project created successfully',
+				error: 'Failed to create project'
+			}
+		);
 	};
 
 	return (
@@ -52,89 +69,76 @@ export function ProjectCard({
 			<Card className="flex flex-col">
 				<CardHeader>
 					<div className="flex items-center justify-between">
-						<CardTitle className="text-lg">{project.title}</CardTitle>
+						<CardTitle className="text-lg">{projectTemplate.title}</CardTitle>
 						<Badge variant="outline" className="ml-2">
-							{project.difficulty}
+							{projectTemplate.difficulty}
 						</Badge>
 					</div>
 					<CardDescription className="mt-2">
-						{project.description}
+						{projectTemplate.description}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="secondary">{project.category.name}</Badge>
+						<Badge variant="secondary">{projectTemplate.category.name}</Badge>
 						<div className="flex items-center space-x-2 text-muted-foreground text-sm">
 							<Users className="h-4 w-4" />
-							<span>{project.minParticipants} participants</span>
+							<span>{projectTemplate.minParticipants} participants</span>
 						</div>
 						<div
 							className={cn(
 								'flex items-center space-x-2 text-muted-foreground text-sm',
 								{
 									'text-destructive':
-										project.credits &&
-										project.credits > 0 &&
+										projectTemplate.credits &&
+										projectTemplate.credits > 0 &&
 										userCredits &&
-										userCredits < project.credits
+										userCredits < projectTemplate.credits
 								}
 							)}
 						>
 							<CreditCard className="h-4 w-4" />
 							<span>
-								{project.credits && project.credits > 0
-									? `${project.credits} credits`
+								{projectTemplate.credits && projectTemplate.credits > 0
+									? `${projectTemplate.credits} credits`
 									: 'Free'}
 							</span>
 						</div>
 					</div>
 				</CardContent>
 				<CardFooter className="mt-auto flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
-					{status && (
-						<Badge
-							variant={
-								status === ProjectEnrollmentStatusEnum.ACTIVE
-									? 'default'
-									: 'secondary'
-							}
-							className="w-full text-center sm:w-auto"
-						>
-							{status}
-						</Badge>
-					)}
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-						{approvalPage && project.status !== ProjectStatusEnum.APPROVED ? (
-							<Button
-								size="sm"
-								onClick={() => setIsApprovalModalOpen(true)}
-								className="w-full sm:w-auto"
-							>
+						{approvalPage &&
+							projectTemplate.status !== ProjectStatusEnum.APPROVED && (
+								<Button
+									size="sm"
+									onClick={() => setIsApprovalModalOpen(true)}
+									className="w-full sm:w-auto"
+								>
+									<Check className="mr-2 h-4 w-4" />
+									Approve
+								</Button>
+							)}
+						{!approvalPage && isEnrolled ? (
+							<Button size="sm" className="w-full sm:w-auto">
 								<Check className="mr-2 h-4 w-4" />
-								Approve
+								Continue
 							</Button>
 						) : (
-							status !== ProjectEnrollmentStatusEnum.ACTIVE &&
-							status !== ProjectEnrollmentStatusEnum.COMPLETED && (
-								<Button size="sm" className="w-full sm:w-auto">
-									<Play className="mr-2 h-4 w-4" />
-									Start
-								</Button>
-							)
-						)}
-						{status === ProjectEnrollmentStatusEnum.ACTIVE && (
 							<Button
-								variant="default"
 								size="sm"
-								asChild
 								className="w-full sm:w-auto"
+								onClick={handleCreateProject}
+								disabled={isCreateProjectPending}
 							>
-								<Link href="#">
-									<ArrowRight className="mr-2 h-4 w-4" />
-									Continue
-								</Link>
+								{isCreateProjectPending ? (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								) : (
+									<Play className="mr-2 h-4 w-4" />
+								)}
+								Start
 							</Button>
 						)}
-
 						<Button
 							variant="outline"
 							size="sm"
@@ -144,8 +148,8 @@ export function ProjectCard({
 							<Link
 								href={
 									approvalPage
-										? `/projects/templates/${project.slug}/approval`
-										: `/projects/templates/${project.slug}`
+										? `/projects/templates/${projectTemplate.slug}/approval`
+										: `/projects/templates/${projectTemplate.slug}`
 								}
 							>
 								<Eye className="mr-2 h-4 w-4" />
@@ -161,7 +165,7 @@ export function ProjectCard({
 					<DialogHeader>
 						<DialogTitle>Approve Project</DialogTitle>
 						<DialogDescription>
-							Are you sure you want to approve "{project.title}"?
+							Are you sure you want to approve "{projectTemplate.title}"?
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>

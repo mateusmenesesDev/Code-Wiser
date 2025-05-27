@@ -9,8 +9,7 @@ export const getProjectQueries = {
 					select: {
 						name: true
 					}
-				},
-				technologies: true
+				}
 			}
 		})
 	),
@@ -21,15 +20,7 @@ export const getProjectQueries = {
 			return await ctx.db.project.findUnique({
 				where: { slug: input.slug },
 				include: {
-					technologies: true,
 					category: true,
-					learningOutcomes: true,
-					milestones: true,
-					author: {
-						select: {
-							id: true
-						}
-					},
 					tasks: true,
 					sprints: true,
 					epics: true
@@ -38,8 +29,8 @@ export const getProjectQueries = {
 		}),
 
 	getEnrolled: protectedProcedure.query(({ ctx }) =>
-		ctx.db.projectEnrollment.findMany({
-			where: { userId: ctx.session?.userId }
+		ctx.db.project.findMany({
+			where: { members: { some: { id: ctx.session?.userId } } }
 		})
 	)
 };

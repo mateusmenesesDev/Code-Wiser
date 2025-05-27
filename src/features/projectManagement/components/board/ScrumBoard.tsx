@@ -15,7 +15,6 @@ import {
 	TabsList,
 	TabsTrigger
 } from '~/common/components/ui/tabs';
-import type { Project } from '../../../projects/types';
 import { TaskCard } from '../../../tasks/components/TaskCard';
 import { ColumnHeader } from './ColumnHeader';
 

@@ -4,14 +4,12 @@ import type { ProjectFormData } from '~/features/projects/types/Projects.type';
 
 export function createProjectData(
 	input: ProjectFormData,
-	userId: string,
 	category: Category,
 	technologies: Technology[]
 ): Prisma.ProjectCreateInput {
 	return {
 		...input,
 		slug: slugify(input.title),
-		author: { connect: { id: userId } },
 		category: { connect: { id: category.id } },
 		difficulty: input.difficulty,
 		credits: input.credits ?? 0,

@@ -3,13 +3,11 @@ import slugify from 'slugify';
 import type { ProjectFormData } from '~/features/projects/types/Projects.type';
 
 export function createProjectTemplateData(
-	input: ProjectFormData,
-	userId: string
+	input: ProjectFormData
 ): Prisma.ProjectTemplateCreateInput {
 	return {
 		...input,
 		slug: slugify(input.title, { lower: true }),
-		author: { connect: { id: userId } },
 		category: {
 			connectOrCreate: {
 				where: { name: input.category },

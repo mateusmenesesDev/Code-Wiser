@@ -5,6 +5,7 @@ import { PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '~/common/components/ui/button';
+import { api } from '~/trpc/react';
 import { useProject } from '../hooks/useProject';
 import { ProjectCard } from './ProjectCard';
 import { ProjectCardSkeleton } from './ProjectCardSkeleton';
@@ -17,9 +18,13 @@ type ProjectsProps = {
 export default function Projects({ approvalPage = false }: ProjectsProps) {
 	const router = useRouter();
 
-	const { userProjects, filteredProjects, userCredits, isLoading } = useProject(
+	const { filteredProjects, userCredits, isLoading } = useProject(
 		approvalPage ? undefined : true
 	);
+
+	const myProjects = api.project.getEnrolled.useQuery();
+
+	console.log('myProjects', myProjects);
 
 	return (
 		<div className="space-y-6">
@@ -55,14 +60,14 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
 							{filteredProjects.map((project) => (
 								<ProjectCard
-									status={
-										userProjects?.find((up) => up.projectId === project.id)
-											?.status
-									}
+									status={project.status}
 									key={project.id}
-									project={project}
+									projectTemplate={project}
 									userCredits={userCredits}
 									approvalPage={approvalPage}
+									isEnrolled={myProjects.data?.some(
+										(p) => p.title === project.title
+									)}
 								/>
 							))}
 						</div>

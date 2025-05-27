@@ -1,7 +1,7 @@
-import type { LearningOutcome, Milestone, Project } from '@prisma/client';
+import type { Project } from '@prisma/client';
 import type { z } from 'zod';
 import type { RouterInputs, RouterOutputs } from '~/trpc/react';
-import type { projectSchema } from '../schemas/projects.schema';
+import type { createProjectTemplateSchema } from '../schemas/projects.schema';
 
 export type Discussion = {
 	id: string;
@@ -34,27 +34,6 @@ export type UserProjectApiResponse = RouterOutputs['project']['getEnrolled'][0];
 
 export type ProjectDatabase = Project;
 
-export type ProjectCard = {
-	id: string;
-	title: string;
-	description: string;
-	category: string;
-	difficulty: string;
-	mentor: string;
-	participants: number;
-	maxParticipants: number;
-	status: 'Started' | 'Completed' | 'Not Started';
-	completionRate: number;
-	credits: number;
-	details: string;
-	startDate: Date;
-	endDate: Date;
-	technologies: string[];
-	learningOutcomes: LearningOutcome[];
-	milestones: Milestone[];
-	discussions: Discussion[];
-	resources: Resource[];
-	images: ProjectImage[];
-};
-
-export type ProjectFormData = z.infer<typeof projectSchema>;
+export type ProjectTemplateFormData = z.infer<
+	typeof createProjectTemplateSchema
+>;

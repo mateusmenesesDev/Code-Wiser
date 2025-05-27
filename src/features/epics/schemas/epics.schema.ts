@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const epicSchema = z.object({
+export const baseEpicSchema = z.object({
 	id: z.string(),
 	title: z.string().min(1, 'Title is required'),
 	description: z.string().optional(),
@@ -8,7 +8,7 @@ export const epicSchema = z.object({
 	projectId: z.string().optional()
 });
 
-export const newEpicSchema = epicSchema
+export const newEpicSchema = baseEpicSchema
 	.omit({ id: true })
 	.superRefine((data, ctx) => {
 		if (!data.projectTemplateId && !data.projectId) {
@@ -19,7 +19,9 @@ export const newEpicSchema = epicSchema
 		}
 	});
 
-export const updateEpicSchema = epicSchema.partial().refine((data) => data.id, {
-	message: 'Id is required',
-	path: ['id']
-});
+export const updateEpicSchema = baseEpicSchema
+	.partial()
+	.refine((data) => data.id, {
+		message: 'Id is required',
+		path: ['id']
+	});

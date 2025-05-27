@@ -173,7 +173,7 @@ export function BacklogView() {
 									<TableCell className="w-[100px]">
 										<PriorityCell
 											priority={task.priority ?? '-'}
-											taskId={task.id}
+											id={task.id}
 											isTemplate={isTemplate}
 											projectSlug={slug as string}
 										/>
@@ -198,7 +198,7 @@ export function BacklogView() {
 														items={project.sprints}
 														onUpdate={(sprintId) =>
 															updateTask({
-																taskId: task.id,
+																id: task.id,
 																sprintId: sprintId ?? undefined
 															})
 														}
@@ -224,7 +224,7 @@ export function BacklogView() {
 														items={project.epics}
 														onUpdate={(epicId) =>
 															updateTask({
-																taskId: task.id,
+																id: task.id,
 																epicId: epicId ?? undefined
 															})
 														}

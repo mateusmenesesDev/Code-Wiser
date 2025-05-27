@@ -17,11 +17,8 @@ model ProjectTemplate {
   learningOutcomes LearningOutcome[]
   milestones       Milestone[]
   images           ProjectImage[]
-  projects         Project[]
   resources        Resource[]
   expectedDuration String?
-  authorId         String
-  author           User                   @relation(fields: [authorId], references: [id])
   categoryId       String
   category         Category               @relation(fields: [categoryId], references: [id])
 

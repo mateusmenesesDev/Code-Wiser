@@ -1,9 +1,4 @@
 import { Calendar, CreditCard, Users } from 'lucide-react';
-import {
-	Avatar,
-	AvatarFallback,
-	AvatarImage
-} from '~/common/components/ui/avatar';
 import { Badge } from '~/common/components/ui/badge';
 import { Separator } from '~/common/components/ui/separator';
 import type { ProjectTemplateApprovalApiResponse } from '../../types/Template.type';
@@ -20,19 +15,6 @@ export function ProjectTemplateApprovalDetails({
 	return (
 		<div>
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-				<div>
-					<h3 className="mb-2 font-semibold text-lg">Mentor</h3>
-					<div className="flex items-center">
-						<Avatar className="mr-2 h-10 w-10">
-							<AvatarImage
-								src={'/placeholder.svg?height=40&width=40'}
-								alt={project.authorId}
-							/>
-							<AvatarFallback>{project.authorId[0]}</AvatarFallback>
-						</Avatar>
-						<span>{project.authorId}</span>
-					</div>
-				</div>
 				<div>
 					<h3 className="mb-2 font-semibold text-lg">Difficulty</h3>
 					<Badge variant="outline">{project.difficulty}</Badge>

@@ -44,7 +44,6 @@ describe('project template procedures testing', () => {
 			maxParticipants: 5,
 			credits: 10,
 			categoryId: 'test-category',
-			authorId: 'test-user-id',
 			createdAt: new Date(),
 			updatedAt: new Date(),
 			category: { name: 'test-category' },

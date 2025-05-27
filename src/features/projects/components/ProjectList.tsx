@@ -1,3 +1,4 @@
+import { api } from '~/trpc/react';
 import type {
 	ProjectTemplateApiResponse,
 	UserProjectApiResponse
@@ -12,19 +13,21 @@ type ProjectListProps = {
 
 export default function ProjectList({
 	projects,
-	userProjects,
 	userCredits
 }: ProjectListProps) {
+	const myProjects = api.project.getEnrolled.useQuery();
+
+	console.log('myProjects', myProjects);
+
 	return (
 		<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
 			{projects.map((project) => (
 				<ProjectCard
-					status={
-						userProjects?.find((up) => up.projectId === project.id)?.status
-					}
+					status={project.status}
 					key={project.id}
-					project={project}
+					projectTemplate={project}
 					userCredits={userCredits}
+					isEnrolled={myProjects.data?.some((p) => p.id === project.id)}
 				/>
 			))}
 		</div>

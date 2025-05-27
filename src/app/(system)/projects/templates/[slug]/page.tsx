@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Card, CardContent } from '~/common/components/ui/card';
 import { ProjectHeader } from '~/features/projects/components/ProjectHeader';
-import { ProjectMentor } from '~/features/projects/components/ProjectMentor';
 import { ProjectStats } from '~/features/projects/components/ProjectStats';
 import { ProjectTabs } from '~/features/projects/components/ProjectTabs';
 import { api } from '~/trpc/react';
@@ -34,7 +33,6 @@ export default function ProjectPage({
 							maxParticipants={project.maxParticipants}
 							credits={project.credits ?? 0}
 						/>
-						<ProjectMentor mentor={project.author.id} />
 					</CardContent>
 				</Card>
 

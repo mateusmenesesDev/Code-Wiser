@@ -14,6 +14,10 @@ export const useTemplate = () => {
 				newEpic.projectTemplateId
 			);
 
+			if (!newEpic.projectTemplateId) {
+				throw new Error('Project template ID is required');
+			}
+
 			utils.projectTemplate.epic.getEpics.setData(
 				newEpic.projectTemplateId,
 				(old) => {
@@ -28,7 +32,8 @@ export const useTemplate = () => {
 						startDate: null,
 						endDate: null,
 						tasks: [],
-						status: EpicStatusEnum.PLANNED
+						status: EpicStatusEnum.PLANNED,
+						projectTemplateId: newEpic.projectTemplateId ?? ''
 					};
 					if (!old) return [completedNewEpic];
 
@@ -39,6 +44,10 @@ export const useTemplate = () => {
 			return { prevData };
 		},
 		onError: (_error, newEpic, context) => {
+			if (!newEpic.projectTemplateId) {
+				throw new Error('Project template ID is required');
+			}
+
 			utils.projectTemplate.epic.getEpics.setData(
 				newEpic.projectTemplateId,
 				context?.prevData

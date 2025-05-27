@@ -1,20 +1,20 @@
 import { Prisma, ProjectStatusEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { projectSchema } from '~/features/projects/schemas/projects.schema';
+import { createProjectTemplateSchema } from '~/features/projects/schemas/projects.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 import { createProjectTemplateData } from '../actions/projectTemplateActions';
 
 export const projectTemplateMutations = {
 	create: protectedProcedure
-		.input(projectSchema)
+		.input(createProjectTemplateSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { userId } = ctx.session;
 			console.log('userId', userId);
 			try {
 				return await ctx.db.$transaction(async (prisma) => {
 					const projectTemplate = await prisma.projectTemplate.create({
-						data: createProjectTemplateData(input, userId)
+						data: createProjectTemplateData(input)
 					});
 
 					return projectTemplate.slug;

@@ -1,4 +1,4 @@
-import { Award, BookOpen, Clock, GitBranch, Star } from 'lucide-react';
+import { Award, BookOpen, GitBranch, Star } from 'lucide-react';
 import { Button } from '~/common/components/ui/button';
 import {
 	Card,
@@ -42,13 +42,6 @@ export function ProjectResources() {
 					>
 						<Award className="mr-2 h-4 w-4" />
 						Best Practices Guide
-					</Button>
-					<Button
-						variant="outline"
-						className="justify-start text-foreground hover:text-primary"
-					>
-						<Clock className="mr-2 h-4 w-4" />
-						Project Timeline
 					</Button>
 				</div>
 			</CardContent>

@@ -1,0 +1,21 @@
+model Project {
+  id              String                 @id @default(cuid())
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  title           String                 @unique
+  slug            String                 @unique
+  description     String
+  methodology     ProjectMethodologyEnum @default(SCRUM)
+  minParticipants Int
+  maxParticipants Int
+  type            ProjectTypeEnum
+  difficulty      ProjectDifficultyEnum
+  resources       Resource[]
+  tasks           Task[]
+  categoryId      String
+  category        Category               @relation(fields: [categoryId], references: [id])
+
+  epics   Epic[]
+  sprints Sprint[]
+  members User[]
+}

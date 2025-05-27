@@ -32,11 +32,6 @@ export const projectTemplateQueries = {
 						category: true,
 						learningOutcomes: true,
 						milestones: true,
-						author: {
-							select: {
-								id: true
-							}
-						},
 						tasks: true,
 						epics: {
 							include: {

@@ -1,4 +1,4 @@
-import type { Epic, Sprint, Task } from '@prisma/client';
+import type { Epic, Task } from '@prisma/client';
 import { z } from 'zod';
 
 export const TaskPriorityEnum = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
@@ -17,15 +17,3 @@ export interface Column {
 export type EpicWithTasks = Epic & {
 	tasks: Task[];
 };
-
-export interface Project {
-	id: string;
-	title: string;
-	description: string;
-	methodology: 'kanban' | 'scrum';
-	backlog: Task[];
-	columns: Column[];
-	sprints: Sprint[];
-	scrumBoard: Column[];
-	epics: Epic[];
-}

@@ -26,12 +26,12 @@ const getPriorityVariant = (priority: TaskPriorityEnum | string) => {
 
 export function PriorityCell({
 	priority,
-	taskId,
+	id,
 	isTemplate,
 	projectSlug
 }: {
 	priority: TaskPriorityEnum | string;
-	taskId: string;
+	id: string;
 	isTemplate: boolean;
 	projectSlug: string;
 }) {
@@ -56,8 +56,8 @@ export function PriorityCell({
 						key={priority}
 						onClick={() =>
 							updateTask({
-								taskId,
-								priority
+								id,
+								priority: priority as TaskPriorityEnum
 							})
 						}
 					>

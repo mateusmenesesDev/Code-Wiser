@@ -51,13 +51,6 @@ enum ProjectRoleEnum {
   MENTOR
 }
 
-enum ProjectEnrollmentStatusEnum {
-  PAUSED
-  CANCELLED
-  ACTIVE
-  COMPLETED
-}
-
 enum ResourceTypeEnum {
   CODE
   DOCUMENTATION

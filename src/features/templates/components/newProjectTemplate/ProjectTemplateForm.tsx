@@ -6,8 +6,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { api } from '~/trpc/react';
 
-import { projectSchema } from '../../../projects/schemas/projects.schema';
-import type { ProjectFormData } from '../../../projects/types/Projects.type';
+import { createProjectTemplateSchema } from '../../../projects/schemas/projects.schema';
+import type { ProjectTemplateFormData } from '../../../projects/types/Projects.type';
 
 import { Button } from '~/common/components/ui/button';
 
@@ -18,12 +18,11 @@ import { ProjectLearningOutcomes } from './ProjectLearningOutcomes';
 import { ProjectMilestones } from './ProjectMilestones';
 import { ProjectParticipants } from './ProjectParticipants';
 import { ProjectTechnologies } from './ProjectTechnologies';
-import { ProjectTimeline } from './ProjectTimeline';
 import { ProjectType } from './ProjectType';
 
 export default function ProjectForm() {
-	const form = useForm<ProjectFormData>({
-		resolver: zodResolver(projectSchema),
+	const form = useForm<ProjectTemplateFormData>({
+		resolver: zodResolver(createProjectTemplateSchema),
 		defaultValues: {
 			learningOutcomes: [{ value: '' }],
 			images: [],
@@ -41,7 +40,7 @@ export default function ProjectForm() {
 		}
 	});
 
-	const onSubmit = (data: ProjectFormData) => {
+	const onSubmit = (data: ProjectTemplateFormData) => {
 		toast.promise(projectMutation.mutateAsync(data), {
 			loading: 'Creating project...',
 			success: 'Project created successfully',
@@ -57,7 +56,6 @@ export default function ProjectForm() {
 			<ProjectBasicInfo form={form} />
 			<ProjectParticipants form={form} />
 			<ProjectType form={form} />
-			<ProjectTimeline form={form} />
 			<ProjectTechnologies form={form} />
 			<ProjectLearningOutcomes form={form} />
 			<ProjectMilestones form={form} />

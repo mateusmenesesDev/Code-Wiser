@@ -25,7 +25,6 @@ import { Input } from '~/common/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '~/common/components/ui/radio-group';
 import { Separator } from '~/common/components/ui/separator';
 import { Textarea } from '~/common/components/ui/textarea';
-import type { Project } from '~/features/projects/types';
 
 const projectFormSchema = z.object({
 	title: z.string().min(1, 'Title is required'),
@@ -36,19 +35,9 @@ const projectFormSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
-interface ProjectSettingsProps {
-	project: Project;
-}
-
-export function ProjectSettings({ project }: ProjectSettingsProps) {
+export function ProjectSettings() {
 	const form = useForm<ProjectFormValues>({
-		resolver: zodResolver(projectFormSchema),
-		defaultValues: {
-			title: project.title,
-			description: project.description,
-			methodology: project.methodology,
-			visibility: 'public'
-		}
+		resolver: zodResolver(projectFormSchema)
 	});
 
 	function onSubmit(_data: ProjectFormValues) {

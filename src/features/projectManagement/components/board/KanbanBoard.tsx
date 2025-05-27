@@ -1,19 +1,31 @@
 'use client';
 
 import { DragDropContext } from 'react-beautiful-dnd';
-import type { Project } from '../../../projects/types';
 import { BoardColumn } from './BoardColumn';
 
-interface KanbanBoardProps {
-	project: Project;
-}
-
-export function KanbanBoard({ project }: KanbanBoardProps) {
+export function KanbanBoard() {
+	const columns = [
+		{
+			id: '1',
+			title: 'Backlog',
+			tasks: []
+		},
+		{
+			id: '2',
+			title: 'In Progress',
+			tasks: []
+		},
+		{
+			id: '3',
+			title: 'Done',
+			tasks: []
+		}
+	];
 	return (
 		<div className="h-full p-6">
 			<DragDropContext onDragEnd={() => {}}>
 				<div className="grid h-full auto-cols-[300px] grid-flow-col gap-4 overflow-x-auto">
-					{project.columns.map((column) => (
+					{columns.map((column) => (
 						<BoardColumn key={column.id} column={column} />
 					))}
 				</div>

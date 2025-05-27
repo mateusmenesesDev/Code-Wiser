@@ -1,7 +1,8 @@
 import { TaskPriorityEnum, TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import { z } from 'zod';
 
-const baseTaskSchema = z.object({
+export const baseTaskSchema = z.object({
+	id: z.string().optional(),
 	title: z.string().min(1, { message: 'Title is required' }),
 	description: z.string().optional(),
 	type: z.nativeEnum(TaskTypeEnum).optional(),
@@ -18,6 +19,7 @@ const baseTaskSchema = z.object({
 });
 
 export const createTaskSchema = baseTaskSchema
+	.omit({ id: true })
 	.extend({
 		projectSlug: z.string().optional(),
 		projectTemplateSlug: z.string().optional()
@@ -37,9 +39,9 @@ export const createTaskSchema = baseTaskSchema
 		}
 	});
 
-export const updateTaskSchema = z
-	.object({
-		taskId: z.string()
-	})
-	.extend(baseTaskSchema.shape)
-	.partial();
+export const updateTaskSchema = baseTaskSchema
+	.partial()
+	.refine((data) => data.id, {
+		message: 'Id is required',
+		path: ['id']
+	});

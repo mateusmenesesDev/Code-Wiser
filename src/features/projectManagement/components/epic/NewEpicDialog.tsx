@@ -22,8 +22,8 @@ import {
 } from '~/common/components/ui/form';
 import { Input } from '~/common/components/ui/input';
 import { Textarea } from '~/common/components/ui/textarea';
-import { epicSchema } from '~/features/epics/schemas/epics.schema';
-import type { Epic } from '~/features/epics/types/Epic.type';
+import { newEpicSchema } from '~/features/epics/schemas/epics.schema';
+import type { EpicInput } from '~/features/epics/types/Epic.type';
 import { useTemplate } from '~/features/templates/hook/useTemplate';
 
 interface NewEpicDialogProps {
@@ -37,8 +37,8 @@ export function NewEpicDialog({
 	onClose,
 	projectId
 }: NewEpicDialogProps) {
-	const form = useForm<Epic>({
-		resolver: zodResolver(epicSchema)
+	const form = useForm<EpicInput>({
+		resolver: zodResolver(newEpicSchema)
 	});
 
 	useEffect(() => {
@@ -49,7 +49,7 @@ export function NewEpicDialog({
 
 	const { createEpic } = useTemplate();
 
-	const onSubmit = (values: Epic) => {
+	const onSubmit = (values: EpicInput) => {
 		createEpic.mutate({
 			title: values.title,
 			description: values.description,
