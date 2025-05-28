@@ -13,7 +13,7 @@ export function useProjectMutations() {
 		isPending: isCreateProjectPending
 	} = api.project.createProject.useMutation({
 		onSuccess: (data) => {
-			router.push(`/projects/${data}`);
+			router.push(`/workspace/${data}`);
 		}
 	});
 

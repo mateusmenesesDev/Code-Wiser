@@ -11,6 +11,17 @@ export const projectMutations = {
 				const { userId } = ctx.session;
 
 				const project = await ctx.db.$transaction(async (prisma) => {
+					// Ensure the user exists in the database
+					await prisma.user.upsert({
+						where: { id: userId },
+						update: {},
+						create: {
+							id: userId,
+							email: `user-${userId}@temp.com`, // Temporary email, will be updated by webhook
+							credits: 0
+						}
+					});
+
 					const projectTemplate = await prisma.projectTemplate.findUnique({
 						where: {
 							id: input.projectTemplateId
@@ -18,7 +29,10 @@ export const projectMutations = {
 						include: {
 							sprints: true,
 							epics: true,
-							tasks: true
+							tasks: true,
+							kanbanColumns: {
+								orderBy: { position: 'asc' }
+							}
 						}
 					});
 
@@ -37,6 +51,7 @@ export const projectMutations = {
 						sprints: templateSprints,
 						epics: templateEpics,
 						tasks: templateTasks,
+						kanbanColumns: templateColumns,
 						...projectData
 					} = projectTemplate;
 
@@ -47,6 +62,19 @@ export const projectMutations = {
 							members: { connect: { id: userId } }
 						}
 					});
+
+					// Create kanban columns
+					const columnIdMap: Record<string, string> = {};
+					for (const column of templateColumns) {
+						const { id: oldId, projectTemplateId, ...columnData } = column;
+						const newColumn = await prisma.kanbanColumn.create({
+							data: {
+								...columnData,
+								projectId: newProject.id
+							}
+						});
+						columnIdMap[oldId] = newColumn.id;
+					}
 
 					const sprintIdMap: Record<string, string> = {};
 					for (const sprint of templateSprints) {
@@ -79,6 +107,7 @@ export const projectMutations = {
 							epicId,
 							sprintId,
 							projectTemplateId,
+							kanbanColumnId,
 							...taskData
 						} = task;
 						await prisma.task.create({
@@ -87,6 +116,9 @@ export const projectMutations = {
 								projectId: newProject.id,
 								epicId: epicId ? epicIdMap[epicId] : null,
 								sprintId: sprintId ? sprintIdMap[sprintId] : null,
+								kanbanColumnId: kanbanColumnId
+									? columnIdMap[kanbanColumnId]
+									: null,
 								projectTemplateId: null
 							}
 						});

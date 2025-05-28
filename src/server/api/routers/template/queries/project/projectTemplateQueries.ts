@@ -32,7 +32,23 @@ export const projectTemplateQueries = {
 						category: true,
 						learningOutcomes: true,
 						milestones: true,
-						tasks: true,
+						tasks: {
+							orderBy: [
+								{ kanbanColumn: { position: 'asc' } },
+								{ orderInColumn: 'asc' }
+							],
+							include: {
+								kanbanColumn: true
+							}
+						},
+						kanbanColumns: {
+							orderBy: { position: 'asc' },
+							include: {
+								tasks: {
+									orderBy: { orderInColumn: 'asc' }
+								}
+							}
+						},
 						epics: {
 							include: {
 								tasks: true

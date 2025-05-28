@@ -22,7 +22,23 @@ export const getProjectQueries = {
 					where: { slug: input.slug },
 					include: {
 						category: true,
-						tasks: true,
+						tasks: {
+							orderBy: [
+								{ kanbanColumn: { position: 'asc' } },
+								{ orderInColumn: 'asc' }
+							],
+							include: {
+								kanbanColumn: true
+							}
+						},
+						kanbanColumns: {
+							orderBy: { position: 'asc' },
+							include: {
+								tasks: {
+									orderBy: { orderInColumn: 'asc' }
+								}
+							}
+						},
 						sprints: true,
 						epics: true
 					}

@@ -54,7 +54,7 @@ export function ProjectCard({
 	};
 
 	const handleContinue = () => {
-		router.push(`/projects/${projectTemplate.slug}`);
+		router.push(`/workspace/${projectTemplate.slug}`);
 	};
 
 	const handleCreateProject = async () => {

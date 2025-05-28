@@ -1,8 +1,9 @@
 enum TaskStatusEnum {
   BACKLOG
+  READY_TO_DEVELOP
   IN_PROGRESS
   CODE_REVIEW
-  UAT
+  TESTING
   DONE
 }
 
@@ -64,4 +65,14 @@ enum EpicStatusEnum {
   PLANNED
   IN_PROGRESS
   COMPLETED
+}
+
+enum KanbanColumnTypeEnum {
+  BACKLOG
+  READY_TO_DEVELOP
+  IN_PROGRESS
+  CODE_REVIEW
+  TESTING
+  DONE
+  CUSTOM
 }
