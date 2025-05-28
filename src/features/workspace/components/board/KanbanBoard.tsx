@@ -6,46 +6,34 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { RouterOutputs } from '~/trpc/react';
 import { api } from '~/trpc/react';
 import { BoardColumn } from './BoardColumn';
+import { KanbanColumnSkeleton } from './KanbanColumnSkeleton';
 
 interface KanbanBoardProps {
 	projectSlug: string;
-	isTemplate?: boolean;
 }
 
 type KanbanColumn = RouterOutputs['kanban']['getColumnsByProjectSlug'][number];
 
-export function KanbanBoard({
-	projectSlug,
-	isTemplate = false
-}: KanbanBoardProps) {
+export function KanbanBoard({ projectSlug }: KanbanBoardProps) {
 	const utils = api.useUtils();
 
 	// Get kanban columns with tasks
-	const { data: columns } = isTemplate
-		? api.kanban.getColumnsByProjectTemplateSlug.useQuery({
-				projectTemplateSlug: projectSlug
-			})
-		: api.kanban.getColumnsByProjectSlug.useQuery({
-				projectSlug: projectSlug
-			});
+	const { data: columns } = api.kanban.getColumnsByProjectSlug.useQuery({
+		projectSlug: projectSlug
+	});
+
+	console.log('columns', columns);
 
 	// Move task mutation with optimistic updates
 	const moveTaskMutation = api.kanban.moveTask.useMutation({
 		onMutate: async ({ taskId, fromColumnId, toColumnId, toIndex }) => {
 			// Cancel any outgoing refetches (so they don't overwrite our optimistic update)
 			await utils.kanban.getColumnsByProjectSlug.cancel({ projectSlug });
-			if (isTemplate) {
-				await utils.kanban.getColumnsByProjectTemplateSlug.cancel({
-					projectTemplateSlug: projectSlug
-				});
-			}
 
 			// Snapshot the previous value
-			const previousColumns = isTemplate
-				? utils.kanban.getColumnsByProjectTemplateSlug.getData({
-						projectTemplateSlug: projectSlug
-					})
-				: utils.kanban.getColumnsByProjectSlug.getData({ projectSlug });
+			const previousColumns = utils.kanban.getColumnsByProjectSlug.getData({
+				projectSlug
+			});
 
 			if (!previousColumns) return { previousColumns };
 
@@ -112,17 +100,7 @@ export function KanbanBoard({
 			}
 
 			// Update the cache with optimistic data
-			if (isTemplate) {
-				utils.kanban.getColumnsByProjectTemplateSlug.setData(
-					{ projectTemplateSlug: projectSlug },
-					newColumns
-				);
-			} else {
-				utils.kanban.getColumnsByProjectSlug.setData(
-					{ projectSlug },
-					newColumns
-				);
-			}
+			utils.kanban.getColumnsByProjectSlug.setData({ projectSlug }, newColumns);
 
 			return { previousColumns };
 		},
@@ -131,28 +109,15 @@ export function KanbanBoard({
 			console.error('Failed to move task:', error);
 
 			if (context?.previousColumns) {
-				if (isTemplate) {
-					utils.kanban.getColumnsByProjectTemplateSlug.setData(
-						{ projectTemplateSlug: projectSlug },
-						context.previousColumns
-					);
-				} else {
-					utils.kanban.getColumnsByProjectSlug.setData(
-						{ projectSlug },
-						context.previousColumns
-					);
-				}
+				utils.kanban.getColumnsByProjectSlug.setData(
+					{ projectSlug },
+					context.previousColumns
+				);
 			}
 		},
 		onSettled: () => {
 			// Always refetch after error or success to ensure we have the latest data
-			if (isTemplate) {
-				void utils.kanban.getColumnsByProjectTemplateSlug.invalidate({
-					projectTemplateSlug: projectSlug
-				});
-			} else {
-				void utils.kanban.getColumnsByProjectSlug.invalidate({ projectSlug });
-			}
+			void utils.kanban.getColumnsByProjectSlug.invalidate({ projectSlug });
 		}
 	});
 
@@ -175,11 +140,27 @@ export function KanbanBoard({
 
 	if (!columns) {
 		return (
-			<div className="flex h-[calc(100vh-40rem)] items-center justify-center">
-				<div className="text-muted-foreground">Loading kanban board...</div>
+			<div className="h-full">
+				<div className="grid h-[calc(100vh-40rem)] auto-cols-fr grid-flow-col gap-4 overflow-x-auto">
+					{/* Skeleton columns with variety */}
+					<div className="min-w-80">
+						<KanbanColumnSkeleton taskCount={2} />
+					</div>
+					<div className="min-w-80">
+						<KanbanColumnSkeleton taskCount={4} />
+					</div>
+					<div className="min-w-80">
+						<KanbanColumnSkeleton taskCount={1} />
+					</div>
+					<div className="min-w-80">
+						<KanbanColumnSkeleton taskCount={3} />
+					</div>
+				</div>
 			</div>
 		);
 	}
+
+	console.log('columns', columns);
 
 	return (
 		<div className="h-full">
