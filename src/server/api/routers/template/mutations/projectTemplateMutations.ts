@@ -9,8 +9,6 @@ export const projectTemplateMutations = {
 	create: protectedProcedure
 		.input(createProjectTemplateSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { userId } = ctx.session;
-			console.log('userId', userId);
 			try {
 				return await ctx.db.$transaction(async (prisma) => {
 					const projectTemplate = await prisma.projectTemplate.create({

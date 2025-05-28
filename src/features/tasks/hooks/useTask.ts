@@ -69,7 +69,7 @@ const useTaskMutations = ({ isTemplate, projectSlug }: UseTaskProps) => {
 				return {
 					...old,
 					tasks: old.tasks.map((task) => {
-						if (task.id === taskUpdate.taskId) {
+						if (task.id === taskUpdate.id) {
 							return {
 								...task,
 								...taskUpdate

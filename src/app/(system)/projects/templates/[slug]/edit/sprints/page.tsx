@@ -1,4 +1,4 @@
-import { SprintPlanning } from '~/features/projectManagement/components/sprint/SprintPlanning';
+import { SprintPlanning } from '~/features/workspace/components/sprint/SprintPlanning';
 import { api } from '~/trpc/server';
 
 export default async function SprintsPage({

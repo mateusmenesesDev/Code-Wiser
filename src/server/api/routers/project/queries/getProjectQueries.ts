@@ -17,15 +17,21 @@ export const getProjectQueries = {
 	getBySlug: protectedProcedure
 		.input(z.object({ slug: z.string() }))
 		.query(async ({ ctx, input }) => {
-			return await ctx.db.project.findUnique({
-				where: { slug: input.slug },
-				include: {
-					category: true,
-					tasks: true,
-					sprints: true,
-					epics: true
-				}
-			});
+			try {
+				const project = await ctx.db.project.findUnique({
+					where: { slug: input.slug },
+					include: {
+						category: true,
+						tasks: true,
+						sprints: true,
+						epics: true
+					}
+				});
+				return project;
+			} catch (error) {
+				console.error(error);
+				throw error;
+			}
 		}),
 
 	getEnrolled: protectedProcedure.query(({ ctx }) =>

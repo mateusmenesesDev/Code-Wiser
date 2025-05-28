@@ -1,6 +1,7 @@
 import { ProjectStatusEnum } from '@prisma/client';
 import { Check, CreditCard, Eye, Loader2, Play, Users } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
@@ -40,6 +41,7 @@ export function ProjectCard({
 	approvalPage = false,
 	isEnrolled = false
 }: ProjectCardProps) {
+	const router = useRouter();
 	const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
 	const { changeProjectApprovalMutation } = useApproval();
 	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
@@ -49,6 +51,10 @@ export function ProjectCard({
 			projectName: projectTemplate.title,
 			approval: approval ? 'APPROVED' : 'REQUESTED_CHANGES'
 		});
+	};
+
+	const handleContinue = () => {
+		router.push(`/projects/${projectTemplate.slug}`);
 	};
 
 	const handleCreateProject = async () => {
@@ -120,7 +126,11 @@ export function ProjectCard({
 								</Button>
 							)}
 						{!approvalPage && isEnrolled ? (
-							<Button size="sm" className="w-full sm:w-auto">
+							<Button
+								size="sm"
+								className="w-full sm:w-auto"
+								onClick={handleContinue}
+							>
 								<Check className="mr-2 h-4 w-4" />
 								Continue
 							</Button>

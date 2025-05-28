@@ -27,7 +27,7 @@ import {
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
 import type { EpicWithTasks } from '../../../projects/types';
-import { TaskCard } from '../../../tasks/components/TaskCard';
+import { TaskCard } from '../tasks/TaskCard';
 
 interface EpicCardProps {
 	epic: EpicWithTasks;

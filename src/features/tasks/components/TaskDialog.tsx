@@ -88,7 +88,7 @@ export function TaskDialog({
 	const onSubmit: SubmitHandler<FormData> = (data) => {
 		if (task) {
 			updateTask({
-				taskId: task.id,
+				id: task.id,
 				...data
 			});
 		} else {

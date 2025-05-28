@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
 	newSprintSchema,
 	updateSprintSchema
-} from '~/features/projectManagement/schemas/sprint.schema';
+} from '~/features/workspace/schemas/sprint.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 
 export const sprintMutations = {

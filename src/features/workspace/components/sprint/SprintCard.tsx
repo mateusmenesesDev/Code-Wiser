@@ -32,8 +32,8 @@ import { Progress } from '~/common/components/ui/progress';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { TaskDialog } from '~/features/tasks/components/TaskDialog';
 import type { RouterOutputs } from '~/trpc/react';
-import { TaskCard } from '../../../tasks/components/TaskCard';
 import { useSprint } from '../../hooks/sprint.hook';
+import { TaskCard } from '../tasks/TaskCard';
 
 interface SprintCardProps {
 	sprint: RouterOutputs['sprint']['getAllByProjectSlug'][number];

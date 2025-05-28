@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { EpicManagement } from '~/features/projectManagement/components/epic/EpicManagement';
+import { EpicManagement } from '~/features/workspace/components/epic/EpicManagement';
 import { api } from '~/trpc/react';
 
 export default function EpicsPage() {
