@@ -16,21 +16,18 @@ export default function ProjectPage() {
 	const projectSlug = params.slug as string;
 	const [activeTab, setActiveTab] = useState('board');
 
-	// Get project and kanban data
 	const { project, isLoading: isProjectLoading } = useProjectData(projectSlug);
 	const { columns, isLoading: isKanbanLoading } = useKanbanData(projectSlug);
 	const stats = useProjectStats(columns);
 
 	return (
 		<div>
-			{/* Show skeleton header while project data is loading */}
 			{isProjectLoading ? (
 				<ProjectHeaderSkeleton />
 			) : (
 				<ProjectHeader projectTitle={project?.title} />
 			)}
 
-			{/* Show skeleton stats while kanban data is loading */}
 			{isKanbanLoading ? (
 				<ProjectStatsCardsSkeleton />
 			) : (
