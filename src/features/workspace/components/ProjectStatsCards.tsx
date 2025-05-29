@@ -20,53 +20,81 @@ interface ProjectStatsCardsProps {
 
 export function ProjectStatsCards({ stats }: ProjectStatsCardsProps) {
 	return (
-		<section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="font-medium text-sm">Total Tasks</CardTitle>
-					<Target className="h-4 w-4 text-muted-foreground" />
+		<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="font-medium text-muted-foreground text-sm">
+						Overall Progress
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="font-bold text-2xl">{stats.totalTasks}</div>
-					<p className="text-muted-foreground text-xs">+2 from last week</p>
+					<div className="flex items-center gap-3">
+						<TrendingUp className="h-8 w-8 text-blue-600" />
+						<div>
+							<p className="font-bold text-2xl">{stats.progressPercentage}%</p>
+							<Progress
+								value={stats.progressPercentage}
+								className="mt-1 h-2 w-20"
+							/>
+						</div>
+					</div>
 				</CardContent>
 			</Card>
 
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="font-medium text-sm">Completed</CardTitle>
-					<CheckCircle className="h-4 w-4 text-muted-foreground" />
+			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="font-medium text-muted-foreground text-sm">
+						Tasks Completed
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="font-bold text-2xl">{stats.completedTasks}</div>
-					<p className="text-muted-foreground text-xs">
-						{Math.round((stats.completedTasks / stats.totalTasks) * 100)}%
-						completion
-					</p>
+					<div className="flex items-center gap-3">
+						<CheckCircle className="h-8 w-8 text-green-600" />
+						<div>
+							<p className="font-bold text-2xl">
+								{stats.completedTasks}/{stats.totalTasks}
+							</p>
+							<p className="text-muted-foreground text-xs">Total tasks</p>
+						</div>
+					</div>
 				</CardContent>
 			</Card>
 
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="font-medium text-sm">In Progress</CardTitle>
-					<Clock className="h-4 w-4 text-muted-foreground" />
+			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="font-medium text-muted-foreground text-sm">
+						In Progress
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="font-bold text-2xl">{stats.inProgressTasks}</div>
-					<p className="text-muted-foreground text-xs">+4 from yesterday</p>
+					<div className="flex items-center gap-3">
+						<Target className="h-8 w-8 text-purple-600" />
+						<div>
+							<p className="font-bold text-2xl">{stats.inProgressTasks}</p>
+							<p className="text-muted-foreground text-xs">Active tasks</p>
+						</div>
+					</div>
 				</CardContent>
 			</Card>
 
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="font-medium text-sm">Progress</CardTitle>
-					<TrendingUp className="h-4 w-4 text-muted-foreground" />
+			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="font-medium text-muted-foreground text-sm">
+						Remaining Tasks
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="font-bold text-2xl">{stats.progressPercentage}%</div>
-					<Progress value={stats.progressPercentage} className="mt-2" />
+					<div className="flex items-center gap-3">
+						<Clock className="h-8 w-8 text-orange-600" />
+						<div>
+							<p className="font-bold text-2xl">
+								{stats.totalTasks - stats.completedTasks}
+							</p>
+							<p className="text-muted-foreground text-xs">Tasks left</p>
+						</div>
+					</div>
 				</CardContent>
 			</Card>
-		</section>
+		</div>
 	);
 }

@@ -9,50 +9,74 @@ import { Skeleton } from '~/common/components/ui/skeleton';
 
 export function ProjectStatsCardsSkeleton() {
 	return (
-		<section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="font-medium text-sm">Total Tasks</CardTitle>
-					<Target className="h-4 w-4 text-muted-foreground" />
+		<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="font-medium text-muted-foreground text-sm">
+						Overall Progress
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Skeleton className="mb-2 h-8 w-12" />
-					<Skeleton className="h-3 w-24" />
+					<div className="flex items-center gap-3">
+						<TrendingUp className="h-8 w-8 text-blue-600" />
+						<div>
+							<Skeleton className="mb-1 h-8 w-16" />
+							<Skeleton className="h-2 w-20" />
+						</div>
+					</div>
 				</CardContent>
 			</Card>
 
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="font-medium text-sm">Completed</CardTitle>
-					<CheckCircle className="h-4 w-4 text-muted-foreground" />
+			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="font-medium text-muted-foreground text-sm">
+						Tasks Completed
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Skeleton className="mb-2 h-8 w-12" />
-					<Skeleton className="h-3 w-20" />
+					<div className="flex items-center gap-3">
+						<CheckCircle className="h-8 w-8 text-green-600" />
+						<div>
+							<Skeleton className="mb-1 h-8 w-20" />
+							<Skeleton className="h-3 w-16" />
+						</div>
+					</div>
 				</CardContent>
 			</Card>
 
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="font-medium text-sm">In Progress</CardTitle>
-					<Clock className="h-4 w-4 text-muted-foreground" />
+			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="font-medium text-muted-foreground text-sm">
+						In Progress
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Skeleton className="mb-2 h-8 w-12" />
-					<Skeleton className="h-3 w-28" />
+					<div className="flex items-center gap-3">
+						<Target className="h-8 w-8 text-purple-600" />
+						<div>
+							<Skeleton className="mb-1 h-8 w-12" />
+							<Skeleton className="h-3 w-20" />
+						</div>
+					</div>
 				</CardContent>
 			</Card>
 
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="font-medium text-sm">Progress</CardTitle>
-					<TrendingUp className="h-4 w-4 text-muted-foreground" />
+			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
+				<CardHeader className="pb-3">
+					<CardTitle className="font-medium text-muted-foreground text-sm">
+						Remaining Tasks
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Skeleton className="mb-2 h-8 w-16" />
-					<Skeleton className="h-2 w-full" />
+					<div className="flex items-center gap-3">
+						<Clock className="h-8 w-8 text-orange-600" />
+						<div>
+							<Skeleton className="mb-1 h-8 w-12" />
+							<Skeleton className="h-3 w-16" />
+						</div>
+					</div>
 				</CardContent>
 			</Card>
-		</section>
+		</div>
 	);
 }
