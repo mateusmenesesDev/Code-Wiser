@@ -12,6 +12,7 @@ model ProjectTemplate {
   type             ProjectTypeEnum
   status           ProjectStatusEnum      @default(PENDING)
   difficulty       ProjectDifficultyEnum
+  figmaProjectUrl  String?
   tasks            Task[]
   technologies     Technology[]
   learningOutcomes LearningOutcome[]

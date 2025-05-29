@@ -10,6 +10,7 @@ model Project {
   maxParticipants Int
   type            ProjectTypeEnum
   difficulty      ProjectDifficultyEnum
+  figmaProjectUrl String?
   resources       Resource[]
   tasks           Task[]
   categoryId      String

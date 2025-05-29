@@ -2,6 +2,8 @@
 
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { DesignFileCard } from '~/features/workspace/components/DesignFileCard';
+import { DesignFileCardSkeleton } from '~/features/workspace/components/DesignFileCardSkeleton';
 import { ProjectHeader } from '~/features/workspace/components/ProjectHeader';
 import { ProjectHeaderSkeleton } from '~/features/workspace/components/ProjectHeaderSkeleton';
 import { ProjectStatsCards } from '~/features/workspace/components/ProjectStatsCards';
@@ -32,6 +34,14 @@ export default function ProjectPage() {
 				<ProjectStatsCardsSkeleton />
 			) : (
 				<ProjectStatsCards stats={stats} />
+			)}
+
+			{isProjectLoading ? (
+				<DesignFileCardSkeleton />
+			) : (
+				project?.figmaProjectUrl && (
+					<DesignFileCard figmaProjectUrl={project.figmaProjectUrl} />
+				)
 			)}
 
 			<WorkspaceTabs
