@@ -1,5 +1,3 @@
-import { Plus } from 'lucide-react';
-import { Button } from '~/common/components/ui/button';
 import { Card, CardContent, CardHeader } from '~/common/components/ui/card';
 import {
 	Tabs,
@@ -67,13 +65,6 @@ export function WorkspaceTabs({
 					</CardContent>
 				</Card>
 			</section>
-
-			{/* Floating Action Button */}
-			<div className="fixed right-6 bottom-6">
-				<Button size="lg" className="h-14 w-14 rounded-full shadow-lg">
-					<Plus className="h-6 w-6" />
-				</Button>
-			</div>
 		</>
 	);
 }
