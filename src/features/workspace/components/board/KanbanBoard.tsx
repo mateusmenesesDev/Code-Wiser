@@ -1,8 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useFilteredColumnsUrl } from '../../hooks/useFilteredColumnsUrl';
-import { useKanbanData } from '../../hooks/useKanbanData';
+import { api } from '~/trpc/react';
 import { useSetAllTasks } from '../../hooks/useTaskFiltersUrl';
 import { TaskFilters } from '../TaskFilters';
 import { TaskFiltersSkeleton } from '../TaskFiltersSkeleton';
@@ -11,22 +10,29 @@ import { KanbanBoardSkeleton } from './KanbanBoardSkeleton';
 
 interface KanbanBoardProps {
 	projectSlug: string;
+	isTemplate?: boolean;
 }
 
-export function KanbanBoard({ projectSlug }: KanbanBoardProps) {
-	const { columns, isLoading, moveTask } = useKanbanData(projectSlug);
+export function KanbanBoard({
+	projectSlug,
+	isTemplate = false
+}: KanbanBoardProps) {
+	// Get unfiltered data for setting up the task atom (for filter options)
+	const { data: projectData, isLoading } = isTemplate
+		? api.projectTemplate.getBySlug.useQuery({ slug: projectSlug })
+		: api.project.getBySlug.useQuery({ slug: projectSlug });
+
 	const setAllTasks = useSetAllTasks();
-	const filteredColumns = useFilteredColumnsUrl(columns);
 
 	const allTasks = useMemo(() => {
-		return columns?.flatMap((column) => column.tasks) || [];
-	}, [columns]);
+		return projectData?.tasks || [];
+	}, [projectData?.tasks]);
 
 	useMemo(() => {
 		setAllTasks(allTasks);
 	}, [allTasks, setAllTasks]);
 
-	if (isLoading || !columns) {
+	if (isLoading || !projectData) {
 		return (
 			<div className="space-y-6">
 				<TaskFiltersSkeleton />
@@ -38,10 +44,7 @@ export function KanbanBoard({ projectSlug }: KanbanBoardProps) {
 	return (
 		<div className="space-y-6">
 			<TaskFilters />
-			<KanbanBoardContent
-				columns={filteredColumns || columns}
-				moveTask={moveTask}
-			/>
+			<KanbanBoardContent projectSlug={projectSlug} isTemplate={isTemplate} />
 		</div>
 	);
 }

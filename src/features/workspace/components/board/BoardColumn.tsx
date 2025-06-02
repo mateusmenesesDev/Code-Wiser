@@ -1,42 +1,42 @@
 'use client';
 
+import type { TaskStatusEnum } from '@prisma/client';
 import { useRef } from 'react';
 import { useDrop } from 'react-dnd';
 import { Card, CardContent, CardHeader } from '~/common/components/ui/card';
 import { cn } from '~/lib/utils';
+import type { RouterOutputs } from '~/trpc/react';
 import type { Column } from '../../../projects/types';
 import { TaskCard } from '../tasks/TaskCard';
 import { ColumnHeader } from './ColumnHeader';
 
 interface BoardColumnProps {
 	column: Column;
-	onAddTask?: () => void;
 	moveTask: (
 		taskId: string,
-		fromColumnId: string,
-		toColumnId: string,
+		fromColumnId: TaskStatusEnum,
+		toColumnId: TaskStatusEnum,
 		toIndex: number
 	) => void;
 }
 
-// Drop zone component for insertion points
 function DropZone({
 	columnId,
 	index,
 	moveTask
 }: {
-	columnId: string;
+	columnId: TaskStatusEnum;
 	index: number;
 	moveTask: (
 		taskId: string,
-		fromColumnId: string,
-		toColumnId: string,
+		fromColumnId: TaskStatusEnum,
+		toColumnId: TaskStatusEnum,
 		toIndex: number
 	) => void;
 }) {
 	const [{ isOver, canDrop }, drop] = useDrop({
 		accept: 'TASK',
-		drop: (item: { id: string; columnId: string }) => {
+		drop: (item: { id: string; columnId: TaskStatusEnum }) => {
 			moveTask(item.id, item.columnId, columnId, index);
 		},
 		collect: (monitor) => ({
@@ -61,14 +61,13 @@ function DropZone({
 	);
 }
 
-export function BoardColumn({ column, onAddTask, moveTask }: BoardColumnProps) {
+export function BoardColumn({ column, moveTask }: BoardColumnProps) {
 	const ref = useRef<HTMLDivElement>(null);
 
 	const [{ isOver, canDrop }, drop] = useDrop({
 		accept: 'TASK',
-		drop: (item: { id: string; columnId: string }, monitor) => {
+		drop: (item: { id: string; columnId: TaskStatusEnum }, monitor) => {
 			if (!monitor.didDrop()) {
-				// If dropped on the column but not on a specific drop zone, add to end
 				const targetIndex = column.tasks.length;
 				moveTask(item.id, item.columnId, column.id, targetIndex);
 			}
@@ -94,15 +93,13 @@ export function BoardColumn({ column, onAddTask, moveTask }: BoardColumnProps) {
 		>
 			<CardHeader
 				className={cn(
-					`${column.color} border-b backdrop-blur-sm transition-all duration-200`,
+					'border-b backdrop-blur-sm transition-all duration-200',
+					column.bgClass,
+					column.borderClass,
 					isOver && canDrop && 'bg-primary/5'
 				)}
 			>
-				<ColumnHeader
-					title={column.title}
-					count={column.tasks.length}
-					onAddTask={onAddTask}
-				/>
+				<ColumnHeader title={column.title} count={column.tasks.length} />
 			</CardHeader>
 			<CardContent className="h-full p-4">
 				<div
@@ -117,7 +114,9 @@ export function BoardColumn({ column, onAddTask, moveTask }: BoardColumnProps) {
 					{column.tasks.map((task, index) => (
 						<div key={task.id}>
 							<TaskCard
-								task={task}
+								task={
+									task as RouterOutputs['sprint']['getAllByProjectSlug'][number]['tasks'][number]
+								}
 								columnId={column.id}
 								index={index}
 								moveTask={moveTask}

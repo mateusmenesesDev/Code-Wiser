@@ -1,8 +1,9 @@
+import type { TaskStatusEnum } from '@prisma/client';
 import { z } from 'zod';
 import {
 	createTaskSchema,
 	updateTaskSchema
-} from '~/features/tasks/schemas/task.schema';
+} from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 
 export const taskMutations = {
@@ -47,12 +48,40 @@ export const taskMutations = {
 	update: protectedProcedure
 		.input(updateTaskSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { taskId, ...rest } = input;
+			const { id, ...rest } = input;
 			const task = await ctx.db.task.update({
-				where: { id: taskId },
+				where: { id },
 				data: { ...rest }
 			});
 			return task;
+		}),
+
+	updateTaskOrders: protectedProcedure
+		.input(
+			z.object({
+				updates: z.array(
+					z.object({
+						id: z.string(),
+						order: z.number(),
+						status: z.string().optional()
+					})
+				)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			// Update all tasks in a transaction
+			await ctx.db.$transaction(
+				input.updates.map((update) =>
+					ctx.db.task.update({
+						where: { id: update.id },
+						data: {
+							order: update.order,
+							...(update.status && { status: update.status as TaskStatusEnum })
+						}
+					})
+				)
+			);
+			return { success: true };
 		}),
 
 	delete: protectedProcedure

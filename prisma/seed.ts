@@ -1,101 +1,119 @@
-import { KanbanColumnTypeEnum, PrismaClient } from '@prisma/client';
+import {
+	PrismaClient,
+	TaskPriorityEnum,
+	TaskStatusEnum,
+	TaskTypeEnum
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
 	console.log('🌱 Starting database seeding...');
 
-	// Get all project templates that don't have kanban columns yet
+	// Get all project templates that don't have tasks yet
 	const projectTemplates = await prisma.projectTemplate.findMany({
 		include: {
-			kanbanColumns: true
+			tasks: true
 		}
 	});
 
-	const templatesWithoutColumns = projectTemplates.filter(
-		(template) => template.kanbanColumns.length === 0
+	const templatesWithoutTasks = projectTemplates.filter(
+		(template) => template.tasks.length === 0
 	);
 
 	console.log(
-		`Found ${templatesWithoutColumns.length} project templates without kanban columns`
+		`Found ${templatesWithoutTasks.length} project templates without tasks`
 	);
 
-	// Default kanban columns configuration
-	const defaultColumns = [
+	// Sample tasks for each status
+	const sampleTasks = [
 		{
-			title: 'Ready to Develop',
-			description: 'Tasks that are ready to be worked on',
-			color: 'bg-muted/30',
-			position: 0,
-			columnType: KanbanColumnTypeEnum.READY_TO_DEVELOP
+			title: 'Set up project structure',
+			description:
+				'Initialize the project with proper folder structure and dependencies',
+			status: TaskStatusEnum.BACKLOG,
+			priority: TaskPriorityEnum.HIGH,
+			type: TaskTypeEnum.TASK,
+			tags: ['setup', 'infrastructure']
 		},
 		{
-			title: 'In Progress',
-			description: 'Tasks currently being worked on',
-			color: 'bg-blue-100/50 dark:bg-blue-900/20',
-			position: 1,
-			columnType: KanbanColumnTypeEnum.IN_PROGRESS
+			title: 'Design user authentication flow',
+			description: 'Create wireframes and user flow for authentication system',
+			status: TaskStatusEnum.READY_TO_DEVELOP,
+			priority: TaskPriorityEnum.MEDIUM,
+			type: TaskTypeEnum.USER_STORY,
+			tags: ['design', 'auth']
 		},
 		{
-			title: 'Code Review',
-			description: 'Tasks waiting for code review',
-			color: 'bg-yellow-100/50 dark:bg-yellow-900/20',
-			position: 2,
-			columnType: KanbanColumnTypeEnum.CODE_REVIEW
+			title: 'Implement login functionality',
+			description: 'Build the login form and authentication logic',
+			status: TaskStatusEnum.IN_PROGRESS,
+			priority: TaskPriorityEnum.HIGH,
+			type: TaskTypeEnum.USER_STORY,
+			tags: ['auth', 'frontend']
 		},
 		{
-			title: 'Testing',
-			description: 'Tasks in testing phase',
-			color: 'bg-purple-100/50 dark:bg-purple-900/20',
-			position: 3,
-			columnType: KanbanColumnTypeEnum.TESTING
+			title: 'Add password validation',
+			description: 'Implement client-side and server-side password validation',
+			status: TaskStatusEnum.CODE_REVIEW,
+			priority: TaskPriorityEnum.MEDIUM,
+			type: TaskTypeEnum.TASK,
+			tags: ['validation', 'security']
 		},
 		{
-			title: 'Done',
-			description: 'Completed tasks',
-			color: 'bg-green-100/50 dark:bg-green-900/20',
-			position: 4,
-			columnType: KanbanColumnTypeEnum.DONE
+			title: 'Test user registration',
+			description:
+				'Write and execute tests for user registration functionality',
+			status: TaskStatusEnum.TESTING,
+			priority: TaskPriorityEnum.LOW,
+			type: TaskTypeEnum.TASK,
+			tags: ['testing', 'auth']
+		},
+		{
+			title: 'Setup database schema',
+			description: 'Create and migrate database tables for user management',
+			status: TaskStatusEnum.DONE,
+			priority: TaskPriorityEnum.HIGH,
+			type: TaskTypeEnum.TASK,
+			tags: ['database', 'migration']
 		}
 	];
 
-	// Create default columns for each project template
-	for (const template of templatesWithoutColumns) {
-		console.log(`Creating kanban columns for template: ${template.title}`);
+	// Create sample tasks for each project template
+	for (const template of templatesWithoutTasks) {
+		console.log(`Creating sample tasks for template: ${template.title}`);
 
-		for (const columnData of defaultColumns) {
-			await prisma.kanbanColumn.create({
+		for (const taskData of sampleTasks) {
+			await prisma.task.create({
 				data: {
-					...columnData,
+					...taskData,
 					projectTemplateId: template.id
 				}
 			});
 		}
 	}
 
-	// Get all projects that don't have kanban columns yet
+	// Get all projects that don't have tasks yet
 	const projects = await prisma.project.findMany({
 		include: {
-			kanbanColumns: true
+			tasks: true
 		}
 	});
 
-	const projectsWithoutColumns = projects.filter(
-		(project) => project.kanbanColumns.length === 0
+	const projectsWithoutTasks = projects.filter(
+		(project) => project.tasks.length === 0
 	);
 
-	console.log(
-		`Found ${projectsWithoutColumns.length} projects without kanban columns`
-	);
+	console.log(`Found ${projectsWithoutTasks.length} projects without tasks`);
 
-	// Create default columns for each project
-	for (const project of projectsWithoutColumns) {
-		console.log(`Creating kanban columns for project: ${project.title}`);
+	// Create sample tasks for each project
+	for (const project of projectsWithoutTasks) {
+		console.log(`Creating sample tasks for project: ${project.title}`);
 
-		for (const columnData of defaultColumns) {
-			await prisma.kanbanColumn.create({
+		for (const taskData of sampleTasks) {
+			await prisma.task.create({
 				data: {
-					...columnData,
+					...taskData,
 					projectId: project.id
 				}
 			});

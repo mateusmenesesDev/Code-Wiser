@@ -12,10 +12,7 @@ async function main() {
 		include: {
 			sprints: true,
 			epics: true,
-			tasks: true,
-			kanbanColumns: {
-				orderBy: { position: 'asc' }
-			}
+			tasks: true
 		}
 	});
 
@@ -45,7 +42,6 @@ async function main() {
 		sprints: templateSprints,
 		epics: templateEpics,
 		tasks: templateTasks,
-		kanbanColumns: templateColumns,
 		...projectData
 	} = projectTemplate;
 
@@ -60,26 +56,6 @@ async function main() {
 			members: { connect: { id: testUser.id } }
 		}
 	});
-
-	// Create kanban columns
-	const columnIdMap: Record<string, string> = {};
-	for (const column of templateColumns) {
-		const { id: oldId, projectTemplateId, ...columnData } = column;
-		const newColumn = await prisma.kanbanColumn.upsert({
-			where: {
-				projectId_position: {
-					projectId: newProject.id,
-					position: columnData.position
-				}
-			},
-			update: columnData,
-			create: {
-				...columnData,
-				projectId: newProject.id
-			}
-		});
-		columnIdMap[oldId] = newColumn.id;
-	}
 
 	// Create sprints
 	const sprintIdMap: Record<string, string> = {};
@@ -115,7 +91,6 @@ async function main() {
 			epicId,
 			sprintId,
 			projectTemplateId,
-			kanbanColumnId,
 			...taskData
 		} = task;
 		await prisma.task.upsert({
@@ -128,15 +103,13 @@ async function main() {
 			update: {
 				...taskData,
 				epicId: epicId ? epicIdMap[epicId] : null,
-				sprintId: sprintId ? sprintIdMap[sprintId] : null,
-				kanbanColumnId: kanbanColumnId ? columnIdMap[kanbanColumnId] : null
+				sprintId: sprintId ? sprintIdMap[sprintId] : null
 			},
 			create: {
 				...taskData,
 				projectId: newProject.id,
 				epicId: epicId ? epicIdMap[epicId] : null,
 				sprintId: sprintId ? sprintIdMap[sprintId] : null,
-				kanbanColumnId: kanbanColumnId ? columnIdMap[kanbanColumnId] : null,
 				projectTemplateId: null
 			}
 		});
@@ -144,7 +117,6 @@ async function main() {
 
 	console.log('✅ Test project created successfully!');
 	console.log(`Project: ${newProject.title} (${newProject.slug})`);
-	console.log(`Columns created: ${templateColumns.length}`);
 	console.log(`Tasks created: ${templateTasks.length}`);
 	console.log('\n🌐 You can now test the kanban board at:');
 	console.log(`http://localhost:3000/workspace/${newProject.slug}`);

@@ -1,136 +1,176 @@
-import { useCallback } from 'react';
-import type { RouterOutputs } from '~/trpc/react';
+import type { TaskStatusEnum } from '@prisma/client';
+import { useCallback, useMemo } from 'react';
 import { api } from '~/trpc/react';
+import {
+	type TaskFilters,
+	generateKanbanColumns
+} from '../utils/kanbanColumns';
 
-type KanbanColumn = RouterOutputs['kanban']['getColumnsByProjectSlug'][number];
+const sortTasksByOrder = (
+	a: { order: number | null; createdAt: Date },
+	b: { order: number | null; createdAt: Date }
+) => {
+	if (a.order == null && b.order == null) {
+		return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+	}
+	if (a.order == null) return 1;
+	if (b.order == null) return -1;
 
-export function useKanbanData(projectSlug: string) {
+	return a.order - b.order;
+};
+
+export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 	const utils = api.useUtils();
 
-	// Get kanban columns with tasks
-	const { data: columns, isLoading } =
-		api.kanban.getColumnsByProjectSlug.useQuery({
-			projectSlug: projectSlug
-		});
+	const { data: projectData, isLoading } = api.project.getBySlug.useQuery({
+		slug: projectSlug
+	});
 
-	// Move task mutation with optimistic updates
-	const moveTaskMutation = api.kanban.moveTask.useMutation({
-		onMutate: async ({ taskId, fromColumnId, toColumnId, toIndex }) => {
-			// Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-			await utils.kanban.getColumnsByProjectSlug.cancel({ projectSlug });
+	const columns = useMemo(() => {
+		if (!projectData?.tasks) return [];
+		return generateKanbanColumns(projectData.tasks, filters);
+	}, [projectData?.tasks, filters]);
 
-			// Snapshot the previous value
-			const previousColumns = utils.kanban.getColumnsByProjectSlug.getData({
-				projectSlug
-			});
+	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
+		onMutate: async ({ updates: _updates }) => {
+			const queryKey = { slug: projectSlug };
 
-			if (!previousColumns) return { previousColumns };
+			await utils.project.getBySlug.cancel(queryKey);
 
-			// Optimistically update the data
-			const newColumns = [...previousColumns];
-
-			// Find the task being moved
-			let taskToMove: KanbanColumn['tasks'][number] | null = null;
-			let fromColumnIndex = -1;
-			let taskIndex = -1;
-
-			for (let i = 0; i < newColumns.length; i++) {
-				const column = newColumns[i];
-				if (column?.id === fromColumnId) {
-					fromColumnIndex = i;
-					taskIndex = column.tasks.findIndex((task) => task.id === taskId);
-					if (taskIndex !== -1) {
-						taskToMove = column.tasks[taskIndex] ?? null;
-						break;
-					}
-				}
-			}
-
-			if (!taskToMove || fromColumnIndex === -1 || taskIndex === -1) {
-				return { previousColumns };
-			}
-
-			// Remove task from source column
-			const sourceColumn = newColumns[fromColumnIndex];
-			if (sourceColumn) {
-				newColumns[fromColumnIndex] = {
-					...sourceColumn,
-					tasks: sourceColumn.tasks.filter((task) => task.id !== taskId)
-				};
-			}
-
-			// Find target column and add task
-			const toColumnIndex = newColumns.findIndex(
-				(col) => col?.id === toColumnId
-			);
-			if (toColumnIndex !== -1) {
-				const targetColumn = newColumns[toColumnIndex];
-				if (targetColumn) {
-					const newTasks = [...targetColumn.tasks];
-
-					// Insert task at the specified index
-					const insertIndex = Math.min(toIndex, newTasks.length);
-					newTasks.splice(insertIndex, 0, {
-						...taskToMove,
-						kanbanColumnId: toColumnId,
-						orderInColumn: insertIndex
-					});
-
-					// Update order for all tasks in the target column
-					newTasks.forEach((task, index) => {
-						task.orderInColumn = index;
-					});
-
-					newColumns[toColumnIndex] = {
-						...targetColumn,
-						tasks: newTasks
-					};
-				}
-			}
-
-			// Update the cache with optimistic data
-			utils.kanban.getColumnsByProjectSlug.setData({ projectSlug }, newColumns);
-
-			return { previousColumns };
+			const previousData = utils.project.getBySlug.getData(queryKey);
+			return { previousData };
 		},
-		onError: (error, _variables, context) => {
-			// If the mutation fails, use the context returned from onMutate to roll back
-			console.error('Failed to move task:', error);
+		onError: (_error, _variables, context) => {
+			const queryKey = { slug: projectSlug };
 
-			if (context?.previousColumns) {
-				utils.kanban.getColumnsByProjectSlug.setData(
-					{ projectSlug },
-					context.previousColumns
-				);
+			if (context?.previousData) {
+				utils.project.getBySlug.setData(queryKey, context.previousData);
 			}
 		},
 		onSettled: () => {
-			// Always refetch after error or success to ensure we have the latest data
-			void utils.kanban.getColumnsByProjectSlug.invalidate({ projectSlug });
+			const queryKey = { slug: projectSlug };
+
+			utils.project.getBySlug.invalidate(queryKey);
 		}
 	});
 
 	const moveTask = useCallback(
 		(
 			taskId: string,
-			fromColumnId: string,
-			toColumnId: string,
+			fromColumnId: TaskStatusEnum,
+			toColumnId: TaskStatusEnum,
 			toIndex: number
 		) => {
-			moveTaskMutation.mutate({
+			if (!projectData?.tasks) return;
+
+			console.log('🔄 Moving task:', {
 				taskId,
 				fromColumnId,
 				toColumnId,
 				toIndex
 			});
+
+			const newStatus = toColumnId;
+			const taskToMove = projectData.tasks.find((task) => task.id === taskId);
+			if (!taskToMove) return;
+
+			const queryKey = { slug: projectSlug };
+
+			const optimisticTasks = projectData.tasks.map((task) => ({ ...task }));
+
+			const movedTaskIndex = optimisticTasks.findIndex(
+				(task) => task.id === taskId
+			);
+			if (movedTaskIndex !== -1) {
+				const task = optimisticTasks[movedTaskIndex];
+				if (task) {
+					task.status = newStatus;
+				}
+			}
+
+			utils.project.getBySlug.setData(queryKey, (oldData) => {
+				if (!oldData) return oldData;
+				console.log('📝 Updating cache with optimistic tasks');
+				return {
+					...oldData,
+					tasks: optimisticTasks
+				};
+			});
+
+			const updates: Array<{ id: string; order: number; status?: string }> = [];
+
+			if (fromColumnId === toColumnId) {
+				const columnTasks = optimisticTasks
+					.filter((task) => task.status === newStatus)
+					.sort(sortTasksByOrder);
+
+				const taskIndex = columnTasks.findIndex((task) => task.id === taskId);
+				if (taskIndex !== -1) {
+					const [movedTask] = columnTasks.splice(taskIndex, 1);
+					if (movedTask) {
+						columnTasks.splice(toIndex, 0, movedTask);
+					}
+				}
+
+				columnTasks.forEach((task, index) => {
+					const taskInArray = optimisticTasks.find((t) => t.id === task.id);
+					if (taskInArray) {
+						taskInArray.order = index;
+					}
+					updates.push({ id: task.id, order: index });
+				});
+			} else {
+				const sourceColumnTasks = optimisticTasks
+					.filter((task) => task.status === fromColumnId)
+					.sort(sortTasksByOrder);
+
+				sourceColumnTasks.forEach((task, index) => {
+					const taskInArray = optimisticTasks.find((t) => t.id === task.id);
+					if (taskInArray) {
+						taskInArray.order = index;
+					}
+					updates.push({ id: task.id, order: index });
+				});
+
+				const targetColumnTasks = optimisticTasks
+					.filter((task) => task.status === newStatus && task.id !== taskId)
+					.sort(sortTasksByOrder);
+
+				const movedTask = optimisticTasks.find((task) => task.id === taskId);
+				if (movedTask) {
+					targetColumnTasks.splice(toIndex, 0, movedTask);
+				}
+
+				targetColumnTasks.forEach((task, index) => {
+					const taskInArray = optimisticTasks.find((t) => t.id === task.id);
+					if (taskInArray) {
+						taskInArray.order = index;
+					}
+					updates.push({
+						id: task.id,
+						order: index,
+						...(task.id === taskId && { status: newStatus })
+					});
+				});
+			}
+
+			utils.project.getBySlug.setData(queryKey, (oldData) => {
+				if (!oldData) return oldData;
+				console.log('📝 Final cache update with orders');
+				return {
+					...oldData,
+					tasks: optimisticTasks
+				};
+			});
+
+			updateTaskOrdersMutation.mutate({ updates });
 		},
-		[moveTaskMutation]
+		[updateTaskOrdersMutation, projectData?.tasks, utils, projectSlug]
 	);
 
 	return {
 		columns,
 		isLoading,
-		moveTask,
-		isMoving: moveTaskMutation.isPending
+		moveTask
 	};
 }

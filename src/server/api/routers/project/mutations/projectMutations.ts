@@ -29,10 +29,7 @@ export const projectMutations = {
 						include: {
 							sprints: true,
 							epics: true,
-							tasks: true,
-							kanbanColumns: {
-								orderBy: { position: 'asc' }
-							}
+							tasks: true
 						}
 					});
 
@@ -51,7 +48,6 @@ export const projectMutations = {
 						sprints: templateSprints,
 						epics: templateEpics,
 						tasks: templateTasks,
-						kanbanColumns: templateColumns,
 						...projectData
 					} = projectTemplate;
 
@@ -62,19 +58,6 @@ export const projectMutations = {
 							members: { connect: { id: userId } }
 						}
 					});
-
-					// Create kanban columns
-					const columnIdMap: Record<string, string> = {};
-					for (const column of templateColumns) {
-						const { id: oldId, projectTemplateId, ...columnData } = column;
-						const newColumn = await prisma.kanbanColumn.create({
-							data: {
-								...columnData,
-								projectId: newProject.id
-							}
-						});
-						columnIdMap[oldId] = newColumn.id;
-					}
 
 					const sprintIdMap: Record<string, string> = {};
 					for (const sprint of templateSprints) {
@@ -107,7 +90,6 @@ export const projectMutations = {
 							epicId,
 							sprintId,
 							projectTemplateId,
-							kanbanColumnId,
 							...taskData
 						} = task;
 						await prisma.task.create({
@@ -116,9 +98,6 @@ export const projectMutations = {
 								projectId: newProject.id,
 								epicId: epicId ? epicIdMap[epicId] : null,
 								sprintId: sprintId ? sprintIdMap[sprintId] : null,
-								kanbanColumnId: kanbanColumnId
-									? columnIdMap[kanbanColumnId]
-									: null,
 								projectTemplateId: null
 							}
 						});

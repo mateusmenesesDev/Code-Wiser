@@ -5,10 +5,10 @@ import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '~/common/components/ui/radio-group';
 import { useAnimate } from '~/common/hooks/useAnimate';
-import type { ProjectFormData } from '../../../projects/types/Projects.type';
+import type { ProjectTemplateFormData } from '~/features/projects/types/Projects.type';
 
 interface ProjectTypeProps {
-	form: UseFormReturn<ProjectFormData>;
+	form: UseFormReturn<ProjectTemplateFormData>;
 }
 
 export function ProjectType({ form }: ProjectTypeProps) {

@@ -8,4 +8,5 @@ model User {
 
   tasks    Task[]
   projects Project[]
+  comments Comment[]
 }

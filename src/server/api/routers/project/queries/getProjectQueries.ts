@@ -23,21 +23,7 @@ export const getProjectQueries = {
 					include: {
 						category: true,
 						tasks: {
-							orderBy: [
-								{ kanbanColumn: { position: 'asc' } },
-								{ orderInColumn: 'asc' }
-							],
-							include: {
-								kanbanColumn: true
-							}
-						},
-						kanbanColumns: {
-							orderBy: { position: 'asc' },
-							include: {
-								tasks: {
-									orderBy: { orderInColumn: 'asc' }
-								}
-							}
+							orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 						},
 						sprints: true,
 						epics: true

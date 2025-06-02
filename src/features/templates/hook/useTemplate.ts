@@ -55,7 +55,7 @@ export const useTemplate = () => {
 		},
 		onSettled: (newEpic) => {
 			utils.projectTemplate.epic.getEpics.invalidate(
-				newEpic?.projectTemplateId
+				newEpic?.projectTemplateId ?? ''
 			);
 		}
 	});

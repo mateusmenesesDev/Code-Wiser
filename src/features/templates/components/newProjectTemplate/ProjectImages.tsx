@@ -4,10 +4,10 @@ import type { UseFormReturn } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
 import { Button } from '~/common/components/ui/button';
 import { Label } from '~/common/components/ui/label';
-import type { ProjectFormData } from '../../../projects/types/Projects.type';
+import type { ProjectTemplateFormData } from '~/features/projects/types/Projects.type';
 
 interface ProjectImagesProps {
-	form: UseFormReturn<ProjectFormData>;
+	form: UseFormReturn<ProjectTemplateFormData>;
 }
 
 export function ProjectImages({ form }: ProjectImagesProps) {

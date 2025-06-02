@@ -1,9 +1,9 @@
 import type { Prisma } from '@prisma/client';
 import slugify from 'slugify';
-import type { ProjectFormData } from '~/features/projects/types/Projects.type';
+import type { ProjectTemplateFormData } from '~/features/projects/types/Projects.type';
 
 export function createProjectTemplateData(
-	input: ProjectFormData
+	input: ProjectTemplateFormData
 ): Prisma.ProjectTemplateCreateInput {
 	return {
 		...input,

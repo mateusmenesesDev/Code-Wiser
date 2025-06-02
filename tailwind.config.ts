@@ -4,6 +4,33 @@ import { fontFamily } from 'tailwindcss/defaultTheme';
 export default {
 	darkMode: ['class'],
 	content: ['./src/**/*.tsx'],
+	safelist: [
+		// Kanban column colors
+		'bg-slate-50',
+		'border-slate-200',
+		'dark:bg-slate-900/50',
+		'dark:border-slate-700',
+		'bg-blue-50',
+		'border-blue-200',
+		'dark:bg-blue-950/50',
+		'dark:border-blue-800',
+		'bg-amber-50',
+		'border-amber-200',
+		'dark:bg-amber-950/50',
+		'dark:border-amber-800',
+		'bg-violet-50',
+		'border-violet-200',
+		'dark:bg-violet-950/50',
+		'dark:border-violet-800',
+		'bg-orange-50',
+		'border-orange-200',
+		'dark:bg-orange-950/50',
+		'dark:border-orange-800',
+		'bg-emerald-50',
+		'border-emerald-200',
+		'dark:bg-emerald-950/50',
+		'dark:border-emerald-800'
+	],
 	theme: {
 		extend: {
 			fontFamily: {

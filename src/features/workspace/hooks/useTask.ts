@@ -1,15 +1,16 @@
 import type { Task } from '@prisma/client';
 import { toast } from 'sonner';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { convertUndefinedToNull } from '~/common/utils/convertion';
 import { api } from '~/trpc/react';
-import type { CreateTaskInput, UpdateTaskInput } from '../types/task.type';
+import type { CreateTaskInput, UpdateTaskInput } from '../types/Task.type';
 
 type UseTaskProps = {
-	isTemplate?: boolean;
 	projectSlug?: string;
 };
 
-const useTaskMutations = ({ isTemplate, projectSlug }: UseTaskProps) => {
+const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
+	const isTemplate = useIsTemplate();
 	const utils = api.useUtils();
 	const getProjectFunction = isTemplate
 		? utils.projectTemplate.getBySlug
@@ -29,8 +30,9 @@ const useTaskMutations = ({ isTemplate, projectSlug }: UseTaskProps) => {
 				createdAt: new Date(),
 				updatedAt: new Date(),
 				projectId: isTemplate ? null : (projectSlug ?? null),
-				projectTemplateId: isTemplate ? (projectSlug ?? null) : null
-			} as Task;
+				projectTemplateId: isTemplate ? (projectSlug ?? null) : null,
+				kanbanColumn: null
+			} as Task & { kanbanColumn: null };
 
 			getProjectFunction.setData({ slug: projectSlug as string }, (old) => {
 				if (!old) return old;
@@ -166,17 +168,13 @@ const useTaskMutations = ({ isTemplate, projectSlug }: UseTaskProps) => {
 	};
 };
 
-export function useTask({
-	isTemplate = false,
-	projectSlug
-}: UseTaskProps = {}) {
+export function useTask({ projectSlug }: UseTaskProps = {}) {
 	const {
 		createTaskMutation,
 		updateTaskMutation,
 		deleteTaskMutation,
 		bulkDeleteTasksMutation
 	} = useTaskMutations({
-		isTemplate,
 		projectSlug
 	});
 

@@ -7,7 +7,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
-import { useTask } from '~/features/tasks/hooks/useTask';
+import { useTask } from '~/features/workspace/hooks/useTask';
 
 const getPriorityVariant = (priority: TaskPriorityEnum | string) => {
 	switch (priority) {
@@ -27,7 +27,6 @@ const getPriorityVariant = (priority: TaskPriorityEnum | string) => {
 export function PriorityCell({
 	priority,
 	id,
-	isTemplate,
 	projectSlug
 }: {
 	priority: TaskPriorityEnum | string;
@@ -36,7 +35,6 @@ export function PriorityCell({
 	projectSlug: string;
 }) {
 	const { updateTask } = useTask({
-		isTemplate,
 		projectSlug
 	});
 

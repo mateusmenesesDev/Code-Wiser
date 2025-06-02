@@ -5,11 +5,11 @@ import { GenericCombobox } from '~/common/components/ui/GenericCombobox';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Label } from '~/common/components/ui/label';
+import type { ProjectTemplateFormData } from '~/features/projects/types/Projects.type';
 import { api } from '~/trpc/react';
-import type { ProjectFormData } from '../../../projects/types/Projects.type';
 
 interface ProjectTechnologiesProps {
-	form: UseFormReturn<ProjectFormData>;
+	form: UseFormReturn<ProjectTemplateFormData>;
 }
 
 export function ProjectTechnologies({ form }: ProjectTechnologiesProps) {

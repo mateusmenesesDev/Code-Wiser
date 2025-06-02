@@ -1,42 +1,70 @@
+'use client';
+
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import type { RouterOutputs } from '~/trpc/react';
+import { CreateTaskDialog } from '~/common/components/task/CreateTaskDialog';
+import { api } from '~/trpc/react';
+import type { Column } from '../../../projects/types';
+import { useKanbanData } from '../../hooks/useKanbanData';
+import { useTaskFiltersUrl } from '../../hooks/useTaskFiltersUrl';
 import { BoardColumn } from './BoardColumn';
 
-type KanbanColumn = RouterOutputs['kanban']['getColumnsByProjectSlug'][number];
-
 interface KanbanBoardContentProps {
-	columns: KanbanColumn[];
-	moveTask: (
-		taskId: string,
-		fromColumnId: string,
-		toColumnId: string,
-		toIndex: number
-	) => void;
+	projectSlug: string;
+	isTemplate?: boolean;
 }
 
 export function KanbanBoardContent({
-	columns,
-	moveTask
+	projectSlug,
+	isTemplate = false
 }: KanbanBoardContentProps) {
+	const { filters } = useTaskFiltersUrl();
+	const { columns, moveTask, isLoading } = useKanbanData(projectSlug, filters);
+
+	const { data: epics = [] } = isTemplate
+		? api.epic.getAllEpicsByProjectTemplateSlug.useQuery({
+				projectTemplateSlug: projectSlug
+			})
+		: api.epic.getAllEpicsByProjectId.useQuery({
+				projectId: projectSlug
+			});
+
+	const { data: sprints = [] } = isTemplate
+		? api.sprint.getAllByProjectTemplateSlug.useQuery({
+				projectTemplateSlug: projectSlug
+			})
+		: api.sprint.getAllByProjectSlug.useQuery({
+				projectSlug: projectSlug
+			});
+
+	const transformedColumns: Column[] = columns.map((column) => ({
+		id: column.id,
+		title: column.title,
+		tasks: column.tasks,
+		color: column.color,
+		bgClass: column.bgClass,
+		borderClass: column.borderClass
+	}));
+
+	if (isLoading) {
+		return <div>Loading...</div>;
+	}
+
 	return (
-		<div className="h-full">
+		<>
 			<DndProvider backend={HTML5Backend}>
 				<div className="grid h-[calc(100vh-40rem)] auto-cols-fr grid-flow-col gap-4 overflow-x-auto">
-					{columns.map((column: KanbanColumn) => (
-						<BoardColumn
-							key={column.id}
-							column={{
-								id: column.id,
-								title: column.title,
-								tasks: column.tasks,
-								color: column.color || 'bg-muted/30'
-							}}
-							moveTask={moveTask}
-						/>
+					{transformedColumns.map((column) => (
+						<BoardColumn key={column.id} column={column} moveTask={moveTask} />
 					))}
 				</div>
 			</DndProvider>
-		</div>
+
+			<CreateTaskDialog
+				epics={epics}
+				sprints={sprints}
+				projectSlug={projectSlug}
+			/>
+		</>
 	);
 }

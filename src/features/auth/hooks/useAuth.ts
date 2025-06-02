@@ -1,4 +1,4 @@
-import { useSignIn, useSignUp } from '@clerk/nextjs';
+import { useSignIn, useSignUp, useUser } from '@clerk/nextjs';
 import { isClerkAPIResponseError } from '@clerk/nextjs/errors';
 import { useState } from 'react';
 import type { z } from 'zod';
@@ -12,6 +12,7 @@ import { api } from '~/trpc/react';
 import { authErrors } from '../authErrors';
 
 export const useAuth = () => {
+	const { user } = useUser();
 	const { signIn, isLoaded, setActive } = useSignIn();
 	const {
 		signUp,
@@ -162,6 +163,7 @@ export const useAuth = () => {
 		verifyEmail,
 		isVerifying,
 		forgotPassword,
-		resetPassword
+		resetPassword,
+		user
 	};
 };

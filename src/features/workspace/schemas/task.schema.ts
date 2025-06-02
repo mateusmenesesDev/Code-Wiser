@@ -14,6 +14,7 @@ export const baseTaskSchema = z.object({
 	blockedReason: z.string().optional(),
 	assigneeId: z.string().optional(),
 	status: z.nativeEnum(TaskStatusEnum).optional(),
+	order: z.number().optional(),
 	storyPoints: z.number().optional(),
 	dueDate: z.date().optional()
 });

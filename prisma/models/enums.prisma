@@ -66,13 +66,3 @@ enum EpicStatusEnum {
   IN_PROGRESS
   COMPLETED
 }
-
-enum KanbanColumnTypeEnum {
-  BACKLOG
-  READY_TO_DEVELOP
-  IN_PROGRESS
-  CODE_REVIEW
-  TESTING
-  DONE
-  CUSTOM
-}

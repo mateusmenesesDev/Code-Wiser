@@ -10,6 +10,7 @@ model Task {
   tags     String[]
   priority TaskPriorityEnum?
   status   TaskStatusEnum?   @default(BACKLOG)
+  order    Int?              @default(0)
 
   dueDate DateTime?
 
@@ -18,27 +19,23 @@ model Task {
 
   storyPoints Int?
 
-  // Kanban positioning
-  kanbanColumnId String?
-  kanbanColumn   KanbanColumn? @relation(fields: [kanbanColumnId], references: [id])
-  orderInColumn  Int?          @default(0)
-
   assigneeId String?
   assignee   User?   @relation(fields: [assigneeId], references: [id])
 
   projectId         String?
-  project           Project? @relation(fields: [projectId], references: [id])
+  project           Project?         @relation(fields: [projectId], references: [id])
   projectTemplateId String?
+  projectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
 
-  projectTemplate ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
-  epicId          String?
-  epic            Epic?            @relation(fields: [epicId], references: [id])
-  sprintId        String?
-  sprint          Sprint?          @relation(fields: [sprintId], references: [id])
+  epicId   String?
+  epic     Epic?   @relation(fields: [epicId], references: [id])
+  sprintId String?
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+
+  comments Comment[]
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])
-  @@index([kanbanColumnId, orderInColumn])
 }
 
 model Epic {
@@ -82,28 +79,18 @@ model Sprint {
   tasks Task[]
 }
 
-model KanbanColumn {
+model Comment {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  title       String
-  description String?
-  color       String? // CSS class or color value for styling
-  position    Int                   @default(0) // Order of columns in the board
-  columnType  KanbanColumnTypeEnum? @default(CUSTOM) // Predefined column type
+  content String
 
-  // Column can belong to either a project or project template
-  projectId         String?
-  project           Project?         @relation(fields: [projectId], references: [id])
-  projectTemplateId String?
-  projectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
 
-  // Tasks in this column
-  tasks Task[]
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  @@unique([projectTemplateId, position])
-  @@unique([projectId, position])
-  @@index([projectId, position])
-  @@index([projectTemplateId, position])
+  @@index([taskId, createdAt])
 }

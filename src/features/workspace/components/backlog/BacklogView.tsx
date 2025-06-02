@@ -23,8 +23,7 @@ import {
 } from '~/common/components/ui/table';
 import { useAnimate } from '~/common/hooks/useAnimate';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
-import { TaskDialog } from '~/features/tasks/components/TaskDialog';
-import { useTask } from '~/features/tasks/hooks/useTask';
+import { useTask } from '~/features/workspace/hooks/useTask';
 import { api } from '~/trpc/react';
 import { PriorityCell } from './PriorityCell';
 import { SprintEpicCell } from './SprintEpicCell';
@@ -53,7 +52,6 @@ export function BacklogView() {
 			});
 
 	const { updateTask, deleteTask, bulkDeleteTasks } = useTask({
-		isTemplate,
 		projectSlug: slug as string
 	});
 
@@ -266,16 +264,6 @@ export function BacklogView() {
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end" className="p-0">
-												<TaskDialog
-													task={task}
-													isTemplate={isTemplate}
-													projectSlug={slug as string}
-													trigger={
-														<Button variant="ghost" className="w-full">
-															Edit
-														</Button>
-													}
-												/>
 												<ConfirmationDialog
 													title="Delete Task"
 													description="Are you sure you want to delete this task?"

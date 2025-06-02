@@ -23,7 +23,6 @@ model ProjectTemplate {
   categoryId       String
   category         Category               @relation(fields: [categoryId], references: [id])
 
-  epics         Epic[]
-  sprints       Sprint[]
-  kanbanColumns KanbanColumn[]
+  epics   Epic[]
+  sprints Sprint[]
 }

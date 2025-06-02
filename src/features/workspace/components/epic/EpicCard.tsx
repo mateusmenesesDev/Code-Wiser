@@ -73,7 +73,13 @@ export function EpicCard({ epic }: EpicCardProps) {
 					<CardContent>
 						<div className="space-y-2">
 							{epic.tasks.map((task) => (
-								<TaskCard key={task.id} task={task} />
+								<TaskCard
+									key={task.id}
+									task={task}
+									columnId={''}
+									index={0}
+									moveTask={() => {}}
+								/>
 							))}
 							<Button variant="ghost" className="w-full" size="sm">
 								<PlusCircle className="mr-2 h-4 w-4" />

@@ -1,11 +1,11 @@
 'use client';
 
+import { TaskStatusEnum } from '@prisma/client';
 import {
 	Calendar,
 	ChevronDown,
 	ChevronRight,
-	MoreHorizontal,
-	PlusCircle
+	MoreHorizontal
 } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
@@ -30,7 +30,6 @@ import {
 import { Input } from '~/common/components/ui/input';
 import { Progress } from '~/common/components/ui/progress';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
-import { TaskDialog } from '~/features/tasks/components/TaskDialog';
 import type { RouterOutputs } from '~/trpc/react';
 import { useSprint } from '../../hooks/sprint.hook';
 import { TaskCard } from '../tasks/TaskCard';
@@ -181,18 +180,14 @@ export function SprintCard({ sprint }: SprintCardProps) {
 					<CardContent>
 						<div className="space-y-2">
 							{sprint.tasks.map((task) => (
-								<TaskCard key={task.id} task={task} />
+								<TaskCard
+									key={task.id}
+									task={task}
+									columnId={TaskStatusEnum.BACKLOG}
+									index={0}
+									moveTask={() => {}}
+								/>
 							))}
-							<TaskDialog
-								isTemplate={isTemplate}
-								projectSlug={projectSlug}
-								trigger={
-									<Button variant="outline" className="w-full">
-										<PlusCircle className="mr-2 h-4 w-4" />
-										Add Task
-									</Button>
-								}
-							/>
 						</div>
 					</CardContent>
 				</CollapsibleContent>

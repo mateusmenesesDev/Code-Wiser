@@ -1,9 +1,9 @@
 import {
-	KanbanColumnTypeEnum,
 	PrismaClient,
 	ProjectDifficultyEnum,
 	ProjectTypeEnum,
 	TaskPriorityEnum,
+	TaskStatusEnum,
 	TaskTypeEnum
 } from '@prisma/client';
 
@@ -38,64 +38,7 @@ async function main() {
 		}
 	});
 
-	// Create kanban columns
-	const columns = [
-		{
-			title: 'Ready to Develop',
-			description: 'Tasks that are ready to be worked on',
-			color: 'bg-muted/30',
-			position: 0,
-			columnType: KanbanColumnTypeEnum.READY_TO_DEVELOP
-		},
-		{
-			title: 'In Progress',
-			description: 'Tasks currently being worked on',
-			color: 'bg-blue-100/50 dark:bg-blue-900/20',
-			position: 1,
-			columnType: KanbanColumnTypeEnum.IN_PROGRESS
-		},
-		{
-			title: 'Code Review',
-			description: 'Tasks waiting for code review',
-			color: 'bg-yellow-100/50 dark:bg-yellow-900/20',
-			position: 2,
-			columnType: KanbanColumnTypeEnum.CODE_REVIEW
-		},
-		{
-			title: 'Testing',
-			description: 'Tasks in testing phase',
-			color: 'bg-purple-100/50 dark:bg-purple-900/20',
-			position: 3,
-			columnType: KanbanColumnTypeEnum.TESTING
-		},
-		{
-			title: 'Done',
-			description: 'Completed tasks',
-			color: 'bg-green-100/50 dark:bg-green-900/20',
-			position: 4,
-			columnType: KanbanColumnTypeEnum.DONE
-		}
-	];
-
-	const createdColumns = [];
-	for (const columnData of columns) {
-		const column = await prisma.kanbanColumn.upsert({
-			where: {
-				projectTemplateId_position: {
-					projectTemplateId: projectTemplate.id,
-					position: columnData.position
-				}
-			},
-			update: columnData,
-			create: {
-				...columnData,
-				projectTemplateId: projectTemplate.id
-			}
-		});
-		createdColumns.push(column);
-	}
-
-	// Create sample tasks
+	// Create sample tasks with different statuses
 	const tasks = [
 		{
 			title: 'Set up development environment',
@@ -103,9 +46,8 @@ async function main() {
 				'Install Node.js, Postgres and Prisma. Configure development database with proper connections and sample data for testing.',
 			type: TaskTypeEnum.TASK,
 			priority: TaskPriorityEnum.HIGHEST,
-			tags: ['setup', 'development', 'environment'],
-			kanbanColumnId: createdColumns[0]?.id, // Ready to Develop
-			orderInColumn: 0
+			status: TaskStatusEnum.READY_TO_DEVELOP,
+			tags: ['setup', 'development', 'environment']
 		},
 		{
 			title: 'Create user authentication',
@@ -113,9 +55,8 @@ async function main() {
 				'Implement user login and registration functionality with proper validation and security measures.',
 			type: TaskTypeEnum.USER_STORY,
 			priority: TaskPriorityEnum.HIGH,
-			tags: ['auth', 'security', 'backend'],
-			kanbanColumnId: createdColumns[0]?.id, // Ready to Develop
-			orderInColumn: 1
+			status: TaskStatusEnum.READY_TO_DEVELOP,
+			tags: ['auth', 'security', 'backend']
 		},
 		{
 			title: 'Design database schema',
@@ -123,9 +64,8 @@ async function main() {
 				'Create the database structure for the application including all necessary tables and relationships.',
 			type: TaskTypeEnum.TASK,
 			priority: TaskPriorityEnum.MEDIUM,
-			tags: ['database', 'design', 'schema'],
-			kanbanColumnId: createdColumns[1]?.id, // In Progress
-			orderInColumn: 0
+			status: TaskStatusEnum.IN_PROGRESS,
+			tags: ['database', 'design', 'schema']
 		},
 		{
 			title: 'Implement API endpoints',
@@ -133,9 +73,8 @@ async function main() {
 				'Create REST API endpoints for user management and data operations.',
 			type: TaskTypeEnum.TASK,
 			priority: TaskPriorityEnum.HIGH,
-			tags: ['api', 'backend', 'endpoints'],
-			kanbanColumnId: createdColumns[1]?.id, // In Progress
-			orderInColumn: 1
+			status: TaskStatusEnum.IN_PROGRESS,
+			tags: ['api', 'backend', 'endpoints']
 		},
 		{
 			title: 'Write unit tests',
@@ -143,9 +82,8 @@ async function main() {
 				'Create comprehensive test suite for the application covering all major functionality.',
 			type: TaskTypeEnum.TASK,
 			priority: TaskPriorityEnum.LOW,
-			tags: ['testing', 'quality', 'unit-tests'],
-			kanbanColumnId: createdColumns[2]?.id, // Code Review
-			orderInColumn: 0
+			status: TaskStatusEnum.CODE_REVIEW,
+			tags: ['testing', 'quality', 'unit-tests']
 		},
 		{
 			title: 'Deploy to production',
@@ -153,9 +91,8 @@ async function main() {
 				'Set up production environment and deploy the application with proper monitoring.',
 			type: TaskTypeEnum.TASK,
 			priority: TaskPriorityEnum.LOWEST,
-			tags: ['deployment', 'production', 'devops'],
-			kanbanColumnId: createdColumns[4]?.id, // Done
-			orderInColumn: 0
+			status: TaskStatusEnum.DONE,
+			tags: ['deployment', 'production', 'devops']
 		}
 	];
 
@@ -179,7 +116,6 @@ async function main() {
 	console.log(
 		`Project template: ${projectTemplate.title} (${projectTemplate.slug})`
 	);
-	console.log(`Columns created: ${createdColumns.length}`);
 	console.log(`Tasks created: ${tasks.length}`);
 }
 

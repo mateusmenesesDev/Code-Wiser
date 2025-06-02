@@ -9,3 +9,18 @@ export const convertUndefinedToNull = <T extends object>(obj: T): T => {
 		)
 	} as T;
 };
+
+export const getStatusLabel = (status: string) => {
+	switch (status) {
+		case 'TODO':
+			return 'To Do';
+		case 'IN_PROGRESS':
+			return 'In Progress';
+		case 'IN_REVIEW':
+			return 'Code Review';
+		case 'DONE':
+			return 'Done';
+		default:
+			return status;
+	}
+};

@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { RouterOutputs } from '~/trpc/react';
 import type {
 	baseEpicSchema,
 	newEpicSchema,
@@ -10,3 +11,6 @@ export type Epic = z.infer<typeof baseEpicSchema>;
 export type EpicInput = z.infer<typeof newEpicSchema>;
 
 export type EpicUpdateInput = z.infer<typeof updateEpicSchema>;
+
+export type EpicsOutput =
+	RouterOutputs['epic']['getAllEpicsByProjectTemplateSlug'];

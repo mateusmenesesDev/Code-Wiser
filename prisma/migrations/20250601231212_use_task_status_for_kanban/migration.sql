@@ -28,9 +28,6 @@ CREATE TYPE "ResourceTypeEnum" AS ENUM ('CODE', 'DOCUMENTATION', 'VIDEO', 'ARTIC
 -- CreateEnum
 CREATE TYPE "EpicStatusEnum" AS ENUM ('PLANNED', 'IN_PROGRESS', 'COMPLETED');
 
--- CreateEnum
-CREATE TYPE "KanbanColumnTypeEnum" AS ENUM ('BACKLOG', 'READY_TO_DEVELOP', 'IN_PROGRESS', 'CODE_REVIEW', 'TESTING', 'DONE', 'CUSTOM');
-
 -- CreateTable
 CREATE TABLE "Project" (
     "id" STRING NOT NULL,
@@ -44,6 +41,7 @@ CREATE TABLE "Project" (
     "maxParticipants" INT4 NOT NULL,
     "type" "ProjectTypeEnum" NOT NULL,
     "difficulty" "ProjectDifficultyEnum" NOT NULL,
+    "figmaProjectUrl" STRING,
     "categoryId" STRING NOT NULL,
 
     CONSTRAINT "Project_pkey" PRIMARY KEY ("id")
@@ -137,8 +135,6 @@ CREATE TABLE "Task" (
     "blocked" BOOL DEFAULT false,
     "blockedReason" STRING,
     "storyPoints" INT4,
-    "kanbanColumnId" STRING,
-    "orderInColumn" INT4 DEFAULT 0,
     "assigneeId" STRING,
     "projectId" STRING,
     "projectTemplateId" STRING,
@@ -181,19 +177,15 @@ CREATE TABLE "Sprint" (
 );
 
 -- CreateTable
-CREATE TABLE "KanbanColumn" (
+CREATE TABLE "Comment" (
     "id" STRING NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "title" STRING NOT NULL,
-    "description" STRING,
-    "color" STRING,
-    "position" INT4 NOT NULL DEFAULT 0,
-    "columnType" "KanbanColumnTypeEnum" DEFAULT 'CUSTOM',
-    "projectId" STRING,
-    "projectTemplateId" STRING,
+    "content" STRING NOT NULL,
+    "authorId" STRING NOT NULL,
+    "taskId" STRING NOT NULL,
 
-    CONSTRAINT "KanbanColumn_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Comment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -211,6 +203,7 @@ CREATE TABLE "ProjectTemplate" (
     "type" "ProjectTypeEnum" NOT NULL,
     "status" "ProjectStatusEnum" NOT NULL DEFAULT 'PENDING',
     "difficulty" "ProjectDifficultyEnum" NOT NULL,
+    "figmaProjectUrl" STRING,
     "expectedDuration" STRING,
     "categoryId" STRING NOT NULL,
 
@@ -254,13 +247,13 @@ CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
 CREATE UNIQUE INDEX "Technology_name_key" ON "Technology"("name");
 
 -- CreateIndex
-CREATE INDEX "Task_kanbanColumnId_orderInColumn_idx" ON "Task"("kanbanColumnId", "orderInColumn");
+CREATE UNIQUE INDEX "Task_projectTemplateId_title_key" ON "Task"("projectTemplateId", "title");
 
 -- CreateIndex
-CREATE INDEX "KanbanColumn_projectId_position_idx" ON "KanbanColumn"("projectId", "position");
+CREATE UNIQUE INDEX "Task_projectId_title_key" ON "Task"("projectId", "title");
 
 -- CreateIndex
-CREATE INDEX "KanbanColumn_projectTemplateId_position_idx" ON "KanbanColumn"("projectTemplateId", "position");
+CREATE INDEX "Comment_taskId_createdAt_idx" ON "Comment"("taskId", "createdAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProjectTemplate_title_key" ON "ProjectTemplate"("title");
@@ -302,9 +295,6 @@ ALTER TABLE "Resource" ADD CONSTRAINT "Resource_projectTemplateId_fkey" FOREIGN 
 ALTER TABLE "Milestone" ADD CONSTRAINT "Milestone_projectTemplateId_fkey" FOREIGN KEY ("projectTemplateId") REFERENCES "ProjectTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Task" ADD CONSTRAINT "Task_kanbanColumnId_fkey" FOREIGN KEY ("kanbanColumnId") REFERENCES "KanbanColumn"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Task" ADD CONSTRAINT "Task_assigneeId_fkey" FOREIGN KEY ("assigneeId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -332,10 +322,10 @@ ALTER TABLE "Sprint" ADD CONSTRAINT "Sprint_projectTemplateSlug_fkey" FOREIGN KE
 ALTER TABLE "Sprint" ADD CONSTRAINT "Sprint_projectSlug_fkey" FOREIGN KEY ("projectSlug") REFERENCES "Project"("slug") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "KanbanColumn" ADD CONSTRAINT "KanbanColumn_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Comment" ADD CONSTRAINT "Comment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "KanbanColumn" ADD CONSTRAINT "KanbanColumn_projectTemplateId_fkey" FOREIGN KEY ("projectTemplateId") REFERENCES "ProjectTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Comment" ADD CONSTRAINT "Comment_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ProjectTemplate" ADD CONSTRAINT "ProjectTemplate_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
