@@ -1,5 +1,6 @@
 'use client';
 
+import { TaskStatusEnum } from '@prisma/client';
 import {
 	ChevronDown,
 	ChevronRight,
@@ -76,7 +77,7 @@ export function EpicCard({ epic }: EpicCardProps) {
 								<TaskCard
 									key={task.id}
 									task={task}
-									columnId={''}
+									columnId={TaskStatusEnum.BACKLOG}
 									index={0}
 									moveTask={() => {}}
 								/>

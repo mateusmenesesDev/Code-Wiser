@@ -27,7 +27,7 @@ export function SprintPlanning({ sprints }: SprintPlanningProps) {
 			initialData: sprints
 		}
 	);
-	const { setIsDialogOpen, isDialogOpen } = useDialog();
+	const { openDialog } = useDialog();
 
 	return (
 		<div className="py-6">
@@ -38,7 +38,7 @@ export function SprintPlanning({ sprints }: SprintPlanningProps) {
 						Plan and manage your project sprints
 					</p>
 				</div>
-				<Button disabled={isLoading} onClick={() => setIsDialogOpen(true)}>
+				<Button disabled={isLoading} onClick={() => openDialog('sprint')}>
 					<PlusCircle className="mr-2 h-4 w-4" />
 					New Sprint
 				</Button>
@@ -58,7 +58,7 @@ export function SprintPlanning({ sprints }: SprintPlanningProps) {
 				</Card>
 			)}
 
-			<NewSprintDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+			<NewSprintDialog />
 		</div>
 	);
 }

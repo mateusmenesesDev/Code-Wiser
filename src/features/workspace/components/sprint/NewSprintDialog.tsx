@@ -23,17 +23,14 @@ import {
 } from '~/common/components/ui/form';
 import { Input } from '~/common/components/ui/input';
 import { Textarea } from '~/common/components/ui/textarea';
+import { useDialog } from '~/common/hooks/useDialog';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useSprint } from '../../hooks/sprint.hook';
 import { newSprintSchema } from '../../schemas/sprint.schema';
 import type { NewSprint } from '../../types/Sprint.type';
 
-type NewSprintDialogProps = {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-};
-
-export function NewSprintDialog({ open, onOpenChange }: NewSprintDialogProps) {
+export function NewSprintDialog() {
+	const { isDialogOpen, closeDialog } = useDialog();
 	const isTemplate = useIsTemplate();
 	const params = useParams();
 	const projectSlug = decodeURIComponent(params.slug as string);
@@ -62,11 +59,11 @@ export function NewSprintDialog({ open, onOpenChange }: NewSprintDialogProps) {
 				? dayjs(data.endDate).format('YYYY-MM-DD')
 				: undefined
 		});
-		onOpenChange(false);
+		closeDialog();
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={isDialogOpen('sprint')} onOpenChange={closeDialog}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Create New Sprint</DialogTitle>
