@@ -22,31 +22,7 @@ const baseProjectTemplateSchema = z.object({
 	credits: z.number().optional(),
 	technologies: z
 		.array(z.string(), isRequired('Technologies are required'))
-		.min(1),
-	learningOutcomes: z
-		.array(
-			z.object({ value: z.string() }),
-			isRequired('Learning outcomes are required')
-		)
 		.min(1)
-		.refine((data) => data.every((outcome) => outcome.value.trim() !== ''), {
-			message: 'Learning outcomes cannot be empty'
-		}),
-	milestones: z
-		.array(
-			z.object({ value: z.string() }),
-			isRequired('Milestones are required')
-		)
-		.optional()
-		.refine(
-			(data) => {
-				if (!data) return true;
-				return data.every((milestone) => milestone.value.trim() !== '');
-			},
-			{
-				message: 'Milestones cannot be empty'
-			}
-		)
 });
 
 export const createProjectTemplateSchema = baseProjectTemplateSchema

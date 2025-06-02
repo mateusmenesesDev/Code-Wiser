@@ -14,8 +14,6 @@ import { Button } from '~/common/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ProjectBasicInfo } from './ProjectBasicInfo';
 import { ProjectImages } from './ProjectImages';
-import { ProjectLearningOutcomes } from './ProjectLearningOutcomes';
-import { ProjectMilestones } from './ProjectMilestones';
 import { ProjectParticipants } from './ProjectParticipants';
 import { ProjectTechnologies } from './ProjectTechnologies';
 import { ProjectType } from './ProjectType';
@@ -24,7 +22,6 @@ export default function ProjectForm() {
 	const form = useForm<ProjectTemplateFormData>({
 		resolver: zodResolver(createProjectTemplateSchema),
 		defaultValues: {
-			learningOutcomes: [{ value: '' }],
 			images: [],
 			technologies: [],
 			type: ProjectTypeEnum.FREE
@@ -57,8 +54,6 @@ export default function ProjectForm() {
 			<ProjectParticipants form={form} />
 			<ProjectType form={form} />
 			<ProjectTechnologies form={form} />
-			<ProjectLearningOutcomes form={form} />
-			<ProjectMilestones form={form} />
 			<ProjectImages form={form} />
 			<Button
 				type="submit"
