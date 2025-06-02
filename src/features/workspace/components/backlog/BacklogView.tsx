@@ -1,9 +1,10 @@
 'use client';
 
-import { ChevronRight, MoreHorizontal, Tag } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Plus, Tag } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
+import { CreateTaskDialog } from '~/common/components/task/CreateTaskDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Checkbox } from '~/common/components/ui/checkbox';
@@ -22,6 +23,7 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import { useAnimate } from '~/common/hooks/useAnimate';
+import { useDialog } from '~/common/hooks/useDialog';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useTask } from '~/features/workspace/hooks/useTask';
 import { api } from '~/trpc/react';
@@ -30,6 +32,8 @@ import { SprintEpicCell } from './SprintEpicCell';
 
 export function BacklogView() {
 	const router = useRouter();
+	const { openDialog } = useDialog();
+
 	const handleNavigation = (route: string) => {
 		if (isTemplate) {
 			router.push(`/projects/templates/${slug}/edit/${route}`);
@@ -49,6 +53,23 @@ export function BacklogView() {
 			})
 		: api.project.getBySlug.useQuery({
 				slug: slug as string
+			});
+
+	// Fetch epics and sprints for the CreateTaskDialog
+	const { data: epics = [] } = isTemplate
+		? api.epic.getAllEpicsByProjectTemplateSlug.useQuery({
+				projectTemplateSlug: slug as string
+			})
+		: api.epic.getAllEpicsByProjectId.useQuery({
+				projectId: slug as string
+			});
+
+	const { data: sprints = [] } = isTemplate
+		? api.sprint.getAllByProjectTemplateSlug.useQuery({
+				projectTemplateSlug: slug as string
+			})
+		: api.sprint.getAllByProjectSlug.useQuery({
+				projectSlug: slug as string
 			});
 
 	const { updateTask, deleteTask, bulkDeleteTasks } = useTask({
@@ -77,25 +98,36 @@ export function BacklogView() {
 
 	return (
 		<div className="h-full w-full" ref={parent}>
-			{selectedTasks.length > 0 && (
-				<div className="mb-4 flex items-center justify-between">
-					<span className="text-muted-foreground text-sm">
-						{selectedTasks.length} task(s) selected
-					</span>
-					<ConfirmationDialog
-						title="Delete Tasks"
-						description={`Are you sure you want to delete ${selectedTasks.length} task(s)?`}
-						onConfirm={() => {
-							bulkDeleteTasks(selectedTasks);
-							setSelectedTasks([]);
-						}}
-					>
-						<Button variant="destructive" size="sm">
-							Delete Selected
-						</Button>
-					</ConfirmationDialog>
+			<div className="mb-4 flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					{selectedTasks.length > 0 && (
+						<>
+							<span className="text-muted-foreground text-sm">
+								{selectedTasks.length} task(s) selected
+							</span>
+							<ConfirmationDialog
+								title="Delete Tasks"
+								description={`Are you sure you want to delete ${selectedTasks.length} task(s)?`}
+								onConfirm={() => {
+									bulkDeleteTasks(selectedTasks);
+									setSelectedTasks([]);
+								}}
+							>
+								<Button variant="destructive" size="sm">
+									Delete Selected
+								</Button>
+							</ConfirmationDialog>
+						</>
+					)}
 				</div>
-			)}
+				<Button
+					onClick={() => openDialog('task')}
+					className="flex items-center gap-2"
+				>
+					<Plus className="h-4 w-4" />
+					Create Task
+				</Button>
+			</div>
 			<ScrollArea className="h-[calc(100vh-15rem)]">
 				<div className="rounded-md border">
 					<Table>
@@ -282,6 +314,12 @@ export function BacklogView() {
 					</Table>
 				</div>
 			</ScrollArea>
+
+			<CreateTaskDialog
+				epics={epics}
+				sprints={sprints}
+				projectSlug={slug as string}
+			/>
 		</div>
 	);
 }
