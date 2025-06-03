@@ -69,7 +69,6 @@ export const taskMutations = {
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			// Update all tasks in a transaction
 			await ctx.db.$transaction(
 				input.updates.map((update) =>
 					ctx.db.task.update({

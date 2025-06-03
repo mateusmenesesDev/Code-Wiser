@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai';
 import { type DialogType, dialogAtom } from '../atoms/dialog.atom';
 
-export function useDialog() {
+export function useDialog(dialogType: DialogType) {
 	const [dialogState, setDialogState] = useAtom(dialogAtom);
 
 	const openDialog = (type: DialogType) => {
@@ -18,10 +18,7 @@ export function useDialog() {
 		});
 	};
 
-	const isDialogOpen = (type?: DialogType) => {
-		if (!type) return dialogState.isOpen;
-		return dialogState.isOpen && dialogState.type === type;
-	};
+	const isDialogOpen = dialogState.type === dialogType;
 
 	return {
 		dialogState,

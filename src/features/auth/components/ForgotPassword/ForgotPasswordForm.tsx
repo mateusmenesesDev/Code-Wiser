@@ -59,7 +59,7 @@ export default function ForgotPasswordForm() {
 
 	const onSubmit = async (data: z.infer<typeof forgotPasswordSchema>) => {
 		await forgotPassword(data.email);
-		setTimeToResend(60); // Set the countdown to 60 seconds after sending the email
+		setTimeToResend(60);
 	};
 
 	const onVerify = async (data: z.infer<typeof resetPasswordSchema>) => {

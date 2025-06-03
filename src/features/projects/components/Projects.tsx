@@ -18,13 +18,9 @@ type ProjectsProps = {
 export default function Projects({ approvalPage = false }: ProjectsProps) {
 	const router = useRouter();
 
-	const { filteredProjects, userCredits, isLoading } = useProject(
-		approvalPage ? undefined : true
-	);
+	const { filteredProjects, userCredits, isLoading } = useProject();
 
 	const myProjects = api.project.getEnrolled.useQuery();
-
-	console.log('myProjects', myProjects);
 
 	return (
 		<div className="space-y-6">

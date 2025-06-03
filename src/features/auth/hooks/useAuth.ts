@@ -1,4 +1,4 @@
-import { useSignIn, useSignUp, useUser } from '@clerk/nextjs';
+import { useClerk, useSignIn, useSignUp, useUser } from '@clerk/nextjs';
 import { isClerkAPIResponseError } from '@clerk/nextjs/errors';
 import { useState } from 'react';
 import type { z } from 'zod';
@@ -14,6 +14,8 @@ import { authErrors } from '../authErrors';
 export const useAuth = () => {
 	const { user } = useUser();
 	const { signIn, isLoaded, setActive } = useSignIn();
+	const { signOut: signOutClerk } = useClerk();
+
 	const {
 		signUp,
 		isLoaded: isLoadedSignUp,
@@ -155,6 +157,10 @@ export const useAuth = () => {
 		}
 	};
 
+	const signOut = async () => {
+		await signOutClerk();
+	};
+
 	return {
 		signInWithEmail,
 		signInWithGoogle,
@@ -164,6 +170,7 @@ export const useAuth = () => {
 		isVerifying,
 		forgotPassword,
 		resetPassword,
-		user
+		user,
+		signOut
 	};
 };

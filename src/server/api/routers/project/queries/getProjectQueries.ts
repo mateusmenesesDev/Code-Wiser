@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { protectedProcedure } from '~/server/api/trpc';
+import { protectedProcedure, publicProcedure } from '~/server/api/trpc';
 
 export const getProjectQueries = {
-	getAll: protectedProcedure.query(({ ctx }) =>
+	getAll: publicProcedure.query(({ ctx }) =>
 		ctx.db.project.findMany({
 			include: {
 				category: {
@@ -14,7 +14,7 @@ export const getProjectQueries = {
 		})
 	),
 
-	getBySlug: protectedProcedure
+	getBySlug: publicProcedure
 		.input(z.object({ slug: z.string() }))
 		.query(async ({ ctx, input }) => {
 			try {

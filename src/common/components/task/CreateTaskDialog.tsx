@@ -25,12 +25,10 @@ export function CreateTaskDialog({
 	projectSlug,
 	trigger
 }: CreateTaskDialogProps) {
-	const { isDialogOpen, closeDialog } = useDialog();
-
-	const isOpen = isDialogOpen('task');
+	const { isDialogOpen, closeDialog } = useDialog('task');
 
 	return (
-		<Dialog open={isOpen} onOpenChange={closeDialog}>
+		<Dialog open={isDialogOpen} onOpenChange={closeDialog}>
 			{trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 			<DialogContent className="sm:max-w-2xl">
 				<DialogHeader>

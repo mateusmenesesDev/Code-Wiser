@@ -1,8 +1,22 @@
 import { ProjectStatusEnum } from '@prisma/client';
 import { z } from 'zod';
-import { protectedProcedure } from '~/server/api/trpc';
+import { protectedProcedure, publicProcedure } from '~/server/api/trpc';
 
 export const projectTemplateQueries = {
+	getApproved: publicProcedure.query(({ ctx }) =>
+		ctx.db.projectTemplate.findMany({
+			where: { status: 'APPROVED' },
+			include: {
+				category: {
+					select: {
+						name: true
+					}
+				},
+				technologies: true
+			}
+		})
+	),
+
 	getAll: protectedProcedure
 		.input(z.object({ status: z.nativeEnum(ProjectStatusEnum) }).optional())
 		.query(({ ctx, input }) =>

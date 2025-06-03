@@ -22,6 +22,7 @@ import {
 	DialogHeader,
 	DialogTitle
 } from '~/common/components/ui/dialog';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { cn } from '~/lib/utils';
 import { useApproval } from '../../templates/hook/useApproval';
 import { useProjectMutations } from '../hooks/useProjectMutations';
@@ -45,6 +46,7 @@ export function ProjectCard({
 	const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
 	const { changeProjectApprovalMutation } = useApproval();
 	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
+	const isTemplate = useIsTemplate();
 
 	const handleApprove = (approval: boolean) => {
 		changeProjectApprovalMutation.mutate({
@@ -125,7 +127,7 @@ export function ProjectCard({
 									Approve
 								</Button>
 							)}
-						{!approvalPage && isEnrolled ? (
+						{!approvalPage && !isTemplate && isEnrolled ? (
 							<Button
 								size="sm"
 								className="w-full sm:w-auto"
@@ -139,14 +141,14 @@ export function ProjectCard({
 								size="sm"
 								className="w-full sm:w-auto"
 								onClick={handleCreateProject}
-								disabled={isCreateProjectPending}
+								disabled={isCreateProjectPending || isTemplate}
 							>
 								{isCreateProjectPending ? (
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								) : (
 									<Play className="mr-2 h-4 w-4" />
 								)}
-								Start
+								{isTemplate ? 'Template' : 'Start'}
 							</Button>
 						)}
 						<Button

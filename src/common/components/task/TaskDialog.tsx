@@ -54,9 +54,7 @@ export function TaskDialog({
 	epics = [],
 	sprints = []
 }: TaskDialogProps) {
-	const { isDialogOpen, closeDialog } = useDialog();
-
-	const isOpen = isDialogOpen('task');
+	const { isDialogOpen, closeDialog } = useDialog('task');
 
 	const [prUrl, setPrUrl] = useState('');
 	const [newComment, setNewComment] = useState('');
@@ -152,7 +150,7 @@ export function TaskDialog({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={closeDialog}>
+		<Dialog open={isDialogOpen} onOpenChange={closeDialog}>
 			<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle className="pr-8 font-semibold text-xl">

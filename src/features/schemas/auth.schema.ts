@@ -23,7 +23,9 @@ export const userDbSchema = z.object({
 export const signInSchema = basicUserSchema
 	.omit({ name: true, lastName: true })
 	.extend({
-		password: z.string()
+		password: z
+			.string({ required_error: 'Password is required' })
+			.min(1, 'Password is required')
 	});
 
 export const signUpSchema = basicUserSchema
@@ -48,7 +50,9 @@ export const resetPasswordSchema = z
 	.object({
 		code: z.string(),
 		password: passwordSchema,
-		confirmPassword: z.string()
+		confirmPassword: z.string({
+			required_error: 'Confirm password is required'
+		})
 	})
 	.refine((data) => data.password === data.confirmPassword, {
 		message: "Passwords don't match",

@@ -36,7 +36,7 @@ const createFilter = (
 	return String(projectValue).toLowerCase() === value.toLowerCase();
 };
 
-export function useProject(approved?: boolean) {
+export function useProject() {
 	const {
 		searchTerm,
 		setSearchTerm,
@@ -48,9 +48,7 @@ export function useProject(approved?: boolean) {
 		setCostFilter
 	} = useProjectFilter();
 
-	const projectsQuery = api.projectTemplate.getAll.useQuery(
-		approved ? { status: 'APPROVED' } : undefined
-	);
+	const projectsQuery = api.projectTemplate.getApproved.useQuery();
 	const userProjectsQuery = api.project.getEnrolled.useQuery();
 	const userCreditsQuery = api.user.getCredits.useQuery();
 

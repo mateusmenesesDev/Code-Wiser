@@ -30,7 +30,7 @@ import { newSprintSchema } from '../../schemas/sprint.schema';
 import type { NewSprint } from '../../types/Sprint.type';
 
 export function NewSprintDialog() {
-	const { isDialogOpen, closeDialog } = useDialog();
+	const { isDialogOpen, closeDialog } = useDialog('sprint');
 	const isTemplate = useIsTemplate();
 	const params = useParams();
 	const projectSlug = decodeURIComponent(params.slug as string);
@@ -63,7 +63,7 @@ export function NewSprintDialog() {
 	};
 
 	return (
-		<Dialog open={isDialogOpen('sprint')} onOpenChange={closeDialog}>
+		<Dialog open={isDialogOpen} onOpenChange={closeDialog}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Create New Sprint</DialogTitle>
