@@ -1,4 +1,4 @@
-import { BookOpen, Briefcase, FolderOpen } from 'lucide-react';
+import { BookOpen, Briefcase } from 'lucide-react';
 
 type MenuItem = {
 	href: string;
@@ -23,12 +23,12 @@ export const MENU_ITEMS: MenuItem[] = [
 		label: 'Projects',
 		loginRequired: false
 	},
-	{
-		href: '/my-projects',
-		icon: FolderOpen,
-		label: 'My Projects',
-		loginRequired: true
-	},
+	// {
+	// 	href: '/my-projects',
+	// 	icon: FolderOpen,
+	// 	label: 'My Projects',
+	// 	loginRequired: true
+	// },
 	{
 		href: '/projects/templates',
 		icon: Briefcase,
