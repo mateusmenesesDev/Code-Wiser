@@ -1,5 +1,4 @@
 'use client';
-import { Protect } from '@clerk/nextjs';
 import {
 	ChevronDown,
 	CreditCard,
@@ -32,7 +31,8 @@ import SignInDialog from '~/features/auth/components/Signin/SigninDialog';
 import SignUpDialog from '~/features/auth/components/Signup/SignupDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { api } from '~/trpc/react';
-import CodeWiseIcon from '../icons/CodeWiseIcon';
+import CodeWiseIcon from '../../icons/CodeWiseIcon';
+import { MenuItem, ProtectedMenuItem } from './HeaderItem';
 
 const Header = () => {
 	const { openDialog } = useDialog('signIn');
@@ -41,21 +41,6 @@ const Header = () => {
 	const { data: userCredits } = api.user.getCredits.useQuery();
 
 	const isLoggedIn = !!user;
-
-	const navItems = MENU_ITEMS.filter((item) => {
-		if (item.orgPermission) {
-			return false;
-		}
-
-		if (isLoggedIn && item.loginRequired) {
-			return true;
-		}
-		if (!isLoggedIn && !item.loginRequired) {
-			return true;
-		}
-
-		return false;
-	});
 
 	return (
 		<header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
@@ -67,45 +52,14 @@ const Header = () => {
 
 					{/* Navigation */}
 					<nav className="hidden items-center gap-8 md:flex">
-						<Link
-							href="/"
-							className="font-medium text-muted-foreground transition-colors hover:text-dev-blue-600"
-						>
-							Projects
-						</Link>
-						{isLoggedIn && (
-							<>
-								{navItems.map((item) => (
-									<Link
-										key={item.href}
-										href={item.href}
-										className="group flex items-center gap-2 font-medium text-muted-foreground transition-colors hover:text-dev-blue-600"
-									>
-										<item.icon className="h-4 w-4" />
-										{item.label}
-									</Link>
-								))}
-
-								{MENU_ITEMS.map(
-									(item) =>
-										item.orgPermission?.permission && (
-											<Protect
-												key={item.href}
-												permission={item.orgPermission?.permission}
-											>
-												<Link
-													key={item.href}
-													href={item.href}
-													className="group flex items-center gap-2 font-medium text-muted-foreground transition-colors hover:text-dev-blue-600"
-												>
-													<item.icon className="h-4 w-4" />
-													{item.label}
-												</Link>
-											</Protect>
-										)
-								)}
-							</>
-						)}
+						{isLoggedIn &&
+							MENU_ITEMS.map((item) =>
+								!item.orgPermission ? (
+									<MenuItem key={item.href} item={item} />
+								) : (
+									<ProtectedMenuItem key={item.href} item={item} />
+								)
+							)}
 					</nav>
 
 					{/* Right Section */}
