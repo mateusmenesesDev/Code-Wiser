@@ -1,4 +1,3 @@
-import { Progress } from '@radix-ui/react-progress';
 import { CheckCircle, Clock, Target, TrendingUp } from 'lucide-react';
 import {
 	Card,
@@ -6,6 +5,7 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
+import { Progress } from '~/common/components/ui/progress';
 
 interface ProjectStats {
 	totalTasks: number;
