@@ -27,7 +27,7 @@ export function SprintPlanning({ sprints }: SprintPlanningProps) {
 			initialData: sprints
 		}
 	);
-	const { openDialog } = useDialog();
+	const { openDialog } = useDialog('sprint');
 
 	return (
 		<div className="py-6">

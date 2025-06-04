@@ -9,7 +9,6 @@ import { Tabs, TabsList, TabsTrigger } from '~/common/components/ui/tabs';
 import type { ProjectTemplateBySlugApiResponse } from '../types/Projects.type';
 import { ProjectDiscussions } from './ProjectDiscussions';
 import { ProjectGallery } from './ProjectGallery';
-import { ProjectMilestones } from './ProjectMilestones';
 import { ProjectOverview } from './ProjectOverview';
 import { ProjectResources } from './ProjectResources';
 
@@ -78,9 +77,6 @@ export function ProjectTabs({
 
 			<div>
 				{activeTab === 'overview' && <ProjectOverview {...project} />}
-				{activeTab === 'milestones' && (
-					<ProjectMilestones milestones={project.milestones} />
-				)}
 				{activeTab === 'discussions' && (
 					<ProjectDiscussions
 						discussions={[

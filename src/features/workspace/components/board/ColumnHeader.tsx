@@ -12,7 +12,7 @@ interface ColumnHeaderProps {
 }
 
 export function ColumnHeader({ title, count }: ColumnHeaderProps) {
-	const { openDialog } = useDialog();
+	const { openDialog } = useDialog('task');
 
 	const handleOpenTaskDialog = () => {
 		openDialog('task');

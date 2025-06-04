@@ -32,7 +32,7 @@ import { SprintEpicCell } from './SprintEpicCell';
 
 export function BacklogView() {
 	const router = useRouter();
-	const { openDialog } = useDialog();
+	const { openDialog } = useDialog('task');
 
 	const handleNavigation = (route: string) => {
 		if (isTemplate) {

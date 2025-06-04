@@ -63,7 +63,7 @@ export function TaskCard({
 		}
 	};
 
-	const { openDialog } = useDialog();
+	const { openDialog } = useDialog('task');
 
 	const handleCardClick = (e: React.MouseEvent) => {
 		if ((e.target as HTMLElement).closest('button')) {
