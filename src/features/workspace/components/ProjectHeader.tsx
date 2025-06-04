@@ -23,17 +23,18 @@ export function ProjectHeader({ projectTitle }: ProjectHeaderProps) {
 			</div>
 
 			<div className="flex items-center gap-3">
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="sm" disabled>
 					<MessageSquare className="mr-2 h-4 w-4" />
-					Ask Mentor
+					Ask Mentor (Coming Soon)
 				</Button>
 				<Button
+					disabled
 					variant="outline"
 					size="sm"
 					onClick={() => router.push('/project-settings')}
 				>
 					<Settings className="mr-2 h-4 w-4" />
-					Settings
+					Settings (Coming Soon)
 				</Button>
 			</div>
 		</section>
