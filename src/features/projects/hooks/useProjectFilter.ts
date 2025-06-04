@@ -2,9 +2,15 @@ import { useQueryState } from 'nuqs';
 
 export const useProjectFilter = () => {
 	const [searchTerm, setSearchTerm] = useQueryState('search');
-	const [categoryFilter, setCategoryFilter] = useQueryState('category');
-	const [difficultyFilter, setDifficultyFilter] = useQueryState('difficulty');
-	const [costFilter, setCostFilter] = useQueryState('cost');
+	const [categoryFilter, setCategoryFilter] = useQueryState('category', {
+		defaultValue: 'all'
+	});
+	const [difficultyFilter, setDifficultyFilter] = useQueryState('difficulty', {
+		defaultValue: 'all'
+	});
+	const [costFilter, setCostFilter] = useQueryState('cost', {
+		defaultValue: 'all'
+	});
 
 	return {
 		searchTerm,

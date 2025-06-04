@@ -6,7 +6,6 @@ import { useProjectFilter } from './useProjectFilter';
 
 type FilterConfig = {
 	value: string | null;
-	defaultValue: string;
 	property:
 		| keyof ProjectTemplateApiResponse
 		| ((project: ProjectTemplateApiResponse) => string | number);
@@ -18,9 +17,9 @@ type FilterConfig = {
 
 const createFilter = (
 	project: ProjectTemplateApiResponse,
-	{ value, defaultValue, property, customComparison }: FilterConfig
+	{ value, property, customComparison }: FilterConfig
 ) => {
-	if (value === defaultValue || !value) return true;
+	if (!value) return true;
 
 	if (customComparison) {
 		return customComparison(project, value);
@@ -55,29 +54,30 @@ export function useProject() {
 	const filters: FilterConfig[] = [
 		{
 			value: searchTerm,
-			defaultValue: 'All',
 			property: 'title',
 			customComparison: (project, value) =>
 				project.title.toLowerCase().includes(value.toLowerCase())
 		},
 		{
-			value: categoryFilter,
-			defaultValue: 'All',
+			value: categoryFilter === 'all' ? null : categoryFilter,
 			property: 'category'
 		},
 		{
-			value: difficultyFilter,
-			defaultValue: 'All',
+			value: difficultyFilter === 'all' ? null : difficultyFilter,
 			property: 'difficulty'
 		},
 		{
-			value: costFilter,
-			defaultValue: 'All',
+			value: costFilter === 'all' ? null : costFilter,
 			property: 'credits',
-			customComparison: (project, value) =>
-				value === 'Free'
-					? project.credits === 0
-					: project.credits != null && project.credits > 0
+			customComparison: (project, value) => {
+				if (value === 'Free') {
+					return project.credits === 0 || project.credits === null;
+				}
+				if (value === 'Credits') {
+					return project.credits != null && project.credits > 0;
+				}
+				return true;
+			}
 		}
 	];
 
