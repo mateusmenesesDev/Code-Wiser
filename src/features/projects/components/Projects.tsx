@@ -192,7 +192,6 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 										style={{ animationDelay: `${index * 0.1}s` }}
 									>
 										<ProjectCard
-											status={project.status}
 											projectTemplate={project}
 											userCredits={userCredits}
 											approvalPage={approvalPage}

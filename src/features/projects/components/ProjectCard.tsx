@@ -1,4 +1,3 @@
-import { ProjectStatusEnum } from '@prisma/client';
 import {
 	Check,
 	Clock,
@@ -6,14 +5,12 @@ import {
 	CreditCard,
 	Eye,
 	Gift,
-	Loader2,
 	Play,
 	Users,
 	Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -25,17 +22,7 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle
-} from '~/common/components/ui/dialog';
-import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { cn } from '~/lib/utils';
-import { useApproval } from '../../templates/hook/useApproval';
 import { useProjectMutations } from '../hooks/useProjectMutations';
 import type { ProjectTemplateApiResponse } from '../types/Projects.type';
 
@@ -43,28 +30,16 @@ type ProjectCardProps = {
 	projectTemplate: ProjectTemplateApiResponse;
 	approvalPage?: boolean;
 	userCredits: number;
-	status?: ProjectStatusEnum;
 	isEnrolled?: boolean;
 };
 
 export function ProjectCard({
 	projectTemplate,
 	userCredits,
-	approvalPage = false,
 	isEnrolled = false
 }: ProjectCardProps) {
 	const router = useRouter();
-	const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
-	const { changeProjectApprovalMutation } = useApproval();
 	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
-	const isTemplate = useIsTemplate();
-
-	const handleApprove = (approval: boolean) => {
-		changeProjectApprovalMutation.mutate({
-			id: projectTemplate.id,
-			status: approval ? 'APPROVED' : 'REQUESTED_CHANGES'
-		});
-	};
 
 	const handleContinue = () => {
 		router.push(`/workspace/${projectTemplate.slug}`);
@@ -244,19 +219,7 @@ export function ProjectCard({
 
 				<CardFooter className="pt-0">
 					<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						{approvalPage &&
-							projectTemplate.status !== ProjectStatusEnum.APPROVED && (
-								<Button
-									size="sm"
-									onClick={() => setIsApprovalModalOpen(true)}
-									className="w-full sm:w-auto"
-								>
-									<Check className="mr-2 h-4 w-4" />
-									Approve
-								</Button>
-							)}
-
-						{!approvalPage && !isTemplate && isEnrolled ? (
+						{isEnrolled ? (
 							<Button
 								size="sm"
 								className="w-full bg-blue-600 hover:bg-blue-700 sm:w-auto"
@@ -270,15 +233,11 @@ export function ProjectCard({
 								size="sm"
 								className="w-full bg-gray-100 text-gray-700 transition-colors hover:bg-blue-600 hover:text-white group-hover:bg-blue-600 group-hover:text-white sm:w-auto"
 								onClick={handleCreateProject}
-								disabled={isCreateProjectPending || isTemplate}
+								disabled={isCreateProjectPending}
 								variant="secondary"
 							>
-								{isCreateProjectPending ? (
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-								) : (
-									<Play className="mr-2 h-4 w-4" />
-								)}
-								{isTemplate ? 'Template' : 'Start Project'}
+								<Play className="mr-2 h-4 w-4" />
+								Start Project
 							</Button>
 						)}
 
@@ -288,13 +247,7 @@ export function ProjectCard({
 							asChild
 							className="w-full sm:w-auto"
 						>
-							<Link
-								href={
-									approvalPage
-										? `/projects/templates/${projectTemplate.slug}/approval`
-										: `/projects/templates/${projectTemplate.slug}`
-								}
-							>
+							<Link href={`/projects/${projectTemplate.slug}`}>
 								<Eye className="mr-2 h-4 w-4" />
 								See More
 							</Link>
@@ -302,33 +255,6 @@ export function ProjectCard({
 					</div>
 				</CardFooter>
 			</Card>
-
-			<Dialog open={isApprovalModalOpen} onOpenChange={setIsApprovalModalOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Approve Project</DialogTitle>
-						<DialogDescription>
-							Are you sure you want to approve "{projectTemplate.title}"?
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => setIsApprovalModalOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button
-							onClick={() => handleApprove(true)}
-							disabled={changeProjectApprovalMutation.isPending}
-						>
-							{changeProjectApprovalMutation.isPending
-								? 'Approving...'
-								: 'Approve'}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</>
 	);
 }
