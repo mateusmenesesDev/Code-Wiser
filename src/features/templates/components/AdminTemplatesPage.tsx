@@ -30,14 +30,16 @@ import {
 	TableHeader,
 	TableRow
 } from '~/common/components/ui/table';
-import { useAdminTemplates } from '../hook/useAdminTemplates';
 import {
-	formatStatus,
-	getAccessColor,
-	getAccessType,
+	getAccessTypeColor,
 	getDifficultyColor,
-	getStatusColor
-} from '../utils/templateUtils';
+	getTemplateStatusColor
+} from '~/common/utils/colorUtils';
+import {
+	formatTemplateStatus,
+	getAccessType
+} from '~/common/utils/projectUtils';
+import { useAdminTemplates } from '../hook/useAdminTemplates';
 
 export default function AdminTemplatesPage() {
 	const {
@@ -225,7 +227,7 @@ export default function AdminTemplatesPage() {
 													</Badge>
 												</TableCell>
 												<TableCell>
-													<Badge className={getAccessColor(accessType)}>
+													<Badge className={getAccessTypeColor(accessType)}>
 														{accessType}
 													</Badge>
 												</TableCell>
@@ -237,8 +239,10 @@ export default function AdminTemplatesPage() {
 													</Badge>
 												</TableCell>
 												<TableCell>
-													<Badge className={getStatusColor(template.status)}>
-														{formatStatus(template.status)}
+													<Badge
+														className={getTemplateStatusColor(template.status)}
+													>
+														{formatTemplateStatus(template.status)}
 													</Badge>
 												</TableCell>
 												<TableCell>

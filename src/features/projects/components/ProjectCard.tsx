@@ -22,6 +22,12 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
+import {
+	getAccessTypeColor,
+	getCategoryColor,
+	getDifficultyColor
+} from '~/common/utils/colorUtils';
+import { getAccessType } from '~/common/utils/projectUtils';
 import { cn } from '~/lib/utils';
 import { useProjectMutations } from '../hooks/useProjectMutations';
 import type { ProjectTemplateApiResponse } from '../types/Projects.type';
@@ -58,31 +64,8 @@ export function ProjectCard({
 		);
 	};
 
-	const getDifficultyColor = (difficulty: string) => {
-		switch (difficulty) {
-			case 'BEGINNER':
-				return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
-			case 'INTERMEDIATE':
-				return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
-			case 'ADVANCED':
-				return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
-			default:
-				return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
-		}
-	};
-
-	const getCategoryColor = (category: string) => {
-		switch (category) {
-			case 'Web Development':
-				return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
-			case 'Mobile Development':
-				return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800';
-			case 'Data Science':
-				return 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-800';
-			default:
-				return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
-		}
-	};
+	const accessType = getAccessType(projectTemplate.credits);
+	const estimatedTime = projectTemplate.expectedDuration || '4-6 weeks';
 
 	const getAccessTypeIcon = (accessType: 'Free' | 'Credits') => {
 		switch (accessType) {
@@ -94,21 +77,6 @@ export function ProjectCard({
 				return null;
 		}
 	};
-
-	const getAccessTypeColor = (accessType: 'Free' | 'Credits') => {
-		switch (accessType) {
-			case 'Free':
-				return 'bg-green-100 text-green-700 border-green-200';
-			case 'Credits':
-				return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800';
-			default:
-				return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
-		}
-	};
-
-	const accessType =
-		projectTemplate.credits && projectTemplate.credits > 0 ? 'Credits' : 'Free';
-	const estimatedTime = projectTemplate.expectedDuration || '4-6 weeks';
 
 	return (
 		<>
