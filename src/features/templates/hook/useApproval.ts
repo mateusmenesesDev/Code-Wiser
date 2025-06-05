@@ -6,7 +6,7 @@ export const useApproval = () => {
 	const utils = api.useUtils();
 
 	const changeProjectApprovalMutation =
-		api.projectTemplate.changeApproval.useMutation({
+		api.projectTemplate.updateStatus.useMutation({
 			onSuccess: async ({ slug, status }) => {
 				toast.success(
 					status === ProjectStatusEnum.APPROVED

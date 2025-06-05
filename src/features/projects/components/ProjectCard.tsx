@@ -61,8 +61,8 @@ export function ProjectCard({
 
 	const handleApprove = (approval: boolean) => {
 		changeProjectApprovalMutation.mutate({
-			projectName: projectTemplate.title,
-			approval: approval ? 'APPROVED' : 'REQUESTED_CHANGES'
+			id: projectTemplate.id,
+			status: approval ? 'APPROVED' : 'REQUESTED_CHANGES'
 		});
 	};
 

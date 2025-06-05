@@ -1,4 +1,4 @@
-import { Briefcase, FolderOpen, Settings, Users } from 'lucide-react';
+import { FolderOpen, Settings, Users } from 'lucide-react';
 
 type MenuItem = {
 	href: string;
@@ -22,16 +22,6 @@ export const MENU_ITEMS: MenuItem[] = [
 		href: '/my-projects',
 		icon: FolderOpen,
 		label: 'My Projects',
-		loginRequired: true
-	},
-	{
-		href: '/projects/templates',
-		icon: Briefcase,
-		label: 'Projects Template',
-		orgPermission: {
-			permission: 'org:project:edit_template',
-			role: 'org:admin'
-		},
 		loginRequired: true
 	}
 	// {
@@ -80,7 +70,7 @@ export const MENU_ITEMS: MenuItem[] = [
 
 export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 	{
-		href: '/admin/projects',
+		href: '/admin/templates',
 		icon: Settings,
 		label: 'Admin Projects',
 		orgPermission: {

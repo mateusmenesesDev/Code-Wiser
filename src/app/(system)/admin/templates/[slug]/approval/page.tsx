@@ -49,8 +49,8 @@ export default function ProjectApprovalPage({
 
 	const handleApprovalProject = (approval: boolean) => {
 		changeProjectApprovalMutation.mutate({
-			projectName: project.title,
-			approval: approval ? 'APPROVED' : 'REJECTED'
+			id: project.id,
+			status: approval ? 'APPROVED' : 'REJECTED'
 		});
 	};
 

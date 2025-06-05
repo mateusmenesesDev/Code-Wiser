@@ -1,7 +1,11 @@
 import { Prisma, ProjectStatusEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
 import { createProjectTemplateSchema } from '~/features/projects/schemas/projects.schema';
+import {
+	deleteTemplateSchema,
+	requestChangesSchema,
+	updateTemplateStatusSchema
+} from '~/features/templates/schemas/template.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 import { createProjectTemplateData } from '../actions/projectTemplateActions';
 
@@ -41,35 +45,38 @@ export const projectTemplateMutations = {
 			}
 		}),
 
-	changeApproval: protectedProcedure
-		.input(
-			z.object({
-				projectName: z.string(),
-				approval: z.nativeEnum(ProjectStatusEnum)
-			})
-		)
+	updateStatus: protectedProcedure
+		.input(updateTemplateStatusSchema)
 		.mutation(async ({ ctx, input }) => {
-			const updated = await ctx.db.projectTemplate.update({
-				where: { title: input.projectName },
-				data: {
-					status: input.approval
-				},
-				select: {
-					title: true,
-					slug: true,
-					status: true
+			try {
+				const updated = await ctx.db.projectTemplate.update({
+					where: { id: input.id },
+					data: { status: input.status },
+					select: {
+						id: true,
+						title: true,
+						slug: true,
+						status: true
+					}
+				});
+
+				return updated;
+			} catch (error) {
+				console.error('Error updating project template status:', error);
+
+				if (error instanceof TRPCError) {
+					throw error;
 				}
-			});
-			return updated;
+
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Failed to update project template status'
+				});
+			}
 		}),
 
 	requestChanges: protectedProcedure
-		.input(
-			z.object({
-				projectId: z.string(),
-				feedback: z.string()
-			})
-		)
+		.input(requestChangesSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
 				return await ctx.db.projectTemplate.update({
@@ -83,6 +90,24 @@ export const projectTemplateMutations = {
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
 					message: 'Failed to request changes'
+				});
+			}
+		}),
+
+	delete: protectedProcedure
+		.input(deleteTemplateSchema)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				const deleted = await ctx.db.projectTemplate.delete({
+					where: { id: input.id }
+				});
+
+				return deleted.id;
+			} catch (error) {
+				console.error('Error deleting project template:', error);
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Failed to delete project template'
 				});
 			}
 		})

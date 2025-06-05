@@ -37,13 +37,13 @@ export default function HeaderAvatarMenu() {
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-48 border bg-background">
-				<DropdownMenuItem asChild>
+				<DropdownMenuItem asChild className="cursor-pointer">
 					<Link href="/my-projects" className="flex items-center gap-2">
 						<FolderOpen className="h-4 w-4" />
 						My Projects
 					</Link>
 				</DropdownMenuItem>
-				<DropdownMenuItem asChild disabled>
+				<DropdownMenuItem asChild disabled className="cursor-pointer">
 					<Link href="/upgrade" className="flex items-center gap-2">
 						<CreditCard className="h-4 w-4" />
 						Upgrade (Coming Soon)
@@ -56,7 +56,11 @@ export default function HeaderAvatarMenu() {
 								key={item.href}
 								permission={item.orgPermission.permission}
 							>
-								<DropdownMenuItem asChild disabled={item.disabled}>
+								<DropdownMenuItem
+									asChild
+									disabled={item.disabled}
+									className="cursor-pointer"
+								>
 									<Link href={item.href} className="flex items-center gap-2">
 										<item.icon className="h-4 w-4" />
 										{item.label}
