@@ -17,6 +17,32 @@ export const projectTemplateQueries = {
 		})
 	),
 
+	getInfoBySlug: publicProcedure
+		.input(z.object({ slug: z.string() }))
+		.query(async ({ ctx, input }) => {
+			try {
+				const projectTemplate = await ctx.db.projectTemplate.findUnique({
+					where: {
+						slug: input.slug,
+						status: 'APPROVED'
+					},
+					include: {
+						technologies: true,
+						category: true,
+						learningOutcomes: true,
+						milestones: true,
+						epics: true,
+						sprints: true
+					}
+				});
+
+				return projectTemplate;
+			} catch (error) {
+				console.error(error);
+				throw error;
+			}
+		}),
+
 	getAll: protectedProcedure
 		.input(z.object({ status: z.nativeEnum(ProjectStatusEnum) }).optional())
 		.query(({ ctx, input }) =>

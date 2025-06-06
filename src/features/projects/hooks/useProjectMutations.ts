@@ -21,7 +21,7 @@ export function useProjectMutations() {
 		mutate: createProjectTemplate,
 		mutateAsync: createProjectTemplateAsync,
 		isPending: isCreateProjectTemplatePending
-	} = api.project.createProject.useMutation({
+	} = api.projectTemplate.create.useMutation({
 		onSuccess: () => {
 			toast.success('Project template created successfully');
 		}

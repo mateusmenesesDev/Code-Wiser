@@ -11,7 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '~/common/components/ui/select';
-import { api } from '~/trpc/react';
+import { useUser } from '~/common/hooks/useUser';
 import { useProject } from '../hooks/useProject';
 import { useProjectFilter } from '../hooks/useProjectFilter';
 import { ProjectCard } from './ProjectCard';
@@ -33,18 +33,18 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 		setCostFilter
 	} = useProjectFilter();
 
-	const { filteredProjects, userCredits, isLoading } = useProject();
-	const myProjects = api.project.getEnrolled.useQuery();
+	const { userCredits } = useUser();
+	const { filteredProjects, isLoading, userProjects } = useProject();
 
 	const clearFilters = () => {
-		setSearchTerm(null);
+		setSearchTerm('');
 		setCategoryFilter('all');
 		setDifficultyFilter('all');
 		setCostFilter('all');
 	};
 
 	const hasActiveFilters =
-		searchTerm ||
+		searchTerm !== '' ||
 		categoryFilter !== 'all' ||
 		difficultyFilter !== 'all' ||
 		costFilter !== 'all';
@@ -87,7 +87,7 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 							<Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
 							<Input
 								placeholder="Search projects, technologies, or keywords..."
-								value={searchTerm ?? ''}
+								value={searchTerm}
 								onChange={(e) => setSearchTerm(e.target.value)}
 								className="h-12 pl-10 text-lg"
 							/>
@@ -142,11 +142,13 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 
 				{/* Results Summary */}
 				<div className="mb-6 flex items-center justify-between">
-					<p className="text-muted-foreground">
+					<div className="text-muted-foreground">
 						Showing{' '}
-						<span className="font-semibold">{filteredProjects?.length}</span>{' '}
+						<span className="font-semibold">
+							{filteredProjects?.length || 0}
+						</span>{' '}
 						projects
-					</p>
+					</div>
 					<div className="flex gap-2">
 						{hasActiveFilters && (
 							<Button variant="outline" size="sm" onClick={clearFilters}>
@@ -177,10 +179,10 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 								<h3 className="mb-2 font-semibold text-2xl">
 									No projects found
 								</h3>
-								<p className="mb-6 text-muted-foreground">
+								<div className="mb-6 text-muted-foreground">
 									Try adjusting your search criteria or browse all available
 									projects.
-								</p>
+								</div>
 								<Button onClick={clearFilters}>Browse All Projects</Button>
 							</div>
 						) : (
@@ -195,7 +197,7 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 											projectTemplate={project}
 											userCredits={userCredits}
 											approvalPage={approvalPage}
-											isEnrolled={myProjects.data?.some(
+											isEnrolled={userProjects?.some(
 												(p) => p.title === project.title
 											)}
 										/>

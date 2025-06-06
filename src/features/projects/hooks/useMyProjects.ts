@@ -70,9 +70,16 @@ export function useMyProjects() {
 		});
 	}, [projects, progressQueries, activityQueries]);
 
+	const isEnrolledProject = (projectTitle: string) => {
+		return projectsWithProgress.some(
+			(project) => project.title === projectTitle
+		);
+	};
+
 	return {
 		projects: projectsWithProgress,
 		isLoading,
-		error
+		error,
+		isEnrolledProject
 	};
 }

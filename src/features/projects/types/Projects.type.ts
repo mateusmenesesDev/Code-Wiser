@@ -26,7 +26,7 @@ export type ProjectImage = {
 export type ProjectTemplateApiResponse =
 	RouterOutputs['projectTemplate']['getAll'][0];
 export type ProjectTemplateBySlugApiResponse =
-	RouterOutputs['projectTemplate']['getBySlug'];
+	RouterOutputs['projectTemplate']['getInfoBySlug'];
 export type CreateProjectTemplateApiInput =
 	RouterInputs['projectTemplate']['create'];
 

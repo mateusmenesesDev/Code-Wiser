@@ -1,7 +1,9 @@
 import { useQueryState } from 'nuqs';
 
 export const useProjectFilter = () => {
-	const [searchTerm, setSearchTerm] = useQueryState('search');
+	const [searchTerm, setSearchTerm] = useQueryState('search', {
+		defaultValue: ''
+	});
 	const [categoryFilter, setCategoryFilter] = useQueryState('category', {
 		defaultValue: 'all'
 	});

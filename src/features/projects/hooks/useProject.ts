@@ -18,11 +18,10 @@ export function useProject() {
 
 	const projectsQuery = api.projectTemplate.getApproved.useQuery();
 	const userProjectsQuery = api.project.getEnrolled.useQuery();
-	const userCreditsQuery = api.user.getCredits.useQuery();
 
 	const filters: FilterConfig[] = [
 		{
-			value: searchTerm,
+			value: searchTerm === '' ? null : searchTerm,
 			property: 'title',
 			customComparison: (project, value) =>
 				project.title.toLowerCase().includes(value.toLowerCase())
@@ -50,9 +49,10 @@ export function useProject() {
 		}
 	];
 
-	const filteredProjects = projectsQuery.data?.filter((project) =>
-		filters.every((filterConfig) => createFilter(project, filterConfig))
-	);
+	const filteredProjects =
+		projectsQuery.data?.filter((project) =>
+			filters.every((filterConfig) => createFilter(project, filterConfig))
+		) ?? [];
 
 	return {
 		searchTerm,
@@ -65,10 +65,6 @@ export function useProject() {
 		setCostFilter,
 		userProjects: userProjectsQuery.data,
 		filteredProjects,
-		userCredits: userCreditsQuery.data?.credits ?? 0,
-		isLoading:
-			projectsQuery.isLoading ||
-			userProjectsQuery.isLoading ||
-			userCreditsQuery.isLoading
+		isLoading: projectsQuery.isLoading || userProjectsQuery.isLoading
 	};
 }

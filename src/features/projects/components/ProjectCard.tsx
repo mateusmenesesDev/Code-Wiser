@@ -215,7 +215,7 @@ export function ProjectCard({
 							asChild
 							className="w-full sm:w-auto"
 						>
-							<Link href={`/projects/${projectTemplate.slug}`}>
+							<Link href={`/project/${projectTemplate.slug}`}>
 								<Eye className="mr-2 h-4 w-4" />
 								See More
 							</Link>
