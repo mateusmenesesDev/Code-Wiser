@@ -553,7 +553,7 @@ async function createProjectTemplates(
 
 		const baseTitle = generateProjectTitle(template, category.name);
 		const title = `${baseTitle} ${i + 1}`;
-		const slug = `${slugify(title, { lower: true, strict: true })}-${faker.string.alphanumeric(4)}`;
+		const slug = slugify(title, { lower: true });
 
 		// Get relevant technologies for this category
 		const categoryTechs =

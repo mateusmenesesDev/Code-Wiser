@@ -54,7 +54,7 @@ export const projectMutations = {
 							difficulty: projectTemplate.difficulty,
 							figmaProjectUrl: projectTemplate.figmaProjectUrl,
 							categoryId: projectTemplate.categoryId,
-							slug: slugify(projectTemplate.title),
+							slug: slugify(projectTemplate.title, { lower: true }),
 							members: { connect: { id: user.id } }
 						}
 					});
