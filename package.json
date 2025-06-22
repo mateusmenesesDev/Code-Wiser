@@ -13,7 +13,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:test-data": "tsx prisma/create-test-data.ts",
+    "db:test-data": "tsx prisma/seed/create-test-data.ts",
     "db:test-project": "tsx prisma/create-test-project.ts",
     "dev": "next dev",
     "postinstall": "prisma generate",
@@ -85,6 +85,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.2",
+    "@faker-js/faker": "^9.8.0",
+    "@types/faker": "^6.6.8",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
