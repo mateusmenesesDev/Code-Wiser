@@ -10,6 +10,7 @@ import {
 	TaskTypeEnum
 } from '@prisma/client';
 import slugify from 'slugify';
+import { checkEnvironment } from './utils/environment';
 
 const prisma = new PrismaClient();
 
@@ -241,26 +242,196 @@ function generateProjectTitle(
 	template: (typeof PROJECT_TEMPLATES)[0],
 	category: string
 ) {
-	const variations = [
-		`${template.prefix} ${category} Platform`,
-		`Modern ${template.prefix} System`,
-		`Advanced ${template.prefix} Application`,
-		`${template.prefix} Management Tool`,
-		`Professional ${template.prefix} Solution`,
-		`${template.prefix} Hub`,
-		`Smart ${template.prefix} Platform`,
-		`${template.prefix} Pro`,
-		`Next-Gen ${template.prefix}`,
-		`${template.prefix} Studio`
+	const adjectives = [
+		'Modern',
+		'Advanced',
+		'Smart',
+		'Professional',
+		'Complete',
+		'Comprehensive',
+		'Full-Stack',
+		'Responsive',
+		'Interactive'
 	];
 
-	return faker.helpers.arrayElement(variations);
+	const suffixes = [
+		'Platform',
+		'System',
+		'Application',
+		'Tool',
+		'Hub',
+		'Studio',
+		'Manager',
+		'Portal',
+		'Dashboard'
+	];
+
+	const structures = [
+		() =>
+			`${faker.helpers.arrayElement(adjectives)} ${template.prefix} ${faker.helpers.arrayElement(suffixes)}`,
+		() =>
+			`${template.prefix} ${faker.helpers.arrayElement(suffixes)} for ${category}`,
+		() => `${faker.company.name().split(' ')[0]} ${template.prefix}`,
+		() => `${template.prefix} ${faker.helpers.arrayElement(suffixes)}`,
+		() => `${faker.helpers.arrayElement(adjectives)} ${template.prefix}`,
+		() =>
+			`${template.prefix}${faker.helpers.arrayElement(['Pro', 'Plus', 'Max', 'Hub', 'Lab'])}`
+	];
+
+	return faker.helpers.arrayElement(structures)();
 }
 
 function generateTasks(
 	_templateType: string,
 	difficulty: ProjectDifficultyEnum
 ) {
+	// Generate dynamic task templates
+	const taskTemplates = [
+		{
+			title: () => `Set up ${faker.hacker.noun()} environment`,
+			description: () =>
+				`Configure ${faker.hacker.adjective()} development tools, dependencies, and ${faker.word.adjective()} environment setup for optimal ${faker.hacker.noun()} development.`,
+			type: TaskTypeEnum.TASK,
+			priority: () =>
+				faker.helpers.arrayElement([
+					TaskPriorityEnum.HIGHEST,
+					TaskPriorityEnum.HIGH
+				]),
+			status: TaskStatusEnum.READY_TO_DEVELOP,
+			tags: () =>
+				faker.helpers.arrayElements(
+					['setup', 'environment', 'configuration', 'development', 'tools'],
+					{ min: 2, max: 4 }
+				)
+		},
+		{
+			title: () => `Design ${faker.hacker.adjective()} system architecture`,
+			description: () =>
+				`Plan the overall ${faker.hacker.adjective()} system architecture and ${faker.word.adjective()} technology stack using ${faker.hacker.noun()} patterns.`,
+			type: TaskTypeEnum.TASK,
+			priority: () =>
+				faker.helpers.arrayElement([
+					TaskPriorityEnum.HIGH,
+					TaskPriorityEnum.MEDIUM
+				]),
+			status: TaskStatusEnum.BACKLOG,
+			tags: () =>
+				faker.helpers.arrayElements(
+					['architecture', 'design', 'planning', 'system', 'blueprint'],
+					{ min: 2, max: 4 }
+				)
+		},
+		{
+			title: () => `Create ${faker.hacker.adjective()} database schema`,
+			description: () =>
+				`Design and implement the ${faker.word.adjective()} database structure with ${faker.hacker.adjective()} relationships and ${faker.hacker.noun()} optimization.`,
+			type: TaskTypeEnum.TASK,
+			priority: () =>
+				faker.helpers.arrayElement([
+					TaskPriorityEnum.HIGH,
+					TaskPriorityEnum.MEDIUM
+				]),
+			status: TaskStatusEnum.BACKLOG,
+			tags: () =>
+				faker.helpers.arrayElements(
+					['database', 'schema', 'backend', 'data', 'modeling'],
+					{ min: 2, max: 4 }
+				)
+		},
+		{
+			title: () => `Implement ${faker.hacker.adjective()} user authentication`,
+			description: () =>
+				`Build ${faker.word.adjective()} user registration, login, and session management with ${faker.hacker.adjective()} security measures.`,
+			type: TaskTypeEnum.USER_STORY,
+			priority: () =>
+				faker.helpers.arrayElement([
+					TaskPriorityEnum.HIGH,
+					TaskPriorityEnum.MEDIUM
+				]),
+			status: TaskStatusEnum.BACKLOG,
+			tags: () =>
+				faker.helpers.arrayElements(
+					['auth', 'security', 'user-management', 'login', 'registration'],
+					{ min: 2, max: 4 }
+				)
+		},
+		{
+			title: () => `Develop ${faker.hacker.adjective()} API endpoints`,
+			description: () =>
+				`Create ${faker.word.adjective()} RESTful API endpoints for ${faker.hacker.noun()} operations with ${faker.hacker.adjective()} validation.`,
+			type: TaskTypeEnum.TASK,
+			priority: () =>
+				faker.helpers.arrayElement([
+					TaskPriorityEnum.MEDIUM,
+					TaskPriorityEnum.LOW
+				]),
+			status: TaskStatusEnum.BACKLOG,
+			tags: () =>
+				faker.helpers.arrayElements(
+					['api', 'backend', 'endpoints', 'rest', 'validation'],
+					{ min: 2, max: 4 }
+				)
+		},
+		{
+			title: () => `Build ${faker.hacker.adjective()} user interface`,
+			description: () =>
+				`Design and implement ${faker.word.adjective()} user interface components with ${faker.hacker.adjective()} interactions and ${faker.hacker.noun()} optimization.`,
+			type: TaskTypeEnum.TASK,
+			priority: () =>
+				faker.helpers.arrayElement([
+					TaskPriorityEnum.MEDIUM,
+					TaskPriorityEnum.LOW
+				]),
+			status: TaskStatusEnum.BACKLOG,
+			tags: () =>
+				faker.helpers.arrayElements(
+					['ui', 'frontend', 'components', 'design', 'ux'],
+					{ min: 2, max: 4 }
+				)
+		},
+		{
+			title: () => `Implement ${faker.hacker.adjective()} testing suite`,
+			description: () =>
+				`Create comprehensive ${faker.word.adjective()} test suite covering ${faker.hacker.noun()} functionality with ${faker.hacker.adjective()} coverage.`,
+			type: TaskTypeEnum.TASK,
+			priority: () =>
+				faker.helpers.arrayElement([
+					TaskPriorityEnum.MEDIUM,
+					TaskPriorityEnum.LOW
+				]),
+			status: TaskStatusEnum.BACKLOG,
+			tags: () =>
+				faker.helpers.arrayElements(
+					['testing', 'unit-tests', 'quality', 'coverage', 'automation'],
+					{ min: 2, max: 4 }
+				)
+		},
+		{
+			title: () => `Deploy to ${faker.hacker.adjective()} production`,
+			description: () =>
+				`Set up ${faker.word.adjective()} production environment and deploy the application with ${faker.hacker.adjective()} monitoring and ${faker.hacker.noun()} optimization.`,
+			type: TaskTypeEnum.TASK,
+			priority: () =>
+				faker.helpers.arrayElement([
+					TaskPriorityEnum.LOW,
+					TaskPriorityEnum.LOWEST
+				]),
+			status: TaskStatusEnum.BACKLOG,
+			tags: () =>
+				faker.helpers.arrayElements(
+					[
+						'deployment',
+						'production',
+						'devops',
+						'monitoring',
+						'infrastructure'
+					],
+					{ min: 2, max: 4 }
+				)
+		}
+	];
+
+	// Generate base tasks with dynamic content
 	const baseTasks: Array<{
 		title: string;
 		description: string;
@@ -268,43 +439,16 @@ function generateTasks(
 		priority: TaskPriorityEnum;
 		status: TaskStatusEnum;
 		tags: string[];
-	}> = [
-		{
-			title: 'Set up development environment',
-			description:
-				'Configure development tools, dependencies, and local environment setup.',
-			type: TaskTypeEnum.TASK,
-			priority: TaskPriorityEnum.HIGHEST,
-			status: TaskStatusEnum.READY_TO_DEVELOP,
-			tags: ['setup', 'environment', 'configuration']
-		},
-		{
-			title: 'Design system architecture',
-			description: 'Plan the overall system architecture and technology stack.',
-			type: TaskTypeEnum.TASK,
-			priority: TaskPriorityEnum.HIGH,
-			status: TaskStatusEnum.BACKLOG,
-			tags: ['architecture', 'design', 'planning']
-		},
-		{
-			title: 'Create database schema',
-			description:
-				'Design and implement the database structure and relationships.',
-			type: TaskTypeEnum.TASK,
-			priority: TaskPriorityEnum.HIGH,
-			status: TaskStatusEnum.BACKLOG,
-			tags: ['database', 'schema', 'backend']
-		},
-		{
-			title: 'Implement user authentication',
-			description:
-				'Build secure user registration, login, and session management.',
-			type: TaskTypeEnum.USER_STORY,
-			priority: TaskPriorityEnum.HIGH,
-			status: TaskStatusEnum.BACKLOG,
-			tags: ['auth', 'security', 'user-management']
-		}
-	];
+	}> = faker.helpers
+		.arrayElements(taskTemplates, { min: 4, max: 6 })
+		.map((template) => ({
+			title: template.title(),
+			description: template.description(),
+			type: template.type,
+			priority: template.priority(),
+			status: template.status,
+			tags: template.tags()
+		}));
 
 	// Add difficulty-specific tasks
 	if (
@@ -408,7 +552,7 @@ async function createProjectTemplates(
 		const status = faker.helpers.arrayElement(Object.values(ProjectStatusEnum));
 
 		const baseTitle = generateProjectTitle(template, category.name);
-		const title = `${baseTitle} ${faker.string.alphanumeric(6)}`;
+		const title = `${baseTitle} ${i + 1}`;
 		const slug = `${slugify(title, { lower: true, strict: true })}-${faker.string.alphanumeric(4)}`;
 
 		// Get relevant technologies for this category
@@ -423,11 +567,28 @@ async function createProjectTemplates(
 			selectedTechNames.includes(tech.name)
 		);
 
+		// Generate dynamic description with business context
+		const businessContext = faker.helpers.arrayElement([
+			`for ${faker.company.buzzPhrase()}`,
+			`targeting ${faker.helpers.arrayElement(['startups', 'enterprises', 'small businesses', 'freelancers', 'teams'])}`,
+			`focused on ${faker.hacker.noun()} optimization`,
+			`with ${faker.hacker.adjective()} scalability`,
+			`designed for ${faker.word.adjective()} performance`
+		]);
+
+		const learningOutcome = faker.helpers.arrayElement([
+			`master ${selectedTechNames.slice(0, 2).join(' and ')}`,
+			`understand ${faker.hacker.adjective()} architecture patterns`,
+			`implement ${faker.word.adjective()} best practices`,
+			`develop ${faker.hacker.noun()} optimization skills`,
+			`learn ${faker.hacker.adjective()} development workflows`
+		]);
+
 		const projectTemplate = await prisma.projectTemplate.create({
 			data: {
 				title,
 				slug,
-				description: `${template.description} using modern technologies and best practices. This project will help you learn ${selectedTechNames.join(', ')} while building a real-world application.`,
+				description: `${template.description} ${businessContext}. This ${faker.word.adjective()} project will help you ${learningOutcome} while building a ${faker.hacker.adjective()} real-world application using ${selectedTechNames.join(', ')}.`,
 				methodology,
 				minParticipants: faker.number.int({ min: 1, max: 3 }),
 				maxParticipants: faker.number.int({ min: 4, max: 8 }),
@@ -443,23 +604,24 @@ async function createProjectTemplates(
 				}),
 				preRequisites: faker.helpers.arrayElements(
 					[
-						'Basic programming knowledge',
-						'Understanding of web development',
-						'Familiarity with databases',
-						'Git version control',
-						'Command line basics',
-						'HTML/CSS fundamentals',
-						'JavaScript knowledge',
-						'API concepts'
+						`Basic ${faker.helpers.arrayElement(selectedTechNames.slice(0, 2))} knowledge`,
+						`Understanding of ${faker.hacker.noun()} development`,
+						`Familiarity with ${faker.hacker.adjective()} databases`,
+						`${faker.hacker.adjective()} Git version control`,
+						`Command line and ${faker.hacker.noun()} basics`,
+						`${faker.word.adjective()} HTML/CSS fundamentals`,
+						`${faker.hacker.adjective()} JavaScript knowledge`,
+						`API and ${faker.hacker.noun()} concepts`,
+						`${faker.word.adjective()} software architecture`,
+						`${faker.hacker.adjective()} testing methodologies`
 					],
-					{ min: 2, max: 4 }
+					{ min: 2, max: 5 }
 				),
 				expectedDuration: faker.helpers.arrayElement([
-					'2-3 weeks',
-					'1 month',
-					'6-8 weeks',
-					'2-3 months',
-					'3-4 months'
+					`${faker.number.int({ min: 2, max: 4 })} weeks`,
+					`${faker.number.int({ min: 1, max: 3 })} month${faker.number.int({ min: 1, max: 3 }) > 1 ? 's' : ''}`,
+					`${faker.number.int({ min: 6, max: 12 })} weeks`,
+					`${faker.number.int({ min: 2, max: 6 })} months`
 				]),
 				categoryId: category.id,
 				technologies: {
@@ -490,6 +652,9 @@ async function createProjectTemplates(
 }
 
 async function main() {
+	// Check environment safety first
+	checkEnvironment();
+
 	console.log('🌱 Creating comprehensive test data with Faker.js...');
 
 	try {
