@@ -11,16 +11,15 @@ export const projectMutations = {
 				const { userId } = ctx.session;
 
 				const project = await ctx.db.$transaction(async (prisma) => {
-					// Ensure the user exists in the database
-					await prisma.user.upsert({
-						where: { id: userId },
-						update: {},
-						create: {
-							id: userId,
-							email: `user-${userId}@temp.com`, // Temporary email, will be updated by webhook
-							credits: 0
-						}
+					const user = await prisma.user.findUnique({
+						where: { id: userId }
 					});
+					if (!user) {
+						throw new TRPCError({
+							code: 'NOT_FOUND',
+							message: 'User not found'
+						});
+					}
 
 					const projectTemplate = await prisma.projectTemplate.findUnique({
 						where: {
@@ -57,7 +56,7 @@ export const projectMutations = {
 							figmaProjectUrl: projectTemplate.figmaProjectUrl,
 							categoryId: projectTemplate.categoryId,
 							slug: slugify(projectTemplate.title),
-							members: { connect: { id: userId } }
+							members: { connect: { id: user.id } }
 						}
 					});
 
