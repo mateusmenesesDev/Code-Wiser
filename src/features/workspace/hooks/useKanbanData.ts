@@ -63,13 +63,6 @@ export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 		) => {
 			if (!projectData?.tasks) return;
 
-			console.log('🔄 Moving task:', {
-				taskId,
-				fromColumnId,
-				toColumnId,
-				toIndex
-			});
-
 			const newStatus = toColumnId;
 			const taskToMove = projectData.tasks.find((task) => task.id === taskId);
 			if (!taskToMove) return;
@@ -90,7 +83,6 @@ export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 
 			utils.project.getBySlug.setData(queryKey, (oldData) => {
 				if (!oldData) return oldData;
-				console.log('📝 Updating cache with optimistic tasks');
 				return {
 					...oldData,
 					tasks: optimisticTasks
@@ -156,7 +148,6 @@ export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 
 			utils.project.getBySlug.setData(queryKey, (oldData) => {
 				if (!oldData) return oldData;
-				console.log('📝 Final cache update with orders');
 				return {
 					...oldData,
 					tasks: optimisticTasks
