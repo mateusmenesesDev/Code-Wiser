@@ -6,6 +6,7 @@ import { api } from '~/trpc/react';
 
 export function useProjectMutations() {
 	const router = useRouter();
+	const utils = api.useUtils();
 
 	const {
 		mutate: createProject,
@@ -14,6 +15,8 @@ export function useProjectMutations() {
 	} = api.project.createProject.useMutation({
 		onSuccess: (data) => {
 			router.push(`/workspace/${data}`);
+			utils.project.getEnrolled.invalidate();
+			utils.projectTemplate.getApproved.invalidate();
 		}
 	});
 
