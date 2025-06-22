@@ -43,7 +43,6 @@ export const projectMutations = {
 					const templateEpics = projectTemplate.epics;
 					const templateTasks = projectTemplate.tasks;
 
-					// Extract only the fields that exist on the Project model
 					const newProject = await prisma.project.create({
 						data: {
 							title: projectTemplate.title,
