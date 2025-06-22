@@ -32,8 +32,8 @@ export function ProjectTemplateApprovalDetails({
 					<h3 className="mb-2 font-semibold text-lg">Project Type</h3>
 					<div className="flex items-center">
 						<CreditCard className="mr-2 h-4 w-4" />
-						<span className="capitalize">{project.type}</span>
-						{project.type === 'CREDITS' && (
+						<span className="capitalize">{project.accessType}</span>
+						{project.accessType === 'CREDITS' && (
 							<span className="ml-2">({project.credits} credits)</span>
 						)}
 					</div>

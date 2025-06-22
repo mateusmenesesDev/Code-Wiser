@@ -22,15 +22,17 @@ export function createProjectTemplateData(
 			}))
 		},
 		learningOutcomes: {
-			create: input.learningOutcomes.map((outcome) => ({
-				value: outcome
-			}))
+			create:
+				input.learningOutcomes?.map((outcome) => ({
+					value: outcome
+				})) ?? []
 		},
 		milestones: {
-			create: input.milestones.map((milestone, index) => ({
-				title: milestone,
-				order: index
-			}))
+			create:
+				input.milestones?.map((milestone, index) => ({
+					title: milestone,
+					order: index
+				})) ?? []
 		},
 		preRequisites: input.preRequisites,
 		images: {
