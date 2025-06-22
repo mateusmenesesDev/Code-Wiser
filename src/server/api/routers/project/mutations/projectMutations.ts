@@ -40,20 +40,22 @@ export const projectMutations = {
 						});
 					}
 
-					const {
-						id: _templateId,
-						status: _status,
-						expectedDuration: _expectedDuration,
-						credits: _credits,
-						sprints: templateSprints,
-						epics: templateEpics,
-						tasks: templateTasks,
-						...projectData
-					} = projectTemplate;
+					const templateSprints = projectTemplate.sprints;
+					const templateEpics = projectTemplate.epics;
+					const templateTasks = projectTemplate.tasks;
 
+					// Extract only the fields that exist on the Project model
 					const newProject = await prisma.project.create({
 						data: {
-							...projectData,
+							title: projectTemplate.title,
+							description: projectTemplate.description,
+							methodology: projectTemplate.methodology,
+							minParticipants: projectTemplate.minParticipants,
+							maxParticipants: projectTemplate.maxParticipants,
+							accessType: projectTemplate.accessType,
+							difficulty: projectTemplate.difficulty,
+							figmaProjectUrl: projectTemplate.figmaProjectUrl,
+							categoryId: projectTemplate.categoryId,
 							slug: slugify(projectTemplate.title),
 							members: { connect: { id: userId } }
 						}
