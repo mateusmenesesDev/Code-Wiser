@@ -1,7 +1,7 @@
 import { Prisma, ProjectStatusEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
-import { createProjectTemplateSchema } from '~/features/projects/schemas/projects.schema';
 import {
+	createProjectTemplateSchema,
 	deleteTemplateSchema,
 	requestChangesSchema,
 	updateTemplateStatusSchema

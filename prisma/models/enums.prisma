@@ -35,7 +35,7 @@ enum ProjectStatusEnum {
   SEND_FOR_APPROVAL
 }
 
-enum ProjectTypeEnum {
+enum ProjectAccessTypeEnum {
   FREE
   CREDITS
   MENTORSHIP
@@ -50,15 +50,6 @@ enum ProjectDifficultyEnum {
 enum ProjectRoleEnum {
   MENTEE
   MENTOR
-}
-
-enum ResourceTypeEnum {
-  CODE
-  DOCUMENTATION
-  VIDEO
-  ARTICLE
-  RECOMMENDED
-  OTHER
 }
 
 enum EpicStatusEnum {

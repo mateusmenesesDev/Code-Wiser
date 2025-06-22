@@ -7,9 +7,15 @@ export function createProjectData(
 	category: Category
 ): Prisma.ProjectCreateInput {
 	return {
-		...input,
+		title: input.title,
+		description: input.description,
 		slug: slugify(input.title),
 		category: { connect: { id: category.id } },
-		difficulty: input.difficulty
+		difficulty: input.difficulty,
+		accessType: input.accessType,
+		methodology: input.methodology,
+		minParticipants: input.minParticipants,
+		maxParticipants: input.maxParticipants,
+		figmaProjectUrl: input.figmaProjectUrl
 	};
 }

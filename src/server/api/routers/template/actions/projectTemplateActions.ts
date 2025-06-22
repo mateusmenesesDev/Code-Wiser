@@ -21,6 +21,18 @@ export function createProjectTemplateData(
 				create: { name: tech }
 			}))
 		},
+		learningOutcomes: {
+			create: input.learningOutcomes.map((outcome) => ({
+				value: outcome
+			}))
+		},
+		milestones: {
+			create: input.milestones.map((milestone, index) => ({
+				title: milestone,
+				order: index
+			}))
+		},
+		preRequisites: input.preRequisites,
 		images: {
 			create: input.images?.map((image) => ({ url: image.file.name }))
 		}

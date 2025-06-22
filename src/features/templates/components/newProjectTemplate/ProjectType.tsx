@@ -1,4 +1,4 @@
-import { ProjectTypeEnum } from '@prisma/client';
+import { ProjectAccessTypeEnum } from '@prisma/client';
 import type { UseFormReturn } from 'react-hook-form';
 import { ErrorMessage } from '~/common/components/ErrorMessage';
 import { Input } from '~/common/components/ui/input';
@@ -26,30 +26,35 @@ export function ProjectType({ form }: ProjectTypeProps) {
 			<div className="space-y-2">
 				<Label>Project Type</Label>
 				<RadioGroup
-					onValueChange={(value) => setValue('type', value as ProjectTypeEnum)}
-					value={watch('type')}
+					onValueChange={(value) =>
+						setValue('accessType', value as ProjectAccessTypeEnum)
+					}
+					value={watch('accessType')}
 				>
 					<div className="flex items-center space-x-2">
-						<RadioGroupItem value={ProjectTypeEnum.FREE} id="free" />
+						<RadioGroupItem value={ProjectAccessTypeEnum.FREE} id="free" />
 						<Label htmlFor="free">Free</Label>
 					</div>
 					<div className="flex items-center space-x-2">
-						<RadioGroupItem value={ProjectTypeEnum.CREDITS} id="credits" />
+						<RadioGroupItem
+							value={ProjectAccessTypeEnum.CREDITS}
+							id="credits"
+						/>
 						<Label htmlFor="credits">Credits Based</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<RadioGroupItem
-							value={ProjectTypeEnum.MENTORSHIP}
+							value={ProjectAccessTypeEnum.MENTORSHIP}
 							id="mentorship"
 						/>
 						<Label htmlFor="mentorship">Mentorship Based</Label>
 					</div>
 				</RadioGroup>
-				<ErrorMessage message={errors.type?.message} />
+				<ErrorMessage message={errors.accessType?.message} />
 			</div>
 
 			<div ref={animateRef}>
-				{watch('type') === ProjectTypeEnum.CREDITS && (
+				{watch('accessType') === ProjectAccessTypeEnum.CREDITS && (
 					<div className="space-y-2">
 						<Label htmlFor="credits">Credits</Label>
 						<Input

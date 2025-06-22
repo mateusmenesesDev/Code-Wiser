@@ -40,6 +40,7 @@ import {
 	getAccessType
 } from '~/common/utils/projectUtils';
 import { useAdminTemplates } from '../hook/useAdminTemplates';
+import { CreateProjectTemplateDialog } from './CreateProjectTemplateDialog';
 
 export default function AdminTemplatesPage() {
 	const {
@@ -60,10 +61,15 @@ export default function AdminTemplatesPage() {
 		deleteTemplate,
 		togglePublishStatus,
 		isDeleting,
-		isToggling
+		isToggling,
+		refetch
 	} = useAdminTemplates();
 
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+	const handleTemplateCreated = () => {
+		refetch();
+	};
 
 	return (
 		<Protect permission="org:project:edit_template">
@@ -268,13 +274,13 @@ export default function AdminTemplatesPage() {
 												<TableCell className="text-right">
 													<div className="flex items-center justify-end gap-2">
 														<Button variant="ghost" size="sm" asChild>
-															<Link href={`/admin/templates/${template.id}`}>
+															<Link href={`/admin/templates/${template.slug}`}>
 																<Eye className="h-4 w-4" />
 															</Link>
 														</Button>
 														<Button variant="ghost" size="sm" asChild>
 															<Link
-																href={`/admin/templates/${template.id}/edit`}
+																href={`/admin/templates/${template.slug}/edit`}
 															>
 																<Edit className="h-4 w-4" />
 															</Link>
@@ -313,18 +319,12 @@ export default function AdminTemplatesPage() {
 				)}
 			</div>
 
-			{/* TODO: Add CreateProjectTemplateDialog component */}
-			{showCreateDialog && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-					<div className="rounded-lg bg-background p-6">
-						<h2 className="mb-4 font-semibold text-lg">Create New Template</h2>
-						<p className="mb-4 text-muted-foreground">
-							This feature will be implemented soon.
-						</p>
-						<Button onClick={() => setShowCreateDialog(false)}>Close</Button>
-					</div>
-				</div>
-			)}
+			{/* Create Project Template Dialog */}
+			<CreateProjectTemplateDialog
+				open={showCreateDialog}
+				onOpenChange={setShowCreateDialog}
+				onTemplateCreated={handleTemplateCreated}
+			/>
 		</Protect>
 	);
 }

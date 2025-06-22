@@ -1,7 +1,7 @@
 import {
 	PrismaClient,
+	ProjectAccessTypeEnum,
 	ProjectDifficultyEnum,
-	ProjectTypeEnum,
 	TaskPriorityEnum,
 	TaskStatusEnum,
 	TaskTypeEnum
@@ -33,7 +33,7 @@ async function main() {
 			minParticipants: 1,
 			maxParticipants: 5,
 			difficulty: ProjectDifficultyEnum.INTERMEDIATE,
-			type: ProjectTypeEnum.FREE,
+			accessType: ProjectAccessTypeEnum.FREE,
 			categoryId: category.id
 		}
 	});

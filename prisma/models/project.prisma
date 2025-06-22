@@ -8,10 +8,9 @@ model Project {
   methodology     ProjectMethodologyEnum @default(SCRUM)
   minParticipants Int
   maxParticipants Int
-  type            ProjectTypeEnum
+  accessType      ProjectAccessTypeEnum
   difficulty      ProjectDifficultyEnum
   figmaProjectUrl String?
-  resources       Resource[]
   tasks           Task[]
   categoryId      String
   category        Category               @relation(fields: [categoryId], references: [id])

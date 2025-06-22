@@ -1,7 +1,7 @@
 import type { Project } from '@prisma/client';
 import type { z } from 'zod';
+import type { createProjectTemplateSchema } from '~/features/templates/schemas/template.schema';
 import type { RouterInputs, RouterOutputs } from '~/trpc/react';
-import type { createProjectTemplateSchema } from '../schemas/projects.schema';
 
 export type Discussion = {
 	id: string;

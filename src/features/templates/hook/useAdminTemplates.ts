@@ -131,6 +131,7 @@ export function useAdminTemplates() {
 		// Actions
 		deleteTemplate,
 		togglePublishStatus,
+		refetch: templatesQuery.refetch,
 
 		// Loading states
 		isDeleting: deleteTemplateMutation.isPending,

@@ -14,16 +14,13 @@ CREATE TYPE "ProjectMethodologyEnum" AS ENUM ('SCRUM', 'KANBAN');
 CREATE TYPE "ProjectStatusEnum" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'REQUESTED_CHANGES', 'SEND_FOR_APPROVAL');
 
 -- CreateEnum
-CREATE TYPE "ProjectTypeEnum" AS ENUM ('FREE', 'CREDITS', 'MENTORSHIP');
+CREATE TYPE "ProjectAccessTypeEnum" AS ENUM ('FREE', 'CREDITS', 'MENTORSHIP');
 
 -- CreateEnum
 CREATE TYPE "ProjectDifficultyEnum" AS ENUM ('BEGINNER', 'INTERMEDIATE', 'ADVANCED');
 
 -- CreateEnum
 CREATE TYPE "ProjectRoleEnum" AS ENUM ('MENTEE', 'MENTOR');
-
--- CreateEnum
-CREATE TYPE "ResourceTypeEnum" AS ENUM ('CODE', 'DOCUMENTATION', 'VIDEO', 'ARTICLE', 'RECOMMENDED', 'OTHER');
 
 -- CreateEnum
 CREATE TYPE "EpicStatusEnum" AS ENUM ('PLANNED', 'IN_PROGRESS', 'COMPLETED');
@@ -39,7 +36,7 @@ CREATE TABLE "Project" (
     "methodology" "ProjectMethodologyEnum" NOT NULL DEFAULT 'SCRUM',
     "minParticipants" INT4 NOT NULL,
     "maxParticipants" INT4 NOT NULL,
-    "type" "ProjectTypeEnum" NOT NULL,
+    "accessType" "ProjectAccessTypeEnum" NOT NULL,
     "difficulty" "ProjectDifficultyEnum" NOT NULL,
     "figmaProjectUrl" STRING,
     "categoryId" STRING NOT NULL,
@@ -89,20 +86,6 @@ CREATE TABLE "Technology" (
     "approved" BOOL NOT NULL DEFAULT false,
 
     CONSTRAINT "Technology_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Resource" (
-    "id" STRING NOT NULL,
-    "title" STRING NOT NULL,
-    "link" STRING NOT NULL,
-    "type" "ResourceTypeEnum" NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "projectId" STRING,
-    "projectTemplateId" STRING,
-
-    CONSTRAINT "Resource_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -200,7 +183,7 @@ CREATE TABLE "ProjectTemplate" (
     "minParticipants" INT4 NOT NULL,
     "maxParticipants" INT4 NOT NULL,
     "credits" INT4,
-    "type" "ProjectTypeEnum" NOT NULL,
+    "accessType" "ProjectAccessTypeEnum" NOT NULL,
     "status" "ProjectStatusEnum" NOT NULL DEFAULT 'PENDING',
     "difficulty" "ProjectDifficultyEnum" NOT NULL,
     "figmaProjectUrl" STRING,
@@ -284,12 +267,6 @@ ALTER TABLE "ProjectImage" ADD CONSTRAINT "ProjectImage_projectTemplateId_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "LearningOutcome" ADD CONSTRAINT "LearningOutcome_projectTemplateId_fkey" FOREIGN KEY ("projectTemplateId") REFERENCES "ProjectTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Resource" ADD CONSTRAINT "Resource_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Resource" ADD CONSTRAINT "Resource_projectTemplateId_fkey" FOREIGN KEY ("projectTemplateId") REFERENCES "ProjectTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Milestone" ADD CONSTRAINT "Milestone_projectTemplateId_fkey" FOREIGN KEY ("projectTemplateId") REFERENCES "ProjectTemplate"("id") ON DELETE SET NULL ON UPDATE CASCADE;

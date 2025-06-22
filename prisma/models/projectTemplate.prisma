@@ -9,7 +9,7 @@ model ProjectTemplate {
   minParticipants  Int
   maxParticipants  Int
   credits          Int?
-  type             ProjectTypeEnum
+  accessType       ProjectAccessTypeEnum
   status           ProjectStatusEnum      @default(PENDING)
   difficulty       ProjectDifficultyEnum
   figmaProjectUrl  String?
@@ -18,7 +18,7 @@ model ProjectTemplate {
   learningOutcomes LearningOutcome[]
   milestones       Milestone[]
   images           ProjectImage[]
-  resources        Resource[]
+  preRequisites    String[]
   expectedDuration String?
   categoryId       String
   category         Category               @relation(fields: [categoryId], references: [id])

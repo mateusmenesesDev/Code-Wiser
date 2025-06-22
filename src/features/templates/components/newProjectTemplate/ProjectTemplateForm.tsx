@@ -1,17 +1,17 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ProjectTypeEnum } from '@prisma/client';
+import { ProjectAccessTypeEnum } from '@prisma/client';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { api } from '~/trpc/react';
 
-import { createProjectTemplateSchema } from '../../../projects/schemas/projects.schema';
-import type { ProjectTemplateFormData } from '../../../projects/types/Projects.type';
+import { createProjectTemplateSchema } from '../../schemas/template.schema';
 
 import { Button } from '~/common/components/ui/button';
 
 import { useRouter } from 'next/navigation';
+import type { CreateProjectTemplateInput } from '../../types/Template.type';
 import { ProjectBasicInfo } from './ProjectBasicInfo';
 import { ProjectImages } from './ProjectImages';
 import { ProjectParticipants } from './ProjectParticipants';
@@ -19,12 +19,11 @@ import { ProjectTechnologies } from './ProjectTechnologies';
 import { ProjectType } from './ProjectType';
 
 export default function ProjectForm() {
-	const form = useForm<ProjectTemplateFormData>({
+	const form = useForm<CreateProjectTemplateInput>({
 		resolver: zodResolver(createProjectTemplateSchema),
 		defaultValues: {
-			images: [],
 			technologies: [],
-			type: ProjectTypeEnum.FREE
+			accessType: ProjectAccessTypeEnum.FREE
 		},
 		mode: 'onChange'
 	});
@@ -37,7 +36,7 @@ export default function ProjectForm() {
 		}
 	});
 
-	const onSubmit = (data: ProjectTemplateFormData) => {
+	const onSubmit = (data: CreateProjectTemplateInput) => {
 		toast.promise(projectMutation.mutateAsync(data), {
 			loading: 'Creating project...',
 			success: 'Project created successfully',
