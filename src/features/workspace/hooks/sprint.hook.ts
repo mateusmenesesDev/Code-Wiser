@@ -3,22 +3,22 @@ import { api } from '~/trpc/react';
 import type { NewSprint, UpdateSprint } from '../types/Sprint.type';
 
 type UseSprintProps = {
-	projectSlug: string;
+	projectId: string;
 	isTemplate: boolean;
 };
 
 const getPrismaFields = (
 	sprint: NewSprint | UpdateSprint,
 	isTemplate: boolean,
-	projectSlug: string
+	projectId: string
 ) => {
 	return {
 		...sprint,
 		title: sprint.title || '',
 		createdAt: new Date(),
 		updatedAt: new Date(),
-		projectTemplateSlug: isTemplate ? projectSlug : null,
-		projectSlug: isTemplate ? null : projectSlug,
+		projectTemplateId: isTemplate ? projectId : null,
+		projectId: isTemplate ? null : projectId,
 		description: sprint.description || null,
 		startDate: sprint.startDate ? new Date(sprint.startDate) : null,
 		endDate: sprint.endDate ? new Date(sprint.endDate) : null,
@@ -27,7 +27,7 @@ const getPrismaFields = (
 	};
 };
 
-export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
+export const useSprint = ({ projectId, isTemplate }: UseSprintProps) => {
 	const utils = api.useUtils();
 
 	const createSprint = api.sprint.create.useMutation({
@@ -35,20 +35,20 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 			const newSprintWithPrismaFields = getPrismaFields(
 				newSprint,
 				isTemplate,
-				projectSlug
+				projectId
 			);
 
 			const routeFunction = isTemplate
-				? utils.sprint.getAllByProjectTemplateSlug
-				: utils.sprint.getAllByProjectSlug;
+				? utils.sprint.getAllByProjectTemplateId
+				: utils.sprint.getAllByProjectId;
 
 			routeFunction.cancel();
 
 			const previousSprints = routeFunction.getData({
-				projectTemplateSlug: projectSlug
+				projectId
 			});
 
-			routeFunction.setData({ projectTemplateSlug: projectSlug }, (old) => {
+			routeFunction.setData({ projectId }, (old) => {
 				if (!old) return [newSprintWithPrismaFields];
 				return [...old, newSprintWithPrismaFields];
 			});
@@ -57,47 +57,44 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 		},
 		onSettled: () => {
 			const routeFunction = isTemplate
-				? utils.sprint.getAllByProjectTemplateSlug
-				: utils.sprint.getAllByProjectSlug;
+				? utils.sprint.getAllByProjectTemplateId
+				: utils.sprint.getAllByProjectId;
 
 			routeFunction.invalidate();
 		},
 		onError: (error, _newSprint, ctx) => {
 			const routeFunction = isTemplate
-				? utils.sprint.getAllByProjectTemplateSlug
-				: utils.sprint.getAllByProjectSlug;
+				? utils.sprint.getAllByProjectTemplateId
+				: utils.sprint.getAllByProjectId;
 
 			toast.error(error.message);
-			routeFunction.setData(
-				{ projectTemplateSlug: projectSlug },
-				ctx?.previousSprints
-			);
+			routeFunction.setData({ projectId }, ctx?.previousSprints);
 		}
 	});
 
 	const getAllSprints = () => {
 		if (isTemplate) {
-			return api.sprint.getAllByProjectTemplateSlug.useQuery({
-				projectTemplateSlug: projectSlug
+			return api.sprint.getAllByProjectTemplateId.useQuery({
+				projectId
 			});
 		}
 
-		return api.sprint.getAllByProjectSlug.useQuery({
-			projectSlug: projectSlug
+		return api.sprint.getAllByProjectId.useQuery({
+			projectId
 		});
 	};
 
 	const deleteSprint = api.sprint.delete.useMutation({
 		onMutate: async ({ id }) => {
 			const routeFunction = isTemplate
-				? utils.sprint.getAllByProjectTemplateSlug
-				: utils.sprint.getAllByProjectSlug;
+				? utils.sprint.getAllByProjectTemplateId
+				: utils.sprint.getAllByProjectId;
 
 			const previousSprints = routeFunction.getData({
-				projectTemplateSlug: projectSlug
+				projectId
 			});
 
-			routeFunction.setData({ projectTemplateSlug: projectSlug }, (old) => {
+			routeFunction.setData({ projectId }, (old) => {
 				if (!old) return [];
 				const newSprints = old.filter((s) => s.id !== id);
 				return newSprints;
@@ -107,15 +104,15 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 		},
 		onSuccess: () => {
 			if (isTemplate) {
-				utils.sprint.getAllByProjectTemplateSlug.invalidate();
+				utils.sprint.getAllByProjectTemplateId.invalidate();
 			} else {
-				utils.sprint.getAllByProjectSlug.invalidate();
+				utils.sprint.getAllByProjectId.invalidate();
 			}
 		},
 		onError: (_err, _sprint, ctx) => {
 			toast.error('Failed to delete sprint');
-			utils.sprint.getAllByProjectSlug.setData(
-				{ projectSlug: projectSlug },
+			utils.sprint.getAllByProjectId.setData(
+				{ projectId },
 				ctx?.previousSprints
 			);
 		}
@@ -124,20 +121,20 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 	const updateSprint = api.sprint.update.useMutation({
 		onMutate: async (updatedSprint) => {
 			const routeFunction = isTemplate
-				? utils.sprint.getAllByProjectTemplateSlug
-				: utils.sprint.getAllByProjectSlug;
+				? utils.sprint.getAllByProjectTemplateId
+				: utils.sprint.getAllByProjectId;
 
 			const previousSprints = routeFunction.getData({
-				projectTemplateSlug: projectSlug
+				projectId
 			});
 
 			const updatedSprintWithPrismaFields = getPrismaFields(
 				updatedSprint,
 				isTemplate,
-				projectSlug
+				projectId
 			);
 
-			routeFunction.setData({ projectTemplateSlug: projectSlug }, (old) => {
+			routeFunction.setData({ projectId }, (old) => {
 				if (!old) return [];
 				return old.map((s) =>
 					s.id === updatedSprint.id ? updatedSprintWithPrismaFields : s
@@ -148,15 +145,15 @@ export const useSprint = ({ projectSlug, isTemplate }: UseSprintProps) => {
 		},
 		onSettled: () => {
 			const routeFunction = isTemplate
-				? utils.sprint.getAllByProjectTemplateSlug
-				: utils.sprint.getAllByProjectSlug;
+				? utils.sprint.getAllByProjectTemplateId
+				: utils.sprint.getAllByProjectId;
 
 			routeFunction.invalidate();
 		},
 		onError: (error, _updatedSprint, ctx) => {
 			toast.error(error.message);
-			utils.sprint.getAllByProjectSlug.setData(
-				{ projectSlug: projectSlug },
+			utils.sprint.getAllByProjectId.setData(
+				{ projectId },
 				ctx?.previousSprints
 			);
 		}

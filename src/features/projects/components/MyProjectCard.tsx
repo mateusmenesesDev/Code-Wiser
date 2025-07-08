@@ -82,7 +82,7 @@ export function MyProjectCard({ project }: MyProjectCardProps) {
 				</div>
 
 				<Button asChild className="w-full">
-					<Link href={`/workspace/${project.slug}`}>
+					<Link href={`/workspace/${project.id}`}>
 						<Play className="mr-2 h-4 w-4" />
 						Continue Project
 					</Link>

@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
 	newSprintSchema,
+	updateSprintOrderSchema,
 	updateSprintSchema
 } from '~/features/workspace/schemas/sprint.schema';
 import { protectedProcedure } from '~/server/api/trpc';
@@ -15,14 +16,14 @@ export const sprintMutations = {
 				description,
 				startDate,
 				endDate,
-				projectSlug,
-				projectTemplateSlug
+				projectId,
+				projectTemplateId
 			} = input;
 
-			if (!projectSlug && !projectTemplateSlug) {
+			if (!projectId && !projectTemplateId) {
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
-					message: 'Either projectSlug or projectTemplateSlug must be provided'
+					message: 'Either projectId or projectTemplateId must be provided'
 				});
 			}
 
@@ -32,17 +33,17 @@ export const sprintMutations = {
 					description,
 					startDate,
 					endDate,
-					project: projectSlug
+					project: projectId
 						? {
 								connect: {
-									slug: projectSlug
+									id: projectId
 								}
 							}
 						: undefined,
-					projectTemplate: projectTemplateSlug
+					projectTemplate: projectTemplateId
 						? {
 								connect: {
-									slug: projectTemplateSlug
+									id: projectTemplateId
 								}
 							}
 						: undefined
@@ -69,5 +70,20 @@ export const sprintMutations = {
 				where: { id },
 				data
 			});
+		}),
+
+	updateOrder: protectedProcedure
+		.input(updateSprintOrderSchema)
+		.mutation(async ({ ctx, input }) => {
+			const { items } = input;
+
+			await ctx.db.$transaction(
+				items.map((item) =>
+					ctx.db.sprint.update({
+						where: { id: item.id },
+						data: { order: item.order }
+					})
+				)
+			);
 		})
 };

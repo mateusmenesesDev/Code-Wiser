@@ -5,10 +5,10 @@ import { ProjectHeader } from '~/features/projects/components/ProjectHeader';
 import { api } from '~/trpc/react';
 
 export default function ProjectPage({
-	params: { slug }
-}: { params: { slug: string } }) {
-	const { data: project, isLoading } = api.projectTemplate.getBySlug.useQuery({
-		slug
+	params: { id }
+}: { params: { id: string } }) {
+	const { data: project, isLoading } = api.projectTemplate.getById.useQuery({
+		id
 	});
 
 	if (isLoading) return <div>Loading...</div>;

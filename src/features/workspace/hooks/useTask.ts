@@ -6,22 +6,22 @@ import { api } from '~/trpc/react';
 import type { CreateTaskInput, UpdateTaskInput } from '../types/Task.type';
 
 type UseTaskProps = {
-	projectSlug?: string;
+	projectId?: string;
 };
 
-const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
+const useTaskMutations = ({ projectId }: UseTaskProps) => {
 	const isTemplate = useIsTemplate();
 	const utils = api.useUtils();
 	const getProjectFunction = isTemplate
-		? utils.projectTemplate.getBySlug
-		: utils.project.getBySlug;
+		? utils.projectTemplate.getById
+		: utils.project.getById;
 
 	const createTaskMutation = api.task.create.useMutation({
 		onMutate: (newTask) => {
 			getProjectFunction.cancel();
 
 			const previousData = getProjectFunction.getData({
-				slug: projectSlug as string
+				id: projectId as string
 			});
 
 			const newTaskWithPrismaFields = {
@@ -29,12 +29,12 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 				id: '-1',
 				createdAt: new Date(),
 				updatedAt: new Date(),
-				projectId: isTemplate ? null : (projectSlug ?? null),
-				projectTemplateId: isTemplate ? (projectSlug ?? null) : null,
+				projectId: isTemplate ? null : (projectId ?? null),
+				projectTemplateId: isTemplate ? (projectId ?? null) : null,
 				kanbanColumn: null
 			} as Task & { kanbanColumn: null };
 
-			getProjectFunction.setData({ slug: projectSlug as string }, (old) => {
+			getProjectFunction.setData({ id: projectId as string }, (old) => {
 				if (!old) return old;
 				return {
 					...old,
@@ -46,7 +46,7 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 		},
 		onError: (_error, _newTask, ctx) => {
 			getProjectFunction.setData(
-				{ slug: projectSlug as string },
+				{ id: projectId as string },
 				ctx?.previousData
 			);
 
@@ -63,10 +63,10 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 			getProjectFunction.cancel();
 
 			const previousData = getProjectFunction.getData({
-				slug: projectSlug as string
+				id: projectId as string
 			});
 
-			getProjectFunction.setData({ slug: projectSlug as string }, (old) => {
+			getProjectFunction.setData({ id: projectId as string }, (old) => {
 				if (!old) return old;
 				return {
 					...old,
@@ -86,17 +86,17 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 		},
 		onError: (_error, _taskUpdate, ctx) => {
 			const apiFunction = isTemplate
-				? utils.projectTemplate.getBySlug
-				: utils.project.getBySlug;
+				? utils.projectTemplate.getById
+				: utils.project.getById;
 
-			apiFunction.setData({ slug: projectSlug as string }, ctx?.previousData);
+			apiFunction.setData({ id: projectId as string }, ctx?.previousData);
 
 			toast.error('Failed to update task');
 		},
 		onSettled: () => {
 			const apiFunction = isTemplate
-				? utils.projectTemplate.getBySlug
-				: utils.project.getBySlug;
+				? utils.projectTemplate.getById
+				: utils.project.getById;
 
 			apiFunction.invalidate();
 		}
@@ -107,10 +107,10 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 			getProjectFunction.cancel();
 
 			const previousData = getProjectFunction.getData({
-				slug: projectSlug as string
+				id: projectId as string
 			});
 
-			getProjectFunction.setData({ slug: projectSlug as string }, (old) => {
+			getProjectFunction.setData({ id: projectId as string }, (old) => {
 				if (!old) return old;
 				return {
 					...old,
@@ -122,7 +122,7 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 		},
 		onError: (_error, _taskId, ctx) => {
 			getProjectFunction.setData(
-				{ slug: projectSlug as string },
+				{ id: projectId as string },
 				ctx?.previousData
 			);
 		},
@@ -136,10 +136,10 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 			getProjectFunction.cancel();
 
 			const previousData = getProjectFunction.getData({
-				slug: projectSlug as string
+				id: projectId as string
 			});
 
-			getProjectFunction.setData({ slug: projectSlug as string }, (old) => {
+			getProjectFunction.setData({ id: projectId as string }, (old) => {
 				if (!old) return old;
 				return {
 					...old,
@@ -151,7 +151,7 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 		},
 		onError: (_error, _vars, ctx) => {
 			getProjectFunction.setData(
-				{ slug: projectSlug as string },
+				{ id: projectId as string },
 				ctx?.previousData
 			);
 		},
@@ -168,27 +168,27 @@ const useTaskMutations = ({ projectSlug }: UseTaskProps) => {
 	};
 };
 
-export function useTask({ projectSlug }: UseTaskProps = {}) {
+export function useTask({ projectId }: UseTaskProps = {}) {
 	const {
 		createTaskMutation,
 		updateTaskMutation,
 		deleteTaskMutation,
 		bulkDeleteTasksMutation
 	} = useTaskMutations({
-		projectSlug
+		projectId
 	});
 
 	const createTask = (createTaskInput: CreateTaskInput) =>
 		createTaskMutation.mutate(createTaskInput);
 
-	const getAllTasksByProjectSlug = (projectSlug: string) =>
-		api.task.getAllByProjectSlug.useQuery({
-			projectSlug
+	const getAllTasksByProjectId = (projectId: string) =>
+		api.task.getAllByProjectId.useQuery({
+			projectId
 		});
 
-	const getAllTasksByProjectTemplateSlug = (projectTemplateSlug: string) =>
-		api.task.getAllByProjectTemplateSlug.useQuery({
-			projectTemplateSlug
+	const getAllTasksByProjectTemplateId = (projectTemplateId: string) =>
+		api.task.getAllByProjectTemplateId.useQuery({
+			projectTemplateId
 		});
 
 	const updateTask = (updateTaskInput: UpdateTaskInput) =>
@@ -201,8 +201,8 @@ export function useTask({ projectSlug }: UseTaskProps = {}) {
 	return {
 		createTask,
 		updateTask,
-		getAllTasksByProjectSlug,
-		getAllTasksByProjectTemplateSlug,
+		getAllTasksByProjectId,
+		getAllTasksByProjectTemplateId,
 		deleteTask,
 		bulkDeleteTasks
 	};

@@ -10,32 +10,21 @@ import { useTaskFiltersUrl } from '../../hooks/useTaskFiltersUrl';
 import { BoardColumn } from './BoardColumn';
 
 interface KanbanBoardContentProps {
-	projectSlug: string;
+	projectId: string;
 	isTemplate?: boolean;
 }
 
-export function KanbanBoardContent({
-	projectSlug,
-	isTemplate = false
-}: KanbanBoardContentProps) {
+export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 	const { filters } = useTaskFiltersUrl();
-	const { columns, moveTask, isLoading } = useKanbanData(projectSlug, filters);
+	const { columns, moveTask, isLoading } = useKanbanData(projectId, filters);
 
-	const { data: epics = [] } = isTemplate
-		? api.epic.getAllEpicsByProjectTemplateSlug.useQuery({
-				projectTemplateSlug: projectSlug
-			})
-		: api.epic.getAllEpicsByProjectId.useQuery({
-				projectId: projectSlug
-			});
+	const { data: epics = [] } = api.epic.getAllEpicsByProjectId.useQuery({
+		projectId
+	});
 
-	const { data: sprints = [] } = isTemplate
-		? api.sprint.getAllByProjectTemplateSlug.useQuery({
-				projectTemplateSlug: projectSlug
-			})
-		: api.sprint.getAllByProjectSlug.useQuery({
-				projectSlug: projectSlug
-			});
+	const { data: sprints = [] } = api.sprint.getAllByProjectId.useQuery({
+		projectId
+	});
 
 	const transformedColumns: Column[] = columns.map((column) => ({
 		id: column.id,
@@ -60,11 +49,7 @@ export function KanbanBoardContent({
 				</div>
 			</DndProvider>
 
-			<CreateTaskDialog
-				epics={epics}
-				sprints={sprints}
-				projectSlug={projectSlug}
-			/>
+			<CreateTaskDialog epics={epics} sprints={sprints} projectId={projectId} />
 		</>
 	);
 }

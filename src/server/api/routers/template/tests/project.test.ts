@@ -32,7 +32,7 @@ describe('project template procedures testing', () => {
 	it('should return all project templates', async () => {
 		const mockProjectTemplate: ProjectTemplateApiResponse = {
 			id: 'test-id',
-			slug: 'test-slug',
+			projectId: 'test-project-id',
 			title: 'Test Project',
 			description: 'Test Description',
 			difficulty: 'BEGINNER',

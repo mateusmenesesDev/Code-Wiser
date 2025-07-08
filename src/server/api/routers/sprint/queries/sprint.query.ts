@@ -6,29 +6,34 @@ const sprintInclude = {
 };
 
 export const sprintQueries = {
-	getAllByProjectSlug: protectedProcedure
-		.input(z.object({ projectSlug: z.string() }))
+	getAllByProjectId: protectedProcedure
+		.input(
+			z.object({ projectId: z.string(), isTemplate: z.boolean().optional() })
+		)
 		.query(async ({ ctx, input }) => {
-			const { projectSlug } = input;
+			const { projectId, isTemplate = false } = input;
+
+			const whereClause = isTemplate
+				? { projectTemplate: { id: projectId } }
+				: { project: { id: projectId } };
 
 			const sprints = await ctx.db.sprint.findMany({
-				where: { projectSlug },
-				include: sprintInclude
+				where: whereClause,
+				include: sprintInclude,
+				orderBy: { order: 'asc' }
 			});
 
 			return sprints;
 		}),
 
-	getAllByProjectTemplateSlug: protectedProcedure
-		.input(z.object({ projectTemplateSlug: z.string() }))
+	getById: protectedProcedure
+		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
-			const { projectTemplateSlug } = input;
-
-			const sprints = await ctx.db.sprint.findMany({
-				where: { projectTemplateSlug },
+			const sprint = await ctx.db.sprint.findUnique({
+				where: { id: input.id },
 				include: sprintInclude
 			});
 
-			return sprints;
+			return sprint;
 		})
 };

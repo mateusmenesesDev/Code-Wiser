@@ -13,17 +13,18 @@ import { SprintCard } from './SprintCard';
 import { SprintPlanningSkeleton } from './SprintPlanningSkeleton';
 
 interface SprintPlanningProps {
-	sprints?: RouterOutputs['sprint']['getAllByProjectSlug'];
+	sprints?: RouterOutputs['sprint']['getAllByProjectId'];
 }
 
 export function SprintPlanning({ sprints }: SprintPlanningProps) {
 	const params = useParams();
-	const { data, isLoading } = api.sprint.getAllByProjectTemplateSlug.useQuery(
+	const { data, isLoading } = api.sprint.getAllByProjectId.useQuery(
 		{
-			projectTemplateSlug: params.slug as string
+			projectId: params.projectId as string,
+			isTemplate: true
 		},
 		{
-			enabled: !!params.slug,
+			enabled: !!params.projectId,
 			initialData: sprints
 		}
 	);

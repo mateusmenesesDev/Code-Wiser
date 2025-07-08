@@ -5,16 +5,17 @@ import {
 	TabsList,
 	TabsTrigger
 } from '~/common/components/ui/tabs';
+import SprintList from '~/features/sprints/components/SprintList';
 import { KanbanBoard } from '~/features/workspace/components/board/KanbanBoard';
 
 interface WorkspaceTabsProps {
-	projectSlug: string;
+	projectId: string;
 	activeTab: string;
 	onTabChange: (tab: string) => void;
 }
 
 export function WorkspaceTabs({
-	projectSlug,
+	projectId,
 	activeTab,
 	onTabChange
 }: WorkspaceTabsProps) {
@@ -41,7 +42,7 @@ export function WorkspaceTabs({
 					<CardContent className="p-6">
 						<Tabs value={activeTab}>
 							<TabsContent value="board" className="mt-0">
-								<KanbanBoard projectSlug={projectSlug} />
+								<KanbanBoard projectId={projectId} />
 							</TabsContent>
 
 							<TabsContent value="backlog" className="mt-0">
@@ -57,9 +58,7 @@ export function WorkspaceTabs({
 							</TabsContent>
 
 							<TabsContent value="sprints" className="mt-0">
-								<div className="flex h-64 items-center justify-center text-muted-foreground">
-									<p>Sprints view coming soon...</p>
-								</div>
+								<SprintList projectId={projectId} isTemplate={false} />
 							</TabsContent>
 						</Tabs>
 					</CardContent>

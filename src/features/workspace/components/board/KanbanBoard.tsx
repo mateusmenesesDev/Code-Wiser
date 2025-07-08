@@ -9,18 +9,17 @@ import { KanbanBoardContent } from './KanbanBoardContent';
 import { KanbanBoardSkeleton } from './KanbanBoardSkeleton';
 
 interface KanbanBoardProps {
-	projectSlug: string;
+	projectId: string;
 	isTemplate?: boolean;
 }
 
 export function KanbanBoard({
-	projectSlug,
+	projectId,
 	isTemplate = false
 }: KanbanBoardProps) {
-	// Get unfiltered data for setting up the task atom (for filter options)
-	const { data: projectData, isLoading } = isTemplate
-		? api.projectTemplate.getBySlug.useQuery({ slug: projectSlug })
-		: api.project.getBySlug.useQuery({ slug: projectSlug });
+	const { data: projectData, isLoading } = api.project.getById.useQuery({
+		id: projectId
+	});
 
 	const setAllTasks = useSetAllTasks();
 
@@ -44,7 +43,7 @@ export function KanbanBoard({
 	return (
 		<div className="space-y-6">
 			<TaskFilters />
-			<KanbanBoardContent projectSlug={projectSlug} isTemplate={isTemplate} />
+			<KanbanBoardContent projectId={projectId} isTemplate={isTemplate} />
 		</div>
 	);
 }

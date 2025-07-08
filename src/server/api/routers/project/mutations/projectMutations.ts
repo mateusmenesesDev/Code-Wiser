@@ -1,5 +1,4 @@
 import { TRPCError } from '@trpc/server';
-import slugify from 'slugify';
 import { createProjectSchema } from '~/features/projects/schemas/projects.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 
@@ -54,19 +53,18 @@ export const projectMutations = {
 							difficulty: projectTemplate.difficulty,
 							figmaProjectUrl: projectTemplate.figmaProjectUrl,
 							categoryId: projectTemplate.categoryId,
-							slug: slugify(projectTemplate.title, { lower: true }),
 							members: { connect: { id: user.id } }
 						}
 					});
 
 					const sprintIdMap: Record<string, string> = {};
 					for (const sprint of templateSprints) {
-						const { id: oldId, projectTemplateSlug, ...sprintData } = sprint;
+						const { id: oldId, projectTemplateId, ...sprintData } = sprint;
 						const newSprint = await prisma.sprint.create({
 							data: {
 								...sprintData,
-								projectSlug: newProject.slug,
-								projectTemplateSlug: null
+								projectId: newProject.id,
+								projectTemplateId: null
 							}
 						});
 						sprintIdMap[oldId] = newSprint.id;
@@ -106,7 +104,7 @@ export const projectMutations = {
 					return newProject;
 				});
 
-				return project.slug;
+				return project.id;
 			} catch (error) {
 				console.error('Create project error:', error);
 				throw error;

@@ -17,13 +17,13 @@ export const projectTemplateQueries = {
 		})
 	),
 
-	getInfoBySlug: publicProcedure
-		.input(z.object({ slug: z.string() }))
+	getInfoById: publicProcedure
+		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
 			try {
 				const projectTemplate = await ctx.db.projectTemplate.findUnique({
 					where: {
-						slug: input.slug,
+						id: input.id,
 						status: 'APPROVED'
 					},
 					include: {
@@ -61,12 +61,12 @@ export const projectTemplateQueries = {
 			})
 		),
 
-	getBySlug: protectedProcedure
-		.input(z.object({ slug: z.string() }))
+	getById: protectedProcedure
+		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
 			try {
 				const projectTemplate = await ctx.db.projectTemplate.findUnique({
-					where: { slug: input.slug },
+					where: { id: input.id },
 					include: {
 						technologies: true,
 						category: true,

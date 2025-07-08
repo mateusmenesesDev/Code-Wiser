@@ -48,7 +48,7 @@ export function ProjectCard({
 	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
 
 	const handleContinue = () => {
-		router.push(`/workspace/${projectTemplate.slug}`);
+		router.push(`/workspace/${projectTemplate.id}`);
 	};
 
 	const handleCreateProject = async () => {
@@ -215,7 +215,7 @@ export function ProjectCard({
 							asChild
 							className="w-full sm:w-auto"
 						>
-							<Link href={`/project/${projectTemplate.slug}`}>
+							<Link href={`/project/${projectTemplate.id}`}>
 								<Eye className="mr-2 h-4 w-4" />
 								See More
 							</Link>

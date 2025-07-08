@@ -8,14 +8,14 @@ export const baseSprintSchema = z.object({
 	description: z.string().optional(),
 	startDate: z.string().optional(),
 	endDate: z.string().optional(),
-	projectSlug: z.string().optional(),
-	projectTemplateSlug: z.string().optional()
+	projectId: z.string().optional(),
+	projectTemplateId: z.string().optional()
 });
 
 export const newSprintSchema = baseSprintSchema
 	.omit({ id: true })
-	.refine((data) => !!data.projectSlug || !!data.projectTemplateSlug, {
-		message: 'Either projectSlug or projectTemplateSlug must be provided'
+	.refine((data) => !!data.projectId || !!data.projectTemplateId, {
+		message: 'Either projectId or projectTemplateId must be provided'
 	});
 
 export const updateSprintSchema = baseSprintSchema
@@ -32,3 +32,12 @@ export const updateSprintSchema = baseSprintSchema
 			});
 		}
 	});
+
+export const updateSprintOrderSchema = z.object({
+	items: z.array(
+		z.object({
+			id: z.string(),
+			order: z.number()
+		})
+	)
+});

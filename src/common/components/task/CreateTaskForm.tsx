@@ -25,21 +25,21 @@ import { TaskFormFields } from './TaskFormFields';
 import { TaskTagsInput, type TaskTagsInputRef } from './TaskTagsInput';
 
 interface CreateTaskFormProps {
-	epics: RouterOutputs['epic']['getAllEpicsByProjectTemplateSlug'];
-	sprints: RouterOutputs['sprint']['getAllByProjectTemplateSlug'];
-	projectSlug?: string;
+	epics: RouterOutputs['epic']['getAllEpicsByProjectTemplateId'];
+	sprints: RouterOutputs['sprint']['getAllByProjectId'];
+	projectId?: string;
 	onSuccess?: () => void;
 }
 
 export function CreateTaskForm({
 	epics,
 	sprints,
-	projectSlug,
+	projectId,
 	onSuccess
 }: CreateTaskFormProps) {
 	const tagsRef = useRef<TaskTagsInputRef>(null);
 
-	const { createTask } = useTask({ projectSlug });
+	const { createTask } = useTask({ projectId });
 	const isTemplate = useIsTemplate();
 
 	const form = useForm<CreateTaskInput>({
@@ -54,8 +54,8 @@ export function CreateTaskForm({
 			blockedReason: '',
 			epicId: undefined,
 			sprintId: undefined,
-			projectSlug: isTemplate ? undefined : projectSlug,
-			projectTemplateSlug: isTemplate ? projectSlug : undefined
+			projectId: isTemplate ? undefined : projectId,
+			projectTemplateId: isTemplate ? projectId : undefined
 		}
 	});
 
@@ -64,8 +64,8 @@ export function CreateTaskForm({
 		const taskData = {
 			...data,
 			tags,
-			projectSlug: isTemplate ? undefined : projectSlug,
-			projectTemplateSlug: isTemplate ? projectSlug : undefined
+			projectId: isTemplate ? undefined : projectId,
+			projectTemplateId: isTemplate ? projectId : undefined
 		};
 
 		toast.promise(

@@ -18,10 +18,10 @@ import { useProjectDetail } from '~/features/projects/hooks/useProjectDetail';
 
 export default function ProjectDetailPage() {
 	const params = useParams();
-	const slug = params.slug as string;
+	const id = params.id as string;
 	const router = useRouter();
 
-	const { project, isLoading } = useProjectDetail(slug);
+	const { project, isLoading } = useProjectDetail(id);
 
 	const handleGoBack = () => {
 		router.back();

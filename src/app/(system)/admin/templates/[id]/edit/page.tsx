@@ -11,15 +11,16 @@ import {
 import { ProjectAccessTypeEnum, ProjectMethodologyEnum } from '@prisma/client';
 import { ArrowLeft } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import SprintList from '~/features/sprints/components/SprintList';
 import EditTemplateBasicInfo from '~/features/templates/components/EditTemplate/EditTemplateBasicInfo';
 import { api } from '~/trpc/react';
 
 const AdminProjectEdit = () => {
-	const { slug } = useParams();
+	const { id } = useParams();
 	const router = useRouter();
 
-	const { data: template, isLoading } = api.projectTemplate.getBySlug.useQuery({
-		slug: slug as string
+	const { data: template, isLoading } = api.projectTemplate.getById.useQuery({
+		id: id as string
 	});
 
 	if (isLoading) {
@@ -83,6 +84,9 @@ const AdminProjectEdit = () => {
 						templateId={template.id}
 						initialData={initialData}
 					/>
+				</TabsContent>
+				<TabsContent value="sprints">
+					<SprintList projectId={template.id} isTemplate />
 				</TabsContent>
 			</Tabs>
 		</div>

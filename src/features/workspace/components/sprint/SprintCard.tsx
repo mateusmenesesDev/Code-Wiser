@@ -35,7 +35,7 @@ import { useSprint } from '../../hooks/sprint.hook';
 import { TaskCard } from '../tasks/TaskCard';
 
 interface SprintCardProps {
-	sprint: RouterOutputs['sprint']['getAllByProjectSlug'][number];
+	sprint: RouterOutputs['sprint']['getAllByProjectId'][number];
 	isTemplate?: boolean;
 }
 
@@ -50,12 +50,12 @@ export function SprintCard({ sprint }: SprintCardProps) {
 	).length;
 	const progress = (completedTasks / sprint.tasks.length) * 100 || 0;
 
-	const projectSlug = isTemplate
-		? (sprint.projectTemplateSlug as string)
-		: (sprint.projectSlug as string);
+	const projectId = isTemplate
+		? (sprint.projectTemplateId as string)
+		: (sprint.projectId as string);
 
 	const { deleteSprint, updateSprint } = useSprint({
-		projectSlug,
+		projectId,
 		isTemplate
 	});
 

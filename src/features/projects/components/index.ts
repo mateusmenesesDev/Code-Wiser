@@ -1,4 +1,3 @@
-export * from '../../workspace/components/backlog/BacklogView';
 export * from '../../workspace/components/board/BoardColumn';
 export * from '../../workspace/components/board/ColumnHeader';
 export * from '../../workspace/components/board/KanbanBoard';

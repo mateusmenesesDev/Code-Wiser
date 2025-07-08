@@ -22,20 +22,20 @@ export const baseTaskSchema = z.object({
 export const createTaskSchema = baseTaskSchema
 	.omit({ id: true })
 	.extend({
-		projectSlug: z.string().optional(),
-		projectTemplateSlug: z.string().optional()
+		projectId: z.string().optional(),
+		projectTemplateId: z.string().optional()
 	})
 	.superRefine((data, ctx) => {
-		if (data.projectSlug && data.projectTemplateSlug) {
+		if (data.projectId && data.projectTemplateId) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: 'Cannot provide both projectSlug and projectTemplateSlug'
+				message: 'Cannot provide both projectId and projectTemplateId'
 			});
 		}
-		if (!data.projectSlug && !data.projectTemplateSlug) {
+		if (!data.projectId && !data.projectTemplateId) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: 'Must provide either projectSlug or projectTemplateSlug'
+				message: 'Must provide either projectId or projectTemplateId'
 			});
 		}
 	});

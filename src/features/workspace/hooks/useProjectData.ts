@@ -1,12 +1,12 @@
 import { api } from '~/trpc/react';
 
-export function useProjectData(projectSlug: string) {
+export function useProjectData(projectId: string) {
 	const {
 		data: project,
 		isLoading,
 		error
-	} = api.project.getBySlug.useQuery({
-		slug: projectSlug
+	} = api.project.getById.useQuery({
+		id: projectId
 	});
 
 	return {

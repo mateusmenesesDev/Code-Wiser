@@ -2,8 +2,7 @@ model Project {
   id              String                 @id @default(cuid())
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
-  title           String                 @unique
-  slug            String                 @unique
+  title           String
   description     String
   methodology     ProjectMethodologyEnum @default(SCRUM)
   minParticipants Int

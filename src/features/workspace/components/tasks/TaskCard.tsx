@@ -12,7 +12,7 @@ import type { RouterOutputs } from '~/trpc/react';
 import { useComments } from '../../hooks/useComments';
 
 interface TaskCardProps {
-	task: RouterOutputs['sprint']['getAllByProjectSlug'][number]['tasks'][number];
+	task: RouterOutputs['sprint']['getAllByProjectId'][number]['tasks'][number];
 	className?: string;
 	columnId: TaskStatusEnum;
 	index: number;

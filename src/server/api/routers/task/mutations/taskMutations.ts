@@ -11,25 +11,25 @@ export const taskMutations = {
 		.input(createTaskSchema)
 		.mutation(async ({ input, ctx }) => {
 			const {
-				projectTemplateSlug,
-				projectSlug,
+				projectTemplateId,
+				projectId,
 				epicId,
 				sprintId,
 				assigneeId,
 				...rest
 			} = input;
-			const projectConnection = projectTemplateSlug
+			const projectConnection = projectTemplateId
 				? {
 						projectTemplate: {
 							connect: {
-								slug: projectTemplateSlug
+								id: projectTemplateId
 							}
 						}
 					}
 				: {
 						project: {
 							connect: {
-								slug: projectSlug
+								id: projectId
 							}
 						}
 					};

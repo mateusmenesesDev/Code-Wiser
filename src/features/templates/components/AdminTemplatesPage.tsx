@@ -274,13 +274,13 @@ export default function AdminTemplatesPage() {
 												<TableCell className="text-right">
 													<div className="flex items-center justify-end gap-2">
 														<Button variant="ghost" size="sm" asChild>
-															<Link href={`/admin/templates/${template.slug}`}>
+															<Link href={`/admin/templates/${template.id}`}>
 																<Eye className="h-4 w-4" />
 															</Link>
 														</Button>
 														<Button variant="ghost" size="sm" asChild>
 															<Link
-																href={`/admin/templates/${template.slug}/edit`}
+																href={`/admin/templates/${template.id}/edit`}
 															>
 																<Edit className="h-4 w-4" />
 															</Link>

@@ -60,8 +60,8 @@ export const useTemplate = () => {
 		}
 	});
 
-	const getEpics = ({ templateSlug }: { templateSlug: string }) =>
-		api.projectTemplate.epic.getEpics.useQuery(templateSlug);
+	const getEpics = ({ templateId }: { templateId: string }) =>
+		api.projectTemplate.epic.getEpics.useQuery(templateId);
 
 	return {
 		createEpic,

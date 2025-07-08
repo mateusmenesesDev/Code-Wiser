@@ -15,14 +15,14 @@ import { CreateTaskForm } from './CreateTaskForm';
 export interface CreateTaskDialogProps {
 	epics?: EpicsOutput;
 	sprints?: SprintsOutput;
-	projectSlug: string;
+	projectId: string;
 	trigger?: React.ReactNode;
 }
 
 export function CreateTaskDialog({
 	epics = [],
 	sprints = [],
-	projectSlug,
+	projectId,
 	trigger
 }: CreateTaskDialogProps) {
 	const { isDialogOpen, closeDialog } = useDialog('task');
@@ -38,7 +38,7 @@ export function CreateTaskDialog({
 				<CreateTaskForm
 					epics={epics}
 					sprints={sprints}
-					projectSlug={projectSlug}
+					projectId={projectId}
 					onSuccess={closeDialog}
 				/>
 			</DialogContent>

@@ -19,13 +19,13 @@ export const epicQueries = {
 			return epics;
 		}),
 
-	getAllEpicsByProjectTemplateSlug: protectedProcedure
-		.input(z.object({ projectTemplateSlug: z.string() }))
+	getAllEpicsByProjectTemplateId: protectedProcedure
+		.input(z.object({ projectTemplateId: z.string() }))
 		.query(async ({ ctx, input }) => {
-			const { projectTemplateSlug } = input;
+			const { projectTemplateId } = input;
 
 			const epics = await ctx.db.epic.findMany({
-				where: { projectTemplate: { slug: projectTemplateSlug } },
+				where: { projectTemplate: { id: projectTemplateId } },
 				include: epicInclude
 			});
 

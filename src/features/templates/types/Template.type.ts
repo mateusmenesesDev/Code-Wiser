@@ -4,11 +4,12 @@ import type {
 	createProjectTemplateSchema,
 	deleteTemplateSchema,
 	updateTemplateBasicInfoInputSchema,
+	updateTemplateSprintsSchema,
 	updateTemplateStatusSchema
 } from '../schemas/template.schema';
 
 export type ProjectTemplateApprovalApiResponse =
-	RouterOutputs['projectTemplate']['getBySlug'];
+	RouterOutputs['projectTemplate']['getById'];
 
 export type UpdateTemplateStatusInput = z.infer<
 	typeof updateTemplateStatusSchema
@@ -19,4 +20,7 @@ export type CreateProjectTemplateInput = z.infer<
 >;
 export type UpdateProjectTemplateBasicInfoInput = z.infer<
 	typeof updateTemplateBasicInfoInputSchema
+>;
+export type UpdateTemplateSprintsInput = z.infer<
+	typeof updateTemplateSprintsSchema
 >;

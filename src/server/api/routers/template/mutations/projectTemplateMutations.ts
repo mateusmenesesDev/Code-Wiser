@@ -1,6 +1,5 @@
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
-import slugify from 'slugify';
 import {
 	createProjectTemplateSchema,
 	deleteTemplateSchema,
@@ -20,7 +19,7 @@ export const projectTemplateMutations = {
 						data: createProjectTemplateData(input)
 					});
 
-					return projectTemplate.slug;
+					return projectTemplate.id;
 				});
 			} catch (error) {
 				console.error('Create project template error:', error);
@@ -46,6 +45,24 @@ export const projectTemplateMutations = {
 			}
 		}),
 
+	delete: protectedProcedure
+		.input(deleteTemplateSchema)
+		.mutation(async ({ ctx, input }) => {
+			try {
+				const deleted = await ctx.db.projectTemplate.delete({
+					where: { id: input.id }
+				});
+
+				return deleted.id;
+			} catch (error) {
+				console.error('Error deleting project template:', error);
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Failed to delete project template'
+				});
+			}
+		}),
+
 	updateStatus: protectedProcedure
 		.input(updateTemplateStatusSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -56,7 +73,6 @@ export const projectTemplateMutations = {
 					select: {
 						id: true,
 						title: true,
-						slug: true,
 						status: true
 					}
 				});
@@ -76,24 +92,6 @@ export const projectTemplateMutations = {
 			}
 		}),
 
-	delete: protectedProcedure
-		.input(deleteTemplateSchema)
-		.mutation(async ({ ctx, input }) => {
-			try {
-				const deleted = await ctx.db.projectTemplate.delete({
-					where: { id: input.id }
-				});
-
-				return deleted.id;
-			} catch (error) {
-				console.error('Error deleting project template:', error);
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: 'Failed to delete project template'
-				});
-			}
-		}),
-
 	update: protectedProcedure
 		.input(updateTemplateBasicInfoInputSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -108,16 +106,10 @@ export const projectTemplateMutations = {
 					...data
 				} = input;
 
-				// Generate slug if title is being updated
-				const updateData = {
-					...data,
-					...(data.title && { slug: slugify(data.title, { lower: true }) })
-				};
-
 				const updated = await ctx.db.projectTemplate.update({
 					where: { id },
 					data: {
-						...updateData,
+						...data,
 						...(category && {
 							category: {
 								connectOrCreate: {

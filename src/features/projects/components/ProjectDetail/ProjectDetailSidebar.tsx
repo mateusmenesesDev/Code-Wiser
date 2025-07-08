@@ -19,10 +19,10 @@ import { getAccessType } from '~/common/utils/projectUtils';
 import { cn } from '~/lib/utils';
 import { useMyProjects } from '../../hooks/useMyProjects';
 import { useProjectMutations } from '../../hooks/useProjectMutations';
-import type { ProjectTemplateBySlugApiResponse } from '../../types/Projects.type';
+import type { ProjectTemplateByIdApiResponse } from '../../types/Projects.type';
 
 interface ProjectDetailSidebarProps {
-	project: NonNullable<ProjectTemplateBySlugApiResponse>;
+	project: NonNullable<ProjectTemplateByIdApiResponse>;
 }
 
 export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
@@ -115,7 +115,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 
 					{isEnrolled ? (
 						<Button
-							onClick={() => router.push(`/workspace/${project.slug}`)}
+							onClick={() => router.push(`/workspace/${project.id}`)}
 							className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 font-semibold text-lg text-white hover:from-blue-700 hover:to-purple-700"
 							size="lg"
 						>

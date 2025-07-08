@@ -33,25 +33,25 @@ export function NewSprintDialog() {
 	const { isDialogOpen, closeDialog } = useDialog('sprint');
 	const isTemplate = useIsTemplate();
 	const params = useParams();
-	const projectSlug = decodeURIComponent(params.slug as string);
+	const projectId = decodeURIComponent(params.id as string);
 
 	const { createSprint } = useSprint({
-		projectSlug: projectSlug,
+		projectId,
 		isTemplate: isTemplate
 	});
 	const form = useForm<NewSprint>({
 		resolver: zodResolver(newSprintSchema),
 		defaultValues: {
-			projectSlug: isTemplate ? undefined : projectSlug,
-			projectTemplateSlug: isTemplate ? projectSlug : undefined
+			projectId: isTemplate ? undefined : projectId,
+			projectTemplateId: isTemplate ? projectId : undefined
 		}
 	});
 
 	const onSubmit = (data: NewSprint) => {
 		createSprint.mutate({
 			...data,
-			projectSlug: isTemplate ? undefined : projectSlug,
-			projectTemplateSlug: isTemplate ? projectSlug : undefined,
+			projectId: isTemplate ? undefined : projectId,
+			projectTemplateId: isTemplate ? projectId : undefined,
 			startDate: data.startDate
 				? dayjs(data.startDate).format('YYYY-MM-DD')
 				: undefined,

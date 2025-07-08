@@ -10,7 +10,6 @@ import { Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import slugify from 'slugify';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -142,11 +141,9 @@ export default function EditTemplateBasicInfo({
 	const updateTemplateMutation = api.projectTemplate.update.useMutation({
 		onSuccess: (data) => {
 			toast.success('Template updated successfully');
-			utils.projectTemplate.getBySlug.invalidate();
+			utils.projectTemplate.getById.invalidate();
 			if (data.title !== initialData.title) {
-				router.push(
-					`/admin/templates/${slugify(data.title, { lower: true })}/edit`
-				);
+				router.push(`/admin/templates/${data.id}/edit`);
 			}
 		},
 		onError: (error) => {

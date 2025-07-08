@@ -15,11 +15,11 @@ import { calculateProjectStats } from '~/features/workspace/utils/kanbanColumns'
 
 export default function ProjectPage() {
 	const params = useParams();
-	const projectSlug = params.slug as string;
+	const projectId = params.id as string;
 	const [activeTab, setActiveTab] = useState('board');
 
-	const { project, isLoading: isProjectLoading } = useProjectData(projectSlug);
-	const { columns, isLoading: isKanbanLoading } = useKanbanData(projectSlug);
+	const { project, isLoading: isProjectLoading } = useProjectData(projectId);
+	const { columns, isLoading: isKanbanLoading } = useKanbanData(projectId);
 
 	const stats = useMemo(() => {
 		if (!columns)
@@ -55,7 +55,7 @@ export default function ProjectPage() {
 			)}
 
 			<WorkspaceTabs
-				projectSlug={projectSlug}
+				projectId={projectId}
 				activeTab={activeTab}
 				onTabChange={setActiveTab}
 			/>

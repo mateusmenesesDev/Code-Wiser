@@ -115,7 +115,7 @@ export function BoardColumn({ column, moveTask }: BoardColumnProps) {
 						<div key={task.id}>
 							<TaskCard
 								task={
-									task as RouterOutputs['sprint']['getAllByProjectSlug'][number]['tasks'][number]
+									task as RouterOutputs['sprint']['getAllByProjectId'][number]['tasks'][number]
 								}
 								columnId={column.id}
 								index={index}

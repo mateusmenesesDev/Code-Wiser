@@ -13,4 +13,4 @@ export type EpicInput = z.infer<typeof newEpicSchema>;
 export type EpicUpdateInput = z.infer<typeof updateEpicSchema>;
 
 export type EpicsOutput =
-	RouterOutputs['epic']['getAllEpicsByProjectTemplateSlug'];
+	RouterOutputs['epic']['getAllEpicsByProjectTemplateId'];

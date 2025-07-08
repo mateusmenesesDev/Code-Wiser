@@ -1,5 +1,4 @@
 import type { Prisma } from '@prisma/client';
-import slugify from 'slugify';
 import type { ProjectTemplateFormData } from '~/features/projects/types/Projects.type';
 
 export function createProjectTemplateData(
@@ -7,7 +6,6 @@ export function createProjectTemplateData(
 ): Prisma.ProjectTemplateCreateInput {
 	return {
 		...input,
-		slug: slugify(input.title, { lower: true }),
 		category: {
 			connectOrCreate: {
 				where: { name: input.category },

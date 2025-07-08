@@ -19,11 +19,11 @@ const sortTasksByOrder = (
 	return a.order - b.order;
 };
 
-export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
+export function useKanbanData(projectId: string, filters?: TaskFilters) {
 	const utils = api.useUtils();
 
-	const { data: projectData, isLoading } = api.project.getBySlug.useQuery({
-		slug: projectSlug
+	const { data: projectData, isLoading } = api.project.getById.useQuery({
+		id: projectId
 	});
 
 	const columns = useMemo(() => {
@@ -33,24 +33,24 @@ export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 
 	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
 		onMutate: async ({ updates: _updates }) => {
-			const queryKey = { slug: projectSlug };
+			const queryKey = { id: projectId };
 
-			await utils.project.getBySlug.cancel(queryKey);
+			await utils.project.getById.cancel(queryKey);
 
-			const previousData = utils.project.getBySlug.getData(queryKey);
+			const previousData = utils.project.getById.getData(queryKey);
 			return { previousData };
 		},
 		onError: (_error, _variables, context) => {
-			const queryKey = { slug: projectSlug };
+			const queryKey = { id: projectId };
 
 			if (context?.previousData) {
-				utils.project.getBySlug.setData(queryKey, context.previousData);
+				utils.project.getById.setData(queryKey, context.previousData);
 			}
 		},
 		onSettled: () => {
-			const queryKey = { slug: projectSlug };
+			const queryKey = { id: projectId };
 
-			utils.project.getBySlug.invalidate(queryKey);
+			utils.project.getById.invalidate(queryKey);
 		}
 	});
 
@@ -67,7 +67,7 @@ export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 			const taskToMove = projectData.tasks.find((task) => task.id === taskId);
 			if (!taskToMove) return;
 
-			const queryKey = { slug: projectSlug };
+			const queryKey = { id: projectId };
 
 			const optimisticTasks = projectData.tasks.map((task) => ({ ...task }));
 
@@ -81,7 +81,7 @@ export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 				}
 			}
 
-			utils.project.getBySlug.setData(queryKey, (oldData) => {
+			utils.project.getById.setData(queryKey, (oldData) => {
 				if (!oldData) return oldData;
 				return {
 					...oldData,
@@ -146,7 +146,7 @@ export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 				});
 			}
 
-			utils.project.getBySlug.setData(queryKey, (oldData) => {
+			utils.project.getById.setData(queryKey, (oldData) => {
 				if (!oldData) return oldData;
 				return {
 					...oldData,
@@ -156,7 +156,7 @@ export function useKanbanData(projectSlug: string, filters?: TaskFilters) {
 
 			updateTaskOrdersMutation.mutate({ updates });
 		},
-		[updateTaskOrdersMutation, projectData?.tasks, utils, projectSlug]
+		[updateTaskOrdersMutation, projectData?.tasks, utils, projectId]
 	);
 
 	return {

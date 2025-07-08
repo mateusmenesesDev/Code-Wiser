@@ -9,4 +9,4 @@ export type NewSprint = z.infer<typeof newSprintSchema>;
 export type UpdateSprint = z.infer<typeof updateSprintSchema>;
 
 export type SprintsOutput =
-	RouterOutputs['sprint']['getAllByProjectTemplateSlug'];
+	RouterOutputs['sprint']['getAllByProjectTemplateId'];

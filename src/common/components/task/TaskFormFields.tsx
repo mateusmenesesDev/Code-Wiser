@@ -21,8 +21,8 @@ import type { RouterOutputs } from '~/trpc/react';
 
 interface TaskFormFieldsProps {
 	form: UseFormReturn<CreateTaskInput>;
-	epics: RouterOutputs['epic']['getAllEpicsByProjectTemplateSlug'];
-	sprints: RouterOutputs['sprint']['getAllByProjectTemplateSlug'];
+	epics: RouterOutputs['epic']['getAllEpicsByProjectTemplateId'];
+	sprints: RouterOutputs['sprint']['getAllByProjectId'];
 }
 
 export function TaskFormFields({ form, epics, sprints }: TaskFormFieldsProps) {
