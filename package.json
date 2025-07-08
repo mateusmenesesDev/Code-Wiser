@@ -88,8 +88,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.2",
-    "@faker-js/faker": "^9.8.0",
-    "@types/faker": "^6.6.8",
+    "@faker-js/faker": "^9.9.0",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
