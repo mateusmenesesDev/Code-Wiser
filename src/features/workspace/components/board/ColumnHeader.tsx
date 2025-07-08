@@ -9,12 +9,18 @@ import { useDialog } from '~/common/hooks/useDialog';
 interface ColumnHeaderProps {
 	title: string;
 	count: number;
+	onCreateTask?: () => void;
 }
 
-export function ColumnHeader({ title, count }: ColumnHeaderProps) {
+export function ColumnHeader({
+	title,
+	count,
+	onCreateTask
+}: ColumnHeaderProps) {
 	const { openDialog } = useDialog('task');
 
 	const handleOpenTaskDialog = () => {
+		onCreateTask?.(); // Clear any selected task to create new one
 		openDialog('task');
 	};
 

@@ -12,6 +12,9 @@ import { ColumnHeader } from './ColumnHeader';
 
 interface BoardColumnProps {
 	column: Column;
+	projectId: string;
+	onTaskClick: (task: NonNullable<SprintApiOutput>['tasks'][number]) => void;
+	onCreateTask: () => void;
 	moveTask: (
 		taskId: string,
 		fromColumnId: TaskStatusEnum,
@@ -61,7 +64,13 @@ function DropZone({
 	);
 }
 
-export function BoardColumn({ column, moveTask }: BoardColumnProps) {
+export function BoardColumn({
+	column,
+	moveTask,
+	projectId,
+	onTaskClick,
+	onCreateTask
+}: BoardColumnProps) {
 	const ref = useRef<HTMLDivElement>(null);
 
 	const [{ isOver, canDrop }, drop] = useDrop({
@@ -99,7 +108,11 @@ export function BoardColumn({ column, moveTask }: BoardColumnProps) {
 					isOver && canDrop && 'bg-primary/5'
 				)}
 			>
-				<ColumnHeader title={column.title} count={column.tasks.length} />
+				<ColumnHeader
+					title={column.title}
+					count={column.tasks.length}
+					onCreateTask={onCreateTask}
+				/>
 			</CardHeader>
 			<CardContent className="h-full p-4">
 				<div
@@ -117,6 +130,8 @@ export function BoardColumn({ column, moveTask }: BoardColumnProps) {
 								task={task as NonNullable<SprintApiOutput>['tasks'][number]}
 								columnId={column.id}
 								index={index}
+								projectId={projectId}
+								onTaskClick={onTaskClick}
 								moveTask={moveTask}
 							/>
 							{/* Drop zone after each task */}

@@ -1,21 +1,22 @@
 import type { TaskStatusEnum } from '@prisma/client';
 import { ArrowUp, Calendar, Flag, MoreVertical, User } from 'lucide-react';
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
 import { useDrag } from 'react-dnd';
-import { TaskDialog } from '~/common/components/task/TaskDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
 import { useDialog } from '~/common/hooks/useDialog';
 import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
 import { cn } from '~/lib/utils';
-import { useComments } from '../../hooks/useComments';
+import { api } from '~/trpc/react';
 
 interface TaskCardProps {
 	task: NonNullable<SprintApiOutput>['tasks'][number];
 	className?: string;
 	columnId: TaskStatusEnum;
 	index: number;
+	projectId: string;
+	onTaskClick: (task: NonNullable<SprintApiOutput>['tasks'][number]) => void;
 	moveTask: (
 		taskId: string,
 		fromColumnId: TaskStatusEnum,
@@ -29,11 +30,15 @@ export function TaskCard({
 	className,
 	columnId,
 	index: _index,
+	projectId,
+	onTaskClick,
 	moveTask: _moveTask
 }: TaskCardProps) {
 	const ref = useRef<HTMLDivElement>(null);
-	const { comments, addComment, isAddingComment } = useComments({
-		taskId: task.id
+
+	// Get project data for epics and sprints
+	const { data: projectData } = api.project.getById.useQuery({
+		id: projectId
 	});
 
 	const [{ isDragging }, drag] = useDrag({
@@ -69,114 +74,99 @@ export function TaskCard({
 		if ((e.target as HTMLElement).closest('button')) {
 			return;
 		}
+		onTaskClick(task);
 		openDialog('task');
 	};
 
-	const handleAddComment = useCallback(
-		async (content: string): Promise<void> => {
-			await addComment(content);
-		},
-		[addComment]
-	);
-
 	return (
-		<>
-			<Card
-				ref={ref}
-				className={cn(
-					'mb-3 cursor-move select-none border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-card/90 hover:shadow-lg',
-					isDragging && 'rotate-2 opacity-50 shadow-lg',
-					className
-				)}
-				onClick={handleCardClick}
-			>
-				<CardContent className="p-4">
-					<div className="mb-2 flex items-center justify-between">
+		<Card
+			ref={ref}
+			className={cn(
+				'mb-3 cursor-move select-none border bg-card/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-card/90 hover:shadow-lg',
+				isDragging && 'rotate-2 opacity-50 shadow-lg',
+				className
+			)}
+			onClick={handleCardClick}
+		>
+			<CardContent className="p-4">
+				<div className="mb-2 flex items-center justify-between">
+					<Badge
+						variant="outline"
+						className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+					>
+						<ArrowUp className="mr-1 h-2 w-2" />
+						{/* Find the epic name */}
+						{task.epicId && projectData?.epics
+							? projectData.epics.find((epic) => epic.id === task.epicId)
+									?.title || 'Epic'
+							: 'Epic (Coming Soon)'}
+					</Badge>
+					<div className="flex items-center gap-1 text-muted-foreground">
+						<div className="h-1 w-1 rounded-full bg-current" />
+						<div className="h-1 w-1 rounded-full bg-current" />
+						<div className="h-1 w-1 rounded-full bg-current" />
+					</div>
+				</div>
+
+				<div className="mb-3 flex items-start justify-between">
+					<h4 className="pr-2 font-medium text-card-foreground text-sm leading-5">
+						{task.title}
+					</h4>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-6 w-6 flex-shrink-0 p-0"
+						onMouseDown={(e) => {
+							e.stopPropagation();
+						}}
+						onClick={(e) => {
+							e.stopPropagation();
+							// TODO: Handle menu actions
+						}}
+					>
+						<MoreVertical className="h-3 w-3" />
+					</Button>
+				</div>
+
+				<p className="mb-3 line-clamp-3 text-muted-foreground text-xs">
+					{task.description}
+				</p>
+
+				<div className="mb-3 flex flex-wrap gap-1">
+					{task.tags.map((tag) => (
 						<Badge
-							variant="outline"
-							className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+							key={tag}
+							variant="secondary"
+							className="bg-muted/60 text-muted-foreground text-xs hover:bg-muted/80"
 						>
-							{/* TODO: Change epic color */}
-							<ArrowUp className="mr-1 h-2 w-2" />
-							{/* TODO: Add epic name */}
-							Epic (Coming Soon)
+							{tag}
 						</Badge>
-						<div className="flex items-center gap-1 text-muted-foreground">
-							<div className="h-1 w-1 rounded-full bg-current" />
-							<div className="h-1 w-1 rounded-full bg-current" />
-							<div className="h-1 w-1 rounded-full bg-current" />
-						</div>
-					</div>
+					))}
+				</div>
 
-					<div className="mb-3 flex items-start justify-between">
-						<h4 className="pr-2 font-medium text-card-foreground text-sm leading-5">
-							{task.title}
-						</h4>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="h-6 w-6 flex-shrink-0 p-0"
-							onMouseDown={(e) => {
-								e.stopPropagation();
-							}}
-							onClick={(e) => {
-								e.stopPropagation();
-								// TODO: Handle menu actions
-							}}
-						>
-							<MoreVertical className="h-3 w-3" />
-						</Button>
-					</div>
+				<div className="flex items-center justify-between">
+					<Badge
+						variant="outline"
+						className={`text-xs ${getPriorityColor(task.priority ?? '')}`}
+					>
+						<Flag className="mr-1 h-2 w-2" />
+						{task.priority}
+					</Badge>
 
-					<p className="mb-3 line-clamp-3 text-muted-foreground text-xs">
-						{task.description}
-					</p>
-
-					<div className="mb-3 flex flex-wrap gap-1">
-						{task.tags.map((tag) => (
-							<Badge
-								key={tag}
-								variant="secondary"
-								className="bg-muted/60 text-muted-foreground text-xs hover:bg-muted/80"
-							>
-								{tag}
-							</Badge>
-						))}
-					</div>
-
-					<div className="flex items-center justify-between">
-						<Badge
-							variant="outline"
-							className={`text-xs ${getPriorityColor(task.priority ?? '')}`}
-						>
-							<Flag className="mr-1 h-2 w-2" />
-							{task.priority}
-							{/* TODO: Quickly change priority */}
-						</Badge>
-
-						<div className="flex items-center gap-2 text-muted-foreground text-xs">
-							{task.dueDate && (
-								<div className="flex items-center gap-1">
-									<Calendar className="h-3 w-3" />
-									<span>{task.dueDate.toLocaleDateString()}</span>
-								</div>
-							)}
+					<div className="flex items-center gap-2 text-muted-foreground text-xs">
+						{task.dueDate && (
 							<div className="flex items-center gap-1">
-								{/* TODO: Add assignee name from user */}
-								<User className="h-3 w-3" />
-								<span>{task.assigneeId}</span>
+								<Calendar className="h-3 w-3" />
+								<span>{task.dueDate.toLocaleDateString()}</span>
 							</div>
+						)}
+						<div className="flex items-center gap-1">
+							<User className="h-3 w-3" />
+							<span>{task.assigneeId}</span>
 						</div>
 					</div>
-				</CardContent>
-			</Card>
-
-			<TaskDialog
-				task={task}
-				comments={comments}
-				onAddComment={handleAddComment}
-				isAddingComment={isAddingComment}
-			/>
-		</>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }

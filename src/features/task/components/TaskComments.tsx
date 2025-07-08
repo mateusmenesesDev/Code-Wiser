@@ -1,4 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { MessageCircle, Send } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -23,6 +25,8 @@ import {
 	type CreateCommentInput,
 	createCommentSchema
 } from '~/features/workspace/schemas/comment.schema';
+
+dayjs.extend(relativeTime);
 
 interface Comment {
 	id: string;
@@ -67,15 +71,6 @@ export function TaskComments({
 		} finally {
 			setIsSubmitting(false);
 		}
-	};
-
-	const formatDate = (date: Date) => {
-		return new Intl.DateTimeFormat('en-US', {
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		}).format(new Date(date));
 	};
 
 	const getInitials = (name: string | null, email: string) => {
@@ -160,7 +155,7 @@ export function TaskComments({
 											{comment.author.name || comment.author.email}
 										</span>
 										<span className="text-muted-foreground text-xs">
-											{formatDate(comment.createdAt)}
+											{dayjs(comment.createdAt).fromNow()}
 										</span>
 									</div>
 									<p className="whitespace-pre-wrap text-foreground text-sm">
