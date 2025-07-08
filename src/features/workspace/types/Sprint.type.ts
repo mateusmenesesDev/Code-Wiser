@@ -8,5 +8,4 @@ import type {
 export type NewSprint = z.infer<typeof newSprintSchema>;
 export type UpdateSprint = z.infer<typeof updateSprintSchema>;
 
-export type SprintsOutput =
-	RouterOutputs['sprint']['getAllByProjectTemplateId'];
+export type SprintsOutput = RouterOutputs['sprint']['getAllByProjectId'];

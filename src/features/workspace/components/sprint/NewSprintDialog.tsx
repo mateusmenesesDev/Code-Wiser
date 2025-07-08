@@ -35,10 +35,7 @@ export function NewSprintDialog() {
 	const params = useParams();
 	const projectId = decodeURIComponent(params.id as string);
 
-	const { createSprint } = useSprint({
-		projectId,
-		isTemplate: isTemplate
-	});
+	const { createSprint } = useSprint({ projectId });
 	const form = useForm<NewSprint>({
 		resolver: zodResolver(newSprintSchema),
 		defaultValues: {

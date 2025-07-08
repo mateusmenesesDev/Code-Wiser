@@ -54,10 +54,7 @@ export function SprintCard({ sprint }: SprintCardProps) {
 		? (sprint.projectTemplateId as string)
 		: (sprint.projectId as string);
 
-	const { deleteSprint, updateSprint } = useSprint({
-		projectId,
-		isTemplate
-	});
+	const { deleteSprint, updateSprint } = useSprint({ projectId });
 
 	const handleDelete = () => {
 		deleteSprint.mutate({ id: sprint.id });
