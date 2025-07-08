@@ -7,6 +7,7 @@ import {
 	Loader2,
 	MessageSquare,
 	Plus,
+	Tag,
 	X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -90,7 +91,7 @@ function TagsInput({ value, onChange }: TagsInputProps) {
 
 	return (
 		<div className="space-y-2">
-			<Label>Tags</Label>
+			<Label className="flex items-center gap-1">Labels</Label>
 			<div className="flex gap-2">
 				<Input
 					placeholder="Add tag"
@@ -115,6 +116,7 @@ function TagsInput({ value, onChange }: TagsInputProps) {
 							variant="secondary"
 							className="flex items-center gap-1"
 						>
+							<Tag className="h-3 w-3" />
 							{tag}
 							<button
 								type="button"
