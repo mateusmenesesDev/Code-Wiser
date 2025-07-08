@@ -1,8 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
+import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
 import { Button } from '~/common/components/ui/button';
 import {
 	DialogContent,
@@ -20,90 +19,75 @@ import {
 } from '~/common/components/ui/form';
 import { Input } from '~/common/components/ui/input';
 import { Textarea } from '~/common/components/ui/textarea';
-import { api } from '~/trpc/react';
-
-const sprintFormSchema = z.object({
-	title: z.string().min(1, 'Title is required'),
-	description: z.string().optional()
-});
-
-type SprintFormData = z.infer<typeof sprintFormSchema>;
+import { useDialog } from '~/common/hooks/useDialog';
+import { useSprintMutations } from '../hooks/useSprintMutations';
+import { newSprintSchema } from '../schemas/sprint.schema';
+import type { NewSprint, SprintApiOutput } from '../types/Sprint.type';
 
 interface SprintDialogProps {
 	projectId: string;
-	sprintId: string | null;
-	onSuccess: () => void;
+	sprint?: SprintApiOutput | null;
+	isTemplate?: boolean;
 	onCancel: () => void;
 }
 
 export default function SprintDialog({
 	projectId,
-	sprintId,
-	onSuccess,
+	sprint,
+	isTemplate = false,
 	onCancel
 }: SprintDialogProps) {
-	const { data: sprint } = api.sprint.getById.useQuery(
-		{ id: sprintId || '' },
-		{ enabled: !!sprintId }
-	);
+	const { createSprint, updateSprint } = useSprintMutations({ projectId });
+	const { closeDialog } = useDialog('sprint');
 
-	const form = useForm<SprintFormData>({
-		resolver: zodResolver(sprintFormSchema),
+	const form = useForm<NewSprint>({
+		resolver: zodResolver(newSprintSchema),
 		defaultValues: {
 			title: '',
-			description: ''
+			description: '',
+			projectId,
+			isTemplate
 		}
 	});
 
-	// Update form when sprint data is loaded
 	useEffect(() => {
 		if (sprint) {
 			form.reset({
 				title: sprint.title,
-				description: sprint.description || ''
+				description: sprint.description || '',
+				projectId: sprint.projectId || projectId,
+				isTemplate
+			});
+		} else {
+			form.reset({
+				title: '',
+				description: '',
+				projectId,
+				isTemplate
 			});
 		}
-	}, [sprint, form]);
+	}, [sprint, form, projectId, isTemplate]);
 
-	const createSprintMutation = api.sprint.create.useMutation({
-		onSuccess: () => {
-			toast.success('Sprint created successfully');
-			onSuccess();
-		},
-		onError: (error) => {
-			toast.error(error.message || 'Failed to create sprint');
-		}
-	});
-
-	const updateSprintMutation = api.sprint.update.useMutation({
-		onSuccess: () => {
-			toast.success('Sprint updated successfully');
-			onSuccess();
-		},
-		onError: (error) => {
-			toast.error(error.message || 'Failed to update sprint');
-		}
-	});
-
-	const onSubmit = (data: SprintFormData) => {
-		if (sprintId) {
-			updateSprintMutation.mutate({
-				id: sprintId,
+	const onSubmit: SubmitHandler<NewSprint> = async (data) => {
+		closeDialog();
+		if (sprint) {
+			await updateSprint.mutateAsync({
+				id: sprint.id,
 				...data
 			});
 		} else {
-			createSprintMutation.mutate({
-				...data,
-				projectId
-			});
+			await createSprint.mutateAsync(data);
 		}
+		onCancel();
 	};
+
+	const isPending = createSprint.isPending || updateSprint.isPending;
 
 	return (
 		<DialogContent>
 			<DialogHeader>
 				<DialogTitle>
-					{sprintId ? 'Edit Sprint' : 'Create New Sprint'}
+					{sprint ? 'Edit Sprint' : 'Create New Sprint'}
 				</DialogTitle>
 			</DialogHeader>
 
@@ -149,13 +133,12 @@ export default function SprintDialog({
 						</Button>
 						<Button
 							type="submit"
-							disabled={
-								createSprintMutation.isPending || updateSprintMutation.isPending
-							}
+							disabled={isPending}
+							className="bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
 						>
-							{createSprintMutation.isPending || updateSprintMutation.isPending
+							{isPending
 								? 'Saving...'
-								: sprintId
+								: sprint
 									? 'Update Sprint'
 									: 'Create Sprint'}
 						</Button>

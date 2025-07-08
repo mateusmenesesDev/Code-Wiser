@@ -9,12 +9,12 @@ import {
 } from '~/common/components/ui/dialog';
 import { useDialog } from '~/common/hooks/useDialog';
 import type { EpicsOutput } from '~/features/epics/types/Epic.type';
-import type { SprintsOutput } from '~/features/workspace/types/Sprint.type';
+import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
 import { CreateTaskForm } from './CreateTaskForm';
 
 export interface CreateTaskDialogProps {
 	epics?: EpicsOutput;
-	sprints?: SprintsOutput;
+	sprints?: SprintsApiOutput;
 	projectId: string;
 	trigger?: React.ReactNode;
 }

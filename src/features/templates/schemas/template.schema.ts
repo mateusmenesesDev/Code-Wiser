@@ -105,13 +105,3 @@ export const updateTemplateBasicInfoInputSchema = baseTemplateSchema
 			path: ['maxParticipants']
 		}
 	);
-
-export const updateTemplateSprintsSchema = z.object({
-	sprints: z.array(
-		z.object({
-			title: z.string().min(1, 'Title is required'),
-			description: z.string().optional(),
-			order: z.number().min(0)
-		})
-	)
-});

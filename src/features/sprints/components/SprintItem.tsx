@@ -21,12 +21,10 @@ import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Progress } from '~/common/components/ui/progress';
 import { cn } from '~/lib/utils';
-import type { RouterOutputs } from '~/trpc/react';
-
-type Sprint = RouterOutputs['sprint']['getAllByProjectId'][number];
+import type { SprintApiOutput } from '../types/Sprint.type';
 
 interface SprintItemProps {
-	sprint: Sprint;
+	sprint: NonNullable<SprintApiOutput>;
 	index: number;
 	moveItem: (dragIndex: number, hoverIndex: number) => void;
 	onDrop: () => void;

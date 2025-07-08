@@ -25,7 +25,7 @@ const getPrismaFields = (
 	};
 };
 
-export const useSprint = ({ projectId }: { projectId: string }) => {
+export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 	const utils = api.useUtils();
 	const isTemplate = useIsTemplate();
 
@@ -62,6 +62,9 @@ export const useSprint = ({ projectId }: { projectId: string }) => {
 		onSettled: () => {
 			invalidateSprints();
 		},
+		onSuccess: () => {
+			toast.success('Sprint created successfully');
+		},
 		onError: (error, _newSprint, ctx) => {
 			toast.error(error.message);
 			utils.sprint.getAllByProjectId.setData(
@@ -70,13 +73,6 @@ export const useSprint = ({ projectId }: { projectId: string }) => {
 			);
 		}
 	});
-
-	const getAllSprints = () => {
-		return api.sprint.getAllByProjectId.useQuery({
-			projectId,
-			isTemplate
-		});
-	};
 
 	const deleteSprint = api.sprint.delete.useMutation({
 		onMutate: async ({ id }) => {
@@ -147,7 +143,6 @@ export const useSprint = ({ projectId }: { projectId: string }) => {
 
 	return {
 		createSprint,
-		getAllSprints,
 		deleteSprint,
 		updateSprint
 	};

@@ -1,31 +1,36 @@
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
 	newSprintSchema,
 	updateSprintOrderSchema,
 	updateSprintSchema
-} from '~/features/workspace/schemas/sprint.schema';
+} from '~/features/sprints/schemas/sprint.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 
 export const sprintMutations = {
 	create: protectedProcedure
 		.input(newSprintSchema)
 		.mutation(async ({ ctx, input }) => {
-			const {
-				title,
-				description,
-				startDate,
-				endDate,
-				projectId,
-				projectTemplateId
-			} = input;
+			const { title, description, startDate, endDate, projectId, isTemplate } =
+				input;
 
-			if (!projectId && !projectTemplateId) {
-				throw new TRPCError({
-					code: 'BAD_REQUEST',
-					message: 'Either projectId or projectTemplateId must be provided'
-				});
-			}
+			const sprintCount = await ctx.db.sprint.count({
+				where: isTemplate ? { projectTemplateId: projectId } : { projectId }
+			});
+
+			const createProjectConnection = (isTemplate: boolean) => {
+				if (isTemplate) {
+					return {
+						projectTemplate: {
+							connect: { id: projectId }
+						}
+					};
+				}
+				return {
+					project: {
+						connect: { id: projectId }
+					}
+				};
+			};
 
 			const sprint = await ctx.db.sprint.create({
 				data: {
@@ -33,20 +38,8 @@ export const sprintMutations = {
 					description,
 					startDate,
 					endDate,
-					project: projectId
-						? {
-								connect: {
-									id: projectId
-								}
-							}
-						: undefined,
-					projectTemplate: projectTemplateId
-						? {
-								connect: {
-									id: projectTemplateId
-								}
-							}
-						: undefined
+					order: sprintCount,
+					...createProjectConnection(isTemplate)
 				}
 			});
 
@@ -64,11 +57,19 @@ export const sprintMutations = {
 	update: protectedProcedure
 		.input(updateSprintSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...data } = input;
+			const { id, ...updateData } = input;
 
-			await ctx.db.sprint.update({
+			const sprint = await ctx.db.sprint.findUnique({
+				where: { id }
+			});
+
+			if (!sprint) {
+				throw new Error('Sprint not found');
+			}
+
+			return ctx.db.sprint.update({
 				where: { id },
-				data
+				data: updateData
 			});
 		}),
 

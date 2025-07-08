@@ -17,6 +17,7 @@ import {
 import { Input } from '~/common/components/ui/input';
 import { Textarea } from '~/common/components/ui/textarea';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
 import { useTask } from '~/features/workspace/hooks/useTask';
 import { createTaskSchema } from '~/features/workspace/schemas/task.schema';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
@@ -26,7 +27,7 @@ import { TaskTagsInput, type TaskTagsInputRef } from './TaskTagsInput';
 
 interface CreateTaskFormProps {
 	epics: RouterOutputs['epic']['getAllEpicsByProjectTemplateId'];
-	sprints: RouterOutputs['sprint']['getAllByProjectId'];
+	sprints: SprintsApiOutput;
 	projectId?: string;
 	onSuccess?: () => void;
 }

@@ -7,12 +7,12 @@ import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
 import { useDialog } from '~/common/hooks/useDialog';
+import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
 import { cn } from '~/lib/utils';
-import type { RouterOutputs } from '~/trpc/react';
 import { useComments } from '../../hooks/useComments';
 
 interface TaskCardProps {
-	task: RouterOutputs['sprint']['getAllByProjectId'][number]['tasks'][number];
+	task: NonNullable<SprintApiOutput>['tasks'][number];
 	className?: string;
 	columnId: TaskStatusEnum;
 	index: number;

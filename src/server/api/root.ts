@@ -2,7 +2,6 @@ import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 import { commentRouter } from './routers/comment';
 import { epicRouter } from './routers/epic/epic.router';
 import { projectRouter } from './routers/project';
-import { projectBaseRouter } from './routers/projectBase';
 import { sprintRouter } from './routers/sprint/sprint.router';
 import { taskRouter } from './routers/task/taskRouter';
 import { projectTemplateRouter } from './routers/template';
@@ -16,7 +15,6 @@ import { userRouter } from './routers/user';
 export const appRouter = createTRPCRouter({
 	user: userRouter,
 	project: projectRouter,
-	projectBase: projectBaseRouter,
 	projectTemplate: projectTemplateRouter,
 	task: taskRouter,
 	sprint: sprintRouter,

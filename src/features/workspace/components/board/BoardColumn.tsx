@@ -4,8 +4,8 @@ import type { TaskStatusEnum } from '@prisma/client';
 import { useRef } from 'react';
 import { useDrop } from 'react-dnd';
 import { Card, CardContent, CardHeader } from '~/common/components/ui/card';
+import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
 import { cn } from '~/lib/utils';
-import type { RouterOutputs } from '~/trpc/react';
 import type { Column } from '../../../projects/types';
 import { TaskCard } from '../tasks/TaskCard';
 import { ColumnHeader } from './ColumnHeader';
@@ -114,9 +114,7 @@ export function BoardColumn({ column, moveTask }: BoardColumnProps) {
 					{column.tasks.map((task, index) => (
 						<div key={task.id}>
 							<TaskCard
-								task={
-									task as RouterOutputs['sprint']['getAllByProjectId'][number]['tasks'][number]
-								}
+								task={task as NonNullable<SprintApiOutput>['tasks'][number]}
 								columnId={column.id}
 								index={index}
 								moveTask={moveTask}

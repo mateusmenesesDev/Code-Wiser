@@ -9,13 +9,10 @@ import { Button } from '~/common/components/ui/button';
 import { Dialog } from '~/common/components/ui/dialog';
 import { Separator } from '~/common/components/ui/separator';
 import { useDialog } from '~/common/hooks/useDialog';
-import type { RouterOutputs } from '~/trpc/react';
 import { api } from '~/trpc/react';
+import type { SprintApiOutput } from '../types/Sprint.type';
 import SprintDialog from './SprintDialog';
 import SprintItem from './SprintItem';
-
-type Sprint = RouterOutputs['sprint']['getAllByProjectId'][number];
-
 interface SprintListProps {
 	projectId: string;
 	isTemplate?: boolean;
@@ -50,9 +47,12 @@ export default function SprintList({
 	projectId,
 	isTemplate = false
 }: SprintListProps) {
-	const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
+	const [selectedSprint, setSelectedSprint] =
+		useState<NonNullable<SprintApiOutput> | null>(null);
 	const { openDialog, closeDialog, isDialogOpen } = useDialog('sprint');
-	const [dragState, setDragState] = useState<Sprint[] | null>(null);
+	const [dragState, setDragState] = useState<
+		NonNullable<SprintApiOutput>[] | null
+	>(null);
 
 	const { data: sprints = [], isLoading } =
 		api.sprint.getAllByProjectId.useQuery({
@@ -68,12 +68,6 @@ export default function SprintList({
 			utils.sprint.getAllByProjectId.invalidate();
 		}
 	});
-
-	const handleSprintUpdate = () => {
-		utils.sprint.getAllByProjectId.invalidate();
-		closeDialog();
-		setSelectedSprintId(null);
-	};
 
 	const moveItem = useCallback(
 		(dragIndex: number, hoverIndex: number) => {
@@ -124,7 +118,7 @@ export default function SprintList({
 					</div>
 					<Button
 						onClick={() => {
-							setSelectedSprintId(null);
+							setSelectedSprint(null);
 							openDialog('sprint');
 						}}
 						className="bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
@@ -149,7 +143,7 @@ export default function SprintList({
 								onDrop={handleDrop}
 								onDragStart={handleDragStart}
 								onEdit={() => {
-									setSelectedSprintId(sprint.id);
+									setSelectedSprint(sprint);
 									openDialog('sprint');
 								}}
 							/>
@@ -168,7 +162,7 @@ export default function SprintList({
 								<Button
 									variant="outline"
 									onClick={() => {
-										setSelectedSprintId(null);
+										setSelectedSprint(null);
 										openDialog('sprint');
 									}}
 									className="border-blue-200 bg-blue-50/50 text-blue-600 hover:bg-blue-100 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
@@ -184,8 +178,8 @@ export default function SprintList({
 				<Dialog open={isDialogOpen} onOpenChange={closeDialog}>
 					<SprintDialog
 						projectId={projectId}
-						sprintId={selectedSprintId}
-						onSuccess={handleSprintUpdate}
+						sprint={selectedSprint}
+						isTemplate={isTemplate}
 						onCancel={closeDialog}
 					/>
 				</Dialog>

@@ -4,7 +4,6 @@ import type {
 	createProjectTemplateSchema,
 	deleteTemplateSchema,
 	updateTemplateBasicInfoInputSchema,
-	updateTemplateSprintsSchema,
 	updateTemplateStatusSchema
 } from '../schemas/template.schema';
 
@@ -20,7 +19,4 @@ export type CreateProjectTemplateInput = z.infer<
 >;
 export type UpdateProjectTemplateBasicInfoInput = z.infer<
 	typeof updateTemplateBasicInfoInputSchema
->;
-export type UpdateTemplateSprintsInput = z.infer<
-	typeof updateTemplateSprintsSchema
 >;
