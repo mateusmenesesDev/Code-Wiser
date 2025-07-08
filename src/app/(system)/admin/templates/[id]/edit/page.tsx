@@ -11,6 +11,7 @@ import {
 import { ProjectAccessTypeEnum, ProjectMethodologyEnum } from '@prisma/client';
 import { ArrowLeft } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import EpicList from '~/features/epics/components/EpicList/EpicList';
 import SprintList from '~/features/sprints/components/SprintList';
 import EditTemplateBasicInfo from '~/features/templates/components/EditTemplate/EditTemplateBasicInfo';
 import { api } from '~/trpc/react';
@@ -32,10 +33,8 @@ const AdminProjectEdit = () => {
 	}
 
 	const initialData = {
-		title: template.title,
-		description: template.description,
+		...template,
 		category: template.category.name,
-		difficulty: template.difficulty,
 		accessType:
 			template.credits && template.credits > 0
 				? ProjectAccessTypeEnum.CREDITS
@@ -79,14 +78,17 @@ const AdminProjectEdit = () => {
 					<TabsTrigger value="epics">Epics</TabsTrigger>
 					<TabsTrigger value="template-info">Template Info</TabsTrigger>
 				</TabsList>
+				<TabsContent value="epics">
+					<EpicList projectId={template.id} isTemplate />
+				</TabsContent>
+				<TabsContent value="sprints">
+					<SprintList projectId={template.id} isTemplate />
+				</TabsContent>
 				<TabsContent value="template-info">
 					<EditTemplateBasicInfo
 						templateId={template.id}
 						initialData={initialData}
 					/>
-				</TabsContent>
-				<TabsContent value="sprints">
-					<SprintList projectId={template.id} isTemplate />
 				</TabsContent>
 			</Tabs>
 		</div>

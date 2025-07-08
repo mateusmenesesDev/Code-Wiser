@@ -6,29 +6,32 @@ const epicInclude = {
 };
 
 export const epicQueries = {
-	getAllEpicsByProjectId: protectedProcedure
-		.input(z.object({ projectId: z.string() }))
+	getAllByProjectId: protectedProcedure
+		.input(z.object({ projectId: z.string(), isTemplate: z.boolean() }))
 		.query(async ({ ctx, input }) => {
-			const { projectId } = input;
+			const { projectId, isTemplate } = input;
 
 			const epics = await ctx.db.epic.findMany({
-				where: { projectId },
+				where: {
+					projectId: isTemplate ? undefined : projectId,
+					projectTemplateId: isTemplate ? projectId : undefined
+				},
 				include: epicInclude
 			});
 
 			return epics;
 		}),
 
-	getAllEpicsByProjectTemplateId: protectedProcedure
-		.input(z.object({ projectTemplateId: z.string() }))
+	getById: protectedProcedure
+		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
-			const { projectTemplateId } = input;
+			const { id } = input;
 
-			const epics = await ctx.db.epic.findMany({
-				where: { projectTemplate: { id: projectTemplateId } },
+			const epic = await ctx.db.epic.findUnique({
+				where: { id },
 				include: epicInclude
 			});
 
-			return epics;
+			return epic;
 		})
 };

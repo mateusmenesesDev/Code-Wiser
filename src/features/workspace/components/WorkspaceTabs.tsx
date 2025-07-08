@@ -5,6 +5,7 @@ import {
 	TabsList,
 	TabsTrigger
 } from '~/common/components/ui/tabs';
+import EpicList from '~/features/epics/components/EpicList/EpicList';
 import SprintList from '~/features/sprints/components/SprintList';
 import { KanbanBoard } from '~/features/workspace/components/board/KanbanBoard';
 
@@ -52,9 +53,7 @@ export function WorkspaceTabs({
 							</TabsContent>
 
 							<TabsContent value="epics" className="mt-0">
-								<div className="flex h-64 items-center justify-center text-muted-foreground">
-									<p>Epics view coming soon...</p>
-								</div>
+								<EpicList projectId={projectId} isTemplate={false} />
 							</TabsContent>
 
 							<TabsContent value="sprints" className="mt-0">

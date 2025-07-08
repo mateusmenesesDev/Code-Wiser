@@ -1,4 +1,3 @@
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
 	newEpicSchema,
@@ -10,37 +9,30 @@ export const epicMutations = {
 	create: protectedProcedure
 		.input(newEpicSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { title, description, projectId, projectTemplateId } = input;
+			const { title, description, projectId, isTemplate } = input;
 
-			if (!projectId && !projectTemplateId) {
-				throw new TRPCError({
-					code: 'BAD_REQUEST',
-					message: 'Either projectId or projectTemplateId must be provided'
-				});
-			}
-
-			const sprint = await ctx.db.sprint.create({
+			const epic = await ctx.db.epic.create({
 				data: {
 					title,
 					description,
-					project: projectId
+					project: !isTemplate
 						? {
 								connect: {
 									id: projectId
 								}
 							}
 						: undefined,
-					projectTemplate: projectTemplateId
+					projectTemplate: isTemplate
 						? {
 								connect: {
-									id: projectTemplateId
+									id: projectId
 								}
 							}
 						: undefined
 				}
 			});
 
-			return sprint;
+			return epic;
 		}),
 
 	delete: protectedProcedure
@@ -48,7 +40,7 @@ export const epicMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { id } = input;
 
-			await ctx.db.sprint.delete({ where: { id } });
+			await ctx.db.epic.delete({ where: { id } });
 		}),
 
 	update: protectedProcedure
@@ -56,7 +48,7 @@ export const epicMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
 
-			await ctx.db.sprint.update({
+			await ctx.db.epic.update({
 				where: { id },
 				data
 			});

@@ -7,10 +7,8 @@ import type {
 } from '../schemas/epics.schema';
 
 export type Epic = z.infer<typeof baseEpicSchema>;
-
 export type EpicInput = z.infer<typeof newEpicSchema>;
-
 export type EpicUpdateInput = z.infer<typeof updateEpicSchema>;
 
-export type EpicsOutput =
-	RouterOutputs['epic']['getAllEpicsByProjectTemplateId'];
+export type EpicsApiOutput = RouterOutputs['epic']['getAllByProjectId'];
+export type EpicApiOutput = RouterOutputs['epic']['getById'];

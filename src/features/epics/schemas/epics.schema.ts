@@ -9,17 +9,14 @@ export const baseEpicSchema = z.object({
 });
 
 export const newEpicSchema = baseEpicSchema
-	.omit({ id: true })
-	.superRefine((data, ctx) => {
-		if (!data.projectTemplateId && !data.projectId) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'Either projectTemplateId or projectId must be provided'
-			});
-		}
+	.omit({ id: true, projectTemplateId: true, projectId: true })
+	.extend({
+		isTemplate: z.boolean(),
+		projectId: z.string()
 	});
 
 export const updateEpicSchema = baseEpicSchema
+	.omit({ projectTemplateId: true, projectId: true })
 	.partial()
 	.refine((data) => data.id, {
 		message: 'Id is required',
