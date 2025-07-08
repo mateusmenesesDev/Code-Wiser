@@ -36,19 +36,19 @@ type ProjectCardProps = {
 	projectTemplate: ProjectTemplateApiResponse;
 	approvalPage?: boolean;
 	userCredits: number;
-	isEnrolled?: boolean;
+	projectId?: string;
 };
 
 export function ProjectCard({
 	projectTemplate,
 	userCredits,
-	isEnrolled = false
+	projectId
 }: ProjectCardProps) {
 	const router = useRouter();
 	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
 
 	const handleContinue = () => {
-		router.push(`/workspace/${projectTemplate.id}`);
+		router.push(`/workspace/${projectId}`);
 	};
 
 	const handleCreateProject = async () => {
@@ -187,7 +187,7 @@ export function ProjectCard({
 
 				<CardFooter className="pt-0">
 					<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						{isEnrolled ? (
+						{projectId ? (
 							<Button
 								size="sm"
 								className="w-full bg-blue-600 hover:bg-blue-700 sm:w-auto"
