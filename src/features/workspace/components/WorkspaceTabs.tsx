@@ -8,6 +8,7 @@ import {
 import EpicList from '~/features/epics/components/EpicList/EpicList';
 import SprintList from '~/features/sprints/components/SprintList';
 import { KanbanBoard } from '~/features/workspace/components/board/KanbanBoard';
+import Backlog from './backlog/Backlog';
 
 interface WorkspaceTabsProps {
 	projectId: string;
@@ -47,9 +48,7 @@ export function WorkspaceTabs({
 							</TabsContent>
 
 							<TabsContent value="backlog" className="mt-0">
-								<div className="flex h-64 items-center justify-center text-muted-foreground">
-									<p>Backlog view coming soon...</p>
-								</div>
+								<Backlog projectId={projectId} isTemplate={false} />
 							</TabsContent>
 
 							<TabsContent value="epics" className="mt-0">

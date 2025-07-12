@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { RouterOutputs } from '~/trpc/react';
 import type {
 	createTaskSchema,
 	updateTaskSchema
@@ -6,3 +7,5 @@ import type {
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
+
+export type TasksApiOutput = RouterOutputs['task']['getAllByProjectId'];

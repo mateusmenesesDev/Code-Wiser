@@ -1,4 +1,5 @@
 import { TaskPriorityEnum } from '@prisma/client';
+import { ChevronDown } from 'lucide-react';
 import { Badge } from '~/common/components/ui/badge';
 
 import {
@@ -7,22 +8,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
+import { getTaskPriorityColor } from '~/common/utils/colorUtils';
 import { useTask } from '~/features/workspace/hooks/useTask';
-
-const getPriorityVariant = (priority: TaskPriorityEnum | string) => {
-	switch (priority) {
-		case 'HIGHEST':
-			return 'destructive';
-		case 'HIGH':
-			return 'default';
-		case 'MEDIUM':
-			return 'warning';
-		case 'LOW':
-			return 'outline';
-		default:
-			return 'outline';
-	}
-};
+import { cn } from '~/lib/utils';
 
 export function PriorityCell({
 	priority,
@@ -42,10 +30,13 @@ export function PriorityCell({
 		<DropdownMenu>
 			<DropdownMenuTrigger>
 				<Badge
-					variant={getPriorityVariant(priority)}
-					className="w-[100px] cursor-pointer justify-center hover:opacity-90"
+					className={cn(
+						getTaskPriorityColor(priority),
+						'w-[100px] cursor-pointer justify-center'
+					)}
 				>
-					{priority ?? 'NO PRIORITY'}
+					{priority}
+					<ChevronDown className="ml-1 h-4 w-4" />
 				</Badge>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-[100px]">
@@ -60,8 +51,10 @@ export function PriorityCell({
 						}
 					>
 						<Badge
-							variant={getPriorityVariant(priority)}
-							className="w-full justify-center"
+							className={cn(
+								getTaskPriorityColor(priority),
+								'w-[100px] cursor-pointer justify-center'
+							)}
 						>
 							{priority}
 						</Badge>

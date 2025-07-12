@@ -57,6 +57,9 @@ model Epic {
   projectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
 
   tasks Task[]
+
+  @@unique([projectTemplateId, title])
+  @@unique([projectId, title])
 }
 
 model Sprint {
@@ -78,6 +81,9 @@ model Sprint {
   endDate   DateTime?
 
   tasks Task[]
+
+  @@unique([projectTemplateId, title])
+  @@unique([projectId, title])
 }
 
 model Comment {

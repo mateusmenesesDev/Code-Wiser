@@ -1,4 +1,4 @@
-import type { Task } from '@prisma/client';
+import { TaskStatusEnum, TaskTypeEnum, type Task } from '@prisma/client';
 import { toast } from 'sonner';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { convertUndefinedToNull } from '~/common/utils/convertion';
@@ -160,11 +160,65 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		}
 	});
 
+	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
+		onMutate: async ({ updates }) => {
+			const queryKey = { id: projectId as string };
+			await utils.projectTemplate.getById.cancel(queryKey);
+
+			const previousData = utils.projectTemplate.getById.getData(queryKey);
+
+			if (previousData) {
+				const optimisticTasks = [...previousData.tasks];
+				for (const { id: taskId, order } of updates) {
+					const taskIndex = optimisticTasks.findIndex((t) => t.id === taskId);
+					if (taskIndex !== -1) {
+						const existingTask = optimisticTasks[taskIndex];
+						if (existingTask) {
+							optimisticTasks[taskIndex] = {
+								...existingTask,
+								id: existingTask.id,
+								order,
+								type: existingTask.type || TaskTypeEnum.TASK,
+								status: existingTask.status || TaskStatusEnum.BACKLOG,
+								createdAt: existingTask.createdAt || new Date(),
+								updatedAt: existingTask.updatedAt || new Date(),
+								title: existingTask.title,
+								description: existingTask.description || null,
+								priority: existingTask.priority || null,
+								tags: existingTask.tags,
+								epicId: existingTask.epicId || null,
+								sprintId: existingTask.sprintId || null
+							};
+						}
+					}
+				}
+
+				utils.projectTemplate.getById.setData(queryKey, {
+					...previousData,
+					tasks: optimisticTasks
+				});
+			}
+
+			return { previousData };
+		},
+		onError: (_error, _variables, context) => {
+			const queryKey = { id: projectId as string };
+			if (context?.previousData) {
+				utils.projectTemplate.getById.setData(queryKey, context.previousData);
+			}
+		},
+		onSettled: () => {
+			const queryKey = { id: projectId as string };
+			utils.projectTemplate.getById.invalidate(queryKey);
+		}
+	});
+
 	return {
 		createTaskMutation,
 		updateTaskMutation,
 		deleteTaskMutation,
-		bulkDeleteTasksMutation
+		bulkDeleteTasksMutation,
+		updateTaskOrdersMutation
 	};
 };
 
@@ -173,7 +227,8 @@ export function useTask({ projectId }: UseTaskProps = {}) {
 		createTaskMutation,
 		updateTaskMutation,
 		deleteTaskMutation,
-		bulkDeleteTasksMutation
+		bulkDeleteTasksMutation,
+		updateTaskOrdersMutation
 	} = useTaskMutations({
 		projectId
 	});
@@ -198,12 +253,16 @@ export function useTask({ projectId }: UseTaskProps = {}) {
 	const bulkDeleteTasks = (taskIds: string[]) =>
 		bulkDeleteTasksMutation.mutate({ taskIds });
 
+	const updateTaskOrders = (updates: { id: string; order: number }[]) =>
+		updateTaskOrdersMutation.mutate({ updates });
+
 	return {
 		createTask,
 		updateTask,
 		getAllTasksByProjectId,
 		getAllTasksByProjectTemplateId,
 		deleteTask,
-		bulkDeleteTasks
+		bulkDeleteTasks,
+		updateTaskOrders
 	};
 }

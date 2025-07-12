@@ -23,9 +23,7 @@ export const getProjectQueries = {
 					category: true,
 					tasks: {
 						orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
-					},
-					sprints: true,
-					epics: true
+					}
 				}
 			});
 			return project;

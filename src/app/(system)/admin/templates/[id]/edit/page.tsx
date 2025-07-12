@@ -14,6 +14,7 @@ import { useParams, useRouter } from 'next/navigation';
 import EpicList from '~/features/epics/components/EpicList/EpicList';
 import SprintList from '~/features/sprints/components/SprintList';
 import EditTemplateBasicInfo from '~/features/templates/components/EditTemplate/EditTemplateBasicInfo';
+import Backlog from '~/features/workspace/components/backlog/Backlog';
 import { api } from '~/trpc/react';
 
 const AdminProjectEdit = () => {
@@ -71,13 +72,16 @@ const AdminProjectEdit = () => {
 				</div>
 			</div>
 
-			<Tabs defaultValue="template-info" className="space-y-6">
+			<Tabs defaultValue="backlog" className="space-y-6">
 				<TabsList className="grid w-full grid-cols-4">
 					<TabsTrigger value="backlog">Backlog</TabsTrigger>
 					<TabsTrigger value="sprints">Sprints</TabsTrigger>
 					<TabsTrigger value="epics">Epics</TabsTrigger>
 					<TabsTrigger value="template-info">Template Info</TabsTrigger>
 				</TabsList>
+				<TabsContent value="backlog">
+					<Backlog projectId={template.id} isTemplate />
+				</TabsContent>
 				<TabsContent value="epics">
 					<EpicList projectId={template.id} isTemplate />
 				</TabsContent>
