@@ -14,14 +14,24 @@ import {
 import { useUser } from '~/common/hooks/useUser';
 import { useProject } from '../hooks/useProject';
 import { useProjectFilter } from '../hooks/useProjectFilter';
+import type {
+	ApprovedProjectsApiOutput,
+	UserProjectApiResponse
+} from '../types/Projects.type';
 import { ProjectCard } from './ProjectCard';
 import { ProjectCardSkeleton } from './ProjectCardSkeleton';
 
 type ProjectsProps = {
 	approvalPage?: boolean;
+	initialProjectsData?: ApprovedProjectsApiOutput;
+	initialUserProjectsData?: UserProjectApiResponse[];
 };
 
-export default function Projects({ approvalPage = false }: ProjectsProps) {
+export default function Projects({
+	approvalPage = false,
+	initialProjectsData,
+	initialUserProjectsData
+}: ProjectsProps) {
 	const {
 		searchTerm,
 		setSearchTerm,
@@ -34,7 +44,10 @@ export default function Projects({ approvalPage = false }: ProjectsProps) {
 	} = useProjectFilter();
 
 	const { userCredits } = useUser();
-	const { filteredProjects, isLoading, userProjects } = useProject();
+	const { filteredProjects, isLoading, userProjects } = useProject({
+		initialProjectsData,
+		initialUserProjectsData
+	});
 
 	const clearFilters = () => {
 		setSearchTerm('');
