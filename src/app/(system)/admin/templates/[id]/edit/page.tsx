@@ -80,7 +80,7 @@ const AdminProjectEdit = () => {
 					<TabsTrigger value="template-info">Template Info</TabsTrigger>
 				</TabsList>
 				<TabsContent value="backlog">
-					<Backlog projectId={template.id} isTemplate />
+					<Backlog projectId={template.id} />
 				</TabsContent>
 				<TabsContent value="epics">
 					<EpicList projectId={template.id} isTemplate />

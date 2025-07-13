@@ -7,12 +7,15 @@ export const projectTemplateQueries = {
 		ctx.db.projectTemplate.findMany({
 			where: { status: 'APPROVED' },
 			include: {
-				category: {
-					select: {
-						name: true
-					}
+				category: true,
+				technologies: true,
+				learningOutcomes: true,
+				milestones: true,
+				tasks: {
+					orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 				},
-				technologies: true
+				epics: true,
+				sprints: true
 			}
 		})
 	),
@@ -75,11 +78,7 @@ export const projectTemplateQueries = {
 						tasks: {
 							orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 						},
-						epics: {
-							include: {
-								tasks: true
-							}
-						},
+						epics: true,
 						sprints: true
 					}
 				});

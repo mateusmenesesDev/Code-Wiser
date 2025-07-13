@@ -12,10 +12,10 @@ import {
 	TabsList,
 	TabsTrigger
 } from '~/common/components/ui/tabs';
-import type { ProjectTemplateByIdApiResponse } from '../../types/Projects.type';
+import type { ProjectTemplateInfoByIdApiOutput } from '../../types/Projects.type';
 
 interface ProjectDetailOverviewProps {
-	project: NonNullable<ProjectTemplateByIdApiResponse>;
+	project: NonNullable<ProjectTemplateInfoByIdApiOutput>;
 }
 
 export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {

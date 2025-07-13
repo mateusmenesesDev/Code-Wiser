@@ -1,4 +1,4 @@
-import { TaskStatusEnum, TaskTypeEnum, type Task } from '@prisma/client';
+import { type Task, TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import { toast } from 'sonner';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { convertUndefinedToNull } from '~/common/utils/convertion';
@@ -223,6 +223,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 };
 
 export function useTask({ projectId }: UseTaskProps = {}) {
+	const isTemplate = useIsTemplate();
 	const {
 		createTaskMutation,
 		updateTaskMutation,
@@ -238,12 +239,8 @@ export function useTask({ projectId }: UseTaskProps = {}) {
 
 	const getAllTasksByProjectId = (projectId: string) =>
 		api.task.getAllByProjectId.useQuery({
-			projectId
-		});
-
-	const getAllTasksByProjectTemplateId = (projectTemplateId: string) =>
-		api.task.getAllByProjectTemplateId.useQuery({
-			projectTemplateId
+			projectId,
+			isTemplate
 		});
 
 	const updateTask = (updateTaskInput: UpdateTaskInput) =>
@@ -260,7 +257,6 @@ export function useTask({ projectId }: UseTaskProps = {}) {
 		createTask,
 		updateTask,
 		getAllTasksByProjectId,
-		getAllTasksByProjectTemplateId,
 		deleteTask,
 		bulkDeleteTasks,
 		updateTaskOrders

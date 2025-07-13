@@ -48,7 +48,7 @@ export function WorkspaceTabs({
 							</TabsContent>
 
 							<TabsContent value="backlog" className="mt-0">
-								<Backlog projectId={projectId} isTemplate={false} />
+								<Backlog projectId={projectId} />
 							</TabsContent>
 
 							<TabsContent value="epics" className="mt-0">

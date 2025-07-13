@@ -34,15 +34,12 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 		NonNullable<SprintApiOutput>['tasks'][number] | null
 	>(null);
 
-	// Get project data for epics and sprints
 	const { data: projectData } = api.project.getById.useQuery({
 		id: projectId
 	});
 
-	// Task mutations
 	const { createTask, updateTask } = useTask({ projectId });
 
-	// Comments hook - only when we have a selected task
 	const { comments, addComment, isAddingComment } = useComments({
 		taskId: selectedTask?.id || ''
 	});
@@ -62,10 +59,10 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 		) => {
 			if ('id' in data && data.id) {
 				// Update existing task - cast to UpdateTaskInput
-				await updateTask(data as UpdateTaskInput);
+				updateTask(data as UpdateTaskInput);
 			} else {
 				// Create new task - cast to CreateTaskInput
-				await createTask(data as CreateTaskInput);
+				createTask(data as CreateTaskInput);
 			}
 			// Clear selected task after successful submission
 			setSelectedTask(null);

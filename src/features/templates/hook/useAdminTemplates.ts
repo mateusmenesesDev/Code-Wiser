@@ -1,7 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
-import type { ProjectTemplateApiResponse } from '~/features/projects/types/Projects.type';
+import type { ProjectTemplateApiOutput } from '~/features/projects/types/Projects.type';
 import {
 	type FilterConfig,
 	createFilter
@@ -60,42 +60,45 @@ export function useAdminTemplates() {
 		const filters: FilterConfig[] = [
 			{
 				value: searchTerm,
-				property: 'title',
+				property: (project) => project?.title || '',
 				customComparison: (
-					project: ProjectTemplateApiResponse,
+					project: NonNullable<ProjectTemplateApiOutput>,
 					value: string
 				) =>
-					project.title.toLowerCase().includes(value.toLowerCase()) ||
-					project.description.toLowerCase().includes(value.toLowerCase())
+					project?.title?.toLowerCase().includes(value.toLowerCase()) ||
+					project?.description?.toLowerCase().includes(value.toLowerCase())
 			},
 			{
 				value: categoryFilter === 'all' ? null : categoryFilter,
-				property: 'category'
+				property: (project) => project?.category.name || ''
 			},
 			{
 				value: difficultyFilter === 'all' ? null : difficultyFilter,
-				property: 'difficulty'
+				property: (project) => project?.difficulty || ''
 			},
 			{
 				value: accessFilter === 'all' ? null : accessFilter,
-				property: 'credits',
+				property: (project) => project?.credits || 0,
 				customComparison: (
-					project: ProjectTemplateApiResponse,
+					project: NonNullable<ProjectTemplateApiOutput>,
 					value: string
 				) => {
 					const accessType =
-						project.credits && project.credits > 0 ? 'Credits' : 'Free';
+						project?.credits && project?.credits > 0 ? 'Credits' : 'Free';
 					return accessType === value;
 				}
 			},
 			{
 				value: statusFilter === 'all' ? null : statusFilter,
-				property: 'status'
-			}
+				property: (project) => project?.status
+			} as FilterConfig
 		];
 
 		return filters.every((filterConfig) =>
-			createFilter(template, filterConfig)
+			createFilter(
+				template as NonNullable<ProjectTemplateApiOutput>,
+				filterConfig
+			)
 		);
 	});
 

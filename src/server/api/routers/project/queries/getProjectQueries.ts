@@ -2,18 +2,6 @@ import { z } from 'zod';
 import { protectedProcedure, publicProcedure } from '~/server/api/trpc';
 
 export const getProjectQueries = {
-	getAll: publicProcedure.query(({ ctx }) =>
-		ctx.db.project.findMany({
-			include: {
-				category: {
-					select: {
-						name: true
-					}
-				}
-			}
-		})
-	),
-
 	getById: publicProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
@@ -21,6 +9,8 @@ export const getProjectQueries = {
 				where: { id: input.id },
 				include: {
 					category: true,
+					epics: true,
+					sprints: true,
 					tasks: {
 						orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 					}

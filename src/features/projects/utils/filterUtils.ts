@@ -1,18 +1,18 @@
-import type { ProjectTemplateApiResponse } from '../types/Projects.type';
+import type { ProjectTemplateApiOutput } from '../types/Projects.type';
 
 export type FilterConfig = {
 	value: string | null;
 	property:
-		| keyof ProjectTemplateApiResponse
-		| ((project: ProjectTemplateApiResponse) => string | number);
+		| keyof ProjectTemplateApiOutput
+		| ((project: ProjectTemplateApiOutput) => string | number);
 	customComparison?: (
-		project: ProjectTemplateApiResponse,
+		project: NonNullable<ProjectTemplateApiOutput>,
 		value: string
 	) => boolean;
 };
 
 export const createFilter = (
-	project: ProjectTemplateApiResponse,
+	project: NonNullable<ProjectTemplateApiOutput>,
 	{ value, property, customComparison }: FilterConfig
 ) => {
 	if (!value) return true;

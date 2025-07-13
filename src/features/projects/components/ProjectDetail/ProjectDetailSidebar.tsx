@@ -19,10 +19,10 @@ import { getAccessType } from '~/common/utils/projectUtils';
 import { cn } from '~/lib/utils';
 import { useMyProjects } from '../../hooks/useMyProjects';
 import { useProjectMutations } from '../../hooks/useProjectMutations';
-import type { ProjectTemplateByIdApiResponse } from '../../types/Projects.type';
+import type { ProjectTemplateInfoByIdApiOutput } from '../../types/Projects.type';
 
 interface ProjectDetailSidebarProps {
-	project: NonNullable<ProjectTemplateByIdApiResponse>;
+	project: NonNullable<ProjectTemplateInfoByIdApiOutput>;
 }
 
 export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {

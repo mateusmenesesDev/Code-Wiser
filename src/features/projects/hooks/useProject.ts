@@ -2,9 +2,20 @@ import { api } from '~/trpc/react';
 
 import { type FilterConfig, createFilter } from '../utils/filterUtils';
 
+import { useMemo } from 'react';
+import type {
+	ApprovedProjectsApiOutput,
+	UserProjectApiResponse
+} from '../types/Projects.type';
 import { useProjectFilter } from './useProjectFilter';
 
-export function useProject() {
+export function useProject({
+	initialProjectsData,
+	initialUserProjectsData
+}: {
+	initialProjectsData?: ApprovedProjectsApiOutput;
+	initialUserProjectsData?: UserProjectApiResponse[];
+}) {
 	const {
 		searchTerm,
 		setSearchTerm,
@@ -16,43 +27,61 @@ export function useProject() {
 		setCostFilter
 	} = useProjectFilter();
 
-	const projectsQuery = api.projectTemplate.getApproved.useQuery();
-	const userProjectsQuery = api.project.getEnrolled.useQuery();
+	const projectsQuery = api.projectTemplate.getApproved.useQuery(undefined, {
+		initialData: initialProjectsData || undefined,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
+		refetchInterval: false
+	});
+	const userProjectsQuery = api.project.getEnrolled.useQuery(undefined, {
+		initialData: initialUserProjectsData || undefined,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
+		refetchInterval: false
+	});
 
-	const filters: FilterConfig[] = [
-		{
-			value: searchTerm === '' ? null : searchTerm,
-			property: 'title',
-			customComparison: (project, value) =>
-				project.title.toLowerCase().includes(value.toLowerCase())
-		},
-		{
-			value: categoryFilter === 'all' ? null : categoryFilter,
-			property: 'category'
-		},
-		{
-			value: difficultyFilter === 'all' ? null : difficultyFilter,
-			property: 'difficulty'
-		},
-		{
-			value: costFilter === 'all' ? null : costFilter,
-			property: 'credits',
-			customComparison: (project, value) => {
-				if (value === 'Free') {
-					return project.credits === 0 || project.credits === null;
+	const filteredProjects = useMemo(() => {
+		const filters: FilterConfig[] = [
+			{
+				value: searchTerm === '' ? null : searchTerm,
+				property: (project) => project?.title,
+				customComparison: (project, value) =>
+					project?.title.toLowerCase().includes(value.toLowerCase())
+			} as FilterConfig,
+			{
+				value: categoryFilter === 'all' ? null : categoryFilter,
+				property: (project) => project?.category.name
+			} as FilterConfig,
+			{
+				value: difficultyFilter === 'all' ? null : difficultyFilter,
+				property: (project) => project?.difficulty
+			} as FilterConfig,
+			{
+				value: costFilter === 'all' ? null : costFilter,
+				property: (project) => project?.credits,
+				customComparison: (project, value) => {
+					if (value === 'Free') {
+						return project.credits === 0 || project.credits === null;
+					}
+					if (value === 'Credits') {
+						return project.credits != null && project.credits > 0;
+					}
+					return true;
 				}
-				if (value === 'Credits') {
-					return project.credits != null && project.credits > 0;
-				}
-				return true;
-			}
-		}
-	];
-
-	const filteredProjects =
-		projectsQuery.data?.filter((project) =>
-			filters.every((filterConfig) => createFilter(project, filterConfig))
-		) ?? [];
+			} as FilterConfig
+		];
+		return (
+			projectsQuery.data?.filter((project) =>
+				filters.every((filterConfig) => createFilter(project, filterConfig))
+			) ?? []
+		);
+	}, [
+		projectsQuery.data,
+		searchTerm,
+		categoryFilter,
+		difficultyFilter,
+		costFilter
+	]);
 
 	return {
 		searchTerm,

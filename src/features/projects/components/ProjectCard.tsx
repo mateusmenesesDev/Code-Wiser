@@ -30,10 +30,10 @@ import {
 import { getAccessType } from '~/common/utils/projectUtils';
 import { cn } from '~/lib/utils';
 import { useProjectMutations } from '../hooks/useProjectMutations';
-import type { ProjectTemplateApiResponse } from '../types/Projects.type';
+import type { ProjectTemplateApiOutput } from '../types/Projects.type';
 
 type ProjectCardProps = {
-	projectTemplate: ProjectTemplateApiResponse;
+	projectTemplate: NonNullable<ProjectTemplateApiOutput>;
 	approvalPage?: boolean;
 	userCredits: number;
 	projectId?: string;
