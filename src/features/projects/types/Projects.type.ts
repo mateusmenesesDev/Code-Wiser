@@ -4,6 +4,8 @@ import type { RouterInputs, RouterOutputs } from '~/trpc/react';
 
 export type ApprovedProjectsApiOutput =
 	RouterOutputs['projectTemplate']['getApproved'];
+export type ProjectTemplateInfoApiOutput =
+	RouterOutputs['projectTemplate']['getInfoById'];
 export type ProjectsTemplateApiOutput =
 	RouterOutputs['projectTemplate']['getAll'];
 export type ProjectTemplateApiOutput =
