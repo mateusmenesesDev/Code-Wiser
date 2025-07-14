@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
+import { UTApi } from 'uploadthing/server';
+import { z } from 'zod';
 import {
 	createProjectTemplateSchema,
 	deleteTemplateSchema,
@@ -45,6 +47,38 @@ export const projectTemplateMutations = {
 			}
 		}),
 
+	createImage: protectedProcedure
+		.input(
+			z.object({
+				projectTemplateId: z.string(),
+				images: z.array(
+					z.object({
+						url: z.string(),
+						alt: z.string(),
+						order: z.number(),
+						uploadId: z.string().optional()
+					})
+				)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const { projectTemplateId, images } = input;
+
+			const result = await ctx.db.projectTemplate.update({
+				where: { id: projectTemplateId },
+				data: {
+					images: {
+						create: images
+					}
+				},
+				include: {
+					images: true
+				}
+			});
+
+			return result;
+		}),
+
 	delete: protectedProcedure
 		.input(deleteTemplateSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -60,6 +94,45 @@ export const projectTemplateMutations = {
 					code: 'INTERNAL_SERVER_ERROR',
 					message: 'Failed to delete project template'
 				});
+			}
+		}),
+
+	deleteImage: protectedProcedure
+		.input(z.object({ id: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			const { id } = input;
+
+			const image = await ctx.db.projectImage.findUnique({
+				where: { id }
+			});
+
+			if (!image) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Image not found'
+				});
+			}
+
+			const fileKey = image.url.split('/').pop();
+
+			if (!fileKey) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Invalid file URL'
+				});
+			}
+
+			try {
+				const utApi = new UTApi();
+				await utApi.deleteFiles(fileKey);
+
+				const deletedImage = await ctx.db.projectImage.delete({
+					where: { id }
+				});
+
+				return deletedImage.id;
+			} catch (error) {
+				console.error('Failed to delete from UploadThing:', error);
 			}
 		}),
 

@@ -88,5 +88,27 @@ export const projectTemplateQueries = {
 				console.error(error);
 				throw error;
 			}
+		}),
+
+	getImages: protectedProcedure
+		.input(z.object({ projectTemplateId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			const projectTemplate = await ctx.db.projectTemplate.findUnique({
+				where: { id: input.projectTemplateId },
+				select: {
+					images: {
+						select: {
+							url: true,
+							alt: true,
+							id: true
+						},
+						orderBy: {
+							order: 'asc'
+						}
+					}
+				}
+			});
+
+			return projectTemplate?.images;
 		})
 };

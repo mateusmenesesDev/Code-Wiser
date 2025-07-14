@@ -39,8 +39,9 @@ const baseTemplateSchema = z.object({
 	images: z
 		.array(
 			z.object({
-				file: z.instanceof(File),
-				preview: z.string()
+				url: z.string(),
+				alt: z.string().optional(),
+				order: z.number().optional()
 			})
 		)
 		.optional()

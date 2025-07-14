@@ -5,6 +5,7 @@ model ProjectImage {
   url               String
   alt               String?
   order             Int              @default(0)
+  uploadId          String?          @unique
   ProjectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
   projectTemplateId String?
 }
