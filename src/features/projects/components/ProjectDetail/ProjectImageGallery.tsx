@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { useState } from 'react';
 import {
 	Card,
@@ -7,7 +8,10 @@ import {
 } from '~/common/components/ui/card';
 
 interface ProjectImageGalleryProps {
-	images?: string[];
+	images?: {
+		url: string;
+		alt: string;
+	}[];
 	projectTitle: string;
 }
 
@@ -17,16 +21,6 @@ export function ProjectImageGallery({
 }: ProjectImageGalleryProps) {
 	const [selectedImage, setSelectedImage] = useState(0);
 
-	// Default placeholder images if none provided
-	const defaultImages = [
-		'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
-		'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
-		'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=800',
-		'https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=800'
-	];
-
-	const displayImages = images.length > 0 ? images : defaultImages;
-
 	return (
 		<Card className="animate-slide-up overflow-hidden shadow-lg">
 			<CardHeader>
@@ -34,19 +28,20 @@ export function ProjectImageGallery({
 			</CardHeader>
 			<CardContent className="p-6">
 				{/* Main Image */}
-				<div className="mb-4 overflow-hidden rounded-xl">
-					<img
-						src={displayImages[selectedImage]}
+				<div className="relative mb-4 h-64 w-full overflow-hidden rounded-xl">
+					<Image
+						src={images[selectedImage]?.url ?? ''}
 						alt={`${projectTitle} preview`}
-						className="h-64 w-full object-cover"
+						fill
+						className="object-cover"
 					/>
 				</div>
 
 				{/* Thumbnail Gallery */}
 				<div className="grid grid-cols-4 gap-3">
-					{displayImages.map((image, index) => (
+					{images.map((image, index) => (
 						<button
-							key={`thumbnail-${image.slice(-20)}-${index}`}
+							key={`thumbnail-${image.url.slice(-20)}-${index}`}
 							type="button"
 							onClick={() => setSelectedImage(index)}
 							className={`overflow-hidden rounded-lg border-2 transition-all ${
@@ -56,7 +51,7 @@ export function ProjectImageGallery({
 							}`}
 						>
 							<img
-								src={image}
+								src={image.url}
 								alt={`${projectTitle} preview ${index + 1}`}
 								className="h-16 w-full object-cover"
 							/>

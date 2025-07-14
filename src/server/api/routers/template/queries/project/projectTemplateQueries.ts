@@ -44,7 +44,17 @@ export const projectTemplateQueries = {
 						learningOutcomes: true,
 						milestones: true,
 						epics: true,
-						sprints: true
+						sprints: true,
+						images: {
+							orderBy: {
+								order: 'asc'
+							},
+							select: {
+								url: true,
+								alt: true,
+								id: true
+							}
+						}
 					}
 				});
 

@@ -72,7 +72,13 @@ export default function ProjectDetail({
 						</CardContent>
 					</Card>
 
-					<ProjectImageGallery images={[]} projectTitle={project.title} />
+					<ProjectImageGallery
+						images={project.images.map((image) => ({
+							url: image.url ?? '',
+							alt: image.alt ?? ''
+						}))}
+						projectTitle={project.title}
+					/>
 
 					<ProjectDetailOverview project={project} />
 				</div>
