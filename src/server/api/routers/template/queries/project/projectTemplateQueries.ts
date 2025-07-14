@@ -14,6 +14,15 @@ export const projectTemplateQueries = {
 				tasks: {
 					orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 				},
+				images: {
+					orderBy: {
+						order: 'asc'
+					},
+					select: {
+						url: true,
+						alt: true
+					}
+				},
 				epics: true,
 				sprints: true
 			}
@@ -79,7 +88,16 @@ export const projectTemplateQueries = {
 							orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 						},
 						epics: true,
-						sprints: true
+						sprints: true,
+						images: {
+							orderBy: {
+								order: 'asc'
+							},
+							select: {
+								url: true,
+								alt: true
+							}
+						}
 					}
 				});
 

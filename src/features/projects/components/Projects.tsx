@@ -202,7 +202,6 @@ export default function Projects({
 									<ProjectCard
 										projectTemplate={project}
 										userCredits={userCredits}
-										approvalPage={approvalPage}
 										projectId={
 											userProjects?.find((p) => p.title === project.title)?.id
 										}

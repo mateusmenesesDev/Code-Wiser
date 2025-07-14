@@ -9,6 +9,7 @@ import {
 	Users,
 	Zap
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -34,7 +35,6 @@ import type { ProjectTemplateApiOutput } from '../types/Projects.type';
 
 type ProjectCardProps = {
 	projectTemplate: NonNullable<ProjectTemplateApiOutput>;
-	approvalPage?: boolean;
 	userCredits: number;
 	projectId?: string;
 };
@@ -82,24 +82,46 @@ export function ProjectCard({
 		<>
 			<Card className="group hover:-translate-y-2 overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl">
 				{/* Thumbnail placeholder */}
-				<div className="relative overflow-hidden">
-					<div className="flex h-48 w-full items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
-						<div className="text-center">
-							<div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
-								<Code2 className="h-8 w-8 text-blue-600" />
+				{projectTemplate.images.length > 0 && (
+					<div className="relative h-48 w-full overflow-hidden">
+						<div className="absolute top-3 right-3 z-10">
+							<Badge
+								className={`${getAccessTypeColor(accessType)} font-medium`}
+							>
+								{getAccessTypeIcon(accessType)}
+								<span className="ml-1">{accessType}</span>
+							</Badge>
+						</div>
+						<Image
+							src={projectTemplate.images[0]?.url ?? ''}
+							alt={projectTemplate.images[0]?.alt ?? ''}
+							fill
+							className="object-cover"
+						/>
+					</div>
+				)}
+				{!projectTemplate.images.length && (
+					<div className="relative overflow-hidden">
+						<div className="flex h-48 w-full items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+							<div className="text-center">
+								<div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
+									<Code2 className="h-8 w-8 text-blue-600" />
+								</div>
+								<p className="font-medium text-blue-700">
+									{projectTemplate.category.name}
+								</p>
 							</div>
-							<p className="font-medium text-blue-700">
-								{projectTemplate.category.name}
-							</p>
+						</div>
+						<div className="absolute top-3 right-3">
+							<Badge
+								className={`${getAccessTypeColor(accessType)} font-medium`}
+							>
+								{getAccessTypeIcon(accessType)}
+								<span className="ml-1">{accessType}</span>
+							</Badge>
 						</div>
 					</div>
-					<div className="absolute top-3 right-3">
-						<Badge className={`${getAccessTypeColor(accessType)} font-medium`}>
-							{getAccessTypeIcon(accessType)}
-							<span className="ml-1">{accessType}</span>
-						</Badge>
-					</div>
-				</div>
+				)}
 
 				<CardHeader className="pb-3">
 					<div className="flex items-start justify-between gap-3">
