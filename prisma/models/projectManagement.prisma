@@ -18,6 +18,7 @@ model Task {
   blockedReason String?
 
   storyPoints Int?
+  prUrl       String?
 
   assigneeId String?
   assignee   User?   @relation(fields: [assigneeId], references: [id])

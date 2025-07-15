@@ -109,7 +109,6 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 				))}
 			</div>
 
-			{/* TaskDialog for both creating and editing tasks */}
 			<TaskDialog
 				task={selectedTask || undefined}
 				projectId={projectId}

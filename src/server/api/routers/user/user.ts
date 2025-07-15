@@ -1,3 +1,4 @@
+import { clerkClient } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { passwordSchema, userDbSchema } from '~/features/schemas/auth.schema';
 import {
@@ -40,5 +41,16 @@ export const userRouter = createTRPCRouter({
 			where: { id: ctx.session.userId },
 			select: { credits: true }
 		});
-	})
+	}),
+
+	getAvatar: protectedProcedure
+		.input(
+			z.object({
+				userId: z.string()
+			})
+		)
+		.query(async ({ input }) => {
+			const clerkUser = await clerkClient.users.getUser(input.userId);
+			return clerkUser.imageUrl;
+		})
 });

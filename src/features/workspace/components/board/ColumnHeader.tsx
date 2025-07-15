@@ -20,7 +20,7 @@ export function ColumnHeader({
 	const { openDialog } = useDialog('task');
 
 	const handleOpenTaskDialog = () => {
-		onCreateTask?.(); // Clear any selected task to create new one
+		onCreateTask?.();
 		openDialog('task');
 	};
 

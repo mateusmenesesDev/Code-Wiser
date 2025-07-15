@@ -48,10 +48,20 @@ export const taskMutations = {
 	update: protectedProcedure
 		.input(updateTaskSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...rest } = input;
+			const { id, epicId, sprintId, assigneeId, ...rest } = input;
+
 			const task = await ctx.db.task.update({
 				where: { id },
-				data: { ...rest }
+				data: {
+					...rest,
+					assignee: assigneeId
+						? { connect: { id: assigneeId } }
+						: { disconnect: true },
+					epic: epicId ? { connect: { id: epicId } } : { disconnect: true },
+					sprint: sprintId
+						? { connect: { id: sprintId } }
+						: { disconnect: true }
+				}
 			});
 			return task;
 		}),

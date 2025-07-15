@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Task } from '@prisma/client';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
-import { Clock, GitBranch, Loader2, MessageSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Clock, GitBranch, Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { Avatar, AvatarFallback } from '~/common/components/ui/avatar';
 import { Button } from '~/common/components/ui/button';
 import {
 	Dialog,
@@ -36,6 +35,7 @@ import {
 	SelectValue
 } from '~/common/components/ui/select';
 import { TagsInput } from './TagsInput';
+import { TaskComments } from './TaskComments';
 
 dayjs.extend(relativeTime);
 
@@ -57,8 +57,6 @@ interface TaskDialogProps {
 			email: string;
 		};
 	}>;
-	onAddComment?: (content: string) => Promise<void>;
-	isAddingComment?: boolean;
 	epics?: Array<{ id: string; title: string }>;
 	sprints?: Array<{ id: string; title: string }>;
 	onSubmit: (data: TaskFormData) => Promise<void>;
@@ -70,16 +68,12 @@ export function TaskDialog({
 	projectId,
 	projectTemplateId,
 	comments = [],
-	onAddComment,
-	isAddingComment = false,
 	epics = [],
 	sprints = [],
 	onSubmit,
 	isSubmitting = false
 }: TaskDialogProps) {
 	const { isDialogOpen, closeDialog } = useDialog('task');
-	const [prUrl, setPrUrl] = useState('');
-	const [newComment, setNewComment] = useState('');
 
 	const isEditing = !!task;
 
@@ -105,7 +99,8 @@ export function TaskDialog({
 				dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
 				projectId,
 				projectTemplateId,
-				storyPoints: task.storyPoints ?? undefined
+				storyPoints: task.storyPoints ?? undefined,
+				prUrl: task.prUrl ?? undefined
 			};
 			form.reset(formData);
 		}
@@ -125,24 +120,6 @@ export function TaskDialog({
 				return 'Done';
 			default:
 				return status;
-		}
-	};
-
-	const handleAddComment = async () => {
-		if (!newComment.trim() || !onAddComment) return;
-
-		try {
-			await onAddComment(newComment.trim());
-			setNewComment('');
-		} catch (error) {
-			console.error('Error adding comment:', error);
-		}
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-			e.preventDefault();
-			void handleAddComment();
 		}
 	};
 
@@ -251,8 +228,7 @@ export function TaskDialog({
 										<div className="flex gap-2">
 											<Input
 												type="url"
-												value={prUrl}
-												onChange={(e) => setPrUrl(e.target.value)}
+												{...form.register('prUrl')}
 												placeholder="https://github.com/user/repo/pull/123"
 												className="flex-1"
 												disabled={!isEditing}
@@ -263,7 +239,7 @@ export function TaskDialog({
 													: 'Save (Soon)'}
 											</Button>
 										</div>
-										{prUrl && isEditing && (
+										{form.watch('prUrl') && isEditing && (
 											<Button
 												variant="outline"
 												size="sm"
@@ -271,7 +247,7 @@ export function TaskDialog({
 												asChild
 											>
 												<a
-													href={prUrl}
+													href={form.watch('prUrl')}
 													target="_blank"
 													rel="noopener noreferrer"
 												>
@@ -284,84 +260,11 @@ export function TaskDialog({
 								</div>
 
 								{/* Comments */}
-								<div className={cn(!isEditing && 'opacity-50')}>
-									<h3 className="mb-3 font-medium text-muted-foreground text-sm">
-										<MessageSquare className="mr-1 inline h-4 w-4" />
-										Comments ({isEditing ? comments.length : 0})
-									</h3>
-
-									{isEditing ? (
-										<>
-											<div className="max-h-60 space-y-3 overflow-y-auto">
-												{comments.map((comment) => {
-													const isOptimistic = comment.id.startsWith('temp-');
-													return (
-														<div
-															key={comment.id}
-															className={cn(
-																'flex gap-3',
-																isOptimistic && 'opacity-70'
-															)}
-														>
-															<Avatar className="h-8 w-8">
-																<AvatarFallback className="text-xs">
-																	{comment.author.name?.[0] ||
-																		comment.author.email[0]}
-																</AvatarFallback>
-															</Avatar>
-															<div className="flex-1 space-y-1">
-																<div className="flex items-center gap-2">
-																	<span className="font-medium text-sm">
-																		{comment.author.name ||
-																			comment.author.email}
-																	</span>
-																	<span className="text-muted-foreground text-xs">
-																		{dayjs(comment.createdAt).fromNow()}
-																	</span>
-																	{isOptimistic && (
-																		<span className="text-muted-foreground text-xs italic">
-																			Sending...
-																		</span>
-																	)}
-																</div>
-																<p className="text-sm">{comment.content}</p>
-															</div>
-														</div>
-													);
-												})}
-											</div>
-
-											{/* Add Comment */}
-											<div className="mt-4 space-y-2">
-												<Textarea
-													placeholder="Add a comment... (Ctrl+Enter to submit)"
-													value={newComment}
-													onChange={(e) => setNewComment(e.target.value)}
-													onKeyDown={handleKeyDown}
-													className="min-h-[80px]"
-													disabled={isAddingComment}
-												/>
-												<Button
-													onClick={handleAddComment}
-													size="sm"
-													disabled={isAddingComment || !newComment.trim()}
-												>
-													{isAddingComment && (
-														<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-													)}
-													{isAddingComment ? 'Adding...' : 'Add Comment'}
-												</Button>
-											</div>
-										</>
-									) : (
-										<div className="rounded-lg border border-muted-foreground/25 border-dashed p-6 text-center">
-											<MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-											<p className="text-muted-foreground text-sm">
-												Comments will be available after creating the task
-											</p>
-										</div>
-									)}
-								</div>
+								<TaskComments
+									comments={comments}
+									taskId={task?.id}
+									isEditing={isEditing}
+								/>
 							</div>
 
 							{/* Sidebar */}

@@ -16,7 +16,8 @@ export const baseTaskSchema = z.object({
 	status: z.nativeEnum(TaskStatusEnum).optional(),
 	order: z.number().optional(),
 	storyPoints: z.number().optional(),
-	dueDate: z.coerce.date().optional()
+	dueDate: z.coerce.date().optional(),
+	prUrl: z.string().optional()
 });
 
 export const createTaskSchema = baseTaskSchema

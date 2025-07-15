@@ -12,7 +12,6 @@ export const getCommentsByTaskId = protectedProcedure
 		const { taskId } = input;
 		const userId = ctx.session.userId;
 
-		// Verify the task exists and user has access to it
 		const task = await ctx.db.task.findUnique({
 			where: { id: taskId },
 			include: {
@@ -31,7 +30,6 @@ export const getCommentsByTaskId = protectedProcedure
 			});
 		}
 
-		// Check if user has access to the task (either through project membership or if it's a template)
 		const hasAccess =
 			task.projectTemplateId ||
 			task.project?.members.some((user: { id: string }) => user.id === userId);
@@ -43,7 +41,6 @@ export const getCommentsByTaskId = protectedProcedure
 			});
 		}
 
-		// Get comments for the task
 		const comments = await ctx.db.comment.findMany({
 			where: { taskId },
 			include: {
@@ -56,7 +53,7 @@ export const getCommentsByTaskId = protectedProcedure
 				}
 			},
 			orderBy: {
-				createdAt: 'asc'
+				createdAt: 'desc'
 			}
 		});
 
