@@ -67,7 +67,13 @@ export function TaskDialog({
 	const isEditing = !!task;
 
 	const form = useForm<TaskFormData>({
-		resolver: zodResolver(isEditing ? updateTaskSchema : createTaskSchema)
+		resolver: zodResolver(isEditing ? updateTaskSchema : createTaskSchema),
+		defaultValues: {
+			status: TaskStatusEnum.BACKLOG,
+			priority: TaskPriorityEnum.MEDIUM,
+			blocked: false,
+			tags: []
+		}
 	});
 
 	useEffect(() => {
@@ -260,9 +266,11 @@ export function TaskDialog({
 										Status
 									</Label>
 									<Select
-										value={form.watch('status') || TaskStatusEnum.BACKLOG}
+										value={form.watch('status')}
 										onValueChange={(value) =>
-											form.setValue('status', value as TaskStatusEnum)
+											form.setValue('status', value as TaskStatusEnum, {
+												shouldDirty: true
+											})
 										}
 									>
 										<SelectTrigger>
@@ -284,9 +292,11 @@ export function TaskDialog({
 										Priority
 									</Label>
 									<Select
-										value={form.watch('priority') || TaskPriorityEnum.MEDIUM}
+										value={form.watch('priority')}
 										onValueChange={(value) =>
-											form.setValue('priority', value as TaskPriorityEnum)
+											form.setValue('priority', value as TaskPriorityEnum, {
+												shouldDirty: true
+											})
 										}
 									>
 										<SelectTrigger>
@@ -312,7 +322,8 @@ export function TaskDialog({
 										onValueChange={(value) =>
 											form.setValue(
 												'assigneeId',
-												value === 'none' ? undefined : value
+												value === 'none' ? undefined : value,
+												{ shouldDirty: true }
 											)
 										}
 									>
@@ -347,11 +358,12 @@ export function TaskDialog({
 										Epic
 									</Label>
 									<Select
-										value={form.watch('epicId') || 'none'}
+										value={form.watch('epicId') ?? 'none'}
 										onValueChange={(value) =>
 											form.setValue(
 												'epicId',
-												value === 'none' ? undefined : value
+												value === 'none' ? undefined : value,
+												{ shouldDirty: true }
 											)
 										}
 										disabled={epics.length === 0}
@@ -382,11 +394,12 @@ export function TaskDialog({
 										Sprint
 									</Label>
 									<Select
-										value={form.watch('sprintId') || 'none'}
+										value={form.watch('sprintId') ?? 'none'}
 										onValueChange={(value) =>
 											form.setValue(
 												'sprintId',
-												value === 'none' ? undefined : value
+												value === 'none' ? undefined : value,
+												{ shouldDirty: true }
 											)
 										}
 										disabled={sprints.length === 0}
