@@ -1,10 +1,23 @@
 import type { TaskStatusEnum } from '@prisma/client';
-import { ArrowUp, Calendar, Flag, MoreVertical, User } from 'lucide-react';
+import {
+	ArrowUp,
+	Calendar,
+	Flag,
+	Lock,
+	MoreVertical,
+	User
+} from 'lucide-react';
 import { useRef } from 'react';
 import { useDrag } from 'react-dnd';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger
+} from '~/common/components/ui/tooltip';
 import { useDialog } from '~/common/hooks/useDialog';
 import { stripHtmlTags } from '~/common/utils/cleanups';
 import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
@@ -91,17 +104,37 @@ export function TaskCard({
 		>
 			<CardContent className="p-4">
 				<div className="mb-2 flex items-center justify-between">
-					<Badge
-						variant="outline"
-						className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
-					>
-						<ArrowUp className="mr-1 h-2 w-2" />
-						{/* Find the epic name */}
-						{task.epicId && projectData?.epics
-							? projectData.epics.find((epic) => epic.id === task.epicId)
-									?.title || 'Epic'
-							: 'Epic (Coming Soon)'}
-					</Badge>
+					<div className="flex items-center gap-2">
+						<Badge
+							variant="outline"
+							className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+						>
+							<ArrowUp className="mr-1 h-2 w-2" />
+							{/* Find the epic name */}
+							{task.epicId && projectData?.epics
+								? projectData.epics.find((epic) => epic.id === task.epicId)
+										?.title || 'Epic'
+								: 'Epic (Coming Soon)'}
+						</Badge>
+						{task.blocked && (
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Badge
+											variant="outline"
+											className="border-red-200 bg-red-100 text-red-800 text-xs dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
+										>
+											<Lock className="mr-1 h-2 w-2" />
+											Blocked
+										</Badge>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>{task.blockedReason || 'This task is blocked'}</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						)}
+					</div>
 					<div className="flex items-center gap-1 text-muted-foreground">
 						<div className="h-1 w-1 rounded-full bg-current" />
 						<div className="h-1 w-1 rounded-full bg-current" />

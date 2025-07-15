@@ -419,7 +419,20 @@ export function TaskDialog({
 								{/* Blocked Status Toggle */}
 								<div className="space-y-3 rounded-lg border bg-muted/20 p-4">
 									<div className="flex items-center space-x-2">
-										<Switch id="blocked" {...form.register('blocked')} />
+										<Switch
+											id="blocked"
+											checked={form.watch('blocked') ?? false}
+											onCheckedChange={(checked) => {
+												form.setValue('blocked', checked, {
+													shouldDirty: true
+												});
+												if (!checked) {
+													form.setValue('blockedReason', undefined, {
+														shouldDirty: true
+													});
+												}
+											}}
+										/>
 										<Label htmlFor="blocked" className="font-medium text-sm">
 											This task is blocked
 										</Label>
