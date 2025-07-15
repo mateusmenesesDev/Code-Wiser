@@ -6,7 +6,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { z } from 'zod';
 import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
-import { useComments } from '~/features/workspace/hooks/useComments';
 import { useTask } from '~/features/workspace/hooks/useTask';
 import type {
 	createTaskSchema,
@@ -39,10 +38,6 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 	});
 
 	const { createTask, updateTask } = useTask({ projectId });
-
-	const { comments, addComment, isAddingComment } = useComments({
-		taskId: selectedTask?.id || ''
-	});
 
 	const transformedColumns: Column[] = columns.map((column) => ({
 		id: column.id,
@@ -81,15 +76,6 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 		setSelectedTask(null); // Clear selected task to create new one
 	}, []);
 
-	const handleAddComment = useCallback(
-		async (content: string): Promise<void> => {
-			if (selectedTask) {
-				await addComment(content);
-			}
-		},
-		[addComment, selectedTask]
-	);
-
 	if (isLoading) {
 		return <div>Loading...</div>;
 	}
@@ -112,9 +98,6 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 			<TaskDialog
 				task={selectedTask || undefined}
 				projectId={projectId}
-				comments={selectedTask ? comments : []}
-				onAddComment={selectedTask ? handleAddComment : undefined}
-				isAddingComment={selectedTask ? isAddingComment : false}
 				epics={projectData?.epics || []}
 				sprints={projectData?.sprints || []}
 				onSubmit={handleTaskSubmit}

@@ -25,19 +25,19 @@ import { cn } from '~/lib/utils';
 dayjs.extend(relativeTime);
 
 interface TaskCommentsProps {
-	comments: CommentsApiOutput;
 	isEditing: boolean;
-	taskId: string | undefined;
+	taskId: string;
 }
 
-export function TaskComments({
-	comments,
-	taskId,
-	isEditing
-}: TaskCommentsProps) {
+export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
 	const { user } = useAuth();
-	const { addComment, updateComment, deleteComment, updateCommentMutation } =
-		useComments({ taskId: taskId || '' });
+	const {
+		addComment,
+		updateComment,
+		deleteComment,
+		updateCommentMutation,
+		comments
+	} = useComments({ taskId });
 	const [newComment, setNewComment] = useState('');
 	const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
 	const [editedContent, setEditedContent] = useState('');

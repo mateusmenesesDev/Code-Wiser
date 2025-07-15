@@ -34,7 +34,7 @@ export function createProjectTemplateData(
 		},
 		preRequisites: input.preRequisites,
 		images: {
-			create: input.images?.map((image) => ({ url: image.file.name }))
+			create: input.images?.map((image) => ({ url: image.url }))
 		}
 	};
 }

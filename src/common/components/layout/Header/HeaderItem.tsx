@@ -1,15 +1,17 @@
 import { Protect } from '@clerk/nextjs';
+import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { MENU_ITEMS } from '~/common/constants/menuItem';
 
 export const MenuItem = ({ item }: { item: (typeof MENU_ITEMS)[number] }) => {
+	const Icon = item.Icon as LucideIcon;
 	return (
 		<Link
 			key={item.href}
 			href={item.href}
 			className="group flex items-center gap-2 font-medium text-muted-foreground transition-colors hover:text-dev-blue-600"
 		>
-			<item.icon className="h-4 w-4" />
+			<Icon className="h-4 w-4" />
 			{item.label}
 		</Link>
 	);

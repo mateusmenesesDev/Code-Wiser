@@ -48,9 +48,11 @@ const AdminProjectEdit = () => {
 		expectedDuration: template.expectedDuration || '',
 		learningOutcomes: template.learningOutcomes.map((outcome) => outcome.value),
 		milestones: template.milestones.map((milestone) => milestone.title),
-		minParticipants: template.minParticipants,
-		maxParticipants: template.maxParticipants,
-		methodology: template.methodology || ProjectMethodologyEnum.SCRUM
+		methodology: template.methodology || ProjectMethodologyEnum.SCRUM,
+		images: template.images.map((image) => ({
+			url: image.url,
+			alt: image.alt || ''
+		}))
 	};
 
 	return (

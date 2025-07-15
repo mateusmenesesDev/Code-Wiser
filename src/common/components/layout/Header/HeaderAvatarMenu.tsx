@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import { ChevronDown, CreditCard, FolderOpen, LogIn, User } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -49,26 +50,28 @@ export default function HeaderAvatarMenu() {
 						Upgrade (Coming Soon)
 					</Link>
 				</DropdownMenuItem>
-				{MENU_ITEMS_WITH_PERMISSION.map(
-					(item) =>
-						item.orgPermission && (
+				{MENU_ITEMS_WITH_PERMISSION.map((Item) => {
+					const Icon = Item.Icon as LucideIcon;
+					return (
+						Item.orgPermission && (
 							<Protect
-								key={item.href}
-								permission={item.orgPermission.permission}
+								key={Item.href}
+								permission={Item.orgPermission.permission}
 							>
 								<DropdownMenuItem
 									asChild
-									disabled={item.disabled}
+									disabled={Item.disabled}
 									className="cursor-pointer"
 								>
-									<Link href={item.href} className="flex items-center gap-2">
-										<item.icon className="h-4 w-4" />
-										{item.label}
+									<Link href={Item.href} className="flex items-center gap-2">
+										<Icon className="h-4 w-4" />
+										{Item.label}
 									</Link>
 								</DropdownMenuItem>
 							</Protect>
 						)
-				)}
+					);
+				})}
 				<DropdownMenuItem
 					onClick={signOut}
 					className="flex items-center gap-2 text-red-600 dark:text-red-400"

@@ -17,7 +17,6 @@ import {
 import { useDialog } from '~/common/hooks/useDialog';
 import { useSprintQueries } from '~/features/sprints/hooks/useSprintQueries';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
-import { useComments } from '../../hooks/useComments';
 import { useTask } from '../../hooks/useTask';
 import type {
 	CreateTaskInput,
@@ -43,10 +42,6 @@ export default function Backlog({ projectId }: { projectId: string }) {
 		getAllTasksByProjectId(projectId);
 
 	const isLoading = isSprintsLoading || isTasksLoading;
-
-	const { comments, addComment, isAddingComment } = useComments({
-		taskId: selectedTask?.id || ''
-	});
 
 	const handleTaskSubmit = useCallback(
 		async (data: CreateTaskInput | UpdateTaskInput) => {
@@ -75,15 +70,6 @@ export default function Backlog({ projectId }: { projectId: string }) {
 			openDialog('task');
 		},
 		[openDialog]
-	);
-
-	const handleAddComment = useCallback(
-		async (content: string): Promise<void> => {
-			if (selectedTask) {
-				await addComment(content);
-			}
-		},
-		[addComment, selectedTask]
 	);
 
 	const moveTask = useCallback(
@@ -156,9 +142,6 @@ export default function Backlog({ projectId }: { projectId: string }) {
 				<TaskDialog
 					task={selectedTask || undefined}
 					projectId={id as string}
-					comments={selectedTask ? comments : []}
-					onAddComment={selectedTask ? handleAddComment : undefined}
-					isAddingComment={selectedTask ? isAddingComment : false}
 					sprints={sprints}
 					onSubmit={handleTaskSubmit}
 				/>

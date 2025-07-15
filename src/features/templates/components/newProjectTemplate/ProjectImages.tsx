@@ -21,8 +21,8 @@ export function ProjectImages({ form }: ProjectImagesProps) {
 		if (e.target.files) {
 			const files = Array.from(e.target.files);
 			const newImages = files.map((file) => ({
-				file,
-				preview: URL.createObjectURL(file)
+				url: URL.createObjectURL(file),
+				alt: file.name
 			}));
 			setValue('images', [...(watch('images') || []), ...newImages]);
 		}
@@ -43,9 +43,9 @@ export function ProjectImages({ form }: ProjectImagesProps) {
 			<Label>Project Images</Label>
 			<div className="grid grid-cols-2 gap-4 md:grid-cols-3">
 				{watch('images')?.map((image, index) => (
-					<div key={image.preview} className="relative aspect-square">
+					<div key={image.url} className="relative aspect-square">
 						<Image
-							src={image.preview}
+							src={image.url}
 							alt={`Project image ${index + 1}`}
 							fill
 							className="rounded-md object-cover"

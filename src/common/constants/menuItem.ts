@@ -2,7 +2,7 @@ import { FolderOpen, Settings, Users } from 'lucide-react';
 
 type MenuItem = {
 	href: string;
-	icon: React.ElementType;
+	Icon: React.ElementType;
 	label: string;
 	comingSoon?: boolean;
 	loginRequired?: boolean;
@@ -13,55 +13,55 @@ type MenuItem = {
 export const MENU_ITEMS: MenuItem[] = [
 	// {
 	// 	href: '/',
-	// 	icon: Layout,
+	// 	Icon: Layout,
 	// 	label: 'Dashboard',
 	// 	comingSoon: true,
 	// 	loginRequired: true
 	// },
 	{
 		href: '/my-projects',
-		icon: FolderOpen,
+		Icon: FolderOpen,
 		label: 'My Projects',
 		loginRequired: true
 	}
 	// {
 	// 	href: '/mentors',
-	// 	icon: Users,
+	// 	Icon: Users,
 	// 	label: 'Mentors',
 	// 	comingSoon: true,
 	// 	loginRequired: true
 	// },
 	// {
 	// 	href: '/messages',
-	// 	icon: MessageSquare,
+	// 	Icon: MessageSquare,
 	// 	label: 'Messages',
 	// 	comingSoon: true,
 	// 	loginRequired: true
 	// },
 	// {
 	// 	href: '/community',
-	// 	icon: Users2,
+	// 	Icon: Users2,
 	// 	label: 'Community',
 	// 	comingSoon: true,
 	// 	loginRequired: true
 	// },
 	// {
 	// 	href: '/forum',
-	// 	icon: MessageCircle,
+	// 	Icon: MessageCircle,
 	// 	label: 'Forum',
 	// 	comingSoon: true,
 	// 	loginRequired: true
 	// },
 	// {
 	// 	href: '/profile',
-	// 	icon: User,
+	// 	Icon: User,
 	// 	label: 'Profile',
 	// 	comingSoon: true,
 	// 	loginRequired: true
 	// },
 	// {
 	// 	href: '/settings',
-	// 	icon: Settings,
+	// 	Icon: Settings,
 	// 	label: 'Settings',
 	// 	comingSoon: true,
 	// 	loginRequired: true
@@ -71,7 +71,7 @@ export const MENU_ITEMS: MenuItem[] = [
 export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 	{
 		href: '/admin/templates',
-		icon: Settings,
+		Icon: Settings,
 		label: 'Admin Projects',
 		orgPermission: {
 			permission: 'org:project:edit_template',
@@ -81,7 +81,7 @@ export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 	},
 	{
 		href: '/admin/mentorship',
-		icon: Users,
+		Icon: Users,
 		label: 'Admin Mentorship',
 		orgPermission: {
 			permission: 'org:project:edit_template',

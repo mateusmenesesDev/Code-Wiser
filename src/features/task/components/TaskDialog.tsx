@@ -47,16 +47,6 @@ interface TaskDialogProps {
 	task?: Task;
 	projectId?: string;
 	projectTemplateId?: string;
-	comments?: Array<{
-		id: string;
-		content: string;
-		createdAt: Date;
-		author: {
-			id: string;
-			name: string | null;
-			email: string;
-		};
-	}>;
 	epics?: Array<{ id: string; title: string }>;
 	sprints?: Array<{ id: string; title: string }>;
 	onSubmit: (data: TaskFormData) => Promise<void>;
@@ -67,7 +57,6 @@ export function TaskDialog({
 	task,
 	projectId,
 	projectTemplateId,
-	comments = [],
 	epics = [],
 	sprints = [],
 	onSubmit,
@@ -260,11 +249,7 @@ export function TaskDialog({
 								</div>
 
 								{/* Comments */}
-								<TaskComments
-									comments={comments}
-									taskId={task?.id}
-									isEditing={isEditing}
-								/>
+								<TaskComments taskId={task?.id || ''} isEditing={isEditing} />
 							</div>
 
 							{/* Sidebar */}
