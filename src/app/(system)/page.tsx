@@ -1,3 +1,4 @@
+import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import Projects from '~/features/projects/components/Projects';
 import { api } from '~/trpc/server';
@@ -16,11 +17,11 @@ export const metadata: Metadata = {
 
 export default async function Home() {
 	const projects = await api.projectTemplate.getApproved();
-	const userProjects = await api.project.getEnrolled();
+	const { userId } = auth();
+	const userProjects = userId ? await api.project.getEnrolled() : [];
 
 	return (
 		<main>
-			<h1 className="sr-only">Code Wise Project Templates</h1>
 			<Projects
 				initialProjectsData={projects}
 				initialUserProjectsData={userProjects}

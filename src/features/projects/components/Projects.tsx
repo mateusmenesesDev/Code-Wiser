@@ -22,13 +22,11 @@ import { ProjectCard } from './ProjectCard';
 import { ProjectCardSkeleton } from './ProjectCardSkeleton';
 
 type ProjectsProps = {
-	approvalPage?: boolean;
 	initialProjectsData?: ApprovedProjectsApiOutput;
 	initialUserProjectsData?: UserProjectApiResponse[];
 };
 
 export default function Projects({
-	approvalPage = false,
 	initialProjectsData,
 	initialUserProjectsData
 }: ProjectsProps) {
@@ -65,32 +63,30 @@ export default function Projects({
 	return (
 		<div className="container mx-auto px-4 py-8">
 			{/* Hero Section */}
-			{!approvalPage && (
-				<div className="mb-12 animate-fade-in text-center">
-					<h1 className="mb-4 font-bold text-5xl">
-						Master Fullstack Development
-					</h1>
-					<p className="mx-auto mb-8 max-w-3xl text-muted-foreground text-xl">
-						Discover hands-on projects designed to elevate your coding skills.
-						From beginner-friendly tasks to advanced challenges, find the
-						perfect project to accelerate your development journey.
-					</p>
-					<div className="flex items-center justify-center gap-6 text-muted-foreground text-sm">
-						<div className="flex items-center gap-2">
-							<Code2 className="h-5 w-5 text-blue-600" />
-							<span>50+ Projects</span>
-						</div>
-						<div className="flex items-center gap-2">
-							<Users className="h-5 w-5 text-purple-600" />
-							<span>Expert Mentors</span>
-						</div>
-						<div className="flex items-center gap-2">
-							<Award className="h-5 w-5 text-green-600" />
-							<span>Real-world Skills</span>
-						</div>
+			<div className="mb-12 animate-fade-in text-center">
+				<h1 className="mb-4 font-bold text-5xl">
+					Master Fullstack Development
+				</h1>
+				<p className="mx-auto mb-8 max-w-3xl text-muted-foreground text-xl">
+					Discover hands-on projects designed to elevate your coding skills.
+					From beginner-friendly tasks to advanced challenges, find the perfect
+					project to accelerate your development journey.
+				</p>
+				<div className="flex items-center justify-center gap-6 text-muted-foreground text-sm">
+					<div className="flex items-center gap-2">
+						<Code2 className="h-5 w-5 text-blue-600" />
+						<span>50+ Projects</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<Users className="h-5 w-5 text-purple-600" />
+						<span>Expert Mentors</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<Award className="h-5 w-5 text-green-600" />
+						<span>Real-world Skills</span>
 					</div>
 				</div>
-			)}
+			</div>
 
 			{/* Search and Filters */}
 			<div className="mb-8 animate-slide-up rounded-2xl p-6 shadow-lg">
