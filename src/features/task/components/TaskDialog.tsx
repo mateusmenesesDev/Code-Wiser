@@ -196,24 +196,6 @@ export function TaskDialog({
 									</div>
 								</div>
 
-								{/* Blocked Status Display Section - Only show if task is actually blocked */}
-								{isEditing && task?.blocked && (
-									<div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900/20">
-										<div className="flex items-start gap-3">
-											<div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
-											<div className="flex-1">
-												<h3 className="mb-1 font-semibold text-red-700 text-sm dark:text-red-300">
-													Task Blocked
-												</h3>
-												<p className="text-red-600 text-sm dark:text-red-400">
-													{task.blockedReason ||
-														'This task is currently blocked.'}
-												</p>
-											</div>
-										</div>
-									</div>
-								)}
-
 								{/* Links and Pull Request */}
 								<div className={cn('space-y-4', !isEditing && 'opacity-50')}>
 									<div>
