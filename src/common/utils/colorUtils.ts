@@ -47,12 +47,16 @@ export const getCategoryColor = (category: string) => {
 	}
 };
 
-export const getAccessTypeColor = (accessType: 'Free' | 'Credits') => {
+export const getAccessTypeColor = (
+	accessType: 'FREE' | 'CREDITS' | 'MENTORSHIP'
+) => {
 	switch (accessType) {
-		case 'Free':
+		case 'FREE':
 			return green;
-		case 'Credits':
+		case 'CREDITS':
 			return purple;
+		case 'MENTORSHIP':
+			return orange;
 		default:
 			return gray;
 	}

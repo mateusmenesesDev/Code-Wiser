@@ -1,3 +1,4 @@
+import type { TRPCClientError } from '@trpc/client';
 import {
 	Check,
 	Clock,
@@ -28,8 +29,8 @@ import {
 	getCategoryColor,
 	getDifficultyColor
 } from '~/common/utils/colorUtils';
-import { getAccessType } from '~/common/utils/projectUtils';
 import { cn } from '~/lib/utils';
+import type { AppRouter } from '~/server/api/root';
 import { useProjectMutations } from '../hooks/useProjectMutations';
 import type { ProjectTemplateApiOutput } from '../types/Projects.type';
 
@@ -59,20 +60,45 @@ export function ProjectCard({
 			{
 				loading: 'Creating project...',
 				success: 'Project created successfully',
-				error: 'Failed to create project'
+				error: (error: TRPCClientError<AppRouter>) => {
+					if (error.data?.code === 'FORBIDDEN') {
+						return (
+							<div className="flex flex-col gap-2">
+								<p>You do not have enough credits to create this project</p>
+								<div className="flex gap-2">
+									<Button
+										size="sm"
+										variant="secondary"
+										onClick={() => router.push('/pricing')}
+									>
+										Upgrade Plan
+									</Button>
+									<Button size="sm" onClick={() => router.push('/pricing')}>
+										Buy Credits
+									</Button>
+								</div>
+							</div>
+						);
+					}
+					return 'Failed to create project';
+				},
+				duration: Number.POSITIVE_INFINITY,
+				dismissible: true,
+				closeButton: true
 			}
 		);
 	};
 
-	const accessType = getAccessType(projectTemplate.credits);
 	const estimatedTime = projectTemplate.expectedDuration || '4-6 weeks';
 
-	const getAccessTypeIcon = (accessType: 'Free' | 'Credits') => {
+	const getAccessTypeIcon = (accessType: 'FREE' | 'CREDITS' | 'MENTORSHIP') => {
 		switch (accessType) {
-			case 'Free':
+			case 'FREE':
 				return <Gift className="h-3 w-3" />;
-			case 'Credits':
+			case 'CREDITS':
 				return <Zap className="h-3 w-3" />;
+			case 'MENTORSHIP':
+				return <Users className="h-3 w-3" />;
 			default:
 				return null;
 		}
@@ -86,10 +112,10 @@ export function ProjectCard({
 					<div className="relative h-48 w-full overflow-hidden">
 						<div className="absolute top-3 right-3 z-10">
 							<Badge
-								className={`${getAccessTypeColor(accessType)} font-medium`}
+								className={`${getAccessTypeColor(projectTemplate.accessType as 'FREE' | 'CREDITS' | 'MENTORSHIP')} font-medium`}
 							>
-								{getAccessTypeIcon(accessType)}
-								<span className="ml-1">{accessType}</span>
+								{getAccessTypeIcon(projectTemplate.accessType)}
+								<span className="ml-1">{projectTemplate.accessType}</span>
 							</Badge>
 						</div>
 						<Image
@@ -114,10 +140,10 @@ export function ProjectCard({
 						</div>
 						<div className="absolute top-3 right-3">
 							<Badge
-								className={`${getAccessTypeColor(accessType)} font-medium`}
+								className={`${getAccessTypeColor(projectTemplate.accessType as 'FREE' | 'CREDITS' | 'MENTORSHIP')} font-medium`}
 							>
-								{getAccessTypeIcon(accessType)}
-								<span className="ml-1">{accessType}</span>
+								{getAccessTypeIcon(projectTemplate.accessType)}
+								<span className="ml-1">{projectTemplate.accessType}</span>
 							</Badge>
 						</div>
 					</div>

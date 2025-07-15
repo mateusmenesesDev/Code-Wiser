@@ -2,10 +2,6 @@
  * Project and template utility functions
  */
 
-export const getAccessType = (credits: number | null): 'Free' | 'Credits' => {
-	return credits && credits > 0 ? 'Credits' : 'Free';
-};
-
 export const formatTemplateStatus = (status: string) => {
 	switch (status) {
 		case 'APPROVED':
