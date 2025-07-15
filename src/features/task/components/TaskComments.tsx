@@ -95,7 +95,7 @@ export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
 
 			{isEditing ? (
 				<>
-					<div className="max-h-72 space-y-3 overflow-y-auto">
+					<div className="max-h-[13rem] space-y-3 overflow-y-auto">
 						{comments.map((comment) => {
 							const isEditing = editingCommentId === comment.id;
 							const isOwnComment = user?.id === comment.authorId;
