@@ -6,6 +6,7 @@ import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
 import { useDialog } from '~/common/hooks/useDialog';
+import { stripHtmlTags } from '~/common/utils/cleanups';
 import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
@@ -129,7 +130,7 @@ export function TaskCard({
 				</div>
 
 				<p className="mb-3 line-clamp-3 text-muted-foreground text-xs">
-					{task.description}
+					{task.description ? stripHtmlTags(task.description) : ''}
 				</p>
 
 				<div className="mb-3 flex flex-wrap gap-1">

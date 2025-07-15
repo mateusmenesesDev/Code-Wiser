@@ -25,7 +25,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 			});
 
 			const newTaskWithPrismaFields = {
-				...convertUndefinedToNull(newTask),
+				...convertUndefinedToNull(newTask, ['epicId', 'sprintId']),
 				id: '-1',
 				createdAt: new Date(),
 				updatedAt: new Date(),
@@ -74,7 +74,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 						if (task.id === taskUpdate.id) {
 							return {
 								...task,
-								...taskUpdate
+								...convertUndefinedToNull(taskUpdate, ['epicId', 'sprintId'])
 							};
 						}
 						return task;

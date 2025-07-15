@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { api } from '~/trpc/react';
 import { useSetAllTasks } from '../../hooks/useTaskFiltersUrl';
 import { TaskFilters } from '../TaskFilters';
@@ -27,7 +27,7 @@ export function KanbanBoard({
 		return projectData?.tasks || [];
 	}, [projectData?.tasks]);
 
-	useMemo(() => {
+	useEffect(() => {
 		setAllTasks(allTasks);
 	}, [allTasks, setAllTasks]);
 
