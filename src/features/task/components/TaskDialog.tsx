@@ -220,20 +220,12 @@ export function TaskDialog({
 										<h3 className="mb-2 font-medium text-muted-foreground text-sm">
 											Pull Request
 										</h3>
-										<div className="flex gap-2">
-											<Input
-												type="url"
-												{...form.register('prUrl')}
-												placeholder="https://github.com/user/repo/pull/123"
-												className="flex-1"
-												disabled={!isEditing}
-											/>
-											<Button variant="outline" size="sm" disabled={!isEditing}>
-												{!isEditing
-													? 'Available after creation'
-													: 'Save (Soon)'}
-											</Button>
-										</div>
+										<Input
+											type="url"
+											{...form.register('prUrl')}
+											placeholder="https://github.com/user/repo/pull/123"
+											className="flex-1"
+										/>
 										{form.watch('prUrl') && isEditing && (
 											<Button
 												variant="outline"
