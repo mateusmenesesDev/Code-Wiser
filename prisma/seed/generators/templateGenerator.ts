@@ -147,6 +147,26 @@ async function createRelatedEntities(
 	return tasks.length;
 }
 
+const getCreditsForDifficulty = (
+	difficulty: ProjectDifficultyEnum,
+	accessType: ProjectAccessTypeEnum
+) => {
+	if (accessType !== ProjectAccessTypeEnum.CREDITS) {
+		return null;
+	}
+
+	switch (difficulty) {
+		case ProjectDifficultyEnum.BEGINNER:
+			return 100;
+		case ProjectDifficultyEnum.INTERMEDIATE:
+			return 200;
+		case ProjectDifficultyEnum.ADVANCED:
+			return 300;
+		default:
+			return 0;
+	}
+};
+
 export async function createProjectTemplates(
 	prisma: PrismaClient,
 	categories: Category[],
@@ -191,10 +211,7 @@ export async function createProjectTemplates(
 				methodology,
 				minParticipants: faker.number.int({ min: 1, max: 3 }),
 				maxParticipants: faker.number.int({ min: 4, max: 8 }),
-				credits:
-					accessType === ProjectAccessTypeEnum.CREDITS
-						? faker.number.int({ min: 10, max: 50 })
-						: null,
+				credits: getCreditsForDifficulty(difficulty, accessType),
 				accessType,
 				status,
 				difficulty,
