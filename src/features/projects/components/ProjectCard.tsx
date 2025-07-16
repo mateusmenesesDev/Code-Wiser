@@ -42,6 +42,27 @@ type ProjectCardProps = {
 	projectId?: string;
 };
 
+const InsufficientCreditsError = () => {
+	const router = useRouter();
+	return (
+		<div className="flex flex-col gap-2">
+			<p>You do not have enough credits to create this project</p>
+			<div className="flex gap-2">
+				<Button
+					size="sm"
+					variant="secondary"
+					onClick={() => router.push('/pricing')}
+				>
+					Upgrade Plan
+				</Button>
+				<Button size="sm" onClick={() => router.push('/pricing')}>
+					Buy Credits
+				</Button>
+			</div>
+		</div>
+	);
+};
+
 export function ProjectCard({
 	projectTemplate,
 	userCredits,
@@ -62,6 +83,13 @@ export function ProjectCard({
 			return;
 		}
 
+		if (projectTemplate.credits && userCredits < projectTemplate.credits) {
+			return toast.info(<InsufficientCreditsError />, {
+				dismissible: true,
+				closeButton: true
+			});
+		}
+
 		toast.promise(
 			createProjectAsync({
 				projectTemplateId: projectTemplate.id
@@ -71,27 +99,10 @@ export function ProjectCard({
 				success: 'Project created successfully',
 				error: (error: TRPCClientError<AppRouter>) => {
 					if (error.data?.code === 'FORBIDDEN') {
-						return (
-							<div className="flex flex-col gap-2">
-								<p>You do not have enough credits to create this project</p>
-								<div className="flex gap-2">
-									<Button
-										size="sm"
-										variant="secondary"
-										onClick={() => router.push('/pricing')}
-									>
-										Upgrade Plan
-									</Button>
-									<Button size="sm" onClick={() => router.push('/pricing')}>
-										Buy Credits
-									</Button>
-								</div>
-							</div>
-						);
+						return <InsufficientCreditsError />;
 					}
 					return 'Failed to create project';
 				},
-				duration: Number.POSITIVE_INFINITY,
 				dismissible: true,
 				closeButton: true
 			}
