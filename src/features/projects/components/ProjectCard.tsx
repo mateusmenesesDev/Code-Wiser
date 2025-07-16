@@ -106,7 +106,7 @@ export function ProjectCard({
 
 	return (
 		<>
-			<Card className="group hover:-translate-y-2 overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl">
+			<Card className="group hover:-translate-y-2 h-full overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl">
 				{/* Thumbnail placeholder */}
 				{projectTemplate.images.length > 0 && (
 					<div className="relative h-48 w-full overflow-hidden">
@@ -217,19 +217,17 @@ export function ProjectCard({
 					<div
 						className={cn(
 							'flex items-center gap-2 text-sm',
-							projectTemplate.credits &&
-								projectTemplate.credits > 0 &&
-								userCredits < projectTemplate.credits
+							projectTemplate.credits && userCredits < projectTemplate.credits
 								? 'text-red-600'
 								: 'text-gray-500'
 						)}
 					>
-						<CreditCard className="h-4 w-4" />
-						<span>
-							{projectTemplate.credits && projectTemplate.credits > 0
-								? `${projectTemplate.credits} credits`
-								: 'Free'}
-						</span>
+						{projectTemplate.credits && (
+							<>
+								<CreditCard className="h-4 w-4" />
+								<span>{projectTemplate.credits} credits</span>
+							</>
+						)}
 					</div>
 				</CardContent>
 

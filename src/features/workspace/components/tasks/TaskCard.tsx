@@ -20,6 +20,7 @@ import {
 } from '~/common/components/ui/tooltip';
 import { useDialog } from '~/common/hooks/useDialog';
 import { stripHtmlTags } from '~/common/utils/cleanups';
+import { getTaskPriorityColor } from '~/common/utils/colorUtils';
 import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
@@ -64,23 +65,6 @@ export function TaskCard({
 	});
 
 	drag(ref);
-
-	const getPriorityColor = (priority: string) => {
-		switch (priority) {
-			case 'HIGHEST':
-				return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
-			case 'HIGH':
-				return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800';
-			case 'MEDIUM':
-				return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
-			case 'LOW':
-				return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
-			case 'LOWEST':
-				return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
-			default:
-				return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
-		}
-	};
 
 	const { openDialog } = useDialog('task');
 
@@ -181,7 +165,7 @@ export function TaskCard({
 				<div className="flex items-center justify-between">
 					<Badge
 						variant="outline"
-						className={`text-xs ${getPriorityColor(task.priority ?? '')}`}
+						className={`text-xs ${getTaskPriorityColor(task.priority ?? '')}`}
 					>
 						<Flag className="mr-1 h-2 w-2" />
 						{task.priority}
