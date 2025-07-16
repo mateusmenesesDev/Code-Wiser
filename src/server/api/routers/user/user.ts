@@ -1,4 +1,5 @@
 import { clerkClient } from '@clerk/nextjs/server';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { passwordSchema, userDbSchema } from '~/features/schemas/auth.schema';
 import {
@@ -14,11 +15,33 @@ export const userRouter = createTRPCRouter({
 	}),
 
 	getById: publicProcedure.input(z.string()).query(async ({ input, ctx }) => {
-		return await ctx.db.user.findUnique({
+		const clerkUser = await clerkClient.users.getUser(input);
+		const user = await ctx.db.user.findUnique({
 			where: {
 				id: input
 			}
 		});
+
+		if (!user) {
+			throw new TRPCError({
+				code: 'NOT_FOUND',
+				message: 'User not found'
+			});
+		}
+
+		if (!clerkUser) {
+			throw new TRPCError({
+				code: 'NOT_FOUND',
+				message: 'Clerk user not found'
+			});
+		}
+
+		const userWithImageUrl = {
+			...user,
+			imageUrl: clerkUser.imageUrl
+		};
+
+		return userWithImageUrl;
 	}),
 
 	update: publicProcedure

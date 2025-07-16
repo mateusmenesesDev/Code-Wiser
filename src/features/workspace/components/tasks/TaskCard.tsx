@@ -7,6 +7,7 @@ import {
 	MoreVertical,
 	User
 } from 'lucide-react';
+import Image from 'next/image';
 import { useRef } from 'react';
 import { useDrag } from 'react-dnd';
 import { Badge } from '~/common/components/ui/badge';
@@ -56,6 +57,13 @@ export function TaskCard({
 		id: projectId
 	});
 
+	const { data: userData } = api.user.getById.useQuery(
+		task.assigneeId as string,
+		{
+			enabled: !!task.assigneeId
+		}
+	);
+
 	const [{ isDragging }, drag] = useDrag({
 		type: 'TASK',
 		item: { id: task.id, columnId },
@@ -89,17 +97,18 @@ export function TaskCard({
 			<CardContent className="p-4">
 				<div className="mb-2 flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<Badge
-							variant="outline"
-							className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
-						>
-							<ArrowUp className="mr-1 h-2 w-2" />
-							{/* Find the epic name */}
-							{task.epicId && projectData?.epics
-								? projectData.epics.find((epic) => epic.id === task.epicId)
-										?.title || 'Epic'
-								: 'Epic (Coming Soon)'}
-						</Badge>
+						{task.epicId && (
+							<Badge
+								variant="outline"
+								className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+							>
+								<ArrowUp className="mr-1 h-2 w-2" />
+								{
+									projectData?.epics.find((epic) => epic.id === task.epicId)
+										?.title
+								}
+							</Badge>
+						)}
 						{task.blocked && (
 							<TooltipProvider>
 								<Tooltip>
@@ -179,8 +188,14 @@ export function TaskCard({
 							</div>
 						)}
 						<div className="flex items-center gap-1">
-							<User className="h-3 w-3" />
-							<span>{task.assigneeId}</span>
+							<User className="h-4 w-4" />
+							<Image
+								src={userData?.imageUrl ?? ''}
+								alt={userData?.name ?? ''}
+								width={26}
+								height={26}
+								className="rounded-full"
+							/>
 						</div>
 					</div>
 				</div>

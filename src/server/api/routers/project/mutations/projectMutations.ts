@@ -104,7 +104,8 @@ export const projectMutations = {
 								projectId: newProject.id,
 								epicId: epicId ? epicIdMap[epicId] : null,
 								sprintId: sprintId ? sprintIdMap[sprintId] : null,
-								projectTemplateId: null
+								projectTemplateId: null,
+								assigneeId: user.id
 							}
 						});
 					}
