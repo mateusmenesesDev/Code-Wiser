@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { createProjectSchema } from '~/features/projects/schemas/projects.schema';
 import { protectedProcedure } from '~/server/api/trpc';
+import { userHasAccess } from '../utils/userHasAccess';
 
 export const projectMutations = {
 	createProject: protectedProcedure
@@ -35,6 +36,13 @@ export const projectMutations = {
 						throw new TRPCError({
 							code: 'NOT_FOUND',
 							message: 'Project template not found'
+						});
+					}
+
+					if (!userHasAccess(user, projectTemplate)) {
+						throw new TRPCError({
+							code: 'FORBIDDEN',
+							message: 'User does not have access to this project template'
 						});
 					}
 
