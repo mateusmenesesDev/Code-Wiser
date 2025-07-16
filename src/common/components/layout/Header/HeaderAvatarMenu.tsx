@@ -44,10 +44,10 @@ export default function HeaderAvatarMenu() {
 						My Projects
 					</Link>
 				</DropdownMenuItem>
-				<DropdownMenuItem asChild disabled className="cursor-pointer">
-					<Link href="/upgrade" className="flex items-center gap-2">
+				<DropdownMenuItem asChild className="cursor-pointer">
+					<Link href="/pricing" className="flex items-center gap-2">
 						<CreditCard className="h-4 w-4" />
-						Upgrade (Coming Soon)
+						Upgrade
 					</Link>
 				</DropdownMenuItem>
 				{MENU_ITEMS_WITH_PERMISSION.map((Item) => {
