@@ -18,6 +18,29 @@ export const taskQueries = {
 					projectTemplate: {
 						id: input.isTemplate ? input.projectId : undefined
 					}
+				},
+				include: {
+					assignee: {
+						select: {
+							id: true,
+							name: true
+						}
+					},
+					sprint: {
+						select: {
+							id: true,
+							title: true
+						}
+					},
+					epic: {
+						select: {
+							id: true,
+							title: true
+						}
+					}
+				},
+				orderBy: {
+					order: 'asc'
 				}
 			});
 			return tasks;

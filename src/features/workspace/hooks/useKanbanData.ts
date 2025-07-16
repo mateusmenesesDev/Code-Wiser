@@ -22,14 +22,17 @@ const sortTasksByOrder = (
 export function useKanbanData(projectId: string, filters?: TaskFilters) {
 	const utils = api.useUtils();
 
-	const { data: projectData, isLoading } = api.project.getById.useQuery({
-		id: projectId
+	const { data: tasks, isLoading } = api.task.getAllByProjectId.useQuery({
+		projectId,
+		isTemplate: false
 	});
 
 	const columns = useMemo(() => {
-		if (!projectData?.tasks) return [];
-		return generateKanbanColumns(projectData.tasks, filters);
-	}, [projectData?.tasks, filters]);
+		if (!tasks) return [];
+		return generateKanbanColumns(tasks, filters);
+	}, [tasks, filters]);
+
+	console.log('columns', columns);
 
 	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
 		onMutate: async ({ updates: _updates }) => {
@@ -61,15 +64,15 @@ export function useKanbanData(projectId: string, filters?: TaskFilters) {
 			toColumnId: TaskStatusEnum,
 			toIndex: number
 		) => {
-			if (!projectData?.tasks) return;
+			if (!tasks) return;
 
 			const newStatus = toColumnId;
-			const taskToMove = projectData.tasks.find((task) => task.id === taskId);
+			const taskToMove = tasks.find((task) => task.id === taskId);
 			if (!taskToMove) return;
 
 			const queryKey = { id: projectId };
 
-			const optimisticTasks = projectData.tasks.map((task) => ({ ...task }));
+			const optimisticTasks = tasks.map((task) => ({ ...task }));
 
 			const movedTaskIndex = optimisticTasks.findIndex(
 				(task) => task.id === taskId
@@ -156,7 +159,7 @@ export function useKanbanData(projectId: string, filters?: TaskFilters) {
 
 			updateTaskOrdersMutation.mutate({ updates });
 		},
-		[updateTaskOrdersMutation, projectData?.tasks, utils, projectId]
+		[updateTaskOrdersMutation, tasks, utils, projectId]
 	);
 
 	return {

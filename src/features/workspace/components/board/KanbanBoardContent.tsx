@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { z } from 'zod';
-import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import { useTask } from '~/features/workspace/hooks/useTask';
 import type {
@@ -13,6 +12,7 @@ import type {
 } from '~/features/workspace/schemas/task.schema';
 import type {
 	CreateTaskInput,
+	TasksApiOutput,
 	UpdateTaskInput
 } from '~/features/workspace/types/Task.type';
 import { api } from '~/trpc/react';
@@ -30,7 +30,7 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 	const { filters } = useTaskFiltersUrl();
 	const { columns, moveTask, isLoading } = useKanbanData(projectId, filters);
 	const [selectedTask, setSelectedTask] = useState<
-		NonNullable<SprintApiOutput>['tasks'][number] | null
+		NonNullable<TasksApiOutput>[number] | null
 	>(null);
 
 	const { data: projectData } = api.project.getById.useQuery({
@@ -66,7 +66,7 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 	);
 
 	const handleTaskClick = useCallback(
-		(task: NonNullable<SprintApiOutput>['tasks'][number]) => {
+		(task: NonNullable<TasksApiOutput>[number]) => {
 			setSelectedTask(task);
 		},
 		[]

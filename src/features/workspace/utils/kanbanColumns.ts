@@ -1,4 +1,5 @@
 import { TaskStatusEnum } from '@prisma/client';
+import type { TasksApiOutput } from '../types/Task.type';
 
 export interface KanbanColumn {
 	id: TaskStatusEnum;
@@ -6,22 +7,7 @@ export interface KanbanColumn {
 	color: string;
 	bgClass: string;
 	borderClass: string;
-	tasks: Array<{
-		id: string;
-		title: string;
-		description?: string | null;
-		priority?: string | null;
-		status?: string | null;
-		order?: number | null;
-		tags: string[];
-		blocked?: boolean | null;
-		blockedReason?: string | null;
-		epicId?: string | null;
-		sprintId?: string | null;
-		dueDate?: Date | null;
-		assigneeId?: string | null;
-		createdAt?: Date;
-	}>;
+	tasks: NonNullable<TasksApiOutput>[number][];
 }
 
 export const KANBAN_COLUMN_CONFIG: Record<
@@ -79,22 +65,7 @@ export interface TaskFilters {
 }
 
 export function generateKanbanColumns(
-	tasks: Array<{
-		id: string;
-		title: string;
-		description?: string | null;
-		priority?: string | null;
-		status?: string | null;
-		order?: number | null;
-		tags: string[];
-		blocked?: boolean | null;
-		blockedReason?: string | null;
-		epicId?: string | null;
-		sprintId?: string | null;
-		dueDate?: Date | null;
-		assigneeId?: string | null;
-		createdAt?: Date;
-	}>,
+	tasks: TasksApiOutput,
 	filters?: TaskFilters
 ): KanbanColumn[] {
 	let filteredTasks = tasks;
@@ -116,17 +87,7 @@ export function generateKanbanColumns(
 
 	for (const status of Object.values(TaskStatusEnum)) {
 		const config = KANBAN_COLUMN_CONFIG[status];
-		const columnTasks = filteredTasks
-			.filter((task) => task.status === status)
-			.sort((a, b) => {
-				if (a.order == null && b.order == null) {
-					return (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0);
-				}
-				if (a.order == null) return 1;
-				if (b.order == null) return -1;
-
-				return a.order - b.order;
-			});
+		const columnTasks = filteredTasks.filter((task) => task.status === status);
 
 		columns.push({
 			id: status,

@@ -1,12 +1,5 @@
 import type { TaskStatusEnum } from '@prisma/client';
-import {
-	ArrowUp,
-	Calendar,
-	Flag,
-	Lock,
-	MoreVertical,
-	User
-} from 'lucide-react';
+import { ArrowUp, Calendar, Flag, Lock, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
 import { useRef } from 'react';
 import { useDrag } from 'react-dnd';
@@ -22,17 +15,17 @@ import {
 import { useDialog } from '~/common/hooks/useDialog';
 import { stripHtmlTags } from '~/common/utils/cleanups';
 import { getTaskPriorityColor } from '~/common/utils/colorUtils';
-import type { SprintApiOutput } from '~/features/sprints/types/Sprint.type';
+import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
 interface TaskCardProps {
-	task: NonNullable<SprintApiOutput>['tasks'][number];
+	task: NonNullable<TasksApiOutput>[number];
 	className?: string;
 	columnId: TaskStatusEnum;
 	index: number;
 	projectId: string;
-	onTaskClick: (task: NonNullable<SprintApiOutput>['tasks'][number]) => void;
+	onTaskClick: (task: NonNullable<TasksApiOutput>[number]) => void;
 	moveTask: (
 		taskId: string,
 		fromColumnId: TaskStatusEnum,
@@ -46,16 +39,10 @@ export function TaskCard({
 	className,
 	columnId,
 	index: _index,
-	projectId,
 	onTaskClick,
 	moveTask: _moveTask
 }: TaskCardProps) {
 	const ref = useRef<HTMLDivElement>(null);
-
-	// Get project data for epics and sprints
-	const { data: projectData } = api.project.getById.useQuery({
-		id: projectId
-	});
 
 	const { data: userData } = api.user.getById.useQuery(
 		task.assigneeId as string,
@@ -103,10 +90,7 @@ export function TaskCard({
 								className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
 							>
 								<ArrowUp className="mr-1 h-2 w-2" />
-								{
-									projectData?.epics.find((epic) => epic.id === task.epicId)
-										?.title
-								}
+								{task.epic?.title || 'Epic'}
 							</Badge>
 						)}
 						{task.blocked && (
@@ -188,7 +172,6 @@ export function TaskCard({
 							</div>
 						)}
 						<div className="flex items-center gap-1">
-							<User className="h-4 w-4" />
 							<Image
 								src={userData?.imageUrl ?? ''}
 								alt={userData?.name ?? ''}
