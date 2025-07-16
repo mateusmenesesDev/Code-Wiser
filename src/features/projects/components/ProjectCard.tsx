@@ -24,11 +24,13 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
+import { useDialog } from '~/common/hooks/useDialog';
 import {
 	getAccessTypeColor,
 	getCategoryColor,
 	getDifficultyColor
 } from '~/common/utils/colorUtils';
+import { useAuth } from '~/features/auth/hooks/useAuth';
 import { cn } from '~/lib/utils';
 import type { AppRouter } from '~/server/api/root';
 import { useProjectMutations } from '../hooks/useProjectMutations';
@@ -46,6 +48,8 @@ export function ProjectCard({
 	projectId
 }: ProjectCardProps) {
 	const router = useRouter();
+	const { user } = useAuth();
+	const { openDialog } = useDialog('signUp');
 	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
 
 	const handleContinue = () => {
@@ -53,6 +57,11 @@ export function ProjectCard({
 	};
 
 	const handleCreateProject = async () => {
+		if (!user) {
+			openDialog('signUp');
+			return;
+		}
+
 		toast.promise(
 			createProjectAsync({
 				projectTemplateId: projectTemplate.id
