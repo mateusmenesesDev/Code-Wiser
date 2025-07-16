@@ -25,7 +25,8 @@
     "lint:force": "biome lint --write --unsafe",
     "format": "biome format",
     "format:fix": "biome format --fix",
-    "test": "vitest"
+    "test": "vitest",
+    "scan": "next dev & npx react-scan@latest localhost:3000"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.5.2",
@@ -81,6 +82,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.2",
+    "react-scan": "^0.4.3",
     "server-only": "^0.0.1",
     "sonner": "^1.6.1",
     "superjson": "^2.2.1",
