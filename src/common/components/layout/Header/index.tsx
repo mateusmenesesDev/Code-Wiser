@@ -22,9 +22,10 @@ const Header = () => {
 	const { openDialog } = useDialog('signIn');
 	const { theme, setTheme } = useTheme();
 	const { user } = useAuth();
-	const { data: userCredits } = api.user.getCredits.useQuery();
-
 	const isLoggedIn = !!user;
+	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
+		enabled: isLoggedIn
+	});
 
 	return (
 		<header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
