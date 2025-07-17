@@ -35,10 +35,7 @@ import {
 	getDifficultyColor,
 	getTemplateStatusColor
 } from '~/common/utils/colorUtils';
-import {
-	formatTemplateStatus,
-	getAccessType
-} from '~/common/utils/projectUtils';
+import { formatTemplateStatus } from '~/common/utils/projectUtils';
 import { useAdminTemplates } from '../hook/useAdminTemplates';
 import { CreateProjectTemplateDialog } from './CreateProjectTemplateDialog';
 
@@ -214,7 +211,7 @@ export default function AdminTemplatesPage() {
 								</TableHeader>
 								<TableBody>
 									{templates?.map((template) => {
-										const accessType = getAccessType(template.credits);
+										const accessType = template.accessType;
 										const isPublished = template.status === 'APPROVED';
 
 										return (
@@ -233,7 +230,11 @@ export default function AdminTemplatesPage() {
 													</Badge>
 												</TableCell>
 												<TableCell>
-													<Badge className={getAccessTypeColor(accessType)}>
+													<Badge
+														className={getAccessTypeColor(
+															accessType as 'FREE' | 'CREDITS' | 'MENTORSHIP'
+														)}
+													>
 														{accessType}
 													</Badge>
 												</TableCell>

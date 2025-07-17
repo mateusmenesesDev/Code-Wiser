@@ -15,7 +15,6 @@ import {
 	getAccessTypeColor,
 	getDifficultyColor
 } from '~/common/utils/colorUtils';
-import { getAccessType } from '~/common/utils/projectUtils';
 import { cn } from '~/lib/utils';
 import { useMyProjects } from '../../hooks/useMyProjects';
 import { useProjectMutations } from '../../hooks/useProjectMutations';
@@ -32,8 +31,6 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 	const isEnrolled = isEnrolledProject(project.title);
 
 	const { createProject, isCreateProjectPending } = useProjectMutations();
-
-	const accessType = getAccessType(project.credits);
 
 	const { userCredits } = useUser();
 	const hasInsufficientCredits =
@@ -62,8 +59,8 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 							<span className="text-muted-foreground text-sm">
 								Access Type:
 							</span>
-							<Badge className={getAccessTypeColor(accessType)}>
-								{accessType}
+							<Badge className={getAccessTypeColor(project.accessType)}>
+								{project.accessType}
 							</Badge>
 						</div>
 						<div className="flex items-center justify-between">

@@ -3,21 +3,19 @@ import { useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { TableCell, TableRow } from '~/common/components/ui/table';
 import type { EpicsApiOutput } from '~/features/epics/types/Epic.type';
-import type {
-	SprintApiOutput,
-	SprintsApiOutput
-} from '~/features/sprints/types/Sprint.type';
+import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
 import { cn } from '~/lib/utils';
+import type { TasksApiOutput } from '../../types/Task.type';
 import { EpicCell } from './EpicCell';
 import { PriorityCell } from './PriorityCell';
 import { SprintCell } from './SprintCell';
 import { TagsCell } from './TagsCell';
 
 interface DraggableTaskRowProps {
-	task: NonNullable<SprintApiOutput>['tasks'][number];
+	task: NonNullable<TasksApiOutput>[number];
 	index: number;
 	projectId: string;
-	onTaskClick: (task: NonNullable<SprintApiOutput>['tasks'][number]) => void;
+	onTaskClick: (task: NonNullable<TasksApiOutput>[number]) => void;
 	moveTask: (dragIndex: number, hoverIndex: number) => void;
 	sprints?: SprintsApiOutput;
 	epics?: EpicsApiOutput;

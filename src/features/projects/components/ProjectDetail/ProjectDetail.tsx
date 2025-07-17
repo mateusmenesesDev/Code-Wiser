@@ -11,8 +11,8 @@ import {
 } from '~/common/utils/colorUtils';
 import type { ProjectTemplateInfoApiOutput } from '../../types/Projects.type';
 import { ProjectDetailOverview } from './ProjectDetailOverview';
-import { ProjectDetailSidebar } from './ProjectDetailSidebar';
 import { ProjectImageGallery } from './ProjectImageGallery';
+import { ProjectDetailSidebar } from './ProjectDetailSidebar';
 
 export default function ProjectDetail({
 	project
