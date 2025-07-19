@@ -1,7 +1,6 @@
 'use client';
 
 import { Calendar, Check, CreditCard, Sparkles } from 'lucide-react';
-import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -14,29 +13,31 @@ import {
 import { EXTERNAL_LINKS } from '~/common/constants/externalLinks';
 import { useUser } from '~/common/hooks/useUser';
 import { useAuth } from '~/features/auth/hooks/useAuth';
+import type {
+	CheckoutInput,
+	CreditOptions
+} from '~/features/checkout/types/Checkout.type';
 
 const PricingPage = () => {
 	const { user } = useAuth();
 	const { userCredits } = useUser();
-	console.log('userCredits', userCredits);
-	const [isLoading, setIsLoading] = useState<string | null>(null);
 
 	const creditPackages = [
 		{
-			id: 'credits_500',
+			id: 'credits_500' as CreditOptions,
 			credits: 500,
 			price: 25,
 			popular: false
 		},
 		{
-			id: 'credits_1500',
+			id: 'credits_1500' as CreditOptions,
 			credits: 1500,
 			price: 67,
 			popular: true,
 			savings: 'Save 10%'
 		},
 		{
-			id: 'credits_3000',
+			id: 'credits_3000' as CreditOptions,
 			credits: 3000,
 			price: 120,
 			popular: false,
@@ -44,30 +45,29 @@ const PricingPage = () => {
 		}
 	];
 
-	const handleBuyCredits = async (
-		packageId: string,
-		credits: number,
-		_price: number
-	) => {
+	const handleBuyCredits = async (data: CheckoutInput) => {
 		if (!user) {
 			toast.error('Authentication Required');
 			return;
 		}
 
-		setIsLoading(packageId);
-
 		try {
-			// TODO: integrate Stripe payment system
 			toast.info('Payment Processing');
+			const response = await fetch('/api/checkout_sessions', {
+				method: 'POST',
+				body: JSON.stringify(data)
+			});
 
-			setTimeout(() => {
-				toast.success(`${credits} credits have been added to your account.`);
-				setIsLoading(null);
-			}, 2000);
+			if (!response.ok) {
+				throw new Error('Failed to create checkout session');
+			}
+
+			const responseData = await response.json();
+
+			window.location.href = responseData.url;
 		} catch (error) {
 			console.error(error);
 			toast.error('Payment Failed');
-			setIsLoading(null);
 		}
 	};
 
@@ -153,12 +153,14 @@ const PricingPage = () => {
 
 											<Button
 												onClick={() =>
-													handleBuyCredits(pkg.id, pkg.credits, pkg.price)
+													handleBuyCredits({
+														credit: pkg.id,
+														mode: 'payment'
+													})
 												}
-												disabled={isLoading === pkg.id}
 												variant="primary"
 											>
-												{isLoading === pkg.id ? 'Processing...' : 'Buy Now'}
+												Buy Now
 											</Button>
 										</div>
 									</CardContent>

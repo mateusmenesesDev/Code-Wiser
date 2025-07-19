@@ -1,11 +1,28 @@
+enum MentorshipStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum MentorshipType {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+}
+
 model User {
-  id                  String   @id @default(uuid())
-  email               String   @unique
-  name                String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  credits             Int      @default(0)
-  isMentorshipEnabled Boolean  @default(false)
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  credits              Int              @default(0)
+  stripeCustomerId     String?          @unique
+  stripeSubscriptionId String?          @unique
+  mentorshipStatus     MentorshipStatus @default(INACTIVE)
+  mentorshipType       MentorshipType?  @default(MONTHLY)
+  mentorshipStartDate  DateTime?
+  mentorshipEndDate    DateTime?
 
   tasks    Task[]
   projects Project[]

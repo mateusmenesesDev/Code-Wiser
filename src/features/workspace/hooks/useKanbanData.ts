@@ -32,8 +32,6 @@ export function useKanbanData(projectId: string, filters?: TaskFilters) {
 		return generateKanbanColumns(tasks, filters);
 	}, [tasks, filters]);
 
-	console.log('columns', columns);
-
 	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
 		onMutate: async ({ updates: _updates }) => {
 			const queryKey = { id: projectId };

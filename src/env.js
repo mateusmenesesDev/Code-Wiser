@@ -12,6 +12,11 @@ export const env = createEnv({
 			.enum(['development', 'test', 'production'])
 			.default('development'),
 		UPLOADTHING_TOKEN: z.string(),
+		STRIPE_SECRET_KEY: z.string(),
+		STRIPE_CREDITS_500_PRICE_ID: z.string(),
+		STRIPE_CREDITS_1500_PRICE_ID: z.string(),
+		STRIPE_CREDITS_3000_PRICE_ID: z.string(),
+		STRIPE_WEBHOOK_SECRET: z.string()
 	},
 
 	/**
@@ -30,7 +35,12 @@ export const env = createEnv({
 	runtimeEnv: {
 		DATABASE_URL: process.env.DATABASE_URL,
 		NODE_ENV: process.env.NODE_ENV,
-		UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN
+		UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
+		STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+		STRIPE_CREDITS_500_PRICE_ID: process.env.STRIPE_CREDITS_500_PRICE_ID,
+		STRIPE_CREDITS_1500_PRICE_ID: process.env.STRIPE_CREDITS_1500_PRICE_ID,
+		STRIPE_CREDITS_3000_PRICE_ID: process.env.STRIPE_CREDITS_3000_PRICE_ID,
+		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET
 		// NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
 	},
 	/**

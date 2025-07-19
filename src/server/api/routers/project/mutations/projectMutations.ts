@@ -110,6 +110,16 @@ export const projectMutations = {
 						});
 					}
 
+					if (
+						user.mentorshipStatus !== 'ACTIVE' &&
+						projectTemplate.accessType === 'CREDITS'
+					) {
+						await prisma.user.update({
+							where: { id: user.id },
+							data: { credits: { decrement: projectTemplate.credits ?? 0 } }
+						});
+					}
+
 					return newProject;
 				});
 
