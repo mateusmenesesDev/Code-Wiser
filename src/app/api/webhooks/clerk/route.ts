@@ -1,6 +1,7 @@
 import type { WebhookEvent } from '@clerk/nextjs/server';
 import { headers } from 'next/headers';
 import { Webhook } from 'svix';
+import { env } from '~/env';
 import {
 	createUser,
 	deleteUser,
@@ -9,11 +10,11 @@ import {
 
 export async function POST(req: Request) {
 	// You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
-	const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+	const WEBHOOK_SECRET = env.CLERK_WEBHOOK_SECRET;
 
 	if (!WEBHOOK_SECRET) {
 		throw new Error(
-			'Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local'
+			'Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local'
 		);
 	}
 
