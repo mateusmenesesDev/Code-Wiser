@@ -4,13 +4,14 @@ import Projects from '~/features/projects/components/Projects';
 import { api } from '~/trpc/server';
 
 export const metadata: Metadata = {
-	title: 'Projects',
+	title: 'Software Development Projects | Learn by Building Real Applications',
 	description:
-		'Discover hands-on projects designed to elevate your coding skills. From beginner-friendly tasks to advanced challenges, find the perfect software development project to accelerate your development journey.',
+		'Browse our curated collection of real-world software development projects. From web development to cloud computing, find hands-on projects that match your skill level and career goals. Get expert guidance and practical experience.',
 	openGraph: {
-		title: 'Projects',
+		title:
+			'Software Development Projects | Learn by Building Real Applications',
 		description:
-			'Discover hands-on projects designed to elevate your coding skills. From beginner-friendly tasks to advanced challenges, find the perfect software development project to accelerate your development journey.',
+			'Browse our curated collection of real-world software development projects. From web development to cloud computing, find hands-on projects that match your skill level and career goals. Get expert guidance and practical experience.',
 		type: 'website'
 	}
 };

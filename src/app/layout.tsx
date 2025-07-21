@@ -17,11 +17,11 @@ dayjs.extend(localizedFormat);
 
 export const metadata: Metadata = {
 	title: {
-		template: '%s | Code Wise',
-		default: 'Code Wise'
+		template: '%s | CodeWise - Mentorship & Project-Based Learning Platform',
+		default: 'CodeWise - Learn Software Development Through Real Projects'
 	},
 	description:
-		'Code Wise - The best way to learn how to code with senior developers',
+		'Accelerate your software development career with CodeWise. Get personalized mentorship from senior developers, work on real-world projects, and master coding through hands-on experience.',
 	icons: [{ rel: 'icon', url: '/favicon.svg' }]
 };
 
