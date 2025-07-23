@@ -17,6 +17,7 @@ export function useProjectMutations() {
 			router.push(`/workspace/${data}`);
 			utils.project.getEnrolled.invalidate();
 			utils.projectTemplate.getApproved.invalidate();
+			utils.user.getCredits.invalidate();
 		}
 	});
 
