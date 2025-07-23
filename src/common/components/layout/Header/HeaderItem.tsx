@@ -25,7 +25,8 @@ export const ProtectedMenuItem = ({
 	}
 
 	return (
-		<Protect key={item.href} permission={item.orgPermission?.permission}>
+		// biome-ignore lint/a11y/useValidAriaRole: <explanation>
+		<Protect key={item.href} role="org:admin">
 			<MenuItem item={item} />
 		</Protect>
 	);

@@ -8,11 +8,11 @@ import {
 	updateTemplateBasicInfoInputSchema,
 	updateTemplateStatusSchema
 } from '~/features/templates/schemas/template.schema';
-import { protectedProcedure } from '~/server/api/trpc';
+import { adminProcedure } from '~/server/api/trpc';
 import { createProjectTemplateData } from '../actions/projectTemplateActions';
 
 export const projectTemplateMutations = {
-	create: protectedProcedure
+	create: adminProcedure
 		.input(createProjectTemplateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -47,7 +47,7 @@ export const projectTemplateMutations = {
 			}
 		}),
 
-	createImage: protectedProcedure
+	createImage: adminProcedure
 		.input(
 			z.object({
 				projectTemplateId: z.string(),
@@ -79,7 +79,7 @@ export const projectTemplateMutations = {
 			return result;
 		}),
 
-	delete: protectedProcedure
+	delete: adminProcedure
 		.input(deleteTemplateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -97,7 +97,7 @@ export const projectTemplateMutations = {
 			}
 		}),
 
-	deleteImage: protectedProcedure
+	deleteImage: adminProcedure
 		.input(z.object({ id: z.string() }))
 		.mutation(async ({ ctx, input }) => {
 			const { id } = input;
@@ -136,7 +136,7 @@ export const projectTemplateMutations = {
 			}
 		}),
 
-	updateStatus: protectedProcedure
+	updateStatus: adminProcedure
 		.input(updateTemplateStatusSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
@@ -165,7 +165,7 @@ export const projectTemplateMutations = {
 			}
 		}),
 
-	update: protectedProcedure
+	update: adminProcedure
 		.input(updateTemplateBasicInfoInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {

@@ -69,7 +69,8 @@ export default function AdminTemplatesPage() {
 	};
 
 	return (
-		<Protect permission="org:project:edit_template">
+		// biome-ignore lint/a11y/useValidAriaRole: <explanation>
+		<Protect role="org:admin">
 			<div className="container mx-auto px-4 py-8">
 				{/* Page Header */}
 				<div className="mb-8 flex items-center justify-between">

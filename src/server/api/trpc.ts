@@ -27,9 +27,12 @@ import { db } from '~/server/db';
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
 	const session = auth();
+	const isAdmin = session.has({ role: 'org:admin' });
+
 	return {
 		db,
 		session,
+		isAdmin,
 		...opts
 	};
 };
@@ -124,6 +127,16 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 	});
 });
 
+const isAdmin = t.middleware(({ next, ctx }) => {
+	if (!ctx.isAdmin) {
+		throw new TRPCError({ code: 'FORBIDDEN' });
+	}
+
+	return next({ ctx: { ...ctx, session: { ...ctx.session, isAdmin: true } } });
+});
+
 export const protectedProcedure = t.procedure
 	.use(isAuthed)
 	.use(timingMiddleware);
+
+export const adminProcedure = t.procedure.use(isAdmin).use(timingMiddleware);
