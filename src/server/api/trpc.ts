@@ -13,6 +13,12 @@ import { ZodError } from 'zod';
 
 import { db } from '~/server/db';
 
+type OrganizationData = {
+	id: string;
+	rol: string;
+	slg: string;
+};
+
 /**
  * 1. CONTEXT
  *
@@ -27,9 +33,10 @@ import { db } from '~/server/db';
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
 	const session = auth();
-	const isAdmin = session.has({ role: 'org:admin' });
-	console.log('session', session);
-	console.log('isAdmin', isAdmin);
+
+	const orgRole = (session.sessionClaims?.o as OrganizationData)?.rol;
+
+	const isAdmin = orgRole === 'admin' || session.has({ role: 'org:admin' });
 
 	return {
 		db,
@@ -131,11 +138,10 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 
 const isAdmin = t.middleware(({ next, ctx }) => {
 	if (!ctx.isAdmin) {
-		console.error('isAdmin middleware', ctx.isAdmin);
 		throw new TRPCError({ code: 'FORBIDDEN' });
 	}
 
-	return next({ ctx: { ...ctx, session: { ...ctx.session, isAdmin: true } } });
+	return next({ ctx: { ...ctx, session: { ...ctx.session } } });
 });
 
 export const protectedProcedure = t.procedure
