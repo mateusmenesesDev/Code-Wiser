@@ -28,6 +28,7 @@ import { db } from '~/server/db';
 export const createTRPCContext = async (opts: { headers: Headers }) => {
 	const session = auth();
 	const isAdmin = session.has({ role: 'org:admin' });
+	console.log('session', session);
 	console.log('isAdmin', isAdmin);
 
 	return {
