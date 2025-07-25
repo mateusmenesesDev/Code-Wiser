@@ -28,6 +28,7 @@ import { db } from '~/server/db';
 export const createTRPCContext = async (opts: { headers: Headers }) => {
 	const session = auth();
 	const isAdmin = session.has({ role: 'org:admin' });
+	console.log('isAdmin', isAdmin);
 
 	return {
 		db,
@@ -129,6 +130,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 
 const isAdmin = t.middleware(({ next, ctx }) => {
 	if (!ctx.isAdmin) {
+		console.error('isAdmin middleware', ctx.isAdmin);
 		throw new TRPCError({ code: 'FORBIDDEN' });
 	}
 
