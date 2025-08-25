@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { api } from '~/trpc/react';
 import { useSetAllTasks } from '../../hooks/useTaskFiltersUrl';
 import { TaskFilters } from '../TaskFilters';
@@ -17,9 +18,12 @@ export function KanbanBoard({
 	projectId,
 	isTemplate = false
 }: KanbanBoardProps) {
-	const { data: projectData, isLoading } = api.project.getById.useQuery({
-		id: projectId
-	});
+	const detectedIsTemplate = useIsTemplate();
+	const actualIsTemplate = isTemplate || detectedIsTemplate;
+
+	const { data: projectData, isLoading } = actualIsTemplate
+		? api.projectTemplate.getById.useQuery({ id: projectId })
+		: api.project.getById.useQuery({ id: projectId });
 
 	const setAllTasks = useSetAllTasks();
 
@@ -43,7 +47,7 @@ export function KanbanBoard({
 	return (
 		<div className="space-y-6">
 			<TaskFilters />
-			<KanbanBoardContent projectId={projectId} isTemplate={isTemplate} />
+			<KanbanBoardContent projectId={projectId} isTemplate={actualIsTemplate} />
 		</div>
 	);
 }

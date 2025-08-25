@@ -15,8 +15,10 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import { useDialog } from '~/common/hooks/useDialog';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useSprintQueries } from '~/features/sprints/hooks/useSprintQueries';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
+import { api } from '~/trpc/react';
 import { useTask } from '../../hooks/useTask';
 import type {
 	CreateTaskInput,
@@ -29,6 +31,7 @@ import { DraggableTaskRow } from './DraggableTaskRow';
 export default function Backlog({ projectId }: { projectId: string }) {
 	const { id } = useParams();
 	const { openDialog } = useDialog('task');
+	const isTemplate = useIsTemplate();
 	const [selectedTask, setSelectedTask] = useState<
 		NonNullable<TasksApiOutput>[number] | null
 	>(null);
@@ -41,6 +44,10 @@ export default function Backlog({ projectId }: { projectId: string }) {
 	const { data: tasks, isLoading: isTasksLoading } =
 		getAllTasksByProjectId(projectId);
 
+	const { data: projectData } = isTemplate
+		? api.projectTemplate.getById.useQuery({ id: projectId })
+		: api.project.getById.useQuery({ id: projectId });
+
 	const isLoading = isSprintsLoading || isTasksLoading;
 
 	const handleTaskSubmit = useCallback(
@@ -50,13 +57,12 @@ export default function Backlog({ projectId }: { projectId: string }) {
 			} else {
 				createTask({
 					...data,
-					projectId: id as string,
 					status: TaskStatusEnum.BACKLOG
 				} as CreateTaskInput);
 			}
 			setSelectedTask(null);
 		},
-		[createTask, id, updateTask]
+		[createTask, updateTask]
 	);
 
 	const handleCreateTask = useCallback(() => {
@@ -141,7 +147,9 @@ export default function Backlog({ projectId }: { projectId: string }) {
 
 				<TaskDialog
 					task={selectedTask || undefined}
-					projectId={id as string}
+					projectId={isTemplate ? undefined : (id as string)}
+					projectTemplateId={isTemplate ? (id as string) : undefined}
+					epics={projectData?.epics || []}
 					sprints={sprints}
 					onSubmit={handleTaskSubmit}
 				/>

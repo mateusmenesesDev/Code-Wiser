@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { z } from 'zod';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import { useTask } from '~/features/workspace/hooks/useTask';
 import type {
@@ -26,16 +27,22 @@ interface KanbanBoardContentProps {
 	isTemplate?: boolean;
 }
 
-export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
+export function KanbanBoardContent({
+	projectId,
+	isTemplate = false
+}: KanbanBoardContentProps) {
 	const { filters } = useTaskFiltersUrl();
 	const { columns, moveTask, isLoading } = useKanbanData(projectId, filters);
 	const [selectedTask, setSelectedTask] = useState<
 		NonNullable<TasksApiOutput>[number] | null
 	>(null);
 
-	const { data: projectData } = api.project.getById.useQuery({
-		id: projectId
-	});
+	const detectedIsTemplate = useIsTemplate();
+	const actualIsTemplate = isTemplate || detectedIsTemplate;
+
+	const { data: projectData } = actualIsTemplate
+		? api.projectTemplate.getById.useQuery({ id: projectId })
+		: api.project.getById.useQuery({ id: projectId });
 
 	const { createTask, updateTask } = useTask({ projectId });
 
@@ -97,7 +104,8 @@ export function KanbanBoardContent({ projectId }: KanbanBoardContentProps) {
 
 			<TaskDialog
 				task={selectedTask || undefined}
-				projectId={projectId}
+				projectId={actualIsTemplate ? undefined : projectId}
+				projectTemplateId={actualIsTemplate ? projectId : undefined}
 				epics={projectData?.epics || []}
 				sprints={projectData?.sprints || []}
 				onSubmit={handleTaskSubmit}

@@ -77,27 +77,48 @@ export function TaskDialog({
 	});
 
 	useEffect(() => {
-		if (isDialogOpen && task) {
-			const formData: TaskFormData = {
-				id: task.id,
-				title: task.title,
-				description: task.description ?? undefined,
-				type: task.type ?? undefined,
-				priority: task.priority ?? undefined,
-				tags: task.tags || [],
-				epicId: task.epicId ?? undefined,
-				sprintId: task.sprintId ?? undefined,
-				assigneeId: task.assigneeId ?? undefined,
-				blockedReason: task.blockedReason ?? undefined,
-				blocked: task.blocked ?? false,
-				status: task.status ?? undefined,
-				dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-				projectId,
-				projectTemplateId,
-				storyPoints: task.storyPoints ?? undefined,
-				prUrl: task.prUrl ?? undefined
-			};
-			form.reset(formData);
+		if (isDialogOpen) {
+			if (task) {
+				const formData: TaskFormData = {
+					id: task.id,
+					title: task.title,
+					description: task.description ?? undefined,
+					type: task.type ?? undefined,
+					priority: task.priority ?? undefined,
+					tags: task.tags || [],
+					epicId: task.epicId ?? undefined,
+					sprintId: task.sprintId ?? undefined,
+					assigneeId: task.assigneeId ?? undefined,
+					blockedReason: task.blockedReason ?? undefined,
+					blocked: task.blocked ?? false,
+					status: task.status ?? undefined,
+					dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+					projectId: projectId,
+					projectTemplateId: projectTemplateId,
+					storyPoints: task.storyPoints ?? undefined,
+					prUrl: task.prUrl && task.prUrl.trim() !== '' ? task.prUrl : undefined
+				};
+				form.reset(formData);
+			} else {
+				form.reset({
+					title: '',
+					description: undefined,
+					type: undefined,
+					priority: TaskPriorityEnum.MEDIUM,
+					tags: [],
+					epicId: undefined,
+					sprintId: undefined,
+					assigneeId: undefined,
+					blockedReason: undefined,
+					blocked: false,
+					status: TaskStatusEnum.BACKLOG,
+					dueDate: undefined,
+					projectId: projectId,
+					projectTemplateId: projectTemplateId,
+					storyPoints: undefined,
+					prUrl: undefined
+				});
+			}
 		}
 	}, [isDialogOpen, task, form, projectId, projectTemplateId]);
 
@@ -119,13 +140,29 @@ export function TaskDialog({
 	};
 
 	const handleSubmit = form.handleSubmit(async (data) => {
+		const cleanedData = {
+			...data,
+			prUrl: data.prUrl && data.prUrl.trim() !== '' ? data.prUrl : undefined,
+			dueDate:
+				data.dueDate &&
+				data.dueDate instanceof Date &&
+				!Number.isNaN(data.dueDate.getTime())
+					? data.dueDate
+					: undefined
+		};
+		console.log('Form data:', cleanedData);
 		try {
-			await onSubmit(data);
+			await onSubmit(cleanedData);
 			closeDialog();
 		} catch (error) {
 			console.error('Error submitting task:', error);
 		}
 	});
+
+	if (projectTemplateId && projectId) {
+		// SHOULD NOT HAPPEN
+		return null;
+	}
 
 	return (
 		<Dialog open={isDialogOpen} onOpenChange={closeDialog}>
@@ -321,7 +358,9 @@ export function TaskDialog({
 										type="date"
 										{...form.register('dueDate', {
 											setValueAs: (value: string) =>
-												value ? new Date(value) : null
+												value && value.trim() !== ''
+													? new Date(value)
+													: undefined
 										})}
 									/>
 								</div>
