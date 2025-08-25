@@ -128,6 +128,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 							<TableHead>Epic</TableHead>
 							<TableHead>Sprint</TableHead>
 							<TableHead>Tags</TableHead>
+							<TableHead className="w-16">Actions</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>

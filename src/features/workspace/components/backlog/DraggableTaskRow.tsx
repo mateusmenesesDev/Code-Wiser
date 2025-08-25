@@ -1,9 +1,19 @@
 import { TaskPriorityEnum } from '@prisma/client';
+import { MoreVertical, Trash2 } from 'lucide-react';
 import { useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
+import { Button } from '~/common/components/ui/button';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger
+} from '~/common/components/ui/dropdown-menu';
 import { TableCell, TableRow } from '~/common/components/ui/table';
 import type { EpicsApiOutput } from '~/features/epics/types/Epic.type';
 import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
+import { useTask } from '~/features/workspace/hooks/useTask';
 import { cn } from '~/lib/utils';
 import type { TasksApiOutput } from '../../types/Task.type';
 import { EpicCell } from './EpicCell';
@@ -36,6 +46,7 @@ export function DraggableTaskRow({
 	epics
 }: DraggableTaskRowProps) {
 	const ref = useRef<HTMLTableRowElement>(null);
+	const { deleteTask } = useTask({ projectId });
 
 	const [{ isDragging }, drag] = useDrag({
 		type: 'BACKLOG_TASK',
@@ -120,6 +131,39 @@ export function DraggableTaskRow({
 			</TableCell>
 			<TableCell>
 				<TagsCell tags={task.tags} taskId={task.id} projectId={projectId} />
+			</TableCell>
+			<TableCell>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-8 w-8 p-0"
+							onClick={(e) => {
+								e.stopPropagation();
+							}}
+						>
+							<MoreVertical className="h-4 w-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-32">
+						<ConfirmationDialog
+							title="Delete Task"
+							description={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
+							onConfirm={() => deleteTask(task.id)}
+						>
+							<DropdownMenuItem
+								className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+								onSelect={(e) => {
+									e.preventDefault();
+								}}
+							>
+								<Trash2 className="mr-2 h-4 w-4" />
+								Delete
+							</DropdownMenuItem>
+						</ConfirmationDialog>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</TableCell>
 		</TableRow>
 	);

@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Task } from '@prisma/client';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
-import { Clock, GitBranch, Loader2 } from 'lucide-react';
+import { Clock, GitBranch, Loader2, Trash2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Button } from '~/common/components/ui/button';
 import {
 	Dialog,
@@ -18,6 +19,7 @@ import { Separator } from '~/common/components/ui/separator';
 import { Switch } from '~/common/components/ui/switch';
 import { Textarea } from '~/common/components/ui/textarea';
 import { useDialog } from '~/common/hooks/useDialog';
+import { useTask } from '~/features/workspace/hooks/useTask';
 import {
 	createTaskSchema,
 	updateTaskSchema
@@ -63,6 +65,9 @@ export function TaskDialog({
 	isSubmitting = false
 }: TaskDialogProps) {
 	const { isDialogOpen, closeDialog } = useDialog('task');
+	const { deleteTask } = useTask({
+		projectId: projectId || projectTemplateId
+	});
 
 	const isEditing = !!task;
 
@@ -158,6 +163,13 @@ export function TaskDialog({
 			console.error('Error submitting task:', error);
 		}
 	});
+
+	const handleDelete = () => {
+		if (task) {
+			deleteTask(task.id);
+			closeDialog();
+		}
+	};
 
 	if (projectTemplateId && projectId) {
 		// SHOULD NOT HAPPEN
@@ -518,30 +530,48 @@ export function TaskDialog({
 							</div>
 						</div>
 
-						<div className="flex justify-end gap-2">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={closeDialog}
-								disabled={isSubmitting}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={isSubmitting || !form.formState.isDirty}
-							>
-								{isSubmitting && (
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-								)}
-								{isSubmitting
-									? isEditing
-										? 'Updating...'
-										: 'Creating...'
-									: isEditing
-										? 'Update Task'
-										: 'Create Task'}
-							</Button>
+						<div className="flex justify-between">
+							{isEditing && (
+								<ConfirmationDialog
+									title="Delete Task"
+									description={`Are you sure you want to delete "${task?.title}"? This action cannot be undone.`}
+									onConfirm={handleDelete}
+								>
+									<Button
+										type="button"
+										variant="destructive"
+										disabled={isSubmitting}
+									>
+										<Trash2 className="mr-2 h-4 w-4" />
+										Delete Task
+									</Button>
+								</ConfirmationDialog>
+							)}
+							<div className="ml-auto flex gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={closeDialog}
+									disabled={isSubmitting}
+								>
+									Cancel
+								</Button>
+								<Button
+									type="submit"
+									disabled={isSubmitting || !form.formState.isDirty}
+								>
+									{isSubmitting && (
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									)}
+									{isSubmitting
+										? isEditing
+											? 'Updating...'
+											: 'Creating...'
+										: isEditing
+											? 'Update Task'
+											: 'Create Task'}
+								</Button>
+							</div>
 						</div>
 					</form>
 				</FormProvider>

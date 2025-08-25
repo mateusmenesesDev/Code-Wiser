@@ -1,11 +1,25 @@
 import type { TaskStatusEnum } from '@prisma/client';
-import { ArrowUp, Calendar, Flag, Lock, MoreVertical } from 'lucide-react';
+import {
+	ArrowUp,
+	Calendar,
+	Flag,
+	Lock,
+	MoreVertical,
+	Trash2
+} from 'lucide-react';
 import Image from 'next/image';
 import { useRef } from 'react';
 import { useDrag } from 'react-dnd';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger
+} from '~/common/components/ui/dropdown-menu';
 import {
 	Tooltip,
 	TooltipContent,
@@ -15,6 +29,7 @@ import {
 import { useDialog } from '~/common/hooks/useDialog';
 import { stripHtmlTags } from '~/common/utils/cleanups';
 import { getTaskPriorityColor } from '~/common/utils/colorUtils';
+import { useTask } from '~/features/workspace/hooks/useTask';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
@@ -39,10 +54,12 @@ export function TaskCard({
 	className,
 	columnId,
 	index: _index,
+	projectId,
 	onTaskClick,
 	moveTask: _moveTask
 }: TaskCardProps) {
 	const ref = useRef<HTMLDivElement>(null);
+	const { deleteTask } = useTask({ projectId });
 
 	const { data: userData } = api.user.getById.useQuery(
 		task.assigneeId as string,
@@ -123,20 +140,40 @@ export function TaskCard({
 					<h4 className="pr-2 font-medium text-card-foreground text-sm leading-5">
 						{task.title}
 					</h4>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-6 w-6 flex-shrink-0 p-0"
-						onMouseDown={(e) => {
-							e.stopPropagation();
-						}}
-						onClick={(e) => {
-							e.stopPropagation();
-							// TODO: Handle menu actions
-						}}
-					>
-						<MoreVertical className="h-3 w-3" />
-					</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-6 w-6 flex-shrink-0 p-0"
+								onMouseDown={(e) => {
+									e.stopPropagation();
+								}}
+								onClick={(e) => {
+									e.stopPropagation();
+								}}
+							>
+								<MoreVertical className="h-3 w-3" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-32">
+							<ConfirmationDialog
+								title="Delete Task"
+								description={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
+								onConfirm={() => deleteTask(task.id)}
+							>
+								<DropdownMenuItem
+									className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+									onSelect={(e) => {
+										e.preventDefault();
+									}}
+								>
+									<Trash2 className="mr-2 h-4 w-4" />
+									Delete
+								</DropdownMenuItem>
+							</ConfirmationDialog>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 
 				<p className="mb-3 line-clamp-3 text-muted-foreground text-xs">
