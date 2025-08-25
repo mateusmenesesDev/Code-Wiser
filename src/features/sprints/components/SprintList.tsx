@@ -10,6 +10,7 @@ import { Dialog } from '~/common/components/ui/dialog';
 import { Separator } from '~/common/components/ui/separator';
 import { useDialog } from '~/common/hooks/useDialog';
 import { api } from '~/trpc/react';
+import { useSprintMutations } from '../hooks/useSprintMutations';
 import type { SprintApiOutput } from '../types/Sprint.type';
 import SprintDialog from './SprintDialog';
 import SprintItem from './SprintItem';
@@ -50,6 +51,7 @@ export default function SprintList({
 	const [selectedSprint, setSelectedSprint] =
 		useState<NonNullable<SprintApiOutput> | null>(null);
 	const { openDialog, closeDialog, isDialogOpen } = useDialog('sprint');
+	const { deleteSprint } = useSprintMutations({ projectId });
 	const [dragState, setDragState] = useState<
 		NonNullable<SprintApiOutput>[] | null
 	>(null);
@@ -103,6 +105,10 @@ export default function SprintList({
 		setDragState(sprints);
 	}, [sprints]);
 
+	const handleDeleteSprint = (sprintId: string) => {
+		deleteSprint.mutate({ id: sprintId });
+	};
+
 	return (
 		<DndProvider backend={HTML5Backend}>
 			<div className="space-y-6">
@@ -146,6 +152,7 @@ export default function SprintList({
 									setSelectedSprint(sprint);
 									openDialog('sprint');
 								}}
+								onDelete={() => handleDeleteSprint(sprint.id)}
 							/>
 						))}
 						{sprintList.length === 0 && (

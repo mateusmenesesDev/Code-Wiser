@@ -51,7 +51,14 @@ export const sprintMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { id } = input;
 
-			await ctx.db.sprint.delete({ where: { id } });
+			await ctx.db.$transaction(async (tx) => {
+				await tx.task.updateMany({
+					where: { sprintId: id },
+					data: { sprintId: null }
+				});
+
+				await tx.sprint.delete({ where: { id } });
+			});
 		}),
 
 	update: protectedProcedure
