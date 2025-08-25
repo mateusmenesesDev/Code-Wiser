@@ -11,7 +11,6 @@ import {
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
 import { TableCell, TableRow } from '~/common/components/ui/table';
-import type { EpicsApiOutput } from '~/features/epics/types/Epic.type';
 import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
 import { useTask } from '~/features/workspace/hooks/useTask';
 import { cn } from '~/lib/utils';
@@ -28,7 +27,7 @@ interface DraggableTaskRowProps {
 	onTaskClick: (task: NonNullable<TasksApiOutput>[number]) => void;
 	moveTask: (dragIndex: number, hoverIndex: number) => void;
 	sprints?: SprintsApiOutput;
-	epics?: EpicsApiOutput;
+	epics?: Array<{ id: string; title: string }>;
 }
 
 interface DragItem {

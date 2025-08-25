@@ -141,6 +141,12 @@ export default function Backlog({ projectId }: { projectId: string }) {
 								onTaskClick={handleTaskClick}
 								moveTask={moveTask}
 								sprints={sprints}
+								epics={
+									projectData?.epics?.map((epic) => ({
+										id: epic.id,
+										title: epic.title
+									})) || []
+								}
 							/>
 						))}
 					</TableBody>
