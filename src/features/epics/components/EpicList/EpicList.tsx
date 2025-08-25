@@ -8,6 +8,7 @@ import { Dialog } from '~/common/components/ui/dialog';
 import { Separator } from '~/common/components/ui/separator';
 import { useDialog } from '~/common/hooks/useDialog';
 import { api } from '~/trpc/react';
+import { useEpicMutations } from '../../hooks/useEpicMutations';
 import type { EpicApiOutput } from '../../types/Epic.type';
 import EpicDialog from '../EpicDialog';
 import EpicItem from './EpicItem';
@@ -24,11 +25,16 @@ export default function EpicList({
 }: EpicListProps) {
 	const [selectedEpic, setSelectedEpic] = useState<EpicApiOutput | null>(null);
 	const { openDialog, closeDialog, isDialogOpen } = useDialog('epic');
+	const { deleteEpic } = useEpicMutations({ projectId });
 
 	const { data: epics = [], isLoading } = api.epic.getAllByProjectId.useQuery({
 		projectId,
 		isTemplate
 	});
+
+	const handleDeleteEpic = (epicId: string) => {
+		deleteEpic.mutate({ id: epicId });
+	};
 
 	return (
 		<div className="space-y-6">
@@ -68,6 +74,7 @@ export default function EpicList({
 								setSelectedEpic(epic);
 								openDialog('epic');
 							}}
+							onDelete={() => handleDeleteEpic(epic.id)}
 						/>
 					))}
 					{epics.length === 0 && (

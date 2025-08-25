@@ -40,7 +40,14 @@ export const epicMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { id } = input;
 
-			await ctx.db.epic.delete({ where: { id } });
+			await ctx.db.$transaction(async (tx) => {
+				await tx.task.updateMany({
+					where: { epicId: id },
+					data: { epicId: null }
+				});
+
+				await tx.epic.delete({ where: { id } });
+			});
 		}),
 
 	update: protectedProcedure

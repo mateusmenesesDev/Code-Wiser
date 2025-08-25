@@ -8,8 +8,10 @@ import {
 	ListTodo,
 	Pencil,
 	Plus,
-	Target
+	Target,
+	Trash2
 } from 'lucide-react';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import {
 	AccordionContent,
 	AccordionItem,
@@ -24,9 +26,10 @@ import type { EpicApiOutput } from '../../types/Epic.type';
 interface EpicItemProps {
 	epic: NonNullable<EpicApiOutput>;
 	onEdit: () => void;
+	onDelete: () => void;
 }
 
-export default function EpicItem({ epic, onEdit }: EpicItemProps) {
+export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 	const totalTasks = epic.tasks?.length || 0;
 	const completedTasks =
 		epic.tasks?.filter((task) => task.status === 'DONE').length || 0;
@@ -100,17 +103,36 @@ export default function EpicItem({ epic, onEdit }: EpicItemProps) {
 									</Badge>
 								)}
 							</div>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={(e) => {
-									e.stopPropagation();
-									onEdit();
-								}}
-								className="opacity-0 transition-opacity group-hover:opacity-100"
-							>
-								<Pencil className="h-4 w-4" />
-							</Button>
+							<div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={(e) => {
+										e.stopPropagation();
+										onEdit();
+									}}
+								>
+									<Pencil className="h-4 w-4" />
+								</Button>
+								<ConfirmationDialog
+									title="Delete Epic"
+									description={`Are you sure you want to delete "${epic.title}"? ${totalTasks > 0 ? `This will remove the epic association from ${totalTasks} task${totalTasks > 1 ? 's' : ''}.` : ''} This action cannot be undone.`}
+									onConfirm={() => {
+										onDelete();
+									}}
+								>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={(e) => {
+											e.stopPropagation();
+										}}
+										className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300"
+									>
+										<Trash2 className="h-4 w-4" />
+									</Button>
+								</ConfirmationDialog>
+							</div>
 						</div>
 					</div>
 				</div>
