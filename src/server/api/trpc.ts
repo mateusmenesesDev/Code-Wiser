@@ -136,6 +136,11 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 	});
 });
 
+/**
+ * Middleware for checking if the user is an admin.
+ *
+ * This is used to protect routes that are only accessible to admins.
+ */
 const isAdmin = t.middleware(({ next, ctx }) => {
 	if (!ctx.isAdmin) {
 		throw new TRPCError({ code: 'FORBIDDEN' });
@@ -144,6 +149,13 @@ const isAdmin = t.middleware(({ next, ctx }) => {
 	return next({ ctx: { ...ctx, session: { ...ctx.session } } });
 });
 
+/**
+ * Protected procedure
+ *
+ * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
+ * guarantee that a user querying is authorized, but you can still access user session data if they
+ * are logged in.
+ */
 export const protectedProcedure = t.procedure
 	.use(isAuthed)
 	.use(timingMiddleware);
