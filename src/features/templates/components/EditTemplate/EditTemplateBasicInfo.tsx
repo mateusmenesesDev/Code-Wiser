@@ -286,6 +286,9 @@ export default function EditTemplateBasicInfo({
 										<SelectItem value={ProjectAccessTypeEnum.CREDITS}>
 											Credits
 										</SelectItem>
+										<SelectItem value={ProjectAccessTypeEnum.MENTORSHIP}>
+											Premium Mentorship
+										</SelectItem>
 									</SelectContent>
 								</Select>
 								<FormMessage />
