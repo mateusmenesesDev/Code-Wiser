@@ -1,3 +1,4 @@
+import { ProjectAccessTypeEnum } from '@prisma/client';
 import type { TRPCClientError } from '@trpc/client';
 import {
 	Check,
@@ -214,21 +215,23 @@ export function ProjectCard({
 					</div>
 
 					{/* Credits */}
-					<div
-						className={cn(
-							'flex items-center gap-2 text-sm',
-							projectTemplate.credits && userCredits < projectTemplate.credits
-								? 'text-red-600'
-								: 'text-gray-500'
-						)}
-					>
-						{projectTemplate.credits && (
-							<>
-								<CreditCard className="h-4 w-4" />
-								<span>{projectTemplate.credits} credits</span>
-							</>
-						)}
-					</div>
+					{projectTemplate.accessType === ProjectAccessTypeEnum.CREDITS && (
+						<div
+							className={cn(
+								'flex items-center gap-2 text-sm',
+								projectTemplate.credits && userCredits < projectTemplate.credits
+									? 'text-red-600'
+									: 'text-gray-500'
+							)}
+						>
+							{projectTemplate.credits && (
+								<>
+									<CreditCard className="h-4 w-4" />
+									<span>{projectTemplate.credits} credits</span>
+								</>
+							)}
+						</div>
+					)}
 				</CardContent>
 
 				<CardFooter className="pt-0">
