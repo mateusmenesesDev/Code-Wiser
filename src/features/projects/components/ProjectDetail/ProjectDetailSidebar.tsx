@@ -1,3 +1,4 @@
+import { ProjectAccessTypeEnum } from '@prisma/client';
 import { Check, ExternalLink, Play, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -87,7 +88,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								{project.minParticipants} min
 							</span>
 						</div>
-						{project.credits && project.credits > 0 && (
+						{project.accessType === ProjectAccessTypeEnum.CREDITS && (
 							<div className="flex items-center justify-between">
 								<span className="text-muted-foreground text-sm">
 									Credits Required:
@@ -102,12 +103,13 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								</span>
 							</div>
 						)}
-						{hasInsufficientCredits && (
-							<div className="rounded-lg bg-red-50 p-3 text-red-700 text-sm">
-								You need {(project.credits || 0) - userCredits} more credits to
-								start this project.
-							</div>
-						)}
+						{project.accessType === ProjectAccessTypeEnum.CREDITS &&
+							hasInsufficientCredits && (
+								<div className="rounded-lg bg-red-50 p-3 text-red-700 text-sm">
+									You need {(project.credits || 0) - userCredits} more credits
+									to start this project.
+								</div>
+							)}
 					</div>
 
 					{isEnrolled ? (
