@@ -306,6 +306,9 @@ export function CreateProjectTemplateDialog({
 												<SelectItem value={ProjectAccessTypeEnum.CREDITS}>
 													Credits
 												</SelectItem>
+												<SelectItem value={ProjectAccessTypeEnum.MENTORSHIP}>
+													Premium Mentorship
+												</SelectItem>
 											</SelectContent>
 										</Select>
 										<FormMessage />
