@@ -155,7 +155,6 @@ export function TaskDialog({
 					? data.dueDate
 					: undefined
 		};
-		console.log('Form data:', cleanedData);
 		try {
 			await onSubmit(cleanedData);
 			closeDialog();
