@@ -20,7 +20,7 @@ import {
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Progress } from '~/common/components/ui/progress';
-import { getTaskPriorityColor } from '~/common/utils/colorUtils';
+import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import { cn } from '~/lib/utils';
 import type { EpicApiOutput } from '../../types/Epic.type';
 
@@ -162,7 +162,7 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 								</div>
 								<div className="flex items-center gap-2">
 									{task.priority && task.status !== 'DONE' && (
-										<Badge variant={getTaskPriorityColor(task.priority)}>
+										<Badge variant={getBadgeTaskPriorityColor(task.priority)}>
 											{task.priority}
 										</Badge>
 									)}
