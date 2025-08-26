@@ -33,9 +33,13 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 
 	const { createProject, isCreateProjectPending } = useProjectMutations();
 
-	const { userCredits } = useUser();
+	const { userCredits, userHasMentorship } = useUser();
 	const hasInsufficientCredits =
 		project.credits && project.credits > 0 && userCredits < project.credits;
+	const isFreeProject = project.accessType === ProjectAccessTypeEnum.FREE;
+	const isCreditProject = project.accessType === ProjectAccessTypeEnum.CREDITS;
+	const isMentorshipProject =
+		project.accessType === ProjectAccessTypeEnum.MENTORSHIP;
 
 	const handleStartProject = () => {
 		if (hasInsufficientCredits) {
@@ -44,6 +48,11 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 			createProject({ projectTemplateId: project.id });
 		}
 	};
+
+	const isStartProjectDisabled =
+		isCreateProjectPending ||
+		(isCreditProject && hasInsufficientCredits) ||
+		(isMentorshipProject && !userHasMentorship);
 
 	return (
 		<div className="sticky top-24">
@@ -88,7 +97,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								{project.minParticipants} min
 							</span>
 						</div>
-						{project.accessType === ProjectAccessTypeEnum.CREDITS && (
+						{isCreditProject && (
 							<div className="flex items-center justify-between">
 								<span className="text-muted-foreground text-sm">
 									Credits Required:
@@ -103,13 +112,12 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								</span>
 							</div>
 						)}
-						{project.accessType === ProjectAccessTypeEnum.CREDITS &&
-							hasInsufficientCredits && (
-								<div className="rounded-lg bg-red-50 p-3 text-red-700 text-sm">
-									You need {(project.credits || 0) - userCredits} more credits
-									to start this project.
-								</div>
-							)}
+						{isCreditProject && hasInsufficientCredits && (
+							<div className="rounded-lg bg-red-50 p-3 text-red-700 text-sm">
+								You need {(project.credits || 0) - userCredits} more credits to
+								start this project.
+							</div>
+						)}
 					</div>
 
 					{isEnrolled ? (
@@ -124,18 +132,21 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 					) : (
 						<Button
 							onClick={handleStartProject}
-							disabled={isCreateProjectPending || !!hasInsufficientCredits}
+							disabled={isStartProjectDisabled}
 							className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 font-semibold text-lg text-white hover:from-blue-700 hover:to-purple-700"
 							size="lg"
 						>
 							<Play className="mr-2 h-5 w-5" />
-							{hasInsufficientCredits && 'Insufficient Credits'}
-							{!hasInsufficientCredits &&
-								isCreateProjectPending &&
-								'Creating...'}
-							{!hasInsufficientCredits &&
-								!isCreateProjectPending &&
-								'Start Project'}
+							{isCreateProjectPending && 'Creating...'}
+							{isCreditProject &&
+								hasInsufficientCredits &&
+								'Insufficient Credits'}
+							{isCreditProject && !hasInsufficientCredits && 'Start Project'}
+							{isMentorshipProject &&
+								!userHasMentorship &&
+								'Mentorship Required'}
+							{isMentorshipProject && userHasMentorship && 'Start Project'}
+							{isFreeProject && 'Start Project'}
 						</Button>
 					)}
 

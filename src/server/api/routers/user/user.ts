@@ -66,6 +66,13 @@ export const userRouter = createTRPCRouter({
 		});
 	}),
 
+	getMentorship: protectedProcedure.query(async ({ ctx }) => {
+		return ctx.db.user.findUnique({
+			where: { id: ctx.session.userId },
+			select: { mentorshipStatus: true }
+		});
+	}),
+
 	getAvatar: protectedProcedure
 		.input(
 			z.object({
