@@ -31,8 +31,16 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 				updatedAt: new Date(),
 				projectId: isTemplate ? null : (projectId ?? null),
 				projectTemplateId: isTemplate ? (projectId ?? null) : null,
-				kanbanColumn: null
-			} as Task & { kanbanColumn: null };
+				kanbanColumn: null,
+				assignee: null,
+				sprint: null,
+				epic: null
+			} as Task & {
+				kanbanColumn: null;
+				assignee: null;
+				sprint: null;
+				epic: null;
+			};
 
 			getProjectFunction.setData({ id: projectId as string }, (old) => {
 				if (!old) return old;
