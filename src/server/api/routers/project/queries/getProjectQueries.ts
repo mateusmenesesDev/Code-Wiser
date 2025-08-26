@@ -12,6 +12,26 @@ export const getProjectQueries = {
 					epics: true,
 					sprints: true,
 					tasks: {
+						include: {
+							assignee: {
+								select: {
+									id: true,
+									name: true
+								}
+							},
+							sprint: {
+								select: {
+									id: true,
+									title: true
+								}
+							},
+							epic: {
+								select: {
+									id: true,
+									title: true
+								}
+							}
+						},
 						orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 					}
 				}

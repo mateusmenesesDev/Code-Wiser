@@ -55,6 +55,10 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		onSettled: () => {
 			utils.task.invalidate();
 			getProjectFunction.invalidate();
+			utils.task.getAllByProjectId.invalidate({
+				projectId: projectId as string,
+				isTemplate
+			});
 		}
 	});
 
@@ -99,6 +103,10 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 				: utils.project.getById;
 
 			apiFunction.invalidate();
+			utils.task.getAllByProjectId.invalidate({
+				projectId: projectId as string,
+				isTemplate
+			});
 		}
 	});
 
@@ -128,6 +136,10 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		},
 		onSettled: () => {
 			getProjectFunction.invalidate();
+			utils.task.getAllByProjectId.invalidate({
+				projectId: projectId as string,
+				isTemplate
+			});
 		}
 	});
 
@@ -157,6 +169,10 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		},
 		onSuccess: () => {
 			getProjectFunction.invalidate();
+			utils.task.getAllByProjectId.invalidate({
+				projectId: projectId as string,
+				isTemplate
+			});
 		}
 	});
 
@@ -210,6 +226,10 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		onSettled: () => {
 			const queryKey = { id: projectId as string };
 			utils.projectTemplate.getById.invalidate(queryKey);
+			utils.task.getAllByProjectId.invalidate({
+				projectId: projectId as string,
+				isTemplate
+			});
 		}
 	});
 

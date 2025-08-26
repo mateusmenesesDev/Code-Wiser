@@ -1,6 +1,8 @@
 import type { TaskStatusEnum } from '@prisma/client';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { api } from '~/trpc/react';
+import type { TasksApiOutput } from '../types/Task.type';
 import {
 	type TaskFilters,
 	generateKanbanColumns
@@ -19,41 +21,32 @@ const sortTasksByOrder = (
 	return a.order - b.order;
 };
 
-export function useKanbanData(projectId: string, filters?: TaskFilters) {
+export function useKanbanData(
+	projectId: string,
+	filters?: TaskFilters,
+	isTemplate?: boolean,
+	providedTasks?: TasksApiOutput,
+	updateTaskOrders?: (updates: { id: string; order: number }[]) => void
+) {
 	const utils = api.useUtils();
+	const detectedIsTemplate = useIsTemplate();
+	const actualIsTemplate = isTemplate ?? detectedIsTemplate;
 
-	const { data: tasks, isLoading } = api.task.getAllByProjectId.useQuery({
+	const { data: queryTasks, isLoading } = api.task.getAllByProjectId.useQuery({
 		projectId,
-		isTemplate: false
+		isTemplate: actualIsTemplate
 	});
+
+	const [optimisticTasks, setOptimisticTasks] = useState<
+		TasksApiOutput | undefined
+	>(undefined);
+
+	const currentTasks = optimisticTasks || providedTasks || queryTasks;
 
 	const columns = useMemo(() => {
-		if (!tasks) return [];
-		return generateKanbanColumns(tasks, filters);
-	}, [tasks, filters]);
-
-	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
-		onMutate: async ({ updates: _updates }) => {
-			const queryKey = { id: projectId };
-
-			await utils.project.getById.cancel(queryKey);
-
-			const previousData = utils.project.getById.getData(queryKey);
-			return { previousData };
-		},
-		onError: (_error, _variables, context) => {
-			const queryKey = { id: projectId };
-
-			if (context?.previousData) {
-				utils.project.getById.setData(queryKey, context.previousData);
-			}
-		},
-		onSettled: () => {
-			const queryKey = { id: projectId };
-
-			utils.project.getById.invalidate(queryKey);
-		}
-	});
+		if (!currentTasks) return [];
+		return generateKanbanColumns(currentTasks, filters);
+	}, [currentTasks, filters]);
 
 	const moveTask = useCallback(
 		(
@@ -62,38 +55,30 @@ export function useKanbanData(projectId: string, filters?: TaskFilters) {
 			toColumnId: TaskStatusEnum,
 			toIndex: number
 		) => {
-			if (!tasks) return;
+			if (!currentTasks) return;
 
 			const newStatus = toColumnId;
-			const taskToMove = tasks.find((task) => task.id === taskId);
+			const taskToMove = currentTasks.find((task) => task.id === taskId);
 			if (!taskToMove) return;
 
-			const queryKey = { id: projectId };
+			const newOptimisticTasks = currentTasks.map((task) => ({ ...task }));
 
-			const optimisticTasks = tasks.map((task) => ({ ...task }));
-
-			const movedTaskIndex = optimisticTasks.findIndex(
+			const movedTaskIndex = newOptimisticTasks.findIndex(
 				(task) => task.id === taskId
 			);
 			if (movedTaskIndex !== -1) {
-				const task = optimisticTasks[movedTaskIndex];
+				const task = newOptimisticTasks[movedTaskIndex];
 				if (task) {
 					task.status = newStatus;
 				}
 			}
 
-			utils.project.getById.setData(queryKey, (oldData) => {
-				if (!oldData) return oldData;
-				return {
-					...oldData,
-					tasks: optimisticTasks
-				};
-			});
+			const queryKey = { id: projectId };
 
 			const updates: Array<{ id: string; order: number; status?: string }> = [];
 
 			if (fromColumnId === toColumnId) {
-				const columnTasks = optimisticTasks
+				const columnTasks = newOptimisticTasks
 					.filter((task) => task.status === newStatus)
 					.sort(sortTasksByOrder);
 
@@ -106,36 +91,36 @@ export function useKanbanData(projectId: string, filters?: TaskFilters) {
 				}
 
 				columnTasks.forEach((task, index) => {
-					const taskInArray = optimisticTasks.find((t) => t.id === task.id);
+					const taskInArray = newOptimisticTasks.find((t) => t.id === task.id);
 					if (taskInArray) {
 						taskInArray.order = index;
 					}
 					updates.push({ id: task.id, order: index });
 				});
 			} else {
-				const sourceColumnTasks = optimisticTasks
+				const sourceColumnTasks = newOptimisticTasks
 					.filter((task) => task.status === fromColumnId)
 					.sort(sortTasksByOrder);
 
 				sourceColumnTasks.forEach((task, index) => {
-					const taskInArray = optimisticTasks.find((t) => t.id === task.id);
+					const taskInArray = newOptimisticTasks.find((t) => t.id === task.id);
 					if (taskInArray) {
 						taskInArray.order = index;
 					}
 					updates.push({ id: task.id, order: index });
 				});
 
-				const targetColumnTasks = optimisticTasks
+				const targetColumnTasks = newOptimisticTasks
 					.filter((task) => task.status === newStatus && task.id !== taskId)
 					.sort(sortTasksByOrder);
 
-				const movedTask = optimisticTasks.find((task) => task.id === taskId);
+				const movedTask = newOptimisticTasks.find((task) => task.id === taskId);
 				if (movedTask) {
 					targetColumnTasks.splice(toIndex, 0, movedTask);
 				}
 
 				targetColumnTasks.forEach((task, index) => {
-					const taskInArray = optimisticTasks.find((t) => t.id === task.id);
+					const taskInArray = newOptimisticTasks.find((t) => t.id === task.id);
 					if (taskInArray) {
 						taskInArray.order = index;
 					}
@@ -147,17 +132,31 @@ export function useKanbanData(projectId: string, filters?: TaskFilters) {
 				});
 			}
 
-			utils.project.getById.setData(queryKey, (oldData) => {
-				if (!oldData) return oldData;
-				return {
-					...oldData,
-					tasks: optimisticTasks
-				};
-			});
+			if (actualIsTemplate) {
+				utils.projectTemplate.getById.setData(queryKey, (oldData) => {
+					if (!oldData) return oldData;
+					return {
+						...oldData,
+						tasks: newOptimisticTasks
+					};
+				});
+			} else {
+				utils.project.getById.setData(queryKey, (oldData) => {
+					if (!oldData) return oldData;
+					return {
+						...oldData,
+						tasks: newOptimisticTasks
+					};
+				});
+			}
 
-			updateTaskOrdersMutation.mutate({ updates });
+			setOptimisticTasks(newOptimisticTasks);
+
+			if (updateTaskOrders) {
+				updateTaskOrders(updates);
+			}
 		},
-		[updateTaskOrdersMutation, tasks, utils, projectId]
+		[currentTasks, utils, projectId, actualIsTemplate, updateTaskOrders]
 	);
 
 	return {

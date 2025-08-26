@@ -87,7 +87,18 @@ export function generateKanbanColumns(
 
 	for (const status of Object.values(TaskStatusEnum)) {
 		const config = KANBAN_COLUMN_CONFIG[status];
-		const columnTasks = filteredTasks.filter((task) => task.status === status);
+		const columnTasks = filteredTasks
+			.filter((task) => task.status === status)
+			.sort((a, b) => {
+				if (a.order == null && b.order == null) {
+					return (
+						new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+					);
+				}
+				if (a.order == null) return 1;
+				if (b.order == null) return -1;
+				return a.order - b.order;
+			});
 
 		columns.push({
 			id: status,

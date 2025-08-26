@@ -47,7 +47,11 @@ export function KanbanBoard({
 	return (
 		<div className="space-y-6">
 			<TaskFilters />
-			<KanbanBoardContent projectId={projectId} isTemplate={actualIsTemplate} />
+			<KanbanBoardContent
+				projectId={projectId}
+				isTemplate={actualIsTemplate}
+				tasks={allTasks}
+			/>
 		</div>
 	);
 }

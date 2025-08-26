@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import type { z } from 'zod';
-import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import { useTask } from '~/features/workspace/hooks/useTask';
 import type {
@@ -24,27 +23,33 @@ import { BoardColumn } from './BoardColumn';
 
 interface KanbanBoardContentProps {
 	projectId: string;
-	isTemplate?: boolean;
+	isTemplate: boolean;
+	tasks: TasksApiOutput;
 }
 
 export function KanbanBoardContent({
 	projectId,
-	isTemplate = false
+	isTemplate,
+	tasks
 }: KanbanBoardContentProps) {
 	const { filters } = useTaskFiltersUrl();
-	const { columns, moveTask, isLoading } = useKanbanData(projectId, filters);
 	const [selectedTask, setSelectedTask] = useState<
 		NonNullable<TasksApiOutput>[number] | null
 	>(null);
 
-	const detectedIsTemplate = useIsTemplate();
-	const actualIsTemplate = isTemplate || detectedIsTemplate;
-
-	const { data: projectData } = actualIsTemplate
+	const { data: projectData } = isTemplate
 		? api.projectTemplate.getById.useQuery({ id: projectId })
 		: api.project.getById.useQuery({ id: projectId });
 
-	const { createTask, updateTask } = useTask({ projectId });
+	const { createTask, updateTask, updateTaskOrders } = useTask({ projectId });
+
+	const { columns, moveTask, isLoading } = useKanbanData(
+		projectId,
+		filters,
+		isTemplate,
+		tasks,
+		updateTaskOrders
+	);
 
 	const transformedColumns: Column[] = columns.map((column) => ({
 		id: column.id,
@@ -60,13 +65,10 @@ export function KanbanBoardContent({
 			data: z.infer<typeof createTaskSchema> | z.infer<typeof updateTaskSchema>
 		) => {
 			if ('id' in data && data.id) {
-				// Update existing task - cast to UpdateTaskInput
 				updateTask(data as UpdateTaskInput);
 			} else {
-				// Create new task - cast to CreateTaskInput
 				createTask(data as CreateTaskInput);
 			}
-			// Clear selected task after successful submission
 			setSelectedTask(null);
 		},
 		[createTask, updateTask]
@@ -80,7 +82,7 @@ export function KanbanBoardContent({
 	);
 
 	const handleCreateTask = useCallback(() => {
-		setSelectedTask(null); // Clear selected task to create new one
+		setSelectedTask(null);
 	}, []);
 
 	if (isLoading) {
@@ -104,8 +106,8 @@ export function KanbanBoardContent({
 
 			<TaskDialog
 				task={selectedTask || undefined}
-				projectId={actualIsTemplate ? undefined : projectId}
-				projectTemplateId={actualIsTemplate ? projectId : undefined}
+				projectId={isTemplate ? undefined : projectId}
+				projectTemplateId={isTemplate ? projectId : undefined}
 				epics={projectData?.epics || []}
 				sprints={projectData?.sprints || []}
 				onSubmit={handleTaskSubmit}
