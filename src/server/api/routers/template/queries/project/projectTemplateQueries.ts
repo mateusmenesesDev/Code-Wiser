@@ -1,6 +1,10 @@
 import { ProjectStatusEnum } from '@prisma/client';
 import { z } from 'zod';
-import { protectedProcedure, publicProcedure } from '~/server/api/trpc';
+import {
+	adminProcedure,
+	protectedProcedure,
+	publicProcedure
+} from '~/server/api/trpc';
 
 export const projectTemplateQueries = {
 	getApproved: publicProcedure.query(({ ctx }) =>
@@ -65,7 +69,7 @@ export const projectTemplateQueries = {
 			}
 		}),
 
-	getAll: protectedProcedure
+	getAll: adminProcedure
 		.input(z.object({ status: z.nativeEnum(ProjectStatusEnum) }).optional())
 		.query(({ ctx, input }) =>
 			ctx.db.projectTemplate.findMany({
