@@ -90,10 +90,7 @@ const PricingPage = () => {
 
 					{user && (
 						<div className="flex justify-center">
-							<Badge
-								variant="outline"
-								className="border-dev-purple-200 bg-gradient-to-r from-dev-purple-50 to-dev-blue-50 px-4 py-2 text-dev-purple-700 text-lg dark:border-dev-purple-700 dark:from-dev-purple-900/20 dark:to-dev-blue-900/20 dark:text-dev-purple-300"
-							>
+							<Badge variant="purple-gradient" className="px-4 py-2 text-lg ">
 								<Sparkles className="mr-2 h-4 w-4" />
 								Current Balance: {userCredits} credits
 							</Badge>
@@ -123,7 +120,7 @@ const PricingPage = () => {
 								>
 									{pkg.popular && (
 										<div className="-top-3 -translate-x-1/2 absolute left-1/2 transform">
-											<Badge variant="primary">Most Popular</Badge>
+											<Badge variant="default">Most Popular</Badge>
 										</div>
 									)}
 
@@ -135,12 +132,7 @@ const PricingPage = () => {
 														{pkg.credits} Credits
 													</h3>
 													{pkg.savings && (
-														<Badge
-															variant="secondary"
-															className="bg-green-50 text-green-600 dark:bg-green-900/20"
-														>
-															{pkg.savings}
-														</Badge>
+														<Badge variant="success">{pkg.savings}</Badge>
 													)}
 												</div>
 												<p className="font-bold text-3xl text-dev-blue-600">

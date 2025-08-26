@@ -28,10 +28,7 @@ export function ColumnHeader({
 		<div className="flex items-center justify-between">
 			<CardTitle className="font-semibold text-card-foreground text-sm">
 				{title}
-				<Badge
-					variant="secondary"
-					className="ml-2 bg-background/50 text-foreground"
-				>
+				<Badge variant="secondary" className="ml-2">
 					{count}
 				</Badge>
 			</CardTitle>

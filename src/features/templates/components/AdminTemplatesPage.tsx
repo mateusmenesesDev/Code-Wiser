@@ -31,9 +31,9 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import {
-	getAccessTypeColor,
-	getDifficultyColor,
-	getTemplateStatusColor
+	getBadgeAccessTypeColor,
+	getBadgeTemplateStatusColor,
+	getDifficultyBadgeColor
 } from '~/common/utils/colorUtils';
 import { formatTemplateStatus } from '~/common/utils/projectUtils';
 import { useAdminTemplates } from '../hook/useAdminTemplates';
@@ -226,29 +226,29 @@ export default function AdminTemplatesPage() {
 													</div>
 												</TableCell>
 												<TableCell>
-													<Badge variant="outline">
+													<Badge variant="secondary">
 														{template.category.name}
 													</Badge>
 												</TableCell>
 												<TableCell>
-													<Badge
-														className={getAccessTypeColor(
-															accessType as 'FREE' | 'CREDITS' | 'MENTORSHIP'
-														)}
-													>
+													<Badge variant={getBadgeAccessTypeColor(accessType)}>
 														{accessType}
 													</Badge>
 												</TableCell>
 												<TableCell>
 													<Badge
-														className={getDifficultyColor(template.difficulty)}
+														variant={getDifficultyBadgeColor(
+															template.difficulty
+														)}
 													>
 														{template.difficulty}
 													</Badge>
 												</TableCell>
 												<TableCell>
 													<Badge
-														className={getTemplateStatusColor(template.status)}
+														variant={getBadgeTemplateStatusColor(
+															template.status
+														)}
 													>
 														{formatTemplateStatus(template.status)}
 													</Badge>

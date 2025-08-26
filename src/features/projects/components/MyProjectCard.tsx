@@ -10,15 +10,12 @@ import {
 	CardTitle
 } from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
-import {
-	getDifficultyColor,
-	getProjectStatusColor
-} from '~/common/utils/colorUtils';
+import { getDifficultyBadgeColor } from '~/common/utils/colorUtils';
 import type { UserProjectApiResponse } from '../types/Projects.type';
 
 interface ProjectWithProgress extends UserProjectApiResponse {
 	progress: number;
-	status: 'In Progress' | 'Near Completion' | 'Not Started';
+	status: string;
 	lastActivity: string;
 }
 
@@ -37,10 +34,7 @@ export function MyProjectCard({ project }: MyProjectCardProps) {
 							{project.description}
 						</CardDescription>
 					</div>
-					<Badge
-						className={getProjectStatusColor(project.status)}
-						variant="outline"
-					>
+					<Badge variant={project.status === 'PENDING' ? 'outline' : 'success'}>
 						{project.status}
 					</Badge>
 				</div>
@@ -56,10 +50,7 @@ export function MyProjectCard({ project }: MyProjectCardProps) {
 				</div>
 
 				<div className="flex items-center justify-between">
-					<Badge
-						variant="outline"
-						className={getDifficultyColor(project.difficulty)}
-					>
+					<Badge variant={getDifficultyBadgeColor(project.difficulty)}>
 						{project.difficulty}
 					</Badge>
 					<Badge variant="secondary">

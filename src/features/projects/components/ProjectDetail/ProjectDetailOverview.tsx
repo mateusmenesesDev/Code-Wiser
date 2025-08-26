@@ -75,11 +75,7 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 							</h3>
 							<div className="flex flex-wrap gap-2">
 								{project.technologies?.map((tech) => (
-									<Badge
-										key={tech.id}
-										variant="outline"
-										className="hover:border-primary hover:bg-primary hover:text-primary"
-									>
+									<Badge key={tech.id} variant="default">
 										{tech.name}
 									</Badge>
 								))}
@@ -104,7 +100,7 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 											<CardTitle className="text-base">
 												{module.title}
 											</CardTitle>
-											<Badge variant="outline" className="text-xs">
+											<Badge variant="default" className="text-xs">
 												{module.duration}
 											</Badge>
 										</div>

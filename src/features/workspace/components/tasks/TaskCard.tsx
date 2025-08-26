@@ -1,4 +1,4 @@
-import type { TaskStatusEnum } from '@prisma/client';
+import type { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import {
 	ArrowUp,
 	Calendar,
@@ -28,7 +28,7 @@ import {
 } from '~/common/components/ui/tooltip';
 import { useDialog } from '~/common/hooks/useDialog';
 import { stripHtmlTags } from '~/common/utils/cleanups';
-import { getTaskPriorityColor } from '~/common/utils/colorUtils';
+import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import { useTask } from '~/features/workspace/hooks/useTask';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
 import { cn } from '~/lib/utils';
@@ -194,8 +194,10 @@ export function TaskCard({
 
 				<div className="flex items-center justify-between">
 					<Badge
-						variant="outline"
-						className={`text-xs ${getTaskPriorityColor(task.priority ?? '')}`}
+						variant={getBadgeTaskPriorityColor(
+							task.priority as TaskPriorityEnum
+						)}
+						className="text-xs"
 					>
 						<Flag className="mr-1 h-2 w-2" />
 						{task.priority}

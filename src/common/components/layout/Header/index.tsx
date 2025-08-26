@@ -63,10 +63,7 @@ const Header = () => {
 						{isLoggedIn ? (
 							<>
 								{/* Credits Badge */}
-								<Badge
-									variant="outline"
-									className="border-dev-purple-200 bg-gradient-to-r from-dev-purple-50 to-dev-blue-50 text-dev-purple-700 dark:border-dev-purple-700 dark:from-dev-purple-900/20 dark:to-dev-blue-900/20 dark:text-dev-purple-300"
-								>
+								<Badge variant="purple-gradient">
 									<Sparkles className="mr-1 h-3 w-3" />
 									{userCredits?.credits ?? 0} credits
 								</Badge>

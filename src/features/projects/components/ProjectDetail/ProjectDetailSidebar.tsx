@@ -13,8 +13,8 @@ import {
 } from '~/common/components/ui/card';
 import { useUser } from '~/common/hooks/useUser';
 import {
-	getAccessTypeColor,
-	getDifficultyColor
+	getBadgeAccessTypeColor,
+	getDifficultyBadgeColor
 } from '~/common/utils/colorUtils';
 import { cn } from '~/lib/utils';
 import { useMyProjects } from '../../hooks/useMyProjects';
@@ -69,16 +69,13 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 							<span className="text-muted-foreground text-sm">
 								Access Type:
 							</span>
-							<Badge className={getAccessTypeColor(project.accessType)}>
+							<Badge variant={getBadgeAccessTypeColor(project.accessType)}>
 								{project.accessType}
 							</Badge>
 						</div>
 						<div className="flex items-center justify-between">
 							<span className="text-muted-foreground text-sm">Difficulty:</span>
-							<Badge
-								variant="outline"
-								className={getDifficultyColor(project.difficulty)}
-							>
+							<Badge variant={getDifficultyBadgeColor(project.difficulty)}>
 								{project.difficulty}
 							</Badge>
 						</div>

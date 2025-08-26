@@ -27,9 +27,8 @@ import {
 } from '~/common/components/ui/card';
 import { useDialog } from '~/common/hooks/useDialog';
 import {
-	getAccessTypeColor,
-	getCategoryColor,
-	getDifficultyColor
+	getBadgeAccessTypeColor,
+	getDifficultyBadgeColor
 } from '~/common/utils/colorUtils';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { cn } from '~/lib/utils';
@@ -113,7 +112,7 @@ export function ProjectCard({
 					<div className="relative h-48 w-full overflow-hidden">
 						<div className="absolute top-3 right-3 z-10">
 							<Badge
-								className={`${getAccessTypeColor(projectTemplate.accessType as 'FREE' | 'CREDITS' | 'MENTORSHIP')} font-medium`}
+								variant={getBadgeAccessTypeColor(projectTemplate.accessType)}
 							>
 								{getAccessTypeIcon(projectTemplate.accessType)}
 								<span className="ml-1">{projectTemplate.accessType}</span>
@@ -141,7 +140,7 @@ export function ProjectCard({
 						</div>
 						<div className="absolute top-3 right-3">
 							<Badge
-								className={`${getAccessTypeColor(projectTemplate.accessType as 'FREE' | 'CREDITS' | 'MENTORSHIP')} font-medium`}
+								variant={getBadgeAccessTypeColor(projectTemplate.accessType)}
 							>
 								{getAccessTypeIcon(projectTemplate.accessType)}
 								<span className="ml-1">{projectTemplate.accessType}</span>
@@ -165,14 +164,9 @@ export function ProjectCard({
 				<CardContent className="space-y-4">
 					{/* Category and Difficulty */}
 					<div className="flex items-center gap-2">
+						<Badge variant="outline">{projectTemplate.category.name}</Badge>
 						<Badge
-							className={`${getCategoryColor(projectTemplate.category.name)} font-medium text-xs`}
-						>
-							{projectTemplate.category.name}
-						</Badge>
-						<Badge
-							variant="outline"
-							className={`${getDifficultyColor(projectTemplate.difficulty)} font-medium text-xs`}
+							variant={getDifficultyBadgeColor(projectTemplate.difficulty)}
 						>
 							{projectTemplate.difficulty}
 						</Badge>
@@ -183,19 +177,12 @@ export function ProjectCard({
 						projectTemplate.technologies.length > 0 && (
 							<div className="flex flex-wrap gap-1">
 								{projectTemplate.technologies.slice(0, 4).map((tech) => (
-									<Badge
-										key={tech.id}
-										variant="secondary"
-										className="bg-gray-100 text-gray-700 text-xs hover:bg-gray-200"
-									>
+									<Badge key={tech.id} variant="default" className="text-xs">
 										{tech.name}
 									</Badge>
 								))}
 								{projectTemplate.technologies.length > 4 && (
-									<Badge
-										variant="secondary"
-										className="bg-gray-100 text-gray-500 text-xs"
-									>
+									<Badge variant="outline">
 										+{projectTemplate.technologies.length - 4} more
 									</Badge>
 								)}

@@ -20,6 +20,7 @@ import {
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Progress } from '~/common/components/ui/progress';
+import { getTaskPriorityColor } from '~/common/utils/colorUtils';
 import { cn } from '~/lib/utils';
 import type { EpicApiOutput } from '../../types/Epic.type';
 
@@ -83,21 +84,14 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 							</div>
 							<div className="flex items-center gap-2">
 								<Badge
-									variant={isCompleted ? 'outline' : 'secondary'}
-									className={cn(
-										'rounded-md',
-										isCompleted &&
-											'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/50 dark:bg-purple-900/20 dark:text-purple-400'
-									)}
+									variant={isCompleted ? 'purple-gradient' : 'outline'}
+									className="rounded-md"
 								>
 									<ListTodo className="mr-1 h-3 w-3" />
 									{totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
 								</Badge>
 								{completedTasks > 0 && (
-									<Badge
-										variant="outline"
-										className="rounded-md border-green-200 bg-green-50 text-green-700 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-400"
-									>
+									<Badge variant="success" className="rounded-md">
 										<CheckCircle2 className="mr-1 h-3 w-3" />
 										{completedTasks} completed
 									</Badge>
@@ -167,16 +161,13 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 									</div>
 								</div>
 								<div className="flex items-center gap-2">
-									{task.priority && (
-										<Badge variant="secondary" className="text-xs">
+									{task.priority && task.status !== 'DONE' && (
+										<Badge variant={getTaskPriorityColor(task.priority)}>
 											{task.priority}
 										</Badge>
 									)}
 									{task.status === 'DONE' && (
-										<Badge
-											variant="secondary"
-											className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-										>
+										<Badge variant="success" className="text-xs">
 											Done
 										</Badge>
 									)}

@@ -192,21 +192,14 @@ export default function SprintItem({
 								</div>
 								<div className="flex items-center gap-2">
 									<Badge
-										variant={isCompleted ? 'outline' : 'secondary'}
-										className={cn(
-											'rounded-md',
-											isCompleted &&
-												'border-green-200 bg-green-50 text-green-700 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-400'
-										)}
+										variant={isCompleted ? 'success' : 'secondary'}
+										className="rounded-md"
 									>
 										<ListTodo className="mr-1 h-3 w-3" />
 										{totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
 									</Badge>
 									{completedTasks > 0 && (
-										<Badge
-											variant="outline"
-											className="rounded-md border-green-200 bg-green-50 text-green-700 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-400"
-										>
+										<Badge variant="success" className="rounded-md">
 											<CheckCircle2 className="mr-1 h-3 w-3" />
 											{completedTasks} completed
 										</Badge>
@@ -269,10 +262,7 @@ export default function SprintItem({
 										<span className="font-medium">{task.title}</span>
 									</div>
 									{task.status === 'DONE' && (
-										<Badge
-											variant="secondary"
-											className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-										>
+										<Badge variant="success" className="rounded-md">
 											Done
 										</Badge>
 									)}

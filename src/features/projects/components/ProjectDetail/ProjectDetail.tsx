@@ -5,14 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
-import {
-	getCategoryColor,
-	getDifficultyColor
-} from '~/common/utils/colorUtils';
+import { getDifficultyBadgeColor } from '~/common/utils/colorUtils';
 import type { ProjectTemplateInfoApiOutput } from '../../types/Projects.type';
 import { ProjectDetailOverview } from './ProjectDetailOverview';
-import { ProjectImageGallery } from './ProjectImageGallery';
 import { ProjectDetailSidebar } from './ProjectDetailSidebar';
+import { ProjectImageGallery } from './ProjectImageGallery';
 
 export default function ProjectDetail({
 	project
@@ -56,13 +53,8 @@ export default function ProjectDetail({
 									</div>
 								</div>
 								<div className="flex gap-2">
-									<Badge className={getCategoryColor(project.category.name)}>
-										{project.category.name}
-									</Badge>
-									<Badge
-										variant="outline"
-										className={getDifficultyColor(project.difficulty)}
-									>
+									<Badge variant="secondary">{project.category.name}</Badge>
+									<Badge variant={getDifficultyBadgeColor(project.difficulty)}>
 										{project.difficulty}
 									</Badge>
 								</div>

@@ -8,16 +8,15 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
-import { getTaskPriorityColor } from '~/common/utils/colorUtils';
+import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import { useTask } from '~/features/workspace/hooks/useTask';
-import { cn } from '~/lib/utils';
 
 export function PriorityCell({
 	priority,
 	id,
 	projectId
 }: {
-	priority: TaskPriorityEnum | string;
+	priority: TaskPriorityEnum;
 	id: string;
 	isTemplate: boolean;
 	projectId: string;
@@ -30,10 +29,8 @@ export function PriorityCell({
 		<DropdownMenu>
 			<DropdownMenuTrigger>
 				<Badge
-					className={cn(
-						getTaskPriorityColor(priority),
-						'w-[100px] cursor-pointer justify-center'
-					)}
+					variant={getBadgeTaskPriorityColor(priority)}
+					className="w-[100px] cursor-pointer justify-center"
 				>
 					{priority}
 					<ChevronDown className="ml-1 h-4 w-4" />
@@ -51,10 +48,8 @@ export function PriorityCell({
 						}
 					>
 						<Badge
-							className={cn(
-								getTaskPriorityColor(priority),
-								'w-[100px] cursor-pointer justify-center'
-							)}
+							variant={getBadgeTaskPriorityColor(priority)}
+							className="w-[100px] cursor-pointer justify-center"
 						>
 							{priority}
 						</Badge>
