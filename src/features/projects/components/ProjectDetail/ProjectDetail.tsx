@@ -16,19 +16,21 @@ export default function ProjectDetail({
 	project: NonNullable<ProjectTemplateInfoApiOutput>;
 }) {
 	return (
-		<div>
+		<article>
 			<GoBackButton>Back to Projects</GoBackButton>
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-				<div className="space-y-8 lg:col-span-2">
+				<main className="space-y-8 lg:col-span-2">
 					<Card className="animate-fade-in overflow-hidden shadow-lg">
 						<CardContent className="p-8">
-							<div className="mb-4 flex items-start justify-between">
+							<header className="mb-4 flex items-start justify-between">
 								<div>
 									<h1 className="mb-2 font-bold text-3xl">{project.title}</h1>
 									<div className="flex items-center gap-4 text-sm">
 										<div className="flex items-center gap-1">
 											<Clock className="h-4 w-4" />
-											<span>{project.expectedDuration || '6-8 weeks'}</span>
+											<time dateTime={project.expectedDuration || '6-8 weeks'}>
+												{project.expectedDuration || '6-8 weeks'}
+											</time>
 										</div>
 									</div>
 								</div>
@@ -38,9 +40,11 @@ export default function ProjectDetail({
 										{project.difficulty}
 									</Badge>
 								</div>
-							</div>
+							</header>
 
-							<div className="leading-relaxed">{project.description}</div>
+							<section>
+								<p className="leading-relaxed">{project.description}</p>
+							</section>
 						</CardContent>
 					</Card>
 
@@ -52,13 +56,15 @@ export default function ProjectDetail({
 						projectTitle={project.title}
 					/>
 					<ProjectDetailOverview project={project} />
-				</div>
-				<Suspense fallback={<SidebarSkeleton />}>
-					<div className="lg:col-span-1">
-						<ProjectDetailSidebar project={project} />
-					</div>
-				</Suspense>
+				</main>
+				<aside>
+					<Suspense fallback={<SidebarSkeleton />}>
+						<div className="lg:col-span-1">
+							<ProjectDetailSidebar project={project} />
+						</div>
+					</Suspense>
+				</aside>
 			</div>
-		</div>
+		</article>
 	);
 }

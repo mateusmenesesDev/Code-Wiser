@@ -33,7 +33,11 @@ export function ProjectImageGallery({
 				<div className="relative mb-4 h-64 w-full overflow-hidden rounded-xl">
 					<Image
 						src={images[selectedImage]?.url ?? ''}
-						alt={`${projectTitle} preview`}
+						alt={
+							images[selectedImage]?.alt
+								? `${projectTitle} - ${images[selectedImage].alt}`
+								: `${projectTitle} project preview image`
+						}
 						fill
 						className="object-cover"
 						priority
@@ -55,7 +59,11 @@ export function ProjectImageGallery({
 						>
 							<Image
 								src={image.url}
-								alt={`${projectTitle} preview ${index + 1}`}
+								alt={
+									image.alt
+										? `${projectTitle} - ${image.alt} (thumbnail ${index + 1})`
+										: `${projectTitle} project preview thumbnail ${index + 1}`
+								}
 								className="h-16 w-full object-cover"
 								priority
 							/>
