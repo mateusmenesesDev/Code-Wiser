@@ -34,6 +34,7 @@ export function ProjectImageGallery({
 						alt={`${projectTitle} preview`}
 						fill
 						className="object-cover"
+						priority
 					/>
 				</div>
 
@@ -50,10 +51,11 @@ export function ProjectImageGallery({
 									: 'border-gray-200 hover:border-blue-300'
 							}`}
 						>
-							<img
+							<Image
 								src={image.url}
 								alt={`${projectTitle} preview ${index + 1}`}
 								className="h-16 w-full object-cover"
+								priority
 							/>
 						</button>
 					))}
