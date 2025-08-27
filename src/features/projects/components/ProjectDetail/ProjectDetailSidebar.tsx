@@ -1,3 +1,5 @@
+'use client';
+
 import { ProjectAccessTypeEnum } from '@prisma/client';
 import { Check, ExternalLink, Play, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';

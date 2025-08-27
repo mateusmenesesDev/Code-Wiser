@@ -3,6 +3,8 @@ import ProjectDetailNotFound from '~/features/projects/components/ProjectDetail/
 import { db } from '~/server/db';
 import { api } from '~/trpc/server';
 
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: { params: { id: string } }) {
 	const project = await db.projectTemplate.findUnique({
 		where: {

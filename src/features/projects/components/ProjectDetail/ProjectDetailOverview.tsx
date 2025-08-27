@@ -19,14 +19,6 @@ interface ProjectDetailOverviewProps {
 }
 
 export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
-	// Mock prerequisites for now - these could be added to the database later
-	const prerequisites = [
-		'Solid understanding of JavaScript ES6+',
-		'Basic React knowledge (hooks, components)',
-		'Understanding of REST APIs',
-		'Basic SQL knowledge'
-	];
-
 	// Simplified modules based on sprints
 	const modules =
 		project.sprints?.map((sprint, index) => ({
@@ -130,13 +122,13 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 							What You Need to Know
 						</h3>
 						<div className="space-y-3">
-							{prerequisites.map((prereq) => (
+							{project.preRequisites?.map((prerequisite) => (
 								<div
-									key={`prereq-${prereq.replace(/\s+/g, '-').toLowerCase()}`}
+									key={`prereq-${prerequisite.replace(/\s+/g, '-').toLowerCase()}`}
 									className="flex items-start gap-3 rounded-lg p-3"
 								>
 									<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
-									<span>{prereq}</span>
+									<span>{prerequisite}</span>
 								</div>
 							))}
 						</div>

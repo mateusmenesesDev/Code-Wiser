@@ -1,32 +1,23 @@
-'use client';
-
-import { ArrowLeft, Clock } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Clock } from 'lucide-react';
+import { Suspense } from 'react';
+import GoBackButton from '~/common/components/GoBackButton';
 import { Badge } from '~/common/components/ui/badge';
-import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
 import { getDifficultyBadgeColor } from '~/common/utils/colorUtils';
 import type { ProjectTemplateInfoApiOutput } from '../../types/Projects.type';
 import { ProjectDetailOverview } from './ProjectDetailOverview';
 import { ProjectDetailSidebar } from './ProjectDetailSidebar';
 import { ProjectImageGallery } from './ProjectImageGallery';
+import { SidebarSkeleton } from './SidebarSkeleton';
 
 export default function ProjectDetail({
 	project
 }: {
 	project: NonNullable<ProjectTemplateInfoApiOutput>;
 }) {
-	const router = useRouter();
-
-	const handleGoBack = () => {
-		router.back();
-	};
 	return (
 		<div>
-			<Button variant="ghost" className="mb-6" onClick={handleGoBack}>
-				<ArrowLeft className="mr-2 h-4 w-4" />
-				Back to Projects
-			</Button>
+			<GoBackButton>Back to Projects</GoBackButton>
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 				<div className="space-y-8 lg:col-span-2">
 					<Card className="animate-fade-in overflow-hidden shadow-lg">
@@ -35,17 +26,6 @@ export default function ProjectDetail({
 								<div>
 									<h1 className="mb-2 font-bold text-3xl">{project.title}</h1>
 									<div className="flex items-center gap-4 text-sm">
-										{/* TODO: Add rating */}
-										{/* <div className="flex items-center gap-1">
-											<Star className="h-4 w-4 fill-current text-yellow-500" />
-											<span className="font-medium">4.8</span>
-											<span>(67 reviews)</span>
-										</div> */}
-										{/* TODO: Add rating */}
-										{/* <div className="flex items-center gap-1">
-											<Users className="h-4 w-4" />
-											<span>234 enrolled</span>
-										</div> */}
 										<div className="flex items-center gap-1">
 											<Clock className="h-4 w-4" />
 											<span>{project.expectedDuration || '6-8 weeks'}</span>
@@ -71,13 +51,13 @@ export default function ProjectDetail({
 						}))}
 						projectTitle={project.title}
 					/>
-
 					<ProjectDetailOverview project={project} />
 				</div>
-
-				<div className="lg:col-span-1">
-					<ProjectDetailSidebar project={project} />
-				</div>
+				<Suspense fallback={<SidebarSkeleton />}>
+					<div className="lg:col-span-1">
+						<ProjectDetailSidebar project={project} />
+					</div>
+				</Suspense>
 			</div>
 		</div>
 	);
