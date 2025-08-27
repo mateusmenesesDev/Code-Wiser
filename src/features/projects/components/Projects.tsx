@@ -41,7 +41,7 @@ export default function Projects({
 		setCostFilter
 	} = useProjectFilter();
 
-	const { userCredits } = useUser();
+	const { userCredits, userHasMentorship } = useUser();
 	const { filteredProjects, isLoading, userProjects } = useProject({
 		initialProjectsData,
 		initialUserProjectsData
@@ -196,6 +196,7 @@ export default function Projects({
 									style={{ animationDelay: `${index * 0.1}s` }}
 								>
 									<ProjectCard
+										userHasMentorship={userHasMentorship}
 										projectTemplate={project}
 										userCredits={userCredits}
 										projectId={
