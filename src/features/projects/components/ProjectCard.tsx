@@ -41,11 +41,13 @@ type ProjectCardProps = {
 	projectTemplate: NonNullable<ProjectTemplateApiOutput>;
 	userCredits: number;
 	projectId?: string;
+	userHasMentorship: boolean;
 };
 
 export function ProjectCard({
 	projectTemplate,
 	userCredits,
+	userHasMentorship,
 	projectId
 }: ProjectCardProps) {
 	const router = useRouter();
@@ -63,7 +65,12 @@ export function ProjectCard({
 			return;
 		}
 
-		if (projectTemplate.credits && userCredits < projectTemplate.credits) {
+		if (
+			!userHasMentorship &&
+			projectTemplate.accessType === ProjectAccessTypeEnum.CREDITS &&
+			projectTemplate.credits &&
+			userCredits < projectTemplate.credits
+		) {
 			return toast.info(<InsufficientCreditsError />, {
 				dismissible: true,
 				closeButton: true

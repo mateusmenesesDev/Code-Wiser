@@ -42,11 +42,15 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 		project.accessType === ProjectAccessTypeEnum.MENTORSHIP;
 
 	const handleStartProject = () => {
-		if (hasInsufficientCredits) {
-			toast.error('You need more credits to start this project');
-		} else {
-			createProject({ projectTemplateId: project.id });
+		if (isMentorshipProject && !userHasMentorship) {
+			return toast.error('You need a mentorship to start this project');
 		}
+
+		if (isCreditProject && hasInsufficientCredits) {
+			return toast.error('You need more credits to start this project');
+		}
+
+		createProject({ projectTemplateId: project.id });
 	};
 
 	const isStartProjectDisabled =
