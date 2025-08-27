@@ -1,7 +1,6 @@
 import ProjectDetail from '~/features/projects/components/ProjectDetail/ProjectDetail';
 import ProjectDetailNotFound from '~/features/projects/components/ProjectDetail/ProjectDetailNotFound';
 import { db } from '~/server/db';
-import { api } from '~/trpc/server';
 
 export const revalidate = 3600;
 
@@ -125,7 +124,30 @@ export default async function ProjectDetailPage({
 }) {
 	const id = params.id;
 
-	const project = await api.projectTemplate.getInfoById({ id });
+	const project = await db.projectTemplate.findUnique({
+		where: {
+			id: id,
+			status: 'APPROVED'
+		},
+		include: {
+			technologies: true,
+			category: true,
+			learningOutcomes: true,
+			milestones: true,
+			epics: true,
+			sprints: true,
+			images: {
+				orderBy: {
+					order: 'asc'
+				},
+				select: {
+					url: true,
+					alt: true,
+					id: true
+				}
+			}
+		}
+	});
 
 	if (!project) {
 		return <ProjectDetailNotFound />;
