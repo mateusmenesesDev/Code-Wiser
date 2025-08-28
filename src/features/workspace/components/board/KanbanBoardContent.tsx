@@ -110,6 +110,19 @@ export function KanbanBoardContent({
 				projectTemplateId={isTemplate ? projectId : undefined}
 				epics={projectData?.epics || []}
 				sprints={projectData?.sprints || []}
+				projectMembers={
+					isTemplate
+						? []
+						: (
+								projectData as {
+									members?: Array<{
+										id: string;
+										name: string | null;
+										email: string;
+									}>;
+								}
+							)?.members || []
+				}
 				onSubmit={handleTaskSubmit}
 			/>
 		</DndProvider>

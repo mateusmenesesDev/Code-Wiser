@@ -158,6 +158,19 @@ export default function Backlog({ projectId }: { projectId: string }) {
 					projectTemplateId={isTemplate ? (id as string) : undefined}
 					epics={projectData?.epics || []}
 					sprints={sprints}
+					projectMembers={
+						isTemplate
+							? []
+							: (
+									projectData as {
+										members?: Array<{
+											id: string;
+											name: string | null;
+											email: string;
+										}>;
+									}
+								)?.members || []
+					}
 					onSubmit={handleTaskSubmit}
 				/>
 			</div>

@@ -51,6 +51,7 @@ interface TaskDialogProps {
 	projectTemplateId?: string;
 	epics?: Array<{ id: string; title: string }>;
 	sprints?: Array<{ id: string; title: string }>;
+	projectMembers?: Array<{ id: string; name: string | null; email: string }>;
 	onSubmit: (data: TaskFormData) => Promise<void>;
 	isSubmitting?: boolean;
 }
@@ -61,6 +62,7 @@ export function TaskDialog({
 	projectTemplateId,
 	epics = [],
 	sprints = [],
+	projectMembers = [],
 	onSubmit,
 	isSubmitting = false
 }: TaskDialogProps) {
@@ -354,7 +356,11 @@ export function TaskDialog({
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="none">No assignee</SelectItem>
-											{/* TODO: Add assignee list */}
+											{projectMembers.map((member) => (
+												<SelectItem key={member.id} value={member.id}>
+													{member.name || member.email}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 								</div>
