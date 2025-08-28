@@ -8,7 +8,10 @@ import { Button } from '~/common/components/ui/button';
 
 import { LogIn, Moon, Sparkles, Sun } from 'lucide-react';
 import { Switch } from '~/common/components/ui/switch';
-import { MENU_ITEMS } from '~/common/constants/menuItem';
+import {
+	MENU_ITEMS,
+	MENU_ITEMS_WITH_PERMISSION
+} from '~/common/constants/menuItem';
 import { useDialog } from '~/common/hooks/useDialog';
 import SignInDialog from '~/features/auth/components/Signin/SigninDialog';
 import SignUpDialog from '~/features/auth/components/Signup/SignupDialog';
@@ -27,6 +30,8 @@ const Header = () => {
 		enabled: isLoggedIn
 	});
 
+	const allMenuItems = [...MENU_ITEMS, ...MENU_ITEMS_WITH_PERMISSION];
+
 	return (
 		<header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
 			<div className="container mx-auto py-2">
@@ -38,7 +43,7 @@ const Header = () => {
 					{/* Navigation */}
 					<nav className="hidden items-center gap-8 md:flex">
 						{isLoggedIn &&
-							MENU_ITEMS.map((item) =>
+							allMenuItems.map((item) =>
 								!item.orgPermission ? (
 									<MenuItem key={item.href} item={item} />
 								) : (

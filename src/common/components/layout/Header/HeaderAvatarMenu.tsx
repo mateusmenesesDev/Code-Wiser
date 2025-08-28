@@ -54,8 +54,7 @@ export default function HeaderAvatarMenu() {
 					const Icon = Item.Icon as LucideIcon;
 					return (
 						Item.orgPermission && (
-							// biome-ignore lint/a11y/useValidAriaRole: <explanation>
-							<Protect key={Item.href} role="org:admin">
+							<Protect key={Item.href} role={Item.orgPermission.role}>
 								<DropdownMenuItem
 									asChild
 									disabled={Item.disabled}

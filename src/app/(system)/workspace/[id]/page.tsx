@@ -1,7 +1,16 @@
 'use client';
 
+import { AlertTriangle, Lock } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { Button } from '~/common/components/ui/button';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle
+} from '~/common/components/ui/card';
 import { DesignFileCard } from '~/features/workspace/components/DesignFileCard';
 import { DesignFileCardSkeleton } from '~/features/workspace/components/DesignFileCardSkeleton';
 import { ProjectHeader } from '~/features/workspace/components/ProjectHeader';
@@ -18,7 +27,11 @@ export default function ProjectPage() {
 	const projectId = params.id as string;
 	const [activeTab, setActiveTab] = useState('board');
 
-	const { project, isLoading: isProjectLoading } = useProjectData(projectId);
+	const {
+		project,
+		isLoading: isProjectLoading,
+		error
+	} = useProjectData(projectId);
 	const { columns, isLoading: isKanbanLoading } = useKanbanData(projectId);
 
 	const stats = useMemo(() => {
@@ -31,6 +44,48 @@ export default function ProjectPage() {
 			};
 		return calculateProjectStats(columns);
 	}, [columns]);
+
+	if (error?.data?.code === 'FORBIDDEN') {
+		return (
+			<div className="container mx-auto px-4 py-8">
+				<Card className="mx-auto max-w-md">
+					<CardHeader className="text-center">
+						<Lock className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+						<CardTitle>Access Denied</CardTitle>
+						<CardDescription>
+							You don't have permission to access this project workspace.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="text-center">
+						<Button variant="outline" onClick={() => window.history.back()}>
+							Go Back
+						</Button>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	if (error?.data?.code === 'NOT_FOUND') {
+		return (
+			<div className="container mx-auto px-4 py-8">
+				<Card className="mx-auto max-w-md">
+					<CardHeader className="text-center">
+						<AlertTriangle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+						<CardTitle>Project Not Found</CardTitle>
+						<CardDescription>
+							The project you're looking for doesn't exist or has been removed.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="text-center">
+						<Button variant="outline" onClick={() => window.history.back()}>
+							Go Back
+						</Button>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
 
 	return (
 		<div>

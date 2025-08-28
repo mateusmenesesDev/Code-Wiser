@@ -1,16 +1,26 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { protectedProcedure, publicProcedure } from '~/server/api/trpc';
+import { protectedProcedure } from '~/server/api/trpc';
 
 export const getProjectQueries = {
-	getById: publicProcedure
+	getById: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
+			const { userId } = ctx.session;
+
 			const project = await ctx.db.project.findUnique({
 				where: { id: input.id },
 				include: {
 					category: true,
 					epics: true,
 					sprints: true,
+					members: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					},
 					tasks: {
 						include: {
 							assignee: {
@@ -36,6 +46,23 @@ export const getProjectQueries = {
 					}
 				}
 			});
+
+			if (!project) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project not found'
+				});
+			}
+
+			const isMember = project.members.some((member) => member.id === userId);
+
+			if (!isMember && !ctx.isAdmin) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'You do not have access to this project'
+				});
+			}
+
 			return project;
 		}),
 
@@ -51,6 +78,50 @@ export const getProjectQueries = {
 			}
 		})
 	),
+
+	getActiveProjects: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().min(1).max(100).default(20),
+				cursor: z.string().nullish()
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const { limit, cursor } = input;
+
+			const projects = await ctx.db.project.findMany({
+				take: limit + 1,
+				cursor: cursor ? { id: cursor } : undefined,
+				orderBy: {
+					updatedAt: 'desc'
+				},
+				include: {
+					category: true,
+					members: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					},
+					tasks: {
+						select: {
+							id: true,
+							status: true
+						}
+					}
+				}
+			});
+
+			let nextCursor: typeof cursor | undefined = undefined;
+			if (projects.length > limit) {
+				const nextItem = projects.pop();
+				if (nextItem) {
+					nextCursor = nextItem.id;
+				}
+			}
+			return { projects, nextCursor };
+		}),
 
 	getLastActivityDay: protectedProcedure
 		.input(z.object({ projectId: z.string() }))

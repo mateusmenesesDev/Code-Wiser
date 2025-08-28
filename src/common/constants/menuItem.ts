@@ -1,11 +1,11 @@
-import { FolderOpen, Settings, Users } from 'lucide-react';
+import { FolderOpen, Users } from 'lucide-react';
 
 type MenuItem = {
 	href: string;
-	Icon: React.ElementType;
+	Icon: React.ComponentType<{ className?: string }>;
 	label: string;
-	comingSoon?: boolean;
 	loginRequired?: boolean;
+	comingSoon?: boolean;
 	orgPermission?: ClerkAuthorization;
 	disabled?: boolean;
 };
@@ -70,24 +70,21 @@ export const MENU_ITEMS: MenuItem[] = [
 
 export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 	{
-		href: '/admin/templates',
-		Icon: Settings,
-		label: 'Admin Projects',
+		href: '/mentor',
+		Icon: Users,
+		label: 'Mentor Dashboard',
 		orgPermission: {
-			permission: 'org:project:edit_template',
+			permission: 'org:project:create',
 			role: 'org:admin'
-		},
-		loginRequired: true
+		}
 	},
 	{
-		href: '/admin/mentorship',
-		Icon: Users,
-		label: 'Admin Mentorship',
+		href: '/admin/templates',
+		Icon: FolderOpen,
+		label: 'Admin Templates',
 		orgPermission: {
 			permission: 'org:project:edit_template',
 			role: 'org:admin'
-		},
-		loginRequired: true,
-		disabled: true
+		}
 	}
 ];
