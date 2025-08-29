@@ -114,7 +114,7 @@ export function BoardColumn({
 					onCreateTask={onCreateTask}
 				/>
 			</CardHeader>
-			<CardContent className="h-full p-4">
+			<CardContent className="h-full overflow-y-auto p-4">
 				<div
 					className={cn(
 						'h-full min-h-[200px] transition-all duration-200',

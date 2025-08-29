@@ -33,7 +33,7 @@ const Header = () => {
 	const allMenuItems = [...MENU_ITEMS, ...MENU_ITEMS_WITH_PERMISSION];
 
 	return (
-		<header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+		<header className="border-b bg-background/80 backdrop-blur-md">
 			<div className="container mx-auto py-2">
 				<div className="flex items-center justify-between">
 					<Link href="/">

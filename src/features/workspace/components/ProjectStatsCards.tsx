@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, Target, TrendingUp } from 'lucide-react';
+import { CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import {
 	Card,
 	CardContent,
@@ -6,6 +6,39 @@ import {
 	CardTitle
 } from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
+
+type StatCardProps = {
+	title: string;
+	icon: React.ReactNode;
+	value: number;
+	percentage: number;
+};
+
+export default function StatCard({
+	title,
+	icon,
+	value,
+	percentage
+}: StatCardProps) {
+	return (
+		<Card className="border-0 bg-card/50 px-4 shadow-lg backdrop-blur-sm">
+			<CardHeader className="px-0 pt-4">
+				<CardTitle className="font-medium text-muted-foreground text-sm">
+					{title}
+				</CardTitle>
+			</CardHeader>
+			<CardContent className="px-0 pb-4">
+				<div className="flex items-center gap-2">
+					{icon}
+					<div>
+						<p className="font-bold text-xl">{value}%</p>
+						<Progress value={percentage} className="mt-1 h-1.5 w-16" />
+					</div>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
 
 interface ProjectStats {
 	totalTasks: number;
@@ -20,81 +53,34 @@ interface ProjectStatsCardsProps {
 
 export function ProjectStatsCards({ stats }: ProjectStatsCardsProps) {
 	return (
-		<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
-				<CardHeader className="pb-3">
-					<CardTitle className="font-medium text-muted-foreground text-sm">
-						Overall Progress
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center gap-3">
-						<TrendingUp className="h-8 w-8 text-blue-600" />
-						<div>
-							<p className="font-bold text-2xl">{stats.progressPercentage}%</p>
-							<Progress
-								value={stats.progressPercentage}
-								className="mt-1 h-2 w-20"
-							/>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+		<div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+			<StatCard
+				title="Overall Progress"
+				icon={<TrendingUp className="h-6 w-6 text-blue-600" />}
+				value={stats.progressPercentage}
+				percentage={stats.progressPercentage}
+			/>
 
-			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
-				<CardHeader className="pb-3">
-					<CardTitle className="font-medium text-muted-foreground text-sm">
-						Tasks Completed
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center gap-3">
-						<CheckCircle className="h-8 w-8 text-green-600" />
-						<div>
-							<p className="font-bold text-2xl">
-								{stats.completedTasks}/{stats.totalTasks}
-							</p>
-							<p className="text-muted-foreground text-xs">Total tasks</p>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			<StatCard
+				title="Tasks Completed"
+				icon={<CheckCircle className="h-6 w-6 text-green-600" />}
+				value={stats.completedTasks}
+				percentage={stats.progressPercentage}
+			/>
 
-			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
-				<CardHeader className="pb-3">
-					<CardTitle className="font-medium text-muted-foreground text-sm">
-						In Progress
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center gap-3">
-						<Target className="h-8 w-8 text-purple-600" />
-						<div>
-							<p className="font-bold text-2xl">{stats.inProgressTasks}</p>
-							<p className="text-muted-foreground text-xs">Active tasks</p>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			<StatCard
+				title="In Progress Tasks"
+				icon={<Clock className="h-6 w-6 text-orange-600" />}
+				value={stats.inProgressTasks}
+				percentage={stats.progressPercentage}
+			/>
 
-			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
-				<CardHeader className="pb-3">
-					<CardTitle className="font-medium text-muted-foreground text-sm">
-						Remaining Tasks
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center gap-3">
-						<Clock className="h-8 w-8 text-orange-600" />
-						<div>
-							<p className="font-bold text-2xl">
-								{stats.totalTasks - stats.completedTasks}
-							</p>
-							<p className="text-muted-foreground text-xs">Tasks left</p>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			<StatCard
+				title="Remaining Tasks"
+				icon={<Clock className="h-6 w-6 text-orange-600" />}
+				value={stats.totalTasks - stats.completedTasks}
+				percentage={stats.progressPercentage}
+			/>
 		</div>
 	);
 }

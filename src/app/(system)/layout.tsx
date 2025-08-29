@@ -7,11 +7,9 @@ export default function Layout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<HydrateClient>
-			<div className="flex h-screen bg-background text-foreground">
-				<div className="flex-1 overflow-y-auto">
-					<Header />
-					<main className="p-6">{children}</main>
-				</div>
+			<div className="bg-background text-foreground">
+				<Header />
+				<main className="p-6">{children}</main>
 			</div>
 		</HydrateClient>
 	);

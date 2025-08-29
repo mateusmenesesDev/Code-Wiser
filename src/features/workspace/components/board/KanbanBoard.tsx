@@ -37,7 +37,7 @@ export function KanbanBoard({
 
 	if (isLoading || !projectData) {
 		return (
-			<div className="space-y-6">
+			<div>
 				<TaskFiltersSkeleton />
 				<KanbanBoardSkeleton />
 			</div>
@@ -45,7 +45,7 @@ export function KanbanBoard({
 	}
 
 	return (
-		<div className="space-y-6">
+		<div>
 			<TaskFilters />
 			<KanbanBoardContent
 				projectId={projectId}

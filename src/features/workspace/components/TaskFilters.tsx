@@ -22,8 +22,8 @@ export function TaskFilters() {
 
 	return (
 		<div className="w-full">
-			<div className="mb-6 rounded-lg border bg-card/30 p-4">
-				<div className="flex flex-wrap items-center gap-4">
+			<div className="mb-3 rounded-lg border bg-card/30 p-3">
+				<div className="flex flex-wrap items-center gap-3">
 					<div className="flex items-center gap-2">
 						<Filter className="h-4 w-4 text-muted-foreground" />
 						<span className="font-medium text-sm">Filters:</span>
@@ -89,7 +89,7 @@ export function TaskFilters() {
 				</div>
 
 				{hasActiveFilters && (
-					<div className="mt-2 text-muted-foreground text-sm">
+					<div className="mt-1 text-muted-foreground text-xs">
 						Showing {filteredCount} of {totalTasks} tasks
 					</div>
 				)}

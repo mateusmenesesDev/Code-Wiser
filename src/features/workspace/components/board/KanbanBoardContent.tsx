@@ -87,7 +87,7 @@ export function KanbanBoardContent({
 
 	return (
 		<DndProvider backend={HTML5Backend}>
-			<div className="grid h-[calc(100vh-40rem)] auto-cols-fr grid-flow-col gap-4 overflow-x-auto">
+			<div className="grid auto-cols-fr grid-flow-col gap-4 overflow-x-auto overflow-y-hidden">
 				{transformedColumns.map((column) => (
 					<BoardColumn
 						key={column.id}

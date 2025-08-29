@@ -29,7 +29,7 @@ export function WorkspaceTabs({
 			{/* Main Content */}
 			<section>
 				<Card className="border-0 bg-card/40 shadow-lg backdrop-blur-sm">
-					<CardHeader>
+					<CardHeader className="p-4">
 						<Tabs
 							value={activeTab}
 							onValueChange={onTabChange}
@@ -44,7 +44,7 @@ export function WorkspaceTabs({
 						</Tabs>
 					</CardHeader>
 
-					<CardContent className="p-6">
+					<CardContent className="px-4">
 						<Tabs value={activeTab}>
 							<TabsContent value="board" className="mt-0">
 								<Suspense fallback={<KanbanBoardSkeleton />}>
