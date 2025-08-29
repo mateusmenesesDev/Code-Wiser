@@ -7,15 +7,14 @@ export const useSprintQueries = () => {
 	const params = useParams();
 	const projectId = decodeURIComponent(params.id as string);
 
-	const getAllSprints = () => {
-		return api.sprint.getAllByProjectId.useQuery({
+	const getAllSprints = () =>
+		api.sprint.getAllByProjectId.useSuspenseQuery({
 			projectId,
 			isTemplate
 		});
-	};
 
 	const getSprintById = (sprintId: string) => {
-		return api.sprint.getById.useQuery({
+		return api.sprint.getById.useSuspenseQuery({
 			id: sprintId
 		});
 	};

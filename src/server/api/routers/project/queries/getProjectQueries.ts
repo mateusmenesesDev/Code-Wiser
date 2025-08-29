@@ -16,9 +16,7 @@ export const getProjectQueries = {
 					sprints: true,
 					members: {
 						select: {
-							id: true,
-							name: true,
-							email: true
+							id: true
 						}
 					},
 					tasks: {
@@ -97,13 +95,6 @@ export const getProjectQueries = {
 				},
 				include: {
 					category: true,
-					members: {
-						select: {
-							id: true,
-							name: true,
-							email: true
-						}
-					},
 					tasks: {
 						select: {
 							id: true,
@@ -159,5 +150,42 @@ export const getProjectQueries = {
 				completedTasks,
 				progress
 			};
+		}),
+
+	getMembers: protectedProcedure
+		.input(z.object({ projectId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			const { userId } = ctx.session;
+
+			const project = await ctx.db.project.findUnique({
+				where: { id: input.projectId },
+				select: {
+					members: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					}
+				}
+			});
+
+			if (!project) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project not found'
+				});
+			}
+
+			const isMember = project.members.some((member) => member.id === userId);
+
+			if (!isMember && !ctx.isAdmin) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'You do not have access to this project'
+				});
+			}
+
+			return project.members;
 		})
 };

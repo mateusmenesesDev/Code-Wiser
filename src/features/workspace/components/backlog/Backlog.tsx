@@ -25,7 +25,6 @@ import type {
 	TasksApiOutput,
 	UpdateTaskInput
 } from '../../types/Task.type';
-import { BacklogSkeleton } from './BacklogSkeleton';
 import { DraggableTaskRow } from './DraggableTaskRow';
 
 export default function Backlog({ projectId }: { projectId: string }) {
@@ -40,15 +39,13 @@ export default function Backlog({ projectId }: { projectId: string }) {
 	const { createTask, updateTask, updateTaskOrders, getAllTasksByProjectId } =
 		useTask({ projectId });
 
-	const { data: sprints, isLoading: isSprintsLoading } = getAllSprints();
-	const { data: tasks, isLoading: isTasksLoading } =
-		getAllTasksByProjectId(projectId);
+	const [sprints] = getAllSprints();
 
-	const { data: projectData } = isTemplate
-		? api.projectTemplate.getById.useQuery({ id: projectId })
-		: api.project.getById.useQuery({ id: projectId });
+	const [tasks] = getAllTasksByProjectId(projectId);
 
-	const isLoading = isSprintsLoading || isTasksLoading;
+	const [projectData] = isTemplate
+		? api.projectTemplate.getById.useSuspenseQuery({ id: projectId })
+		: api.project.getById.useSuspenseQuery({ id: projectId });
 
 	const handleTaskSubmit = useCallback(
 		async (data: CreateTaskInput | UpdateTaskInput) => {
@@ -100,10 +97,6 @@ export default function Backlog({ projectId }: { projectId: string }) {
 		},
 		[tasks, updateTaskOrders]
 	);
-
-	if (isLoading) {
-		return <BacklogSkeleton />;
-	}
 
 	const backlogTasks = tasks
 		?.filter((task) => task.status === TaskStatusEnum.BACKLOG)
@@ -158,19 +151,6 @@ export default function Backlog({ projectId }: { projectId: string }) {
 					projectTemplateId={isTemplate ? (id as string) : undefined}
 					epics={projectData?.epics || []}
 					sprints={sprints}
-					projectMembers={
-						isTemplate
-							? []
-							: (
-									projectData as {
-										members?: Array<{
-											id: string;
-											name: string | null;
-											email: string;
-										}>;
-									}
-								)?.members || []
-					}
 					onSubmit={handleTaskSubmit}
 				/>
 			</div>

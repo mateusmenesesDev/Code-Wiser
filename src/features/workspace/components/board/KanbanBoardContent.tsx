@@ -37,13 +37,13 @@ export function KanbanBoardContent({
 		NonNullable<TasksApiOutput>[number] | null
 	>(null);
 
-	const { data: projectData } = isTemplate
-		? api.projectTemplate.getById.useQuery({ id: projectId })
-		: api.project.getById.useQuery({ id: projectId });
+	const [projectData] = isTemplate
+		? api.projectTemplate.getById.useSuspenseQuery({ id: projectId })
+		: api.project.getById.useSuspenseQuery({ id: projectId });
 
 	const { createTask, updateTask, updateTaskOrders } = useTask({ projectId });
 
-	const { columns, moveTask, isLoading } = useKanbanData(
+	const { columns, moveTask } = useKanbanData(
 		projectId,
 		filters,
 		isTemplate,
@@ -85,10 +85,6 @@ export function KanbanBoardContent({
 		setSelectedTask(null);
 	}, []);
 
-	if (isLoading) {
-		return <div>Loading...</div>;
-	}
-
 	return (
 		<DndProvider backend={HTML5Backend}>
 			<div className="grid h-[calc(100vh-40rem)] auto-cols-fr grid-flow-col gap-4 overflow-x-auto">
@@ -110,19 +106,6 @@ export function KanbanBoardContent({
 				projectTemplateId={isTemplate ? projectId : undefined}
 				epics={projectData?.epics || []}
 				sprints={projectData?.sprints || []}
-				projectMembers={
-					isTemplate
-						? []
-						: (
-								projectData as {
-									members?: Array<{
-										id: string;
-										name: string | null;
-										email: string;
-									}>;
-								}
-							)?.members || []
-				}
 				onSubmit={handleTaskSubmit}
 			/>
 		</DndProvider>

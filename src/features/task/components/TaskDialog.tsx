@@ -36,6 +36,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '~/common/components/ui/select';
+import { api } from '~/trpc/react';
 import { TagsInput } from './TagsInput';
 import { TaskComments } from './TaskComments';
 
@@ -51,7 +52,6 @@ interface TaskDialogProps {
 	projectTemplateId?: string;
 	epics?: Array<{ id: string; title: string }>;
 	sprints?: Array<{ id: string; title: string }>;
-	projectMembers?: Array<{ id: string; name: string | null; email: string }>;
 	onSubmit: (data: TaskFormData) => Promise<void>;
 	isSubmitting?: boolean;
 }
@@ -62,7 +62,6 @@ export function TaskDialog({
 	projectTemplateId,
 	epics = [],
 	sprints = [],
-	projectMembers = [],
 	onSubmit,
 	isSubmitting = false
 }: TaskDialogProps) {
@@ -70,6 +69,12 @@ export function TaskDialog({
 	const { deleteTask } = useTask({
 		projectId: projectId || projectTemplateId
 	});
+
+	const { data: projectMembers, isLoading: isLoadingMembers } =
+		api.project.getMembers.useQuery(
+			{ projectId: projectId || '' },
+			{ enabled: !!projectId && isDialogOpen }
+		);
 
 	const isEditing = !!task;
 
@@ -356,11 +361,17 @@ export function TaskDialog({
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="none">No assignee</SelectItem>
-											{projectMembers.map((member) => (
-												<SelectItem key={member.id} value={member.id}>
-													{member.name || member.email}
+											{isLoadingMembers ? (
+												<SelectItem value="loading" disabled>
+													Loading members...
 												</SelectItem>
-											))}
+											) : (
+												projectMembers?.map((member) => (
+													<SelectItem key={member.id} value={member.id}>
+														{member.name || member.email}
+													</SelectItem>
+												))
+											)}
 										</SelectContent>
 									</Select>
 								</div>

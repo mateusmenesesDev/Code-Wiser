@@ -266,7 +266,7 @@ export function useTask({ projectId }: UseTaskProps = {}) {
 		createTaskMutation.mutate(createTaskInput);
 
 	const getAllTasksByProjectId = (projectId: string) =>
-		api.task.getAllByProjectId.useQuery({
+		api.task.getAllByProjectId.useSuspenseQuery({
 			projectId,
 			isTemplate
 		});

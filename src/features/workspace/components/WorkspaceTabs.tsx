@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Card, CardContent, CardHeader } from '~/common/components/ui/card';
 import {
 	Tabs,
@@ -8,7 +9,9 @@ import {
 import EpicList from '~/features/epics/components/EpicList/EpicList';
 import SprintList from '~/features/sprints/components/SprintList';
 import { KanbanBoard } from '~/features/workspace/components/board/KanbanBoard';
+import { KanbanBoardSkeleton } from '~/features/workspace/components/board/KanbanBoardSkeleton';
 import Backlog from './backlog/Backlog';
+import { BacklogSkeleton } from './backlog/BacklogSkeleton';
 
 interface WorkspaceTabsProps {
 	projectId: string;
@@ -44,11 +47,15 @@ export function WorkspaceTabs({
 					<CardContent className="p-6">
 						<Tabs value={activeTab}>
 							<TabsContent value="board" className="mt-0">
-								<KanbanBoard projectId={projectId} />
+								<Suspense fallback={<KanbanBoardSkeleton />}>
+									<KanbanBoard projectId={projectId} />
+								</Suspense>
 							</TabsContent>
 
 							<TabsContent value="backlog" className="mt-0">
-								<Backlog projectId={projectId} />
+								<Suspense fallback={<BacklogSkeleton />}>
+									<Backlog projectId={projectId} />
+								</Suspense>
 							</TabsContent>
 
 							<TabsContent value="epics" className="mt-0">
