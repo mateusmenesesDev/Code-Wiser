@@ -6,6 +6,15 @@ import {
 } from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 
+type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
+
+const createRelationshipUpdate = (
+	id: string | undefined
+): RelationshipUpdate | undefined => {
+	if (id === undefined) return undefined;
+	return id ? { connect: { id } } : { disconnect: true };
+};
+
 export const taskMutations = {
 	create: protectedProcedure
 		.input(createTaskSchema)
@@ -50,18 +59,22 @@ export const taskMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { id, epicId, sprintId, assigneeId, ...rest } = input;
 
+			const updateData = {
+				...rest,
+				...(createRelationshipUpdate(assigneeId) && {
+					assignee: createRelationshipUpdate(assigneeId)
+				}),
+				...(createRelationshipUpdate(epicId) && {
+					epic: createRelationshipUpdate(epicId)
+				}),
+				...(createRelationshipUpdate(sprintId) && {
+					sprint: createRelationshipUpdate(sprintId)
+				})
+			};
+
 			const task = await ctx.db.task.update({
 				where: { id },
-				data: {
-					...rest,
-					assignee: assigneeId
-						? { connect: { id: assigneeId } }
-						: { disconnect: true },
-					epic: epicId ? { connect: { id: epicId } } : { disconnect: true },
-					sprint: sprintId
-						? { connect: { id: sprintId } }
-						: { disconnect: true }
-				}
+				data: updateData
 			});
 			return task;
 		}),
