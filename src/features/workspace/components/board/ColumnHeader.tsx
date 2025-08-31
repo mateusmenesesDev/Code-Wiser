@@ -5,17 +5,20 @@ import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { CardTitle } from '~/common/components/ui/card';
 import { useDialog } from '~/common/hooks/useDialog';
+import { cn } from '~/lib/utils';
 
 interface ColumnHeaderProps {
 	title: string;
 	count: number;
 	onCreateTask?: () => void;
+	className?: string;
 }
 
 export function ColumnHeader({
 	title,
 	count,
-	onCreateTask
+	onCreateTask,
+	className
 }: ColumnHeaderProps) {
 	const { openDialog } = useDialog('task');
 
@@ -25,7 +28,12 @@ export function ColumnHeader({
 	};
 
 	return (
-		<div className="flex items-center justify-between">
+		<div
+			className={cn(
+				'flex items-center justify-between border-b p-2 backdrop-blur-sm transition-all duration-200',
+				className
+			)}
+		>
 			<CardTitle className="font-semibold text-card-foreground text-sm">
 				{title}
 				<Badge variant="secondary" className="ml-2">

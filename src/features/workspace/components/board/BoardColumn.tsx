@@ -3,7 +3,6 @@
 import type { TaskStatusEnum } from '@prisma/client';
 import { useRef } from 'react';
 import { useDrop } from 'react-dnd';
-import { Card, CardContent, CardHeader } from '~/common/components/ui/card';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
 import { cn } from '~/lib/utils';
 import type { Column } from '../../../projects/types';
@@ -90,34 +89,30 @@ export function BoardColumn({
 	drop(ref);
 
 	return (
-		<Card
+		<div
 			ref={ref}
 			className={cn(
-				'h-full border-0 bg-card/40 shadow-lg backdrop-blur-sm transition-all duration-200',
+				'border-0 bg-card/40 shadow-lg backdrop-blur-sm transition-all duration-200',
 				isOver &&
 					canDrop &&
 					'border-2 border-primary/20 bg-primary/10 shadow-xl',
 				canDrop && 'border-dashed'
 			)}
 		>
-			<CardHeader
+			<ColumnHeader
+				title={column.title}
+				count={column.tasks.length}
+				onCreateTask={onCreateTask}
 				className={cn(
-					'border-b backdrop-blur-sm transition-all duration-200',
 					column.bgClass,
 					column.borderClass,
 					isOver && canDrop && 'bg-primary/5'
 				)}
-			>
-				<ColumnHeader
-					title={column.title}
-					count={column.tasks.length}
-					onCreateTask={onCreateTask}
-				/>
-			</CardHeader>
-			<CardContent className="h-full overflow-y-auto p-4">
+			/>
+			<div className="h-[calc(100vh-30.375rem)] overflow-y-auto p-4">
 				<div
 					className={cn(
-						'h-full min-h-[200px] transition-all duration-200',
+						'h-full transition-all duration-200',
 						isOver && canDrop && 'rounded-lg bg-primary/5'
 					)}
 				>
@@ -157,7 +152,7 @@ export function BoardColumn({
 						</div>
 					)}
 				</div>
-			</CardContent>
-		</Card>
+			</div>
+		</div>
 	);
 }
