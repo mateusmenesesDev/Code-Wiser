@@ -1,20 +1,13 @@
 'use client';
 
-import { AlertTriangle, Lock } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Button } from '~/common/components/ui/button';
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle
-} from '~/common/components/ui/card';
 import { ProjectHeader } from '~/features/workspace/components/ProjectHeader';
 import { ProjectHeaderSkeleton } from '~/features/workspace/components/ProjectHeaderSkeleton';
 import { ProjectStatsCards } from '~/features/workspace/components/ProjectStatsCards';
 import { ProjectStatsCardsSkeleton } from '~/features/workspace/components/ProjectStatsCardsSkeleton';
+import WorkspaceAccessDenied from '~/features/workspace/components/WorkspaceAccessDenied';
+import WorkspaceNotFound from '~/features/workspace/components/WorkspaceNotFound';
 import { WorkspaceTabs } from '~/features/workspace/components/WorkspaceTabs';
 import { useKanbanData } from '~/features/workspace/hooks/useKanbanData';
 import { useProjectData } from '~/features/workspace/hooks/useProjectData';
@@ -43,46 +36,13 @@ export default function ProjectPage() {
 		return calculateProjectStats(columns);
 	}, [columns]);
 
-	if (error?.data?.code === 'FORBIDDEN') {
-		return (
-			<div className="container mx-auto px-4 py-8">
-				<Card className="mx-auto max-w-md">
-					<CardHeader className="text-center">
-						<Lock className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-						<CardTitle>Access Denied</CardTitle>
-						<CardDescription>
-							You don't have permission to access this project workspace.
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="text-center">
-						<Button variant="outline" onClick={() => window.history.back()}>
-							Go Back
-						</Button>
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
-
-	if (error?.data?.code === 'NOT_FOUND') {
-		return (
-			<div className="container mx-auto px-4 py-8">
-				<Card className="mx-auto max-w-md">
-					<CardHeader className="text-center">
-						<AlertTriangle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-						<CardTitle>Project Not Found</CardTitle>
-						<CardDescription>
-							The project you're looking for doesn't exist or has been removed.
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="text-center">
-						<Button variant="outline" onClick={() => window.history.back()}>
-							Go Back
-						</Button>
-					</CardContent>
-				</Card>
-			</div>
-		);
+	if (error) {
+		switch (error.data?.code) {
+			case 'FORBIDDEN':
+				return <WorkspaceAccessDenied />;
+			case 'NOT_FOUND':
+				return <WorkspaceNotFound />;
+		}
 	}
 
 	return (
@@ -96,11 +56,13 @@ export default function ProjectPage() {
 				/>
 			)}
 
-			{isKanbanLoading ? (
-				<ProjectStatsCardsSkeleton />
-			) : (
-				<ProjectStatsCards stats={stats} />
-			)}
+			<div className="mb-4">
+				{isKanbanLoading ? (
+					<ProjectStatsCardsSkeleton />
+				) : (
+					<ProjectStatsCards stats={stats} />
+				)}
+			</div>
 
 			<WorkspaceTabs
 				projectId={projectId}

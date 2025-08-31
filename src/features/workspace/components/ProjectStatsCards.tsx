@@ -1,42 +1,18 @@
 import { CheckCircle, Clock, TrendingUp } from 'lucide-react';
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle
-} from '~/common/components/ui/card';
-import { Progress } from '~/common/components/ui/progress';
 
-type StatCardProps = {
-	title: string;
+type StatItemProps = {
 	icon: React.ReactNode;
 	value: number;
-	percentage: number;
+	label: string;
 };
 
-export default function StatCard({
-	title,
-	icon,
-	value,
-	percentage
-}: StatCardProps) {
+function StatItem({ icon, value, label }: StatItemProps) {
 	return (
-		<Card className="border-0 bg-card/50 px-4 shadow-lg backdrop-blur-sm">
-			<CardHeader className="px-0 pt-4">
-				<CardTitle className="font-medium text-muted-foreground text-sm">
-					{title}
-				</CardTitle>
-			</CardHeader>
-			<CardContent className="px-0 pb-4">
-				<div className="flex items-center gap-2">
-					{icon}
-					<div>
-						<p className="font-bold text-xl">{value}%</p>
-						<Progress value={percentage} className="mt-1 h-1.5 w-16" />
-					</div>
-				</div>
-			</CardContent>
-		</Card>
+		<div className="flex items-center gap-2">
+			{icon}
+			<span className="font-medium">{value}</span>
+			<span className="text-muted-foreground text-sm">{label}</span>
+		</div>
 	);
 }
 
@@ -53,33 +29,26 @@ interface ProjectStatsCardsProps {
 
 export function ProjectStatsCards({ stats }: ProjectStatsCardsProps) {
 	return (
-		<div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-			<StatCard
-				title="Overall Progress"
-				icon={<TrendingUp className="h-6 w-6 text-blue-600" />}
+		<div className="ml-auto flex w-fit flex-wrap items-center justify-end gap-6 rounded-lg bg-card/30 p-3 text-sm">
+			<StatItem
+				icon={<TrendingUp className="h-4 w-4 text-blue-600" />}
 				value={stats.progressPercentage}
-				percentage={stats.progressPercentage}
+				label="%"
 			/>
-
-			<StatCard
-				title="Tasks Completed"
-				icon={<CheckCircle className="h-6 w-6 text-green-600" />}
+			<StatItem
+				icon={<CheckCircle className="h-4 w-4 text-green-600" />}
 				value={stats.completedTasks}
-				percentage={stats.progressPercentage}
+				label="done"
 			/>
-
-			<StatCard
-				title="In Progress Tasks"
-				icon={<Clock className="h-6 w-6 text-orange-600" />}
+			<StatItem
+				icon={<Clock className="h-4 w-4 text-orange-600" />}
 				value={stats.inProgressTasks}
-				percentage={stats.progressPercentage}
+				label="active"
 			/>
-
-			<StatCard
-				title="Remaining Tasks"
-				icon={<Clock className="h-6 w-6 text-orange-600" />}
+			<StatItem
+				icon={<Clock className="h-4 w-4 text-gray-600" />}
 				value={stats.totalTasks - stats.completedTasks}
-				percentage={stats.progressPercentage}
+				label="left"
 			/>
 		</div>
 	);

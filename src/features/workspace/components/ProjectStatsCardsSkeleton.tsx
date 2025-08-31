@@ -1,82 +1,32 @@
-import { CheckCircle, Clock, Target, TrendingUp } from 'lucide-react';
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle
-} from '~/common/components/ui/card';
+import { CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { Skeleton } from '~/common/components/ui/skeleton';
 
 export function ProjectStatsCardsSkeleton() {
 	return (
-		<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
-				<CardHeader className="pb-3">
-					<CardTitle className="font-medium text-muted-foreground text-sm">
-						Overall Progress
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center gap-3">
-						<TrendingUp className="h-8 w-8 text-blue-600" />
-						<div>
-							<Skeleton className="mb-1 h-8 w-16" />
-							<Skeleton className="h-2 w-20" />
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+		<div className="ml-auto flex w-fit flex-wrap items-center justify-end gap-6 rounded-lg bg-card/30 p-3 text-sm">
+			<div className="flex items-center gap-2">
+				<TrendingUp className="h-4 w-4 text-blue-600" />
+				<Skeleton className="h-4 w-8" />
+				<span className="text-muted-foreground text-sm">%</span>
+			</div>
 
-			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
-				<CardHeader className="pb-3">
-					<CardTitle className="font-medium text-muted-foreground text-sm">
-						Tasks Completed
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center gap-3">
-						<CheckCircle className="h-8 w-8 text-green-600" />
-						<div>
-							<Skeleton className="mb-1 h-8 w-20" />
-							<Skeleton className="h-3 w-16" />
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			<div className="flex items-center gap-2">
+				<CheckCircle className="h-4 w-4 text-green-600" />
+				<Skeleton className="h-4 w-6" />
+				<span className="text-muted-foreground text-sm">done</span>
+			</div>
 
-			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
-				<CardHeader className="pb-3">
-					<CardTitle className="font-medium text-muted-foreground text-sm">
-						In Progress
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center gap-3">
-						<Target className="h-8 w-8 text-purple-600" />
-						<div>
-							<Skeleton className="mb-1 h-8 w-12" />
-							<Skeleton className="h-3 w-20" />
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			<div className="flex items-center gap-2">
+				<Clock className="h-4 w-4 text-orange-600" />
+				<Skeleton className="h-4 w-6" />
+				<span className="text-muted-foreground text-sm">active</span>
+			</div>
 
-			<Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
-				<CardHeader className="pb-3">
-					<CardTitle className="font-medium text-muted-foreground text-sm">
-						Remaining Tasks
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center gap-3">
-						<Clock className="h-8 w-8 text-orange-600" />
-						<div>
-							<Skeleton className="mb-1 h-8 w-12" />
-							<Skeleton className="h-3 w-16" />
-						</div>
-					</div>
-				</CardContent>
-			</Card>
+			<div className="flex items-center gap-2">
+				<Clock className="h-4 w-4 text-gray-600" />
+				<Skeleton className="h-4 w-6" />
+				<span className="text-muted-foreground text-sm">left</span>
+			</div>
 		</div>
 	);
 }
