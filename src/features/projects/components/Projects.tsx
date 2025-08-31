@@ -108,12 +108,9 @@ export default function Projects({
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="all">All Categories</SelectItem>
-								<SelectItem value="Web Development">Web Development</SelectItem>
-								<SelectItem value="Mobile Development">
-									Mobile Development
-								</SelectItem>
-								<SelectItem value="Data Science">Data Science</SelectItem>
-								<SelectItem value="DevOps">DevOps</SelectItem>
+								<SelectItem value="Fullstack">Full Stack</SelectItem>
+								<SelectItem value="Backend">Backend</SelectItem>
+								<SelectItem value="Frontend">Frontend</SelectItem>
 							</SelectContent>
 						</Select>
 
