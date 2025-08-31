@@ -60,12 +60,12 @@ export function TagsCell({ tags, taskId, projectId }: TagsCellProps) {
 				<Badge
 					key={tag}
 					variant="secondary"
-					className='flex items-center bg-muted/60 text-muted-foreground text-xs hover:bg-muted/80'
+					className="flex items-center bg-muted/60 text-muted-foreground text-xs hover:bg-muted/80"
 				>
 					{tag}
 					<Button
 						variant="ghost"
-						className='ml-1 h-auto p-0'
+						className="ml-1 h-auto p-0"
 						onClick={() => handleRemoveTag(tag)}
 					>
 						<X className="h-3 w-3" />
