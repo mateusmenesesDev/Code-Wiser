@@ -2,6 +2,7 @@ import type { TaskPriorityEnum } from '@prisma/client';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
+import { useSprintQueries } from '~/features/sprints/hooks/useSprintQueries';
 import { allTasksAtom } from '../atoms/taskFiltersAtom';
 
 const filtersSearchParams = {
@@ -11,18 +12,12 @@ const filtersSearchParams = {
 };
 
 export function useTaskFiltersUrl() {
+	const { getAllSprints } = useSprintQueries();
+	const [sprints] = getAllSprints();
 	const [filters, setFilters] = useQueryStates(filtersSearchParams);
 	const allTasks = useAtomValue(allTasksAtom);
 
 	const filterOptions = useMemo(() => {
-		const sprints = Array.from(
-			new Set(
-				allTasks
-					.map((task) => task.sprintId)
-					.filter((id): id is string => id !== null)
-			)
-		);
-
 		const priorities = Array.from(
 			new Set(
 				allTasks
@@ -44,7 +39,7 @@ export function useTaskFiltersUrl() {
 			priorities,
 			assignees
 		};
-	}, [allTasks]);
+	}, [allTasks, sprints]);
 
 	const filteredTasks = useMemo(() => {
 		return allTasks.filter((task) => {

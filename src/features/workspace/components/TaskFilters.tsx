@@ -38,9 +38,9 @@ export function TaskFilters() {
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">All Sprints</SelectItem>
-							{filterOptions.sprints.map((sprintId) => (
-								<SelectItem key={sprintId} value={sprintId}>
-									Sprint {sprintId}
+							{filterOptions.sprints.map((sprint) => (
+								<SelectItem key={sprint.id} value={sprint.id}>
+									{sprint.title}
 								</SelectItem>
 							))}
 						</SelectContent>
