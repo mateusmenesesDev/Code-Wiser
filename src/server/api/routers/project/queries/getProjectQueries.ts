@@ -100,6 +100,13 @@ export const getProjectQueries = {
 							id: true,
 							status: true
 						}
+					},
+					members: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
 					}
 				}
 			});
