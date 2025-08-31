@@ -210,15 +210,17 @@ export function TaskCard({
 								<span>{task.dueDate.toLocaleDateString()}</span>
 							</div>
 						)}
-						<div className="flex items-center gap-1">
-							<Image
-								src={userData?.imageUrl ?? ''}
-								alt={userData?.name ?? ''}
-								width={26}
-								height={26}
-								className="rounded-full"
-							/>
-						</div>
+						{userData && (
+							<div className="flex items-center gap-1">
+								<Image
+									src={userData.imageUrl}
+									alt={userData.name ?? ''}
+									width={26}
+									height={26}
+									className="rounded-full"
+								/>
+							</div>
+						)}
 					</div>
 				</div>
 			</CardContent>
