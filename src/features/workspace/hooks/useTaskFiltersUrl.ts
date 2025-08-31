@@ -2,6 +2,7 @@ import type { TaskPriorityEnum } from '@prisma/client';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
+import { useProjectMembers } from '~/features/projects/hooks/useProjectMembers';
 import { useSprintQueries } from '~/features/sprints/hooks/useSprintQueries';
 import { allTasksAtom } from '../atoms/taskFiltersAtom';
 
@@ -14,6 +15,7 @@ const filtersSearchParams = {
 export function useTaskFiltersUrl() {
 	const { getAllSprints } = useSprintQueries();
 	const [sprints] = getAllSprints();
+	const { members } = useProjectMembers();
 	const [filters, setFilters] = useQueryStates(filtersSearchParams);
 	const allTasks = useAtomValue(allTasksAtom);
 
@@ -26,20 +28,17 @@ export function useTaskFiltersUrl() {
 			)
 		);
 
-		const assignees = Array.from(
-			new Set(
-				allTasks
-					.map((task) => task.assigneeId)
-					.filter((id): id is string => id !== null)
-			)
-		);
+		const assignees = members?.map((member) => ({
+			assigneeId: member.id,
+			name: member.name || member.email || ''
+		}));
 
 		return {
 			sprints,
 			priorities,
 			assignees
 		};
-	}, [allTasks, sprints]);
+	}, [allTasks, sprints, members]);
 
 	const filteredTasks = useMemo(() => {
 		return allTasks.filter((task) => {

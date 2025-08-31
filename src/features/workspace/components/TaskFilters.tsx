@@ -72,9 +72,9 @@ export function TaskFilters() {
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">All Users</SelectItem>
-							{filterOptions.assignees.map((assigneeId) => (
+							{filterOptions.assignees?.map(({ assigneeId, name }) => (
 								<SelectItem key={assigneeId} value={assigneeId}>
-									User {assigneeId}
+									{name}
 								</SelectItem>
 							))}
 						</SelectContent>
