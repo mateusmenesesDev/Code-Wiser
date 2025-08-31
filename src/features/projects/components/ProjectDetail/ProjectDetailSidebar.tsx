@@ -31,7 +31,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 	const router = useRouter();
 
 	const { isEnrolledProject } = useMyProjects();
-	const isEnrolled = isEnrolledProject(project.title);
+	const isEnrolledId = isEnrolledProject(project.title);
 
 	const { createProject, isCreateProjectPending } = useProjectMutations();
 
@@ -123,9 +123,9 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 						)}
 					</div>
 
-					{isEnrolled ? (
+					{isEnrolledId ? (
 						<Button
-							onClick={() => router.push(`/workspace/${project.id}`)}
+							onClick={() => router.push(`/workspace/${isEnrolledId}`)}
 							className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 font-semibold text-lg text-white hover:from-blue-700 hover:to-purple-700"
 							size="lg"
 						>

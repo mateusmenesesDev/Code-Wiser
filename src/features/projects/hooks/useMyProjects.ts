@@ -71,9 +71,13 @@ export function useMyProjects() {
 	}, [projects, progressQueries, activityQueries]);
 
 	const isEnrolledProject = (projectTitle: string) => {
-		return projectsWithProgress.some(
+		const enrolledProjects = projectsWithProgress.find(
 			(project) => project.title === projectTitle
 		);
+		if (enrolledProjects) {
+			return enrolledProjects.id;
+		}
+		return false;
 	};
 
 	return {
