@@ -27,6 +27,19 @@ import type {
 } from '../../types/Task.type';
 import { DraggableTaskRow } from './DraggableTaskRow';
 
+/**
+ * Backlog Component
+ *
+ * Displays tasks in a table format with drag-and-drop reordering capabilities.
+ * Features:
+ * - Drag and drop to reorder tasks
+ * - Optimistic updates for immediate UI feedback
+ * - Inline editing of task properties (priority, epic, sprint, tags)
+ * - Task creation and deletion
+ *
+ * The order column shows the current position of each task in the backlog.
+ * Tasks can be reordered by dragging them to different positions.
+ */
 export default function Backlog({ projectId }: { projectId: string }) {
 	const { id } = useParams();
 	const { openDialog } = useDialog('task');
@@ -77,11 +90,15 @@ export default function Backlog({ projectId }: { projectId: string }) {
 
 	const moveTask = useCallback(
 		(dragIndex: number, hoverIndex: number) => {
+			if (dragIndex === hoverIndex) return;
+
 			const backlogTasks = tasks
 				?.filter((task) => task.status === TaskStatusEnum.BACKLOG)
 				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-			const updates = backlogTasks?.map((task, index) => ({
+			if (!backlogTasks || backlogTasks.length === 0) return;
+
+			const updates = backlogTasks.map((task, index) => ({
 				id: task.id,
 				order:
 					index === dragIndex
@@ -91,9 +108,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 							: index
 			}));
 
-			if (updates) {
-				updateTaskOrders(updates);
-			}
+			updateTaskOrders(updates);
 		},
 		[tasks, updateTaskOrders]
 	);
@@ -116,6 +131,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 				<Table className="border">
 					<TableHeader>
 						<TableRow>
+							<TableHead className="w-12">Order</TableHead>
 							<TableHead>Title</TableHead>
 							<TableHead>Priority</TableHead>
 							<TableHead>Epic</TableHead>

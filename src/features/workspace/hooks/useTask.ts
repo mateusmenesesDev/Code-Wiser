@@ -287,11 +287,20 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		onMutate: async ({ updates }) => {
 			const queryKey = { id: projectId as string };
 			await utils.projectTemplate.getById.cancel(queryKey);
+			utils.task.getAllByProjectId.cancel({
+				projectId: projectId as string,
+				isTemplate
+			});
 
-			const previousData = utils.projectTemplate.getById.getData(queryKey);
+			const previousProjectData =
+				utils.projectTemplate.getById.getData(queryKey);
+			const previousTaskData = utils.task.getAllByProjectId.getData({
+				projectId: projectId as string,
+				isTemplate
+			});
 
-			if (previousData) {
-				const optimisticTasks = [...previousData.tasks];
+			if (previousProjectData) {
+				const optimisticTasks = [...previousProjectData.tasks];
 				for (const { id: taskId, order } of updates) {
 					const taskIndex = optimisticTasks.findIndex((t) => t.id === taskId);
 					if (taskIndex !== -1) {
@@ -317,17 +326,50 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 				}
 
 				utils.projectTemplate.getById.setData(queryKey, {
-					...previousData,
+					...previousProjectData,
 					tasks: optimisticTasks
 				});
 			}
 
-			return { previousData };
+			if (previousTaskData) {
+				const optimisticTaskData = [...previousTaskData];
+				for (const { id: taskId, order } of updates) {
+					const taskIndex = optimisticTaskData.findIndex(
+						(t) => t.id === taskId
+					);
+					if (taskIndex !== -1) {
+						const existingTask = optimisticTaskData[taskIndex];
+						if (existingTask) {
+							optimisticTaskData[taskIndex] = {
+								...existingTask,
+								order
+							};
+						}
+					}
+				}
+
+				utils.task.getAllByProjectId.setData(
+					{ projectId: projectId as string, isTemplate },
+					optimisticTaskData
+				);
+			}
+
+			return { previousProjectData, previousTaskData };
 		},
 		onError: (_error, _variables, context) => {
 			const queryKey = { id: projectId as string };
-			if (context?.previousData) {
-				utils.projectTemplate.getById.setData(queryKey, context.previousData);
+			if (context?.previousProjectData) {
+				utils.projectTemplate.getById.setData(
+					queryKey,
+					context.previousProjectData
+				);
+			}
+
+			if (context?.previousTaskData) {
+				utils.task.getAllByProjectId.setData(
+					{ projectId: projectId as string, isTemplate },
+					context.previousTaskData
+				);
 			}
 		},
 		onSettled: () => {
