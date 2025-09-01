@@ -29,7 +29,9 @@ export function MyProjectCard({ project }: MyProjectCardProps) {
 			<CardHeader>
 				<div className="flex items-start justify-between">
 					<div className="flex-1">
-						<CardTitle className="mb-2 text-lg">{project.title}</CardTitle>
+						<CardTitle level={2} className="mb-2 text-lg">
+							{project.title}
+						</CardTitle>
 						<CardDescription className="line-clamp-2">
 							{project.description}
 						</CardDescription>

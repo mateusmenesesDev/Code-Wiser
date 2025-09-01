@@ -64,7 +64,7 @@ export default function SignUpForm() {
 			<form onSubmit={handleSubmitCode(onVerify)}>
 				<Card className="w-[350px]">
 					<CardHeader>
-						<CardTitle>Verification Code </CardTitle>
+						<CardTitle level={1}>Verification Code </CardTitle>
 					</CardHeader>
 					<CardContent>
 						{error && (

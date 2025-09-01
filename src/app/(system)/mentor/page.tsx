@@ -139,7 +139,7 @@ function MentorDashboardContent() {
 				<Card className="py-16 text-center">
 					<CardContent>
 						<Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-						<h3 className="mb-2 font-semibold text-lg">No projects found</h3>
+						<h2 className="mb-2 font-semibold text-lg">No projects found</h2>
 						<p className="mb-4 text-muted-foreground text-sm">
 							{searchTerm
 								? 'Try adjusting your search criteria.'
@@ -163,7 +163,7 @@ function MentorDashboardContent() {
 									<CardHeader>
 										<div className="flex items-start justify-between">
 											<div className="flex-1">
-												<CardTitle className="mb-2 text-lg">
+												<CardTitle level={2} className="mb-2 text-lg">
 													{project.title}
 												</CardTitle>
 												<CardDescription className="line-clamp-2">

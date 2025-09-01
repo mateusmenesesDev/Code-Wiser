@@ -96,10 +96,17 @@ export function DraggableTaskRow({
 	return (
 		<TableRow
 			ref={ref}
-			className={cn('cursor-move', isDragging && 'bg-muted opacity-50')}
+			className={cn(
+				'cursor-move transition-all duration-200',
+				isDragging && 'bg-muted/50 opacity-50 shadow-lg'
+			)}
+			aria-label={`Task: ${task.title}. Drag to reorder.`}
 		>
+			<TableCell className="text-center font-mono text-muted-foreground text-sm">
+				{task.order ?? 0}
+			</TableCell>
 			<TableCell
-				className="cursor-pointer hover:bg-muted/80"
+				className="cursor-pointer transition-colors duration-150 hover:bg-muted/80"
 				onClick={() => onTaskClick(task)}
 			>
 				{task.title}

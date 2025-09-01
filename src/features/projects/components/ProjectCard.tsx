@@ -158,7 +158,10 @@ export function ProjectCard({
 
 				<CardHeader className="pb-3">
 					<div className="flex items-start justify-between gap-3">
-						<CardTitle className="line-clamp-2 font-bold text-lg transition-colors group-hover:text-blue-600">
+						<CardTitle
+							level={2}
+							className="line-clamp-2 font-bold text-lg transition-colors group-hover:text-blue-600"
+						>
 							{projectTemplate.title}
 						</CardTitle>
 					</div>

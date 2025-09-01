@@ -89,7 +89,7 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 								<Card key={module.id} className="border-l-4 border-l-primary">
 									<CardHeader className="pb-3">
 										<div className="flex items-center justify-between">
-											<CardTitle className="text-base">
+											<CardTitle level={3} className="text-base">
 												{module.title}
 											</CardTitle>
 											<Badge variant="default" className="text-xs">

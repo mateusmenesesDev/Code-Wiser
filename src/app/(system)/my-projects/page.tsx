@@ -40,9 +40,9 @@ export default function MyProjectsPage() {
 				<Card className="py-16 text-center">
 					<CardContent>
 						<FolderOpen className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-						<h3 className="mb-2 font-semibold text-lg">
+						<h2 className="mb-2 font-semibold text-lg">
 							No projects started yet
-						</h3>
+						</h2>
 						<p className="mb-4 text-muted-foreground text-sm">
 							Start your first project to begin your development journey
 						</p>

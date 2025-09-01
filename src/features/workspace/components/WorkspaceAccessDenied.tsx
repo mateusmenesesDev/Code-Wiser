@@ -14,7 +14,7 @@ export default function WorkspaceAccessDenied() {
 			<Card className="mx-auto max-w-md">
 				<CardHeader className="text-center">
 					<Lock className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-					<CardTitle>Access Denied</CardTitle>
+					<CardTitle level={1}>Access Denied</CardTitle>
 					<CardDescription>
 						You don't have permission to access this project workspace.
 					</CardDescription>

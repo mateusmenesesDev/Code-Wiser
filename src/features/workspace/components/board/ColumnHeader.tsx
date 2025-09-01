@@ -34,7 +34,10 @@ export function ColumnHeader({
 				className
 			)}
 		>
-			<CardTitle className="font-semibold text-card-foreground text-sm">
+			<CardTitle
+				level={2}
+				className="font-semibold text-card-foreground text-sm"
+			>
 				{title}
 				<Badge variant="secondary" className="ml-2">
 					{count}

@@ -128,9 +128,9 @@ const PricingPage = () => {
 										<div className="flex items-center justify-between">
 											<div>
 												<div className="mb-2 flex items-center gap-2">
-													<h3 className="font-bold text-2xl">
+													<h2 className="font-bold text-2xl">
 														{pkg.credits} Credits
-													</h3>
+													</h2>
 													{pkg.savings && (
 														<Badge variant="success">{pkg.savings}</Badge>
 													)}
@@ -201,7 +201,10 @@ const PricingPage = () => {
 
 						<Card className="border-dev-purple-200 dark:border-dev-purple-700">
 							<CardHeader>
-								<CardTitle className="text-center text-dev-purple-700 dark:text-dev-purple-300">
+								<CardTitle
+									level={3}
+									className="text-center text-dev-purple-700 dark:text-dev-purple-300"
+								>
 									1-on-1 Mentorship
 								</CardTitle>
 							</CardHeader>

@@ -26,7 +26,9 @@ export function ProjectImageGallery({
 	return (
 		<Card className="animate-slide-up overflow-hidden shadow-lg">
 			<CardHeader>
-				<CardTitle className="text-xl">Project Preview</CardTitle>
+				<CardTitle level={2} className="text-xl">
+					Project Preview
+				</CardTitle>
 			</CardHeader>
 			<CardContent className="p-6">
 				{/* Main Image */}

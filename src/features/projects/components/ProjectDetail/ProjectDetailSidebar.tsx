@@ -64,7 +64,9 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 		<div className="sticky top-24">
 			<Card className="border-0 shadow-lg">
 				<CardHeader>
-					<CardTitle className="text-2xl">Ready to Start?</CardTitle>
+					<CardTitle level={2} className="text-2xl">
+						Ready to Start?
+					</CardTitle>
 					<CardDescription>
 						Join hundreds of developers building this project
 					</CardDescription>
@@ -163,7 +165,9 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 			{/* Mentor Info */}
 			<Card className="mt-6 border-0 shadow-lg">
 				<CardHeader>
-					<CardTitle className="text-lg">Need Help?</CardTitle>
+					<CardTitle level={2} className="text-lg">
+						Need Help?
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<div className="mb-4 text-muted-foreground text-sm">

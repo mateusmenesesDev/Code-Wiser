@@ -14,7 +14,7 @@ export default function WorkspaceNotFound() {
 			<Card className="mx-auto max-w-md">
 				<CardHeader className="text-center">
 					<AlertTriangle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-					<CardTitle>Project Not Found</CardTitle>
+					<CardTitle level={1}>Project Not Found</CardTitle>
 					<CardDescription>
 						The project you're looking for doesn't exist or has been removed.
 					</CardDescription>

@@ -94,7 +94,9 @@ export default function AdminTemplatesPage() {
 				{/* Filters */}
 				<Card className="mb-6">
 					<CardHeader>
-						<CardTitle className="text-lg">Filters & Search</CardTitle>
+						<CardTitle level={2} className="text-lg">
+							Filters & Search
+						</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-5">

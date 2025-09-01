@@ -177,7 +177,7 @@ export default function Projects({
 							<div className="mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gray-100">
 								<Search className="h-16 w-16 text-muted-foreground" />
 							</div>
-							<h3 className="mb-2 font-semibold text-2xl">No projects found</h3>
+							<h2 className="mb-2 font-semibold text-2xl">No projects found</h2>
 							<div className="mb-6 text-muted-foreground">
 								Try adjusting your search criteria or browse all available
 								projects.
