@@ -1,11 +1,14 @@
 import { db } from '~/server/db';
 
-export async function createUser(email: string, id: string) {
+type UserData = {
+	email: string;
+	name: string;
+	id: string;
+};
+
+export async function createUser(data: UserData) {
 	return await db.user.create({
-		data: {
-			id,
-			email
-		}
+		data
 	});
 }
 

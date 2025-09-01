@@ -72,7 +72,11 @@ export async function POST(req: Request) {
 					status: 400
 				});
 			}
-			await createUser(evt.data.email_addresses[0]?.email_address, evt.data.id);
+			await createUser({
+				email: evt.data.email_addresses[0]?.email_address,
+				name: `${evt.data.first_name} ${evt.data.last_name}`,
+				id: evt.data.id
+			});
 			break;
 		case 'user.updated':
 			await updateUser(evt.data.id, {
