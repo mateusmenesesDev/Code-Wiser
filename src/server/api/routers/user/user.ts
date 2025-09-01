@@ -11,7 +11,11 @@ import { createUser, deleteUser, updateUser } from './queries';
 
 export const userRouter = createTRPCRouter({
 	create: publicProcedure.input(userDbSchema).mutation(async ({ input }) => {
-		return await createUser(input.email, input.id);
+		return await createUser({
+			email: input.email,
+			id: input.id,
+			name: input.name
+		});
 	}),
 
 	getById: publicProcedure.input(z.string()).query(async ({ input, ctx }) => {

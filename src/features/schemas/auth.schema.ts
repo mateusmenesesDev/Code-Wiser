@@ -17,7 +17,8 @@ export const basicUserSchema = z.object({
 
 export const userDbSchema = z.object({
 	id: z.string(),
-	email: z.string().email('Invalid email address')
+	email: z.string().email('Invalid email address'),
+	name: z.string().min(1, 'Name is required')
 });
 
 export const signInSchema = basicUserSchema
