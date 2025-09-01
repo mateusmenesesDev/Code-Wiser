@@ -15,7 +15,7 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
-import { api } from '~/trpc/react';
+import { useTask } from '~/features/workspace/hooks/useTask';
 
 interface TagsCellProps {
 	tags: string[];
@@ -27,18 +27,13 @@ export function TagsCell({ tags, taskId, projectId }: TagsCellProps) {
 	const [open, setOpen] = useState(false);
 	const [inputValue, setInputValue] = useState('');
 
-	const utils = api.useUtils();
-	const updateTaskMutation = api.task.update.useMutation({
-		onSuccess: () => {
-			utils.projectTemplate.getById.invalidate({ id: projectId });
-		}
-	});
+	const { updateTask } = useTask({ projectId });
 
 	const handleAddTag = async () => {
 		if (!inputValue.trim()) return;
 
 		const newTags = [...tags, inputValue.trim()];
-		await updateTaskMutation.mutate({
+		updateTask({
 			id: taskId,
 			tags: newTags
 		});
@@ -48,7 +43,7 @@ export function TagsCell({ tags, taskId, projectId }: TagsCellProps) {
 
 	const handleRemoveTag = async (tagToRemove: string) => {
 		const newTags = tags.filter((tag) => tag !== tagToRemove);
-		await updateTaskMutation.mutate({
+		updateTask({
 			id: taskId,
 			tags: newTags
 		});

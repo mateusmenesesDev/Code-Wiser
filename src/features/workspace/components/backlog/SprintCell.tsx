@@ -14,8 +14,8 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
+import { useTask } from '~/features/workspace/hooks/useTask';
 import { cn } from '~/lib/utils';
-import { api } from '~/trpc/react';
 
 interface SprintCellProps {
 	sprintId: string | null;
@@ -32,12 +32,7 @@ export function SprintCell({
 }: SprintCellProps) {
 	const [open, setOpen] = useState(false);
 
-	const utils = api.useUtils();
-	const updateTaskMutation = api.task.update.useMutation({
-		onSuccess: () => {
-			utils.projectTemplate.getById.invalidate({ id: projectId });
-		}
-	});
+	const { updateTask } = useTask({ projectId });
 
 	const availableSprints = sprints || [];
 	const selectedSprint = availableSprints.find(
@@ -45,7 +40,7 @@ export function SprintCell({
 	);
 
 	const handleSprintSelect = async (sprintId: string | undefined) => {
-		await updateTaskMutation.mutate({
+		updateTask({
 			id: taskId,
 			sprintId
 		});

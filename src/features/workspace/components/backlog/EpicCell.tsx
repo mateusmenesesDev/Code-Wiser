@@ -14,8 +14,8 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
+import { useTask } from '~/features/workspace/hooks/useTask';
 import { cn } from '~/lib/utils';
-import { api } from '~/trpc/react';
 
 interface EpicCellProps {
 	epicId: string | null;
@@ -27,18 +27,13 @@ interface EpicCellProps {
 export function EpicCell({ epicId, taskId, projectId, epics }: EpicCellProps) {
 	const [open, setOpen] = useState(false);
 
-	const utils = api.useUtils();
-	const updateTaskMutation = api.task.update.useMutation({
-		onSuccess: () => {
-			utils.projectTemplate.getById.invalidate({ id: projectId });
-		}
-	});
+	const { updateTask } = useTask({ projectId });
 
 	const availableEpics = epics || [];
 	const selectedEpic = availableEpics.find((epic) => epic.id === epicId);
 
 	const handleEpicSelect = async (epicId: string | undefined) => {
-		await updateTaskMutation.mutate({
+		updateTask({
 			id: taskId,
 			epicId
 		});
