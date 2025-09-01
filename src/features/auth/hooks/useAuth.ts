@@ -96,7 +96,8 @@ export const useAuth = () => {
 				await setActiveSignUp({ session: createdSessionId });
 				await createUserMutation.mutateAsync({
 					email: emailAddress,
-					id: createdUserId
+					id: createdUserId,
+					name: emailAddress
 				});
 				return;
 			}
