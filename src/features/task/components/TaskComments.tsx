@@ -8,7 +8,11 @@ import {
 	Trash2
 } from 'lucide-react';
 import { useState } from 'react';
-import { Avatar, AvatarFallback } from '~/common/components/ui/avatar';
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage
+} from '~/common/components/ui/avatar';
 import { Button } from '~/common/components/ui/button';
 import {
 	DropdownMenu,
@@ -103,6 +107,10 @@ export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
 							return (
 								<div key={comment.id} className={cn('flex gap-3')}>
 									<Avatar className="h-8 w-8">
+										<AvatarImage
+											src={comment.authorImageUrl}
+											alt={comment.author.name || comment.author.email}
+										/>
 										<AvatarFallback className="text-xs">
 											{comment.author.name?.[0] || comment.author.email[0]}
 										</AvatarFallback>

@@ -1,3 +1,4 @@
+import { clerkClient } from '@clerk/nextjs/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
@@ -57,5 +58,17 @@ export const getCommentsByTaskId = protectedProcedure
 			}
 		});
 
-		return comments;
+		const commentsWithImageUrl = await Promise.all(
+			comments.map(async (comment) => {
+				const authorImageUrl = await clerkClient.users.getUser(
+					comment.author.id
+				);
+				return {
+					...comment,
+					authorImageUrl: authorImageUrl.imageUrl
+				};
+			})
+		);
+
+		return commentsWithImageUrl;
 	});

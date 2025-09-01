@@ -1,5 +1,6 @@
 import { useMutationState } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useAuth } from '~/features/auth/hooks/useAuth';
 import { api } from '~/trpc/react';
 import type { CommentsApiOutput } from '../types/Comment.type';
 
@@ -19,6 +20,7 @@ interface UpdateVariables {
 
 export function useComments({ taskId }: UseCommentsProps) {
 	const utils = api.useUtils();
+	const { user } = useAuth();
 
 	const {
 		data: comments = [],
@@ -48,9 +50,10 @@ export function useComments({ taskId }: UseCommentsProps) {
 					authorId: 'optimistic',
 					author: {
 						id: 'optimistic',
-						name: 'You',
-						email: ''
-					}
+						name: user?.fullName || '',
+						email: user?.emailAddresses[0]?.emailAddress || ''
+					},
+					authorImageUrl: user?.imageUrl || ''
 				};
 				return [optimisticComment, ...old];
 			});
