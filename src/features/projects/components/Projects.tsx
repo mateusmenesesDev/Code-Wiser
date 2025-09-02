@@ -137,6 +137,7 @@ export default function Projects({
 								<SelectItem value="all">All Access</SelectItem>
 								<SelectItem value="Free">Free</SelectItem>
 								<SelectItem value="Credits">Credits</SelectItem>
+								<SelectItem value="Mentorship">Mentorship</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>

@@ -61,10 +61,13 @@ export function useProject({
 				property: (project) => project?.credits,
 				customComparison: (project, value) => {
 					if (value === 'Free') {
-						return project.credits === 0 || project.credits === null;
+						return project.accessType === 'FREE';
 					}
 					if (value === 'Credits') {
-						return project.credits != null && project.credits > 0;
+						return project.accessType === 'CREDITS';
+					}
+					if (value === 'Mentorship') {
+						return project.accessType === 'MENTORSHIP';
 					}
 					return true;
 				}
