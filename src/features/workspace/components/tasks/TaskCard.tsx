@@ -1,25 +1,10 @@
 import type { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
-import {
-	ArrowUp,
-	Calendar,
-	Flag,
-	Lock,
-	MoreVertical,
-	Trash2
-} from 'lucide-react';
+import { ArrowUp, Calendar, Flag, Lock } from 'lucide-react';
 import Image from 'next/image';
 import { useRef } from 'react';
 import { useDrag } from 'react-dnd';
-import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
-import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger
-} from '~/common/components/ui/dropdown-menu';
 import {
 	Tooltip,
 	TooltipContent,
@@ -29,7 +14,6 @@ import {
 import { useDialog } from '~/common/hooks/useDialog';
 import { stripHtmlTags } from '~/common/utils/cleanups';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
-import { useTask } from '~/features/workspace/hooks/useTask';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
@@ -54,12 +38,10 @@ export function TaskCard({
 	className,
 	columnId,
 	index: _index,
-	projectId,
 	onTaskClick,
 	moveTask: _moveTask
 }: TaskCardProps) {
 	const ref = useRef<HTMLDivElement>(null);
-	const { deleteTask } = useTask({ projectId });
 
 	const { data: userData } = api.user.getById.useQuery(
 		task.assigneeId as string,
@@ -99,81 +81,40 @@ export function TaskCard({
 			onClick={handleCardClick}
 		>
 			<CardContent className="p-4">
-				<div className="mb-2 flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						{task.epicId && (
-							<Badge
-								variant="outline"
-								className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
-							>
-								<ArrowUp className="mr-1 h-2 w-2" />
-								{task.epic?.title || 'Epic'}
-							</Badge>
-						)}
-						{task.blocked && (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Badge
-											variant="outline"
-											className="border-red-200 bg-red-100 text-red-800 text-xs dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
-										>
-											<Lock className="mr-1 h-2 w-2" />
-											Blocked
-										</Badge>
-									</TooltipTrigger>
-									<TooltipContent>
-										<p>{task.blockedReason || 'This task is blocked'}</p>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						)}
-					</div>
-					<div className="flex items-center gap-1 text-muted-foreground">
-						<div className="h-1 w-1 rounded-full bg-current" />
-						<div className="h-1 w-1 rounded-full bg-current" />
-						<div className="h-1 w-1 rounded-full bg-current" />
-					</div>
+				<div className="mb-2 flex items-center gap-2">
+					{task.epic && (
+						<Badge
+							variant="outline"
+							className="border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+						>
+							<ArrowUp className="mr-1 h-2 w-2" />
+							{task.epic.title}
+						</Badge>
+					)}
+					{task.blocked && (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Badge
+										variant="outline"
+										className="border-red-200 bg-red-100 text-red-800 text-xs dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
+									>
+										<Lock className="mr-1 h-2 w-2" />
+										Blocked
+									</Badge>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>{task.blockedReason || 'This task is blocked'}</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					)}
 				</div>
 
 				<div className="mb-3 flex items-start justify-between">
 					<h4 className="pr-2 font-medium text-card-foreground text-sm leading-5">
 						{task.title}
 					</h4>
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="sm"
-								className="h-6 w-6 flex-shrink-0 p-0"
-								onMouseDown={(e) => {
-									e.stopPropagation();
-								}}
-								onClick={(e) => {
-									e.stopPropagation();
-								}}
-							>
-								<MoreVertical className="h-3 w-3" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="w-32">
-							<ConfirmationDialog
-								title="Delete Task"
-								description={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
-								onConfirm={() => deleteTask(task.id)}
-							>
-								<DropdownMenuItem
-									className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
-									onSelect={(e) => {
-										e.preventDefault();
-									}}
-								>
-									<Trash2 className="mr-2 h-4 w-4" />
-									Delete
-								</DropdownMenuItem>
-							</ConfirmationDialog>
-						</DropdownMenuContent>
-					</DropdownMenu>
 				</div>
 
 				<p className="mb-3 line-clamp-3 text-muted-foreground text-xs">
