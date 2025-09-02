@@ -6,6 +6,12 @@ import { useParams } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger
+} from '~/common/components/ui/accordion';
 import { Button } from '~/common/components/ui/button';
 import {
 	Table,
@@ -89,16 +95,21 @@ export default function Backlog({ projectId }: { projectId: string }) {
 	);
 
 	const moveTask = useCallback(
-		(dragIndex: number, hoverIndex: number) => {
+		(dragIndex: number, hoverIndex: number, groupTaskIds?: string[]) => {
 			if (dragIndex === hoverIndex) return;
 
-			const backlogTasks = tasks
-				?.filter((task) => task.status === TaskStatusEnum.BACKLOG)
-				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+			const allBacklog =
+				tasks?.filter((task) => task.status === TaskStatusEnum.BACKLOG) ?? [];
 
-			if (!backlogTasks || backlogTasks.length === 0) return;
+			const groupTasks = (
+				groupTaskIds?.length
+					? allBacklog.filter((t) => groupTaskIds.includes(t.id))
+					: allBacklog.filter((t) => !t.sprintId)
+			).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-			const updates = backlogTasks.map((task, index) => ({
+			if (groupTasks.length === 0) return;
+
+			const updates = groupTasks.map((task, index) => ({
 				id: task.id,
 				order:
 					index === dragIndex
@@ -114,8 +125,21 @@ export default function Backlog({ projectId }: { projectId: string }) {
 	);
 
 	const backlogTasks = tasks
-		?.filter((task) => task.status === TaskStatusEnum.BACKLOG)
+		?.filter((task) => task.status === TaskStatusEnum.BACKLOG && !task.sprintId)
 		.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+	const sprintTaskMap = new Map(
+		(sprints ?? []).map((sprint) => {
+			const sprintTasks = tasks
+				?.filter(
+					(task) =>
+						task.status === TaskStatusEnum.BACKLOG &&
+						task.sprintId === sprint.id
+				)
+				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+			return [sprint.id, sprintTasks ?? []] as const;
+		})
+	);
 
 	return (
 		<DndProvider backend={HTML5Backend}>
@@ -128,38 +152,105 @@ export default function Backlog({ projectId }: { projectId: string }) {
 					</Button>
 				</div>
 
-				<Table className="border">
-					<TableHeader>
-						<TableRow>
-							<TableHead className="w-12">Order</TableHead>
-							<TableHead>Title</TableHead>
-							<TableHead>Priority</TableHead>
-							<TableHead>Epic</TableHead>
-							<TableHead>Sprint</TableHead>
-							<TableHead>Tags</TableHead>
-							<TableHead className="w-16">Actions</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{backlogTasks?.map((task, index) => (
-							<DraggableTaskRow
-								key={task.id}
-								task={task}
-								index={index}
-								projectId={id as string}
-								onTaskClick={handleTaskClick}
-								moveTask={moveTask}
-								sprints={sprints}
-								epics={
-									projectData?.epics?.map((epic) => ({
-										id: epic.id,
-										title: epic.title
-									})) || []
-								}
-							/>
-						))}
-					</TableBody>
-				</Table>
+				<Accordion type="multiple">
+					{(sprints ?? []).map((sprint) => {
+						const sprintTasks = sprintTaskMap.get(sprint.id) ?? [];
+						const sprintTaskIds = sprintTasks.map((t) => t.id);
+						return (
+							<AccordionItem key={sprint.id} value={sprint.id}>
+								<AccordionTrigger>
+									<span className="flex items-center gap-2">
+										{sprint.title}
+										<span className="text-muted-foreground">
+											({sprintTasks.length})
+										</span>
+									</span>
+								</AccordionTrigger>
+								<AccordionContent>
+									<Table className="border">
+										<TableHeader>
+											<TableRow>
+												<TableHead className="w-12">Order</TableHead>
+												<TableHead>Title</TableHead>
+												<TableHead>Priority</TableHead>
+												<TableHead>Epic</TableHead>
+												<TableHead>Sprint</TableHead>
+												<TableHead>Tags</TableHead>
+												<TableHead className="w-16">Actions</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{(sprintTasks ?? []).map((task, index) => (
+												<DraggableTaskRow
+													key={task.id}
+													task={task}
+													index={index}
+													projectId={id as string}
+													onTaskClick={handleTaskClick}
+													moveTask={(drag, hover) =>
+														moveTask(drag, hover, sprintTaskIds)
+													}
+													sprints={sprints}
+													epics={
+														projectData?.epics?.map((epic) => ({
+															id: epic.id,
+															title: epic.title
+														})) || []
+													}
+												/>
+											))}
+										</TableBody>
+									</Table>
+								</AccordionContent>
+							</AccordionItem>
+						);
+					})}
+
+					<AccordionItem value="__backlog__">
+						<AccordionTrigger>
+							<span className="flex items-center gap-2">
+								Backlog
+								<span className="text-muted-foreground">
+									({backlogTasks?.length ?? 0})
+								</span>
+							</span>
+						</AccordionTrigger>
+						<AccordionContent>
+							<Table className="border">
+								<TableHeader>
+									<TableRow>
+										<TableHead className="w-12">Order</TableHead>
+										<TableHead>Title</TableHead>
+										<TableHead>Priority</TableHead>
+										<TableHead>Epic</TableHead>
+										<TableHead>Sprint</TableHead>
+										<TableHead>Tags</TableHead>
+										<TableHead className="w-16">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{backlogTasks?.map((task, index) => (
+										<DraggableTaskRow
+											key={task.id}
+											task={task}
+											index={index}
+											projectId={id as string}
+											onTaskClick={handleTaskClick}
+											moveTask={(drag, hover) => moveTask(drag, hover)}
+											sprints={sprints}
+											epics={
+												projectData?.epics?.map((epic) => ({
+													id: epic.id,
+													title: epic.title
+												})) || []
+											}
+										/>
+									))}
+								</TableBody>
+							</Table>
+						</AccordionContent>
+					</AccordionItem>
+				</Accordion>
 
 				<TaskDialog
 					task={selectedTask || undefined}

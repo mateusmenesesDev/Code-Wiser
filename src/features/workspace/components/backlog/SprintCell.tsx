@@ -39,7 +39,7 @@ export function SprintCell({
 		(sprint) => sprint.id === sprintId
 	);
 
-	const handleSprintSelect = async (sprintId: string | undefined) => {
+	const handleSprintSelect = async (sprintId: string | null | undefined) => {
 		updateTask({
 			id: taskId,
 			sprintId
@@ -67,7 +67,7 @@ export function SprintCell({
 						<CommandEmpty>No sprint found.</CommandEmpty>
 						<CommandGroup>
 							<CommandItem
-								onSelect={() => handleSprintSelect(undefined)}
+								onSelect={() => handleSprintSelect(null)}
 								className="cursor-pointer"
 							>
 								<Check

@@ -9,7 +9,7 @@ import { protectedProcedure } from '~/server/api/trpc';
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 
 const createRelationshipUpdate = (
-	id: string | undefined
+	id: string | null | undefined
 ): RelationshipUpdate | undefined => {
 	if (id === undefined) return undefined;
 	return id ? { connect: { id } } : { disconnect: true };
