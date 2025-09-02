@@ -58,7 +58,7 @@ export function useProject({
 			} as FilterConfig,
 			{
 				value: costFilter === 'all' ? null : costFilter,
-				property: (project) => project?.credits,
+				property: (project) => project?.accessType,
 				customComparison: (project, value) => {
 					if (value === 'Free') {
 						return project.accessType === 'FREE';
