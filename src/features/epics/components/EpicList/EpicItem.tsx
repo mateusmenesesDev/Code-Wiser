@@ -58,14 +58,6 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 						)}
 					/>
 					<div className="flex flex-1 items-center justify-between">
-						<div className="space-y-1 text-left">
-							<h3 className="font-semibold text-lg">{epic.title}</h3>
-							{epic.description && (
-								<p className="text-muted-foreground text-sm">
-									{epic.description}
-								</p>
-							)}
-						</div>
 						<div className="flex items-center gap-6">
 							<div className="flex items-center gap-4">
 								<div className="flex items-center gap-2">
