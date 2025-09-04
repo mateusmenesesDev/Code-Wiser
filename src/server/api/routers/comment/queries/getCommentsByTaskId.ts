@@ -32,6 +32,7 @@ export const getCommentsByTaskId = protectedProcedure
 		}
 
 		const hasAccess =
+			ctx.isAdmin ||
 			task.projectTemplateId ||
 			task.project?.members.some((user: { id: string }) => user.id === userId);
 
