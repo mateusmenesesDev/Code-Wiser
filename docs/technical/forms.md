@@ -47,67 +47,26 @@ const useFormField = () => {
 
 ```ts
 // Reusable validation building blocks
-export const passwordSchema = z
-  .string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(
-    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])/,
-    "Complex password required"
-  );
+export const baseSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+});
 
 // Composed schemas with cross-field validation
-export const signUpSchema = basicUserSchema
-  .extend({
-    password: passwordSchema,
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
+export const createSchema = baseSchema.extend({
+  description: z.string().min(10, "Description must be at least 10 characters"),
+});
+
+export const updateSchema = baseSchema
+  .partial()
+  .refine((data) => data.name || data.email, {
+    message: "At least one field must be provided",
   });
 ```
 
 ### Form Patterns
 
-#### 1. Simple Forms (Authentication)
-
-**Pattern**: Direct register with schema validation
-
-```ts
-export function SignInForm({ onSuccess }) {
-  const { signInWithEmail, error } = useAuth();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { isSubmitting, errors },
-  } = useForm<z.infer<typeof signInSchema>>({
-    resolver: zodResolver(signInSchema),
-  });
-
-  return (
-    <form
-      onSubmit={handleSubmit(async (data) => {
-        await signInWithEmail(data);
-        onSuccess();
-      })}
-    >
-      <Input
-        type="email"
-        placeholder="Enter your email"
-        {...register("email")}
-      />
-      <ErrorMessage message={errors.email?.message} />
-
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Signing in..." : "Sign In"}
-      </Button>
-    </form>
-  );
-}
-```
-
-#### 2. Complex Forms with Controller Pattern
+#### 1. Complex Forms with Controller Pattern
 
 **Pattern**: FormField wrapper for complex components
 
@@ -136,7 +95,7 @@ export function SignInForm({ onSuccess }) {
 />
 ```
 
-#### 3. Dynamic Array Fields
+#### 2. Dynamic Array Fields
 
 **Pattern**: Add/remove functionality with validation
 
@@ -305,29 +264,6 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
 
 #### Common Patterns
 
-**File**: `src/features/schemas/auth.schema.ts`
-
-```ts
-export const passwordSchema = z
-  .string()
-  .min(8, "Password must be at least 8 characters")
-  .max(100, "Password must be at most 100 characters")
-  .regex(
-    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])/,
-    "Password must contain uppercase, lowercase, number and special character"
-  );
-
-export const signUpSchema = basicUserSchema
-  .extend({
-    password: passwordSchema,
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-```
-
 **File**: `src/features/templates/schemas/template.schema.ts`
 
 ```ts
@@ -458,6 +394,6 @@ const debouncedValidation = useMemo(
 
 **Form Implementations:**
 
-- `src/features/auth/components/Signin/SignInForm.tsx` - Simple form pattern
+- `src/features/auth/components/Signin/SigninDialog.tsx` - OAuth authentication dialog
 - `src/features/task/components/TaskDialog.tsx` - Complex form with rich editor
 - `src/features/templates/components/CreateProjectTemplateDialog.tsx` - Multi-step wizard

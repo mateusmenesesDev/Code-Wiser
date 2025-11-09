@@ -37,6 +37,7 @@ model Task {
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])
+  @@schema("public")
 }
 
 model Epic {
@@ -61,6 +62,7 @@ model Epic {
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])
+  @@schema("public")
 }
 
 model Sprint {
@@ -85,6 +87,7 @@ model Sprint {
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])
+  @@schema("public")
 }
 
 model Comment {
@@ -101,4 +104,5 @@ model Comment {
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId, createdAt])
+  @@schema("public")
 }

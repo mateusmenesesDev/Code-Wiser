@@ -17,4 +17,6 @@ model Project {
   epics   Epic[]
   sprints Sprint[]
   members User[]
+
+  @@schema("public")
 }

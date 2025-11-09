@@ -24,4 +24,6 @@ model ProjectTemplate {
 
   epics   Epic[]
   sprints Sprint[]
+
+  @@schema("public")
 }
