@@ -1,4 +1,4 @@
-import { FolderOpen, Users } from 'lucide-react';
+import { FolderOpen, Users, UserCog } from 'lucide-react';
 
 type MenuItem = {
 	href: string;
@@ -84,6 +84,15 @@ export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 		label: 'Admin Templates',
 		orgPermission: {
 			permission: 'org:project:edit_template',
+			role: 'org:admin'
+		}
+	},
+	{
+		href: '/admin/users',
+		Icon: UserCog,
+		label: 'User Management',
+		orgPermission: {
+			permission: 'org:project:create',
 			role: 'org:admin'
 		}
 	}
