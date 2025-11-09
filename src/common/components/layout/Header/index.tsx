@@ -14,7 +14,6 @@ import {
 } from '~/common/constants/menuItem';
 import { useDialog } from '~/common/hooks/useDialog';
 import SignInDialog from '~/features/auth/components/Signin/SigninDialog';
-import SignUpDialog from '~/features/auth/components/Signup/SignupDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { api } from '~/trpc/react';
 import CodeWiseIcon from '../../icons/CodeWiseIcon';
@@ -100,7 +99,6 @@ const Header = () => {
 			</div>
 
 			<SignInDialog />
-			<SignUpDialog />
 		</header>
 	);
 };

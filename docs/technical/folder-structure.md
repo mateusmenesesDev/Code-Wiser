@@ -101,7 +101,7 @@ app/
 
 **Route Group Conventions:**
 
-- `(auth)`: Authentication-related pages (login, signup, callbacks)
+- `(auth)`: Authentication-related pages (OAuth callbacks)
 - `(system)`: Main application pages requiring authentication
 - `api/`: Backend API endpoints and integrations
 
@@ -112,7 +112,7 @@ app/
 ```
 features/
 ├── auth/                        # Authentication & authorization
-│   ├── components/              # Auth UI components (Signin, Signup, ForgotPassword)
+│   ├── components/              # Auth UI components (OAuth sign-in dialogs)
 │   ├── hooks/                   # Authentication logic
 │   └── authErrors.ts            # Error handling
 ├── projects/                    # Project catalog & management

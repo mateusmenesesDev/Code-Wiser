@@ -60,15 +60,17 @@ export async function POST(req: Request) {
 	console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
 	console.log('Webhook body:', body);
 
+	const allowedOAuthProviders = ['oauth_google', 'oauth_github'];
+
 	switch (eventType) {
 		case 'user.created':
-			if (evt.data.email_addresses[0]?.linked_to[0]?.type !== 'oauth_google') {
-				return new Response('No need to create user', {
-					status: 200
+			if (!allowedOAuthProviders.includes(evt.data.email_addresses[0]?.linked_to[0]?.type ?? '')) {
+				return new Response('User is not an allowed OAuth provider', {
+					status: 400
 				});
 			}
 			if (!evt.data.email_addresses[0]?.email_address) {
-				return new Response('Error occured -- no email address', {
+				return new Response('User is not an allowed OAuth provider', {
 					status: 400
 				});
 			}
