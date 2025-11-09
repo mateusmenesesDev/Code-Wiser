@@ -55,6 +55,18 @@ export const userRouter = createTRPCRouter({
 	}),
 
 	delete: adminProcedure.input(z.string()).mutation(async ({ input }) => {
+		try {
+			// Delete from Clerk first
+			await clerkClient.users.deleteUser(input);
+		} catch (error) {
+			// If Clerk user doesn't exist or deletion fails, log but continue
+			console.error(`Failed to delete Clerk user ${input}:`, error);
+			throw new TRPCError({
+				code: 'INTERNAL_SERVER_ERROR',
+				message: 'Failed to delete user'
+			});
+		}
+
 		return await deleteUser(input);
 	}),
 
