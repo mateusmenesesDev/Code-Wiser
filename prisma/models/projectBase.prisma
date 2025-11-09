@@ -8,6 +8,8 @@ model ProjectImage {
   uploadId          String?          @unique
   ProjectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
   projectTemplateId String?
+
+  @@schema("public")
 }
 
 model LearningOutcome {
@@ -17,6 +19,8 @@ model LearningOutcome {
   updatedAt         DateTime         @updatedAt
   ProjectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
   projectTemplateId String?
+
+  @@schema("public")
 }
 
 model Category {
@@ -27,6 +31,8 @@ model Category {
   approved        Boolean           @default(false)
   projects        Project[]
   ProjectTemplate ProjectTemplate[]
+
+  @@schema("public")
 }
 
 model Technology {
@@ -34,6 +40,8 @@ model Technology {
   name            String            @unique
   approved        Boolean           @default(false)
   ProjectTemplate ProjectTemplate[]
+
+  @@schema("public")
 }
 
 model Milestone {
@@ -47,4 +55,6 @@ model Milestone {
   updatedAt         DateTime         @updatedAt
   ProjectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
   projectTemplateId String?
+
+  @@schema("public")
 }

@@ -1,12 +1,16 @@
 enum MentorshipStatus {
   ACTIVE
   INACTIVE
+
+  @@schema("public")
 }
 
 enum MentorshipType {
   MONTHLY
   QUARTERLY
   SEMIANNUAL
+
+  @@schema("public")
 }
 
 model User {
@@ -27,4 +31,6 @@ model User {
   tasks    Task[]
   projects Project[]
   comments Comment[]
+
+  @@schema("public")
 }
