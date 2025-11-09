@@ -5,6 +5,8 @@ enum TaskStatusEnum {
   CODE_REVIEW
   TESTING
   DONE
+
+  @@schema("public")
 }
 
 enum TaskPriorityEnum {
@@ -13,6 +15,8 @@ enum TaskPriorityEnum {
   MEDIUM
   HIGH
   HIGHEST
+
+  @@schema("public")
 }
 
 enum TaskTypeEnum {
@@ -20,11 +24,15 @@ enum TaskTypeEnum {
   TASK
   SUBTASK
   BUG
+
+  @@schema("public")
 }
 
 enum ProjectMethodologyEnum {
   SCRUM
   KANBAN
+
+  @@schema("public")
 }
 
 enum ProjectStatusEnum {
@@ -33,27 +41,48 @@ enum ProjectStatusEnum {
   REJECTED
   REQUESTED_CHANGES
   SEND_FOR_APPROVAL
+
+  @@schema("public")
 }
 
 enum ProjectAccessTypeEnum {
   FREE
   CREDITS
   MENTORSHIP
+
+  @@schema("public")
 }
 
 enum ProjectDifficultyEnum {
   BEGINNER
   INTERMEDIATE
   ADVANCED
+
+  @@schema("public")
 }
 
 enum ProjectRoleEnum {
   MENTEE
   MENTOR
+
+  @@schema("public")
 }
 
 enum EpicStatusEnum {
   PLANNED
   IN_PROGRESS
   COMPLETED
+
+  @@schema("public")
 }
+
+// CockroachDB system enum for multi-region - do not modify
+// This enum is managed by CockroachDB and should not be altered
+// Adding it here prevents Prisma from trying to drop it
+enum crdb_internal_region {
+  // Values are managed by CockroachDB - this matches the database state
+  aws_us_east_1 @map("aws-us-east-1")
+
+  @@schema("public")
+}
+

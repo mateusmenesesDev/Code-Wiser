@@ -102,10 +102,10 @@ export function AdminOnly({ children }: { children: React.ReactNode }) {
 }
 ```
 
-### Sign in/up and sign out (custom hook)
+### Sign in and sign out (custom hook)
 
-- `src/features/auth/hooks/useAuth.ts` wraps Clerk SDK for email/password, Google OAuth, verification, forgot/reset password, and sign out.
-- Components using it: `SigninDialog`, `SignUpForm`, and related dialogs.
+- `src/features/auth/hooks/useAuth.ts` wraps Clerk SDK for OAuth authentication (Google and GitHub) and sign out.
+- Components using it: `SigninDialog` for OAuth authentication flows.
 
 ## SSO callback
 

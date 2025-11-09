@@ -1,13 +1,13 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { passwordSchema, userDbSchema } from '~/features/schemas/auth.schema';
+import { userDbSchema } from '~/features/schemas/auth.schema';
 import {
 	createTRPCRouter,
 	protectedProcedure,
 	publicProcedure
 } from '../../trpc';
-import { createUser, deleteUser, updateUser } from './queries';
+import { createUser, deleteUser } from './queries';
 
 export const userRouter = createTRPCRouter({
 	create: publicProcedure.input(userDbSchema).mutation(async ({ input }) => {
@@ -47,17 +47,6 @@ export const userRouter = createTRPCRouter({
 
 		return userWithImageUrl;
 	}),
-
-	update: publicProcedure
-		.input(
-			userDbSchema.extend({
-				password: passwordSchema.optional()
-			})
-		)
-		.mutation(async ({ input }) => {
-			const { id, ...data } = input;
-			return await updateUser(id, data);
-		}),
 
 	delete: publicProcedure.input(z.string()).mutation(async ({ input }) => {
 		return await deleteUser(input);
