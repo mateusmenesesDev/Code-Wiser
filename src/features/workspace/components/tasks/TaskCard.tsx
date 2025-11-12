@@ -117,16 +117,12 @@ export function TaskCard({
 					</h4>
 				</div>
 
-				<p className="mb-3 line-clamp-3 text-muted-foreground text-xs">
-					{task.description ? stripHtmlTags(task.description) : ''}
-				</p>
-
 				<div className="mb-3 flex flex-wrap gap-1">
 					{task.tags.map((tag) => (
 						<Badge
 							key={tag}
 							variant="secondary"
-							className="bg-muted/60 text-muted-foreground text-xs hover:bg-muted/80"
+							className="hidden bg-muted/60 text-muted-foreground text-xs hover:bg-muted/80 2xl:block"
 						>
 							{tag}
 						</Badge>

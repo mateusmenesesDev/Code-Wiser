@@ -9,6 +9,7 @@ export const projectMutations = {
 		.mutation(async ({ ctx, input }) => {
 			try {
 				const { userId } = ctx.session;
+				console.log('userId', userId);
 
 				const project = await ctx.db.$transaction(async (prisma) => {
 					const user = await prisma.user.findUnique({

@@ -29,7 +29,7 @@ interface ProjectStatsCardsProps {
 
 export function ProjectStatsCards({ stats }: ProjectStatsCardsProps) {
 	return (
-		<div className="ml-auto flex w-fit flex-wrap items-center justify-end gap-6 rounded-lg bg-card/30 p-3 text-sm">
+		<div className="ml-auto flex w-fit flex-wrap items-center justify-end gap-6 rounded-lg bg-card/30 px-3 py-1 text-sm 2xl:py-3">
 			<StatItem
 				icon={<TrendingUp className="h-4 w-4 text-blue-600" />}
 				value={stats.progressPercentage}

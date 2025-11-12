@@ -14,16 +14,13 @@ export function ProjectHeader({
 	const router = useRouter();
 
 	return (
-		<section className="mb-4 flex items-center justify-between">
-			<div className="flex items-center gap-4">
+		<section className="mb-2 flex items-baseline justify-between 2xl:mb-4">
+			<div className="flex items-baseline gap-4">
 				<Button variant="ghost" onClick={() => router.back()}>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Back to Projects
 				</Button>
-				<div>
-					<h1 className="font-bold text-3xl">{projectTitle}</h1>
-					<p className="text-muted-foreground">Workspace</p>
-				</div>
+				<h1 className="font-bold text-xl 2xl:text-3xl">{projectTitle}</h1>
 			</div>
 
 			<div className="flex items-center gap-2">

@@ -109,7 +109,7 @@ export function BoardColumn({
 					isOver && canDrop && 'bg-primary/5'
 				)}
 			/>
-			<div className="h-[calc(100vh-30.375rem)] overflow-y-auto p-4">
+			<div className="h-[calc(100vh-26.475rem)] overflow-y-auto p-4 2xl:h-[calc(100vh-30.375rem)]">
 				<div
 					className={cn(
 						'h-full transition-all duration-200',

@@ -29,7 +29,7 @@ export function WorkspaceTabs({
 			{/* Main Content */}
 			<section>
 				<Card className="border-0 bg-card/40 shadow-lg backdrop-blur-sm">
-					<CardHeader className="p-4">
+					<CardHeader className="p-2 2xl:p-4">
 						<Tabs
 							value={activeTab}
 							onValueChange={onTabChange}
