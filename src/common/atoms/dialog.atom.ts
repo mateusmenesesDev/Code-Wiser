@@ -12,9 +12,11 @@ export type DialogType =
 export interface DialogState {
 	isOpen: boolean;
 	type?: DialogType;
+	id?: string;
 }
 
 export const dialogAtom = atom<DialogState>({
 	isOpen: false,
-	type: undefined
+	type: undefined,
+	id: undefined
 });

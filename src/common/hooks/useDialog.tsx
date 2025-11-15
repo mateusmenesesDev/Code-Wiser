@@ -4,10 +4,11 @@ import { type DialogType, dialogAtom } from '../atoms/dialog.atom';
 export function useDialog(dialogType: DialogType) {
 	const [dialogState, setDialogState] = useAtom(dialogAtom);
 
-	const openDialog = (type: DialogType) => {
+	const openDialog = (type: DialogType, id?: string) => {
 		setDialogState({
 			isOpen: true,
-			type
+			type,
+			id
 		});
 	};
 

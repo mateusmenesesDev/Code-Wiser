@@ -1,7 +1,36 @@
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
+import { clerkClient } from '@clerk/nextjs/server';
 
 export const taskQueries = {
+	getById: protectedProcedure
+		.input(z.object({ id: z.string() }))
+		.query(async ({ ctx, input }) => {
+			const task = await ctx.db.task.findUnique({
+				where: { id: input.id },
+				include: {
+					assignee: {
+						select: {
+							id: true,
+							name: true
+						}
+					},
+					sprint: {
+						select: {
+							id: true,
+							title: true
+						}
+					},
+					epic: {
+						select: {
+							id: true,
+							title: true
+						}
+					}
+				}
+			});
+			return task;
+		}),
 	getAllByProjectId: protectedProcedure
 		.input(
 			z.object({
@@ -44,5 +73,12 @@ export const taskQueries = {
 				}
 			});
 			return tasks;
+		}),
+
+	getAssigneeImage: protectedProcedure
+		.input(z.object({ assigneeId: z.string() }))
+		.query(async ({ input }) => {
+			const assignee = await clerkClient.users.getUser(input.assigneeId);
+			return assignee?.imageUrl;
 		})
 };

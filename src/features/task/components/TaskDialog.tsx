@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { Task } from '@prisma/client';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import { Clock, GitBranch, Loader2, Trash2 } from 'lucide-react';
 import { useEffect } from 'react';
@@ -47,7 +46,7 @@ type TaskFormData =
 	| z.infer<typeof updateTaskSchema>;
 
 interface TaskDialogProps {
-	task?: Task;
+	taskId?: string;
 	projectId?: string;
 	projectTemplateId?: string;
 	epics?: Array<{ id: string; title: string }>;
@@ -57,7 +56,7 @@ interface TaskDialogProps {
 }
 
 export function TaskDialog({
-	task,
+	taskId,
 	projectId,
 	projectTemplateId,
 	epics = [],
@@ -66,6 +65,13 @@ export function TaskDialog({
 	isSubmitting = false
 }: TaskDialogProps) {
 	const { isDialogOpen, closeDialog } = useDialog('task');
+	const { data: task, isLoading: isLoadingTask } = api.task.getById.useQuery(
+		{ id: taskId ?? '' },
+		{
+			enabled: !!taskId && !!isDialogOpen
+		}
+	);
+
 	const { deleteTask } = useTask({
 		projectId: projectId || projectTemplateId
 	});
@@ -90,7 +96,7 @@ export function TaskDialog({
 
 	useEffect(() => {
 		if (isDialogOpen) {
-			if (task) {
+			if (taskId && !isLoadingTask && task) {
 				const formData: TaskFormData = {
 					id: task.id,
 					title: task.title,
@@ -132,7 +138,15 @@ export function TaskDialog({
 				});
 			}
 		}
-	}, [isDialogOpen, task, form, projectId, projectTemplateId]);
+	}, [
+		isDialogOpen,
+		taskId,
+		isLoadingTask,
+		task,
+		form,
+		projectId,
+		projectTemplateId
+	]);
 
 	const getStatusLabel = (status: TaskStatusEnum) => {
 		switch (status) {

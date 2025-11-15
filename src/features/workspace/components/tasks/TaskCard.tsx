@@ -12,7 +12,6 @@ import {
 	TooltipTrigger
 } from '~/common/components/ui/tooltip';
 import { useDialog } from '~/common/hooks/useDialog';
-import { stripHtmlTags } from '~/common/utils/cleanups';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
 import { cn } from '~/lib/utils';

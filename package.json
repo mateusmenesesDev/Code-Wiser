@@ -48,7 +48,7 @@
     "@radix-ui/react-popover": "^1.1.2",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-radio-group": "^1.2.1",
-    "@radix-ui/react-scroll-area": "^1.2.0",
+    "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-select": "^2.1.1",
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-slot": "^1.2.3",
@@ -93,6 +93,7 @@
     "tailwind": "^4.0.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "tunnel-rat": "^0.1.2",
     "uploadthing": "^7.7.3",
     "uuid": "^11.0.2",
     "zod": "^3.23.8"
