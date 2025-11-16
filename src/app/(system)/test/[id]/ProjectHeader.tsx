@@ -70,9 +70,7 @@ export default function ProjectHeader({
 							value={priorityFilter ?? 'all'}
 							onValueChange={(value) =>
 								setPriorityFilter(
-									value === 'all'
-										? ('all' as TaskPriorityEnum)
-										: (value as TaskPriorityEnum)
+									value === 'all' ? 'all' : (value as TaskPriorityEnum)
 								)
 							}
 						>

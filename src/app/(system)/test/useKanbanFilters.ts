@@ -11,7 +11,10 @@ export const useKanbanFilters = () => {
         assignee: z.string().optional()
     });
 
-    const { sprint, priority, assignee } = kanbanFilters;
+    // Normalize "undefined" strings from URL to actual undefined
+    const sprint = kanbanFilters.sprint === 'undefined' || kanbanFilters.sprint === '' ? undefined : kanbanFilters.sprint;
+    const priority = kanbanFilters.priority; // Enum, can't be "undefined" string
+    const assignee = kanbanFilters.assignee === 'undefined' || kanbanFilters.assignee === '' ? undefined : kanbanFilters.assignee;
 
     const hasActiveFilters = useMemo(() => {
         return sprint !== undefined || priority !== undefined || assignee !== undefined;
@@ -20,9 +23,9 @@ export const useKanbanFilters = () => {
     const filterTasks = (tasks: KanbanDataOutput | undefined) => {
         if (!tasks) return [];
         return tasks.filter((task) => {
-            if (sprint && task.sprint?.id !== sprint) return false;
+            if (sprint && sprint !== 'all' && task.sprint?.id !== sprint) return false;
             if (priority && task.priority !== priority) return false;
-            if (assignee && task.assignee?.id !== assignee) return false;
+            if (assignee && assignee !== 'all' && task.assignee?.id !== assignee) return false;
             return true;
         });
     };
@@ -32,13 +35,22 @@ export const useKanbanFilters = () => {
         priorityFilter: priority,
         assigneeFilter: assignee,
         setSprintFilter: (sprint: string) => {
-            setKanbanFilters({ ...kanbanFilters, sprint });
+            setKanbanFilters({ 
+                ...kanbanFilters, 
+                sprint: sprint === 'all' ? undefined : sprint 
+            });
         },
-        setPriorityFilter: (priority: TaskPriorityEnum) => {
-            setKanbanFilters({ ...kanbanFilters, priority });
+        setPriorityFilter: (priority: TaskPriorityEnum | 'all') => {
+            setKanbanFilters({ 
+                ...kanbanFilters, 
+                priority: priority === 'all' ? undefined : priority 
+            });
         },
         setAssigneeFilter: (assignee: string) => {
-            setKanbanFilters({ ...kanbanFilters, assignee });
+            setKanbanFilters({ 
+                ...kanbanFilters, 
+                assignee: assignee === 'all' ? undefined : assignee 
+            });
         },
         clearFilters: () => {
             setKanbanFilters({ sprint: undefined, priority: undefined, assignee: undefined });
