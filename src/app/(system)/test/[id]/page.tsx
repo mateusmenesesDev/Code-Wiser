@@ -2,7 +2,6 @@
 
 import type { TaskStatusEnum } from '@prisma/client';
 import { useParams } from 'next/navigation';
-import { useMemo } from 'react';
 import {
 	KanbanBoard,
 	KanbanCards,
@@ -10,114 +9,24 @@ import {
 	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
-import { api } from '~/trpc/react';
 import { columns } from '../constants';
 import ProjectHeader from './ProjectHeader';
-import { useQueryState } from 'nuqs';
 import KanbanCardContent from './KanbanCardContent';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import { useDialog } from '~/common/hooks/useDialog';
+import { useKanbanFilters } from '../useKanbanFilters';
+import { useKanbanData } from '../useKanbanData';
+import { useKanbanMutations } from '../useKanbanMutations';
 
 const TestPage = () => {
 	const { id } = useParams();
 	const projectId = id as string;
-	const utils = api.useUtils();
 	const { dialogState } = useDialog('task');
+	const { allTasks, members, sprints } = useKanbanData(projectId);
+	const { filterTasks } = useKanbanFilters();
+	const { updateTaskOrdersMutation } = useKanbanMutations(projectId);
 
-	const { data: allTasks } = api.kanban.getKanbanData.useQuery({
-		projectId
-	});
-	const { data: members } = api.project.getMembers.useQuery({
-		projectId
-	});
-	const { data: sprints } = api.sprint.getAllByProjectId.useQuery({
-		projectId,
-		isTemplate: false
-	});
-
-	const [assigneeFilter] = useQueryState('assignee', {
-		defaultValue: 'all'
-	});
-	const [priorityFilter] = useQueryState('priority', {
-		defaultValue: 'all'
-	});
-	const [sprintFilter] = useQueryState('sprint', {
-		defaultValue: 'all'
-	});
-
-	// Client-side filtering
-	const tasks = useMemo(() => {
-		if (!allTasks) return undefined;
-
-		return allTasks.filter((task) => {
-			// Filter by assignee
-			if (assigneeFilter && assigneeFilter !== 'all') {
-				if (task.assignee?.id !== assigneeFilter) {
-					return false;
-				}
-			}
-
-			// Filter by priority
-			if (priorityFilter && priorityFilter !== 'all') {
-				if (task.priority !== priorityFilter) {
-					return false;
-				}
-			}
-
-			// Filter by sprint
-			if (sprintFilter && sprintFilter !== 'all') {
-				if (task.sprint?.id !== sprintFilter) {
-					return false;
-				}
-			}
-
-			return true;
-		});
-	}, [allTasks, assigneeFilter, priorityFilter, sprintFilter]);
-
-	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
-		onMutate: async ({ updates }) => {
-			// Cancel any outgoing refetches
-			await utils.kanban.getKanbanData.cancel({ projectId });
-
-			// Snapshot the previous value
-			const previousTasks = utils.kanban.getKanbanData.getData({ projectId });
-
-			// Optimistically update to the new value
-			if (previousTasks) {
-				const tasksById = new Map(previousTasks.map((t) => [t.id, t]));
-
-				// Create optimistic tasks in the order specified by updates
-				const optimisticTasks = updates
-					.map((update) => {
-						const task = tasksById.get(update.id);
-						if (!task) return null;
-						return {
-							...task,
-							order: update.order,
-							status: update.status as TaskStatusEnum
-						};
-					})
-					.filter((t): t is NonNullable<typeof t> => t !== null);
-
-				// Sort by order to maintain correct order
-				optimisticTasks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-				utils.kanban.getKanbanData.setData({ projectId }, optimisticTasks);
-			}
-
-			return { previousTasks };
-		},
-		onError: (_error, _variables, context) => {
-			// Rollback to the previous value on error
-			if (context?.previousTasks) {
-				utils.kanban.getKanbanData.setData(
-					{ projectId },
-					context.previousTasks
-				);
-			}
-		}
-	});
+	const tasks = filterTasks(allTasks ?? []);
 
 	const handleDataChange = (data: KanbanItemProps[]) => {
 		const updates = data.map((task, index) => ({
@@ -144,7 +53,7 @@ const TestPage = () => {
 			<ProjectHeader
 				members={members ?? []}
 				sprints={sprints ?? []}
-				tasks={
+				stats={
 					tasks?.map((task) => ({ status: task.status as TaskStatusEnum })) ??
 					[]
 				}
@@ -161,7 +70,7 @@ const TestPage = () => {
 							<KanbanBoard
 								id={column.id}
 								key={column.id}
-								className={column.bgColor}
+								className="bg-card/30"
 							>
 								<KanbanHeader>
 									<div className="flex items-center justify-between">
@@ -198,9 +107,6 @@ const TestPage = () => {
 			<TaskDialog
 				taskId={dialogState.id ?? undefined}
 				projectId={projectId}
-				projectTemplateId={undefined}
-				epics={[]}
-				sprints={[]}
 				onSubmit={async (data) => {
 					console.log('data', data);
 				}}

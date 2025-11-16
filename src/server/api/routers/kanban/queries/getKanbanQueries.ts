@@ -1,16 +1,5 @@
-import { TaskPriorityEnum } from "@prisma/client";
-import { z } from "zod";
 import { protectedProcedure } from "~/server/api/trpc";
-
-const kanbanDataSchema = z.object({
-    projectId: z.string(),
-    filters: z.object({
-        sprintId: z.string().optional(),
-        priority: z.nativeEnum(TaskPriorityEnum).optional().nullable(),
-        assigneeId: z.string().optional(),
-        epicId: z.string().optional()
-    }).optional()
-});
+import { kanbanDataSchema } from "../schemas";
 
 export const getKanbanQueries = {
 	getKanbanData: protectedProcedure.input(kanbanDataSchema).query(async ({ ctx, input }) => {

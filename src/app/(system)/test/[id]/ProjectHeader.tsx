@@ -1,6 +1,5 @@
 import { TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
 import { Filter, X } from 'lucide-react';
-import { useQueryState } from 'nuqs';
 import { Button } from '~/common/components/ui/button';
 import {
 	Select,
@@ -11,38 +10,29 @@ import {
 } from '~/common/components/ui/select';
 import { ProjectStatsCards } from '~/features/workspace/components/ProjectStatsCards';
 import type { RouterOutputs } from '~/trpc/react';
+import { useKanbanFilters } from '../useKanbanFilters';
 
 interface ProjectHeaderProps {
 	members: RouterOutputs['project']['getMembers'];
 	sprints: { id: string; title: string }[];
-	tasks: { status: TaskStatusEnum }[];
+	stats: { status: TaskStatusEnum }[];
 }
 
 export default function ProjectHeader({
 	members,
 	sprints,
-	tasks
+	stats
 }: ProjectHeaderProps) {
-	const [sprintFilter, setSprintFilter] = useQueryState('sprint', {
-		defaultValue: 'all'
-	});
-	const [priorityFilter, setPriorityFilter] = useQueryState('priority', {
-		defaultValue: 'all'
-	});
-	const [assigneeFilter, setAssigneeFilter] = useQueryState('assignee', {
-		defaultValue: 'all'
-	});
-
-	const clearFilters = () => {
-		setSprintFilter('all');
-		setPriorityFilter('all');
-		setAssigneeFilter('all');
-	};
-
-	const hasActiveFilters =
-		sprintFilter !== 'all' ||
-		priorityFilter !== 'all' ||
-		assigneeFilter !== 'all';
+	const {
+		sprintFilter,
+		priorityFilter,
+		assigneeFilter,
+		setSprintFilter,
+		setPriorityFilter,
+		setAssigneeFilter,
+		clearFilters,
+		hasActiveFilters
+	} = useKanbanFilters();
 
 	return (
 		<div className="rounded-lg border-border/40 border-b bg-card p-4">
@@ -54,14 +44,14 @@ export default function ProjectHeader({
 					</p>
 				</div>
 				<div className="flex flex-col">
-					<ProjectStatsCards tasks={tasks ?? []} />
+					<ProjectStatsCards tasks={stats ?? []} />
 					<div className="flex items-center gap-2">
 						<Filter className="h-4 w-4 text-muted-foreground" />
 						<span className="text-muted-foreground text-sm">Filters:</span>
 						<Select
 							value={assigneeFilter ?? 'all'}
 							onValueChange={(value) =>
-								setAssigneeFilter(value === 'all' ? null : value)
+								setAssigneeFilter(value === 'all' ? 'all' : value)
 							}
 						>
 							<SelectTrigger className="h-8 w-[180px]">
@@ -80,7 +70,9 @@ export default function ProjectHeader({
 							value={priorityFilter ?? 'all'}
 							onValueChange={(value) =>
 								setPriorityFilter(
-									value === 'all' ? null : (value as TaskPriorityEnum)
+									value === 'all'
+										? ('all' as TaskPriorityEnum)
+										: (value as TaskPriorityEnum)
 								)
 							}
 						>
@@ -101,7 +93,7 @@ export default function ProjectHeader({
 						<Select
 							value={sprintFilter ?? 'all'}
 							onValueChange={(value) =>
-								setSprintFilter(value === 'all' ? null : value)
+								setSprintFilter(value === 'all' ? 'all' : value)
 							}
 						>
 							<SelectTrigger className="h-8 w-[180px]">
@@ -109,11 +101,13 @@ export default function ProjectHeader({
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="all">All Sprints</SelectItem>
-								{sprints?.map((sprint) => (
-									<SelectItem key={sprint.id} value={sprint.id}>
-										{sprint.title}
-									</SelectItem>
-								))}
+								{sprints
+									?.sort((a, b) => a.title.localeCompare(b.title))
+									.map((sprint) => (
+										<SelectItem key={sprint.id} value={sprint.id}>
+											{sprint.title}
+										</SelectItem>
+									))}
 							</SelectContent>
 						</Select>
 						{hasActiveFilters && (

@@ -25,6 +25,7 @@ import { useAuth } from '~/features/auth/hooks/useAuth';
 import { useComments } from '~/features/workspace/hooks/useComments';
 import type { CommentsApiOutput } from '~/features/workspace/types/Comment.type';
 import { cn } from '~/lib/utils';
+import { TaskCommentsSkeleton } from './TaskCommentsSkeleton';
 
 dayjs.extend(relativeTime);
 
@@ -40,7 +41,8 @@ export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
 		updateComment,
 		deleteComment,
 		updateCommentMutation,
-		comments
+		comments,
+		isLoading
 	} = useComments({ taskId });
 	const [newComment, setNewComment] = useState('');
 	const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -94,109 +96,115 @@ export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
 		<div className={cn(!isEditing && 'opacity-50')}>
 			<h3 className="mb-3 font-medium text-muted-foreground text-sm">
 				<MessageSquare className="mr-1 inline h-4 w-4" />
-				Comments ({isEditing ? comments.length : 0})
+				Comments ({isEditing ? (isLoading ? '...' : comments.length) : 0})
 			</h3>
 
 			{isEditing ? (
 				<>
 					<div className="max-h-[13rem] space-y-3 overflow-y-auto">
-						{comments.map((comment) => {
-							const isEditing = editingCommentId === comment.id;
-							const isOwnComment = user?.id === comment.authorId;
+						{isLoading ? (
+							<TaskCommentsSkeleton />
+						) : (
+							comments.map((comment) => {
+								const isEditing = editingCommentId === comment.id;
+								const isOwnComment = user?.id === comment.authorId;
 
-							return (
-								<div key={comment.id} className={cn('flex gap-3')}>
-									<Avatar className="h-8 w-8">
-										<AvatarImage
-											src={comment.authorImageUrl}
-											alt={comment.author.name || comment.author.email}
-										/>
-										<AvatarFallback className="text-xs">
-											{comment.author.name?.[0] || comment.author.email[0]}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex-1 space-y-1">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2">
-												<span className="font-medium text-sm">
-													{comment.author.name || comment.author.email}
-												</span>
-												<span className="text-muted-foreground text-xs">
-													{dayjs(comment.createdAt).fromNow()}
-												</span>
+								return (
+									<div key={comment.id} className={cn('flex gap-3')}>
+										<Avatar className="h-8 w-8">
+											<AvatarImage
+												src={comment.authorImageUrl}
+												alt={comment.author.name || comment.author.email}
+											/>
+											<AvatarFallback className="text-xs">
+												{comment.author.name?.[0] || comment.author.email[0]}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex-1 space-y-1">
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<span className="font-medium text-sm">
+														{comment.author.name || comment.author.email}
+													</span>
+													<span className="text-muted-foreground text-xs">
+														{dayjs(comment.createdAt).fromNow()}
+													</span>
+												</div>
+												{isOwnComment && (
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="h-8 w-8"
+															>
+																<MoreVertical className="h-4 w-4" />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent align="end">
+															<DropdownMenuItem
+																onClick={() => startEditing(comment)}
+															>
+																<Pencil className="mr-2 h-4 w-4" />
+																Edit
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onClick={() => handleDeleteComment(comment.id)}
+															>
+																<Trash2 className="mr-2 h-4 w-4" />
+																Delete
+															</DropdownMenuItem>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												)}
 											</div>
-											{isOwnComment && (
-												<DropdownMenu>
-													<DropdownMenuTrigger asChild>
+											{isEditing ? (
+												<div className="space-y-2">
+													<Textarea
+														value={editedContent}
+														onChange={(e) => setEditedContent(e.target.value)}
+														onKeyDown={(e) =>
+															handleKeyDown(e, true, comment.id)
+														}
+														className="min-h-[80px]"
+														disabled={updateCommentMutation.isPending}
+														autoFocus
+													/>
+													<div className="flex gap-2">
 														<Button
-															variant="ghost"
-															size="icon"
-															className="h-8 w-8"
+															onClick={() => handleEditComment(comment.id)}
+															size="sm"
+															disabled={
+																updateCommentMutation.isPending ||
+																!editedContent.trim()
+															}
+															type="button"
 														>
-															<MoreVertical className="h-4 w-4" />
+															{updateCommentMutation.isPending && (
+																<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+															)}
+															{updateCommentMutation.isPending
+																? 'Updating...'
+																: 'Update'}
 														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent align="end">
-														<DropdownMenuItem
-															onClick={() => startEditing(comment)}
+														<Button
+															onClick={cancelEditing}
+															size="sm"
+															variant="outline"
+															disabled={updateCommentMutation.isPending}
 														>
-															<Pencil className="mr-2 h-4 w-4" />
-															Edit
-														</DropdownMenuItem>
-														<DropdownMenuItem
-															onClick={() => handleDeleteComment(comment.id)}
-														>
-															<Trash2 className="mr-2 h-4 w-4" />
-															Delete
-														</DropdownMenuItem>
-													</DropdownMenuContent>
-												</DropdownMenu>
+															Cancel
+														</Button>
+													</div>
+												</div>
+											) : (
+												<p className="text-sm">{comment.content}</p>
 											)}
 										</div>
-										{isEditing ? (
-											<div className="space-y-2">
-												<Textarea
-													value={editedContent}
-													onChange={(e) => setEditedContent(e.target.value)}
-													onKeyDown={(e) => handleKeyDown(e, true, comment.id)}
-													className="min-h-[80px]"
-													disabled={updateCommentMutation.isPending}
-													autoFocus
-												/>
-												<div className="flex gap-2">
-													<Button
-														onClick={() => handleEditComment(comment.id)}
-														size="sm"
-														disabled={
-															updateCommentMutation.isPending ||
-															!editedContent.trim()
-														}
-														type="button"
-													>
-														{updateCommentMutation.isPending && (
-															<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-														)}
-														{updateCommentMutation.isPending
-															? 'Updating...'
-															: 'Update'}
-													</Button>
-													<Button
-														onClick={cancelEditing}
-														size="sm"
-														variant="outline"
-														disabled={updateCommentMutation.isPending}
-													>
-														Cancel
-													</Button>
-												</div>
-											</div>
-										) : (
-											<p className="text-sm">{comment.content}</p>
-										)}
 									</div>
-								</div>
-							);
-						})}
+								);
+							})
+						)}
 					</div>
 
 					{/* Add Comment */}
