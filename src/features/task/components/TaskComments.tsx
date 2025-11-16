@@ -7,7 +7,7 @@ import {
 	Pencil,
 	Trash2
 } from 'lucide-react';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import {
 	Avatar,
 	AvatarFallback,
@@ -34,15 +34,14 @@ interface TaskCommentsProps {
 	taskId: string;
 }
 
-export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
+function TaskCommentsContent({ taskId, isEditing }: TaskCommentsProps) {
 	const { user } = useAuth();
 	const {
 		addComment,
 		updateComment,
 		deleteComment,
 		updateCommentMutation,
-		comments,
-		isLoading
+		comments
 	} = useComments({ taskId });
 	const [newComment, setNewComment] = useState('');
 	const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
@@ -96,115 +95,109 @@ export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
 		<div className={cn(!isEditing && 'opacity-50')}>
 			<h3 className="mb-3 font-medium text-muted-foreground text-sm">
 				<MessageSquare className="mr-1 inline h-4 w-4" />
-				Comments ({isEditing ? (isLoading ? '...' : comments.length) : 0})
+				Comments ({isEditing ? comments.length : 0})
 			</h3>
 
 			{isEditing ? (
 				<>
 					<div className="max-h-[13rem] space-y-3 overflow-y-auto">
-						{isLoading ? (
-							<TaskCommentsSkeleton />
-						) : (
-							comments.map((comment) => {
-								const isEditing = editingCommentId === comment.id;
-								const isOwnComment = user?.id === comment.authorId;
+						{comments.map((comment: CommentsApiOutput[number]) => {
+							const isEditing = editingCommentId === comment.id;
+							const isOwnComment = user?.id === comment.authorId;
 
-								return (
-									<div key={comment.id} className={cn('flex gap-3')}>
-										<Avatar className="h-8 w-8">
-											<AvatarImage
-												src={comment.authorImageUrl}
-												alt={comment.author.name || comment.author.email}
-											/>
-											<AvatarFallback className="text-xs">
-												{comment.author.name?.[0] || comment.author.email[0]}
-											</AvatarFallback>
-										</Avatar>
-										<div className="flex-1 space-y-1">
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-2">
-													<span className="font-medium text-sm">
-														{comment.author.name || comment.author.email}
-													</span>
-													<span className="text-muted-foreground text-xs">
-														{dayjs(comment.createdAt).fromNow()}
-													</span>
-												</div>
-												{isOwnComment && (
-													<DropdownMenu>
-														<DropdownMenuTrigger asChild>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="h-8 w-8"
-															>
-																<MoreVertical className="h-4 w-4" />
-															</Button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent align="end">
-															<DropdownMenuItem
-																onClick={() => startEditing(comment)}
-															>
-																<Pencil className="mr-2 h-4 w-4" />
-																Edit
-															</DropdownMenuItem>
-															<DropdownMenuItem
-																onClick={() => handleDeleteComment(comment.id)}
-															>
-																<Trash2 className="mr-2 h-4 w-4" />
-																Delete
-															</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
-												)}
+							return (
+								<div key={comment.id} className={cn('flex gap-3')}>
+									<Avatar className="h-8 w-8">
+										<AvatarImage
+											src={comment.authorImageUrl}
+											alt={comment.author.name || comment.author.email}
+										/>
+										<AvatarFallback className="text-xs">
+											{comment.author.name?.[0] || comment.author.email[0]}
+										</AvatarFallback>
+									</Avatar>
+									<div className="flex-1 space-y-1">
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-2">
+												<span className="font-medium text-sm">
+													{comment.author.name || comment.author.email}
+												</span>
+												<span className="text-muted-foreground text-xs">
+													{dayjs(comment.createdAt).fromNow()}
+												</span>
 											</div>
-											{isEditing ? (
-												<div className="space-y-2">
-													<Textarea
-														value={editedContent}
-														onChange={(e) => setEditedContent(e.target.value)}
-														onKeyDown={(e) =>
-															handleKeyDown(e, true, comment.id)
-														}
-														className="min-h-[80px]"
-														disabled={updateCommentMutation.isPending}
-														autoFocus
-													/>
-													<div className="flex gap-2">
+											{isOwnComment && (
+												<DropdownMenu>
+													<DropdownMenuTrigger asChild>
 														<Button
-															onClick={() => handleEditComment(comment.id)}
-															size="sm"
-															disabled={
-																updateCommentMutation.isPending ||
-																!editedContent.trim()
-															}
-															type="button"
+															variant="ghost"
+															size="icon"
+															className="h-8 w-8"
 														>
-															{updateCommentMutation.isPending && (
-																<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-															)}
-															{updateCommentMutation.isPending
-																? 'Updating...'
-																: 'Update'}
+															<MoreVertical className="h-4 w-4" />
 														</Button>
-														<Button
-															onClick={cancelEditing}
-															size="sm"
-															variant="outline"
-															disabled={updateCommentMutation.isPending}
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end">
+														<DropdownMenuItem
+															onClick={() => startEditing(comment)}
 														>
-															Cancel
-														</Button>
-													</div>
-												</div>
-											) : (
-												<p className="text-sm">{comment.content}</p>
+															<Pencil className="mr-2 h-4 w-4" />
+															Edit
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onClick={() => handleDeleteComment(comment.id)}
+														>
+															<Trash2 className="mr-2 h-4 w-4" />
+															Delete
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
 											)}
 										</div>
+										{isEditing ? (
+											<div className="space-y-2">
+												<Textarea
+													value={editedContent}
+													onChange={(e) => setEditedContent(e.target.value)}
+													onKeyDown={(e) => handleKeyDown(e, true, comment.id)}
+													className="min-h-[80px]"
+													disabled={updateCommentMutation.isPending}
+													autoFocus
+												/>
+												<div className="flex gap-2">
+													<Button
+														onClick={() => handleEditComment(comment.id)}
+														size="sm"
+														disabled={
+															updateCommentMutation.isPending ||
+															!editedContent.trim()
+														}
+														type="button"
+													>
+														{updateCommentMutation.isPending && (
+															<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+														)}
+														{updateCommentMutation.isPending
+															? 'Updating...'
+															: 'Update'}
+													</Button>
+													<Button
+														onClick={cancelEditing}
+														size="sm"
+														variant="outline"
+														disabled={updateCommentMutation.isPending}
+													>
+														Cancel
+													</Button>
+												</div>
+											</div>
+										) : (
+											<p className="text-sm">{comment.content}</p>
+										)}
 									</div>
-								);
-							})
-						)}
+								</div>
+							);
+						})}
 					</div>
 
 					{/* Add Comment */}
@@ -229,6 +222,45 @@ export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
 					</p>
 				</div>
 			)}
+		</div>
+	);
+}
+
+export function TaskComments({ taskId, isEditing }: TaskCommentsProps) {
+	if (!taskId) {
+		return (
+			<div className={cn(!isEditing && 'opacity-50')}>
+				<h3 className="mb-3 font-medium text-muted-foreground text-sm">
+					<MessageSquare className="mr-1 inline h-4 w-4" />
+					Comments (0)
+				</h3>
+				<div className="rounded-lg border border-muted-foreground/25 border-dashed p-6 text-center">
+					<MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+					<p className="text-muted-foreground text-sm">
+						Comments will be available after creating the task
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<Suspense fallback={<TaskCommentsSuspenseFallback isEditing={isEditing} />}>
+			<TaskCommentsContent taskId={taskId} isEditing={isEditing} />
+		</Suspense>
+	);
+}
+
+function TaskCommentsSuspenseFallback({ isEditing }: { isEditing: boolean }) {
+	return (
+		<div className={cn(!isEditing && 'opacity-50')}>
+			<h3 className="mb-3 font-medium text-muted-foreground text-sm">
+				<MessageSquare className="mr-1 inline h-4 w-4" />
+				Comments (...)
+			</h3>
+			<div className="max-h-[13rem] space-y-3 overflow-y-auto">
+				<TaskCommentsSkeleton />
+			</div>
 		</div>
 	);
 }

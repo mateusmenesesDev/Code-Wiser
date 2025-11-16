@@ -22,16 +22,9 @@ export function useComments({ taskId }: UseCommentsProps) {
 	const utils = api.useUtils();
 	const { user } = useAuth();
 
-	const {
-		data: comments = [],
-		isLoading,
-		error
-	} = api.comment.getByTaskId.useQuery(
-		{ taskId },
-		{
-			enabled: !!taskId
-		}
-	);
+	const [comments = []] = api.comment.getByTaskId.useSuspenseQuery({
+		taskId
+	});
 
 	const createCommentMutation = api.comment.create.useMutation({
 		onMutate: async (variables) => {
@@ -159,8 +152,6 @@ export function useComments({ taskId }: UseCommentsProps) {
 
 	return {
 		comments,
-		isLoading,
-		error,
 		addComment,
 		updateComment,
 		deleteComment,
