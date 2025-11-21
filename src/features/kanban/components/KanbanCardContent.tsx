@@ -20,7 +20,7 @@ export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 			<div className="flex flex-col gap-3">
 				<Badge
 					variant="default"
-					className="w-fit border-blue-200 bg-blue-100 text-blue-800 text-xs dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+					className="hidden w-fit border-blue-200 bg-blue-100 text-blue-800 text-xs xl:block dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
 				>
 					{task.sprint?.title}
 				</Badge>
