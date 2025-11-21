@@ -125,6 +125,11 @@ export const getProjectQueries = {
 	getLastActivityDay: protectedProcedure
 		.input(z.object({ projectId: z.string() }))
 		.query(async ({ ctx, input }) => {
+			const hasAccess = await userHasAccessToProject(ctx, input.projectId);
+			if (!hasAccess) {
+				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+
 			const lastTask = await ctx.db.task.findFirst({
 				where: { projectId: input.projectId },
 				orderBy: { updatedAt: 'desc' },
@@ -141,6 +146,11 @@ export const getProjectQueries = {
 	getProjectProgress: protectedProcedure
 		.input(z.object({ projectId: z.string() }))
 		.query(async ({ ctx, input }) => {
+			const hasAccess = await userHasAccessToProject(ctx, input.projectId);
+			if (!hasAccess) {
+				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+
 			const tasks = await ctx.db.task.findMany({
 				where: { projectId: input.projectId },
 				select: { status: true }

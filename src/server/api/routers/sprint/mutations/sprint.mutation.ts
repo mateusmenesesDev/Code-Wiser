@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
 	newSprintSchema,
@@ -5,6 +6,7 @@ import {
 	updateSprintSchema
 } from '~/features/sprints/schemas/sprint.schema';
 import { protectedProcedure } from '~/server/api/trpc';
+import { userHasAccessToProject } from '~/server/utils/auth';
 
 export const sprintMutations = {
 	create: protectedProcedure
@@ -12,6 +14,11 @@ export const sprintMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { title, description, startDate, endDate, projectId, isTemplate } =
 				input;
+
+			const hasAccess = await userHasAccessToProject(ctx, projectId);
+			if (!hasAccess) {
+				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
 
 			const sprintCount = await ctx.db.sprint.count({
 				where: isTemplate ? { projectTemplateId: projectId } : { projectId }
@@ -51,6 +58,31 @@ export const sprintMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { id } = input;
 
+			// Verify access through existing sprint
+			const existingSprint = await ctx.db.sprint.findUnique({
+				where: { id },
+				include: {
+					project: {
+						include: { members: true }
+					}
+				}
+			});
+
+			if (!existingSprint) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Sprint not found'
+				});
+			}
+
+			const hasAccess = await userHasAccessToProject(
+				ctx,
+				existingSprint.projectId ?? ''
+			);
+			if (!hasAccess) {
+				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+
 			await ctx.db.$transaction(async (tx) => {
 				await tx.task.updateMany({
 					where: { sprintId: id },
@@ -66,12 +98,32 @@ export const sprintMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...updateData } = input;
 
-			const sprint = await ctx.db.sprint.findUnique({
-				where: { id }
+			// Verify access through existing sprint
+			const existingSprint = await ctx.db.sprint.findUnique({
+				where: { id },
+				include: {
+					project: {
+						include: { members: true }
+					}
+				}
 			});
 
-			if (!sprint) {
-				throw new Error('Sprint not found');
+			if (!existingSprint) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Sprint not found'
+				});
+			}
+
+			// Only verify access for non-template projects
+			if (existingSprint.projectId) {
+				const hasAccess = await userHasAccessToProject(
+					ctx,
+					existingSprint.projectId
+				);
+				if (!hasAccess) {
+					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+				}
 			}
 
 			return ctx.db.sprint.update({

@@ -1,6 +1,8 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
 import { clerkClient } from '@clerk/nextjs/server';
+import { userHasAccessToProject } from '~/server/utils/auth';
 
 export const taskQueries = {
 	getById: protectedProcedure
@@ -39,6 +41,11 @@ export const taskQueries = {
 			})
 		)
 		.query(async ({ ctx, input }) => {
+			const hasAccess = await userHasAccessToProject(ctx, input.projectId);
+			if (!hasAccess) {
+				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+
 			const tasks = await ctx.db.task.findMany({
 				where: {
 					project: {

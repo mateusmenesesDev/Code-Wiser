@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import type { TaskStatusEnum } from '@prisma/client';
 import { z } from 'zod';
 import {
@@ -5,6 +6,7 @@ import {
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
+import { userHasAccessToProject } from '~/server/utils/auth';
 
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 
@@ -21,6 +23,11 @@ export const taskMutations = {
 		.mutation(async ({ input, ctx }) => {
 			const { isTemplate, projectId, epicId, sprintId, assigneeId, ...rest } =
 				input;
+
+			const hasAccess = await userHasAccessToProject(ctx, projectId);
+			if (!hasAccess) {
+				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
 
 			const task = await ctx.db.task.create({
 				data: {
@@ -48,6 +55,32 @@ export const taskMutations = {
 				isTemplate,
 				...rest
 			} = input;
+
+			// Verify access through existing task
+			const existingTask = await ctx.db.task.findUnique({
+				where: { id },
+				include: {
+					project: {
+						include: { members: true }
+					}
+				}
+			});
+
+			if (!existingTask) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Task not found'
+				});
+			}
+
+			// Only verify access for non-template projects
+			const hasAccess = await userHasAccessToProject(
+				ctx,
+				existingTask.projectId ?? ''
+			);
+			if (!hasAccess) {
+				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
 
 			const updateData = {
 				...rest,
@@ -105,6 +138,35 @@ export const taskMutations = {
 		.input(z.object({ taskId: z.string() }))
 		.mutation(async ({ ctx, input }) => {
 			const { taskId } = input;
+
+			// Verify access through existing task
+			const existingTask = await ctx.db.task.findUnique({
+				where: { id: taskId },
+				include: {
+					project: {
+						include: { members: true }
+					}
+				}
+			});
+
+			if (!existingTask) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Task not found'
+				});
+			}
+
+			// Only verify access for non-template projects
+			if (existingTask.projectId) {
+				const hasAccess = await userHasAccessToProject(
+					ctx,
+					existingTask.projectId
+				);
+				if (!hasAccess) {
+					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+				}
+			}
+
 			await ctx.db.task.delete({ where: { id: taskId } });
 		}),
 
@@ -115,6 +177,42 @@ export const taskMutations = {
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			// Verify access through existing tasks
+			const existingTasks = await ctx.db.task.findMany({
+				where: {
+					id: {
+						in: input.taskIds
+					}
+				},
+				select: {
+					projectId: true
+				}
+			});
+
+			if (existingTasks.length === 0) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Tasks not found'
+				});
+			}
+
+			// Get unique projectIds (only non-template)
+			const uniqueProjectIds = [
+				...new Set(
+					existingTasks
+						.map((task) => task.projectId)
+						.filter((id): id is string => id !== null)
+				)
+			];
+
+			// Verify access for all unique projects
+			for (const projectId of uniqueProjectIds) {
+				const hasAccess = await userHasAccessToProject(ctx, projectId);
+				if (!hasAccess) {
+					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+				}
+			}
+
 			return ctx.db.task.deleteMany({
 				where: {
 					id: {
