@@ -9,18 +9,21 @@ import {
 } from '~/common/components/ui/tabs';
 
 import { ProjectAccessTypeEnum, ProjectMethodologyEnum } from '@prisma/client';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileJson } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import EpicList from '~/features/epics/components/EpicList/EpicList';
 import SprintList from '~/features/sprints/components/SprintList';
 import EditTemplateBasicInfo from '~/features/templates/components/EditTemplate/EditTemplateBasicInfo';
 import EditTemplateImages from '~/features/templates/components/EditTemplate/EditTemplateImages';
-import Backlog from '~/features/workspace/components/backlog/Backlog';
+import { CreateTasksSprintsEpicsFromJsonDialog } from '~/features/templates/components/CreateTasksSprintsEpicsFromJsonDialog';
+import Backlog from '~/features/backlog/components/Backlog';
 import { api } from '~/trpc/react';
 
 const AdminProjectEdit = () => {
 	const { id } = useParams();
 	const router = useRouter();
+	const [showJsonDialog, setShowJsonDialog] = useState(false);
 
 	const { data: template, isLoading } = api.projectTemplate.getById.useQuery({
 		id: id as string
@@ -73,6 +76,10 @@ const AdminProjectEdit = () => {
 						</h1>
 					</div>
 				</div>
+				<Button variant="outline" onClick={() => setShowJsonDialog(true)}>
+					<FileJson className="mr-2 h-4 w-4" />
+					Add from JSON
+				</Button>
 			</div>
 
 			<Tabs defaultValue="backlog" className="space-y-6">
@@ -102,6 +109,16 @@ const AdminProjectEdit = () => {
 					<EditTemplateImages templateId={template.id} />
 				</TabsContent>
 			</Tabs>
+
+			<CreateTasksSprintsEpicsFromJsonDialog
+				open={showJsonDialog}
+				onOpenChange={setShowJsonDialog}
+				projectTemplateId={template.id}
+				onSuccess={() => {
+					// Invalidate queries to refresh the data
+					router.refresh();
+				}}
+			/>
 		</div>
 	);
 };

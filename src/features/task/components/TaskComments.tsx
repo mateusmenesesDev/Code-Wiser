@@ -31,7 +31,7 @@ dayjs.extend(relativeTime);
 
 interface TaskCommentsProps {
 	isEditing: boolean;
-	taskId: string;
+	taskId?: string;
 }
 
 function TaskCommentsContent({ taskId, isEditing }: TaskCommentsProps) {
@@ -42,7 +42,7 @@ function TaskCommentsContent({ taskId, isEditing }: TaskCommentsProps) {
 		deleteComment,
 		updateCommentMutation,
 		comments
-	} = useComments({ taskId });
+	} = useComments({ taskId: taskId ?? '' });
 	const [newComment, setNewComment] = useState('');
 	const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
 	const [editedContent, setEditedContent] = useState('');

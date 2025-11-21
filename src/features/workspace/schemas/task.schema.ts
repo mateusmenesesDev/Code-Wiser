@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 export const baseTaskSchema = z.object({
 	id: z.string().optional(),
+	projectId: z.string(),
 	title: z.string().min(1, { message: 'Title is required' }),
 	description: z.string().optional(),
 	type: z.nativeEnum(TaskTypeEnum).optional(),
@@ -22,27 +23,11 @@ export const baseTaskSchema = z.object({
 
 export const createTaskSchema = baseTaskSchema
 	.omit({ id: true })
-	.extend({
-		projectId: z.string().optional(),
-		projectTemplateId: z.string().optional()
-	})
-	.superRefine((data, ctx) => {
-		if (data.projectId && data.projectTemplateId) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'Cannot provide both projectId and projectTemplateId'
-			});
-		}
-		if (!data.projectId && !data.projectTemplateId) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'Must provide either projectId or projectTemplateId'
-			});
-		}
-	});
+	.extend({ isTemplate: z.boolean() });
 
 export const updateTaskSchema = baseTaskSchema
 	.partial()
+	.extend({ isTemplate: z.boolean() })
 	.refine((data) => data.id, {
 		message: 'Id is required',
 		path: ['id']

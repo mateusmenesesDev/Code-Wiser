@@ -19,33 +19,15 @@ export const taskMutations = {
 	create: protectedProcedure
 		.input(createTaskSchema)
 		.mutation(async ({ input, ctx }) => {
-			const {
-				projectTemplateId,
-				projectId,
-				epicId,
-				sprintId,
-				assigneeId,
-				...rest
-			} = input;
-			const projectConnection = projectTemplateId
-				? {
-						projectTemplate: {
-							connect: {
-								id: projectTemplateId
-							}
-						}
-					}
-				: {
-						project: {
-							connect: {
-								id: projectId
-							}
-						}
-					};
+			const { isTemplate, projectId, epicId, sprintId, assigneeId, ...rest } =
+				input;
+
 			const task = await ctx.db.task.create({
 				data: {
 					...rest,
-					...projectConnection,
+					...(isTemplate
+						? { projectTemplate: { connect: { id: projectId } } }
+						: { project: { connect: { id: projectId } } }),
 					assignee: assigneeId ? { connect: { id: assigneeId } } : undefined,
 					epic: epicId ? { connect: { id: epicId } } : undefined,
 					sprint: sprintId ? { connect: { id: sprintId } } : undefined
@@ -57,7 +39,15 @@ export const taskMutations = {
 	update: protectedProcedure
 		.input(updateTaskSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { id, epicId, sprintId, assigneeId, ...rest } = input;
+			const {
+				id,
+				epicId,
+				sprintId,
+				assigneeId,
+				projectId,
+				isTemplate,
+				...rest
+			} = input;
 
 			const updateData = {
 				...rest,
@@ -74,7 +64,12 @@ export const taskMutations = {
 
 			const task = await ctx.db.task.update({
 				where: { id },
-				data: updateData
+				data: {
+					...updateData,
+					...(input.isTemplate
+						? { projectTemplate: { connect: { id: input.projectId } } }
+						: { project: { connect: { id: input.projectId } } })
+				}
 			});
 			return task;
 		}),

@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
+import { userHasAccessToProject } from '~/server/utils/auth';
 
 export const getProjectQueries = {
 	getById: protectedProcedure
@@ -162,7 +163,10 @@ export const getProjectQueries = {
 	getMembers: protectedProcedure
 		.input(z.object({ projectId: z.string() }))
 		.query(async ({ ctx, input }) => {
-			const { userId } = ctx.session;
+			const hasAccess = await userHasAccessToProject(ctx, input.projectId);
+			if (!hasAccess) {
+				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
 
 			const project = await ctx.db.project.findUnique({
 				where: { id: input.projectId },
@@ -181,15 +185,6 @@ export const getProjectQueries = {
 				throw new TRPCError({
 					code: 'NOT_FOUND',
 					message: 'Project not found'
-				});
-			}
-
-			const isMember = project.members.some((member) => member.id === userId);
-
-			if (!isMember && !ctx.isAdmin) {
-				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message: 'You do not have access to this project'
 				});
 			}
 

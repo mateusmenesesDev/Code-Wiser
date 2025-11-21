@@ -1,74 +1,112 @@
 'use client';
 
+import type { TaskStatusEnum } from '@prisma/client';
 import { useParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
-import { ProjectHeader } from '~/features/workspace/components/ProjectHeader';
-import { ProjectHeaderSkeleton } from '~/features/workspace/components/ProjectHeaderSkeleton';
-import { ProjectStatsCards } from '~/features/workspace/components/ProjectStatsCards';
-import { ProjectStatsCardsSkeleton } from '~/features/workspace/components/ProjectStatsCardsSkeleton';
-import WorkspaceAccessDenied from '~/features/workspace/components/WorkspaceAccessDenied';
-import WorkspaceNotFound from '~/features/workspace/components/WorkspaceNotFound';
-import { WorkspaceTabs } from '~/features/workspace/components/WorkspaceTabs';
-import { useKanbanData } from '~/features/workspace/hooks/useKanbanData';
-import { useProjectData } from '~/features/workspace/hooks/useProjectData';
-import { calculateProjectStats } from '~/features/workspace/utils/kanbanColumns';
+import {
+	KanbanBoard,
+	KanbanCards,
+	KanbanHeader,
+	type KanbanItemProps,
+	KanbanProvider
+} from '~/common/components/ui/kanban';
+import { TaskDialog } from '~/features/task/components/TaskDialog';
+import { useDialog } from '~/common/hooks/useDialog';
+import { useKanbanData } from '~/features/kanban/hooks/useKanbanData';
+import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
+import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
+import ProjectHeader from '~/features/workspace/components/ProjectHeader';
+import { columns } from '~/features/kanban/constants';
+import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 
-export default function Workspace() {
-	const params = useParams();
-	const projectId = params.id as string;
-	const [activeTab, setActiveTab] = useState('board');
+const Workspace = () => {
+	const { id } = useParams();
+	const projectId = id as string;
+	const { dialogState } = useDialog('task');
+	const { allTasks, members, sprints } = useKanbanData(projectId);
+	const { filterTasks } = useKanbanFilters();
+	const { updateTaskOrdersMutation } = useKanbanMutations(projectId);
 
-	const {
-		project,
-		isLoading: isProjectLoading,
-		error
-	} = useProjectData(projectId);
-	const { columns, isLoading: isKanbanLoading } = useKanbanData(projectId);
+	const tasks = filterTasks(allTasks ?? []);
 
-	const stats = useMemo(() => {
-		if (!columns)
-			return {
-				totalTasks: 0,
-				completedTasks: 0,
-				inProgressTasks: 0,
-				progressPercentage: 0
-			};
-		return calculateProjectStats(columns);
-	}, [columns]);
+	const handleDataChange = (data: KanbanItemProps[]) => {
+		const updates = data.map((task, index) => ({
+			id: task.id,
+			order: index,
+			status: task.status as TaskStatusEnum
+		}));
+		updateTaskOrdersMutation.mutate({ updates });
+	};
 
-	if (error) {
-		switch (error.data?.code) {
-			case 'FORBIDDEN':
-				return <WorkspaceAccessDenied />;
-			case 'NOT_FOUND':
-				return <WorkspaceNotFound />;
-		}
+	if (!tasks) {
+		return (
+			<div className="flex h-screen items-center justify-center">
+				<div className="flex flex-col items-center gap-2">
+					<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+					<p className="text-muted-foreground text-sm">Loading tasks...</p>
+				</div>
+			</div>
+		);
 	}
 
 	return (
-		<div>
-			{isProjectLoading ? (
-				<ProjectHeaderSkeleton />
-			) : (
-				<ProjectHeader
-					projectTitle={project?.title}
-					figmaProjectUrl={project?.figmaProjectUrl || undefined}
-				/>
-			)}
-
-			<div className="mb-4">
-				{isKanbanLoading ? (
-					<ProjectStatsCardsSkeleton />
-				) : (
-					<ProjectStatsCards stats={stats} />
-				)}
-			</div>
-
-			<WorkspaceTabs
-				projectId={projectId}
-				activeTab={activeTab}
-				onTabChange={setActiveTab}
+		<div className="flex h-[calc(100vh-8rem)] flex-col">
+			<ProjectHeader
+				members={members ?? []}
+				sprints={sprints ?? []}
+				stats={
+					tasks?.map((task) => ({ status: task.status as TaskStatusEnum })) ??
+					[]
+				}
 			/>
+			<div className="flex-1 overflow-hidden">
+				<KanbanProvider
+					columns={columns}
+					data={tasks}
+					onDataChange={handleDataChange}
+				>
+					{(column) => {
+						const columnTasks = tasks.filter((t) => t.status === column.id);
+						return (
+							<KanbanBoard
+								id={column.id}
+								key={column.id}
+								className="bg-card/30"
+							>
+								<KanbanHeader>
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<div
+												className="h-2 w-2 rounded-full shadow-sm"
+												style={{ backgroundColor: column.color }}
+											/>
+											<span className="font-semibold text-sm">
+												{column.name}
+											</span>
+										</div>
+										<span
+											className="flex h-6 min-w-6 items-center justify-center rounded-full px-2 font-medium text-xs"
+											style={{
+												backgroundColor: column.color,
+												color: 'white'
+											}}
+										>
+											{columnTasks.length}
+										</span>
+									</div>
+								</KanbanHeader>
+								<KanbanCards id={column.id}>
+									{(task) => {
+										return <KanbanCardContent task={task} />;
+									}}
+								</KanbanCards>
+							</KanbanBoard>
+						);
+					}}
+				</KanbanProvider>
+			</div>
+			<TaskDialog taskId={dialogState.id ?? undefined} projectId={projectId} />
 		</div>
 	);
-}
+};
+
+export default Workspace;

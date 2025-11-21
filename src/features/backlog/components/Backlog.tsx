@@ -25,12 +25,8 @@ import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useSprintQueries } from '~/features/sprints/hooks/useSprintQueries';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import { api } from '~/trpc/react';
-import { useTask } from '../../hooks/useTask';
-import type {
-	CreateTaskInput,
-	TasksApiOutput,
-	UpdateTaskInput
-} from '../../types/Task.type';
+import { useTask } from '~/features/task/hooks/useTask';
+import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
 import { DraggableTaskRow } from './DraggableTaskRow';
 
 /**
@@ -55,8 +51,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 	>(null);
 
 	const { getAllSprints } = useSprintQueries();
-	const { createTask, updateTask, updateTaskOrders, getAllTasksByProjectId } =
-		useTask({ projectId });
+	const { updateTaskOrders, getAllTasksByProjectId } = useTask({ projectId });
 
 	const [sprints] = getAllSprints();
 
@@ -65,21 +60,6 @@ export default function Backlog({ projectId }: { projectId: string }) {
 	const [projectData] = isTemplate
 		? api.projectTemplate.getById.useSuspenseQuery({ id: projectId })
 		: api.project.getById.useSuspenseQuery({ id: projectId });
-
-	const handleTaskSubmit = useCallback(
-		async (data: CreateTaskInput | UpdateTaskInput) => {
-			if ('id' in data && data.id) {
-				updateTask(data as UpdateTaskInput);
-			} else {
-				createTask({
-					...data,
-					status: TaskStatusEnum.BACKLOG
-				} as CreateTaskInput);
-			}
-			setSelectedTask(null);
-		},
-		[createTask, updateTask]
-	);
 
 	const handleCreateTask = useCallback(() => {
 		setSelectedTask(null);
@@ -252,14 +232,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 					</AccordionItem>
 				</Accordion>
 
-				<TaskDialog
-					task={selectedTask || undefined}
-					projectId={isTemplate ? undefined : (id as string)}
-					projectTemplateId={isTemplate ? (id as string) : undefined}
-					epics={projectData?.epics || []}
-					sprints={sprints}
-					onSubmit={handleTaskSubmit}
-				/>
+				<TaskDialog taskId={selectedTask?.id} projectId={id as string} />
 			</div>
 		</DndProvider>
 	);

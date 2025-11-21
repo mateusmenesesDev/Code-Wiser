@@ -15,7 +15,8 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
-import { useTask } from '~/features/workspace/hooks/useTask';
+import { useTask } from '~/features/task/hooks/useTask';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 
 interface TagsCellProps {
 	tags: string[];
@@ -26,7 +27,7 @@ interface TagsCellProps {
 export function TagsCell({ tags, taskId, projectId }: TagsCellProps) {
 	const [open, setOpen] = useState(false);
 	const [inputValue, setInputValue] = useState('');
-
+	const isTemplate = useIsTemplate();
 	const { updateTask } = useTask({ projectId });
 
 	const handleAddTag = async () => {
@@ -35,7 +36,8 @@ export function TagsCell({ tags, taskId, projectId }: TagsCellProps) {
 		const newTags = [...tags, inputValue.trim()];
 		updateTask({
 			id: taskId,
-			tags: newTags
+			tags: newTags,
+			isTemplate
 		});
 		setInputValue('');
 		setOpen(false);
@@ -45,7 +47,8 @@ export function TagsCell({ tags, taskId, projectId }: TagsCellProps) {
 		const newTags = tags.filter((tag) => tag !== tagToRemove);
 		updateTask({
 			id: taskId,
-			tags: newTags
+			tags: newTags,
+			isTemplate
 		});
 	};
 

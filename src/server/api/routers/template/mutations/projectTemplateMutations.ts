@@ -8,6 +8,7 @@ import {
 	updateTemplateBasicInfoInputSchema,
 	updateTemplateStatusSchema
 } from '~/features/templates/schemas/template.schema';
+import { bulkCreateSchema } from '~/features/templates/schemas/bulkCreate.schema';
 import { adminProcedure } from '~/server/api/trpc';
 import { createProjectTemplateData } from '../actions/projectTemplateActions';
 
@@ -252,5 +253,172 @@ export const projectTemplateMutations = {
 					message: 'Failed to update project template'
 				});
 			}
+		}),
+
+	bulkCreateTasksSprintsEpics: adminProcedure
+		.input(
+			z.object({
+				projectTemplateId: z.string(),
+				data: bulkCreateSchema
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const { projectTemplateId, data } = input;
+
+			// Increase timeout to 30 seconds for large bulk operations
+			return await ctx.db.$transaction(
+				async (prisma) => {
+					// Create epics first (in parallel)
+					const epicTitleToId: Record<string, string> = {};
+					const epicPromises = (data.epics || []).map(async (epicData) => {
+						const epic = await prisma.epic.create({
+							data: {
+								title: epicData.title,
+								description: epicData.description,
+								projectTemplate: {
+									connect: { id: projectTemplateId }
+								}
+							}
+						});
+						return { title: epicData.title, id: epic.id };
+					});
+
+					const createdEpics = await Promise.all(epicPromises);
+					for (const { title, id } of createdEpics) {
+						epicTitleToId[title] = id;
+					}
+
+					// Create sprints (in parallel)
+					const sprintTitleToId: Record<string, string> = {};
+					const sprintCount = await prisma.sprint.count({
+						where: { projectTemplateId }
+					});
+
+					const sprintsToCreate = data.sprints || [];
+					const sprintPromises = sprintsToCreate.map(async (sprintData, i) => {
+						if (!sprintData) return null;
+						const sprint = await prisma.sprint.create({
+							data: {
+								title: sprintData.title,
+								description: sprintData.description,
+								startDate: sprintData.startDate
+									? new Date(sprintData.startDate)
+									: null,
+								endDate: sprintData.endDate
+									? new Date(sprintData.endDate)
+									: null,
+								order: sprintData.order ?? sprintCount + i,
+								projectTemplate: {
+									connect: { id: projectTemplateId }
+								}
+							}
+						});
+						return { title: sprintData.title, id: sprint.id };
+					});
+
+					const createdSprints = await Promise.all(sprintPromises);
+					for (const result of createdSprints) {
+						if (result) {
+							sprintTitleToId[result.title] = result.id;
+						}
+					}
+
+					// Validate and prepare tasks
+					const warnings: string[] = [];
+					const tasksToCreate = (data.tasks || []).map((taskData) => {
+						// Validate epic and sprint references
+						if (taskData.epicTitle && !epicTitleToId[taskData.epicTitle]) {
+							warnings.push(
+								`Task "${taskData.title}": Epic "${taskData.epicTitle}" not found. Task will be created without epic.`
+							);
+						}
+						if (
+							taskData.sprintTitle &&
+							!sprintTitleToId[taskData.sprintTitle]
+						) {
+							warnings.push(
+								`Task "${taskData.title}": Sprint "${taskData.sprintTitle}" not found. Task will be created without sprint.`
+							);
+						}
+
+						return {
+							title: taskData.title,
+							description: taskData.description,
+							type: taskData.type,
+							priority: taskData.priority,
+							tags: taskData.tags || [],
+							blocked: taskData.blocked ?? false,
+							blockedReason: taskData.blockedReason,
+							status: taskData.status,
+							order: taskData.order,
+							storyPoints: taskData.storyPoints,
+							dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+							prUrl: taskData.prUrl,
+							epicId: taskData.epicTitle
+								? epicTitleToId[taskData.epicTitle] || null
+								: null,
+							sprintId: taskData.sprintTitle
+								? sprintTitleToId[taskData.sprintTitle] || null
+								: null
+						};
+					});
+
+					// Create tasks in batches to avoid overwhelming the database
+					const batchSize = 50;
+					const taskBatches = [];
+					for (let i = 0; i < tasksToCreate.length; i += batchSize) {
+						taskBatches.push(tasksToCreate.slice(i, i + batchSize));
+					}
+
+					const tasks = [];
+					for (const batch of taskBatches) {
+						const batchPromises = batch.map(async (taskData) => {
+							const task = await prisma.task.create({
+								data: {
+									title: taskData.title,
+									description: taskData.description,
+									type: taskData.type,
+									priority: taskData.priority,
+									tags: taskData.tags,
+									blocked: taskData.blocked,
+									blockedReason: taskData.blockedReason,
+									status: taskData.status,
+									order: taskData.order,
+									storyPoints: taskData.storyPoints,
+									dueDate: taskData.dueDate,
+									prUrl: taskData.prUrl,
+									projectTemplate: {
+										connect: { id: projectTemplateId }
+									},
+									epic: taskData.epicId
+										? { connect: { id: taskData.epicId } }
+										: undefined,
+									sprint: taskData.sprintId
+										? { connect: { id: taskData.sprintId } }
+										: undefined
+								}
+							});
+							return task;
+						});
+						const batchResults = await Promise.all(batchPromises);
+						tasks.push(...batchResults);
+					}
+
+					if (warnings.length > 0) {
+						console.warn('Bulk create warnings:', warnings);
+					}
+
+					return {
+						epicsCreated: data.epics?.length || 0,
+						sprintsCreated: data.sprints?.length || 0,
+						tasksCreated: tasks.length,
+						warnings: warnings.length > 0 ? warnings : undefined
+					};
+				},
+				{
+					maxWait: 10000, // Maximum time to wait for a transaction slot
+					timeout: 30000 // Maximum time the transaction can run (30 seconds)
+				}
+			);
 		})
 };

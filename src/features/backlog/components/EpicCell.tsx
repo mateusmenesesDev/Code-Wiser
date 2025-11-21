@@ -14,8 +14,9 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
-import { useTask } from '~/features/workspace/hooks/useTask';
+import { useTask } from '~/features/task/hooks/useTask';
 import { cn } from '~/lib/utils';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 
 interface EpicCellProps {
 	epicId: string | null;
@@ -25,6 +26,7 @@ interface EpicCellProps {
 }
 
 export function EpicCell({ epicId, taskId, projectId, epics }: EpicCellProps) {
+	const isTemplate = useIsTemplate();
 	const [open, setOpen] = useState(false);
 
 	const { updateTask } = useTask({ projectId });
@@ -35,7 +37,8 @@ export function EpicCell({ epicId, taskId, projectId, epics }: EpicCellProps) {
 	const handleEpicSelect = async (epicId: string | undefined) => {
 		updateTask({
 			id: taskId,
-			epicId
+			epicId,
+			isTemplate
 		});
 		setOpen(false);
 	};

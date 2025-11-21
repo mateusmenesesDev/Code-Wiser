@@ -38,6 +38,7 @@ import {
 import { formatTemplateStatus } from '~/common/utils/projectUtils';
 import { useAdminTemplates } from '../hook/useAdminTemplates';
 import { CreateProjectTemplateDialog } from './CreateProjectTemplateDialog';
+import { CreateProjectFromJsonDialog } from './CreateProjectFromJsonDialog';
 
 export default function AdminTemplatesPage() {
 	const {
@@ -63,6 +64,8 @@ export default function AdminTemplatesPage() {
 	} = useAdminTemplates();
 
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
+	const [showCreateFromJsonDialog, setShowCreateFromJsonDialog] =
+		useState(false);
 
 	const handleTemplateCreated = () => {
 		refetch();
@@ -82,13 +85,21 @@ export default function AdminTemplatesPage() {
 							Manage project templates for users to explore and start
 						</p>
 					</div>
-					<Button
-						onClick={() => setShowCreateDialog(true)}
-						className="bg-blue-600 hover:bg-blue-700"
-					>
-						<Plus className="mr-2 h-4 w-4" />
-						Add New Project
-					</Button>
+					<div className="flex gap-2">
+						<Button
+							onClick={() => setShowCreateFromJsonDialog(true)}
+							variant="outline"
+						>
+							Create from JSON
+						</Button>
+						<Button
+							onClick={() => setShowCreateDialog(true)}
+							className="bg-blue-600 hover:bg-blue-700"
+						>
+							<Plus className="mr-2 h-4 w-4" />
+							Add New Project
+						</Button>
+					</div>
 				</div>
 
 				{/* Filters */}
@@ -327,6 +338,13 @@ export default function AdminTemplatesPage() {
 			<CreateProjectTemplateDialog
 				open={showCreateDialog}
 				onOpenChange={setShowCreateDialog}
+				onTemplateCreated={handleTemplateCreated}
+			/>
+
+			{/* Create Project Template from JSON Dialog */}
+			<CreateProjectFromJsonDialog
+				open={showCreateFromJsonDialog}
+				onOpenChange={setShowCreateFromJsonDialog}
 				onTemplateCreated={handleTemplateCreated}
 			/>
 		</Protect>

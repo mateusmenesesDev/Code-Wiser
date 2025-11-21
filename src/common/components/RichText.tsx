@@ -1,6 +1,7 @@
 import Image from '@tiptap/extension-image';
 import { type Editor, EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { uploadFiles } from '../utils/uploadthing';
 
@@ -51,6 +52,13 @@ export default function RichText() {
 			}
 		}
 	});
+
+	// Update editor content when form value changes
+	useEffect(() => {
+		if (editor && content !== editor.getHTML()) {
+			editor.commands.setContent(content || '');
+		}
+	}, [content, editor]);
 
 	const handleImageUpload = async (
 		file: File,

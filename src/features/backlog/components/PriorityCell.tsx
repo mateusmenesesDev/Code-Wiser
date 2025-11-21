@@ -8,8 +8,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
-import { useTask } from '~/features/workspace/hooks/useTask';
+import { useTask } from '~/features/task/hooks/useTask';
 
 export function PriorityCell({
 	priority,
@@ -21,6 +22,7 @@ export function PriorityCell({
 	isTemplate: boolean;
 	projectId: string;
 }) {
+	const isTemplate = useIsTemplate();
 	const { updateTask } = useTask({
 		projectId
 	});
@@ -43,7 +45,8 @@ export function PriorityCell({
 						onClick={() =>
 							updateTask({
 								id,
-								priority: priority as TaskPriorityEnum
+								priority: priority as TaskPriorityEnum,
+								isTemplate
 							})
 						}
 					>

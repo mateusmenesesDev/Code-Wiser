@@ -7,7 +7,7 @@
     "schema": "./prisma"
   },
   "scripts": {
-    "local:build": "infisical run -- bun build",
+    "local:build": "infisical run -- bun next build",
     "build": "next build",
     "db:generate": "infisical run -- prisma migrate dev",
     "db:migrate": "infisical run -- prisma migrate deploy",
