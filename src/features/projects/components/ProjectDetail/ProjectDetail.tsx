@@ -20,9 +20,10 @@ export default function ProjectDetail({
 			<GoBackButton>Back to Projects</GoBackButton>
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 				<main className="space-y-8 lg:col-span-2">
+					{/* Header Card */}
 					<Card className="animate-fade-in overflow-hidden shadow-lg">
 						<CardContent className="p-8">
-							<header className="mb-4 flex items-start justify-between">
+							<div className="mb-6 flex flex-col items-start justify-between sm:flex-row">
 								<div>
 									<h1 className="mb-2 font-bold text-3xl">{project.title}</h1>
 									<div className="flex items-center gap-4 text-sm">
@@ -40,14 +41,11 @@ export default function ProjectDetail({
 										{project.difficulty}
 									</Badge>
 								</div>
-							</header>
-
-							<section>
-								<p className="leading-relaxed">{project.description}</p>
-							</section>
+							</div>
 						</CardContent>
 					</Card>
 
+					{/* Image Gallery - Prominently displayed early */}
 					<ProjectImageGallery
 						images={project.images.map((image) => ({
 							url: image.url ?? '',
@@ -55,6 +53,18 @@ export default function ProjectDetail({
 						}))}
 						projectTitle={project.title}
 					/>
+
+					{/* Description Card */}
+					<Card className="animate-fade-in overflow-hidden shadow-lg">
+						<CardContent className="p-8">
+							<section>
+								<p className="text-gray-700 leading-relaxed dark:text-gray-300">
+									{project.description}
+								</p>
+							</section>
+						</CardContent>
+					</Card>
+
 					<ProjectDetailOverview project={project} />
 				</main>
 				<aside>
