@@ -64,7 +64,11 @@ export async function POST(req: Request) {
 
 	switch (eventType) {
 		case 'user.created':
-			if (!allowedOAuthProviders.includes(evt.data.email_addresses[0]?.linked_to[0]?.type ?? '')) {
+			if (
+				!allowedOAuthProviders.includes(
+					evt.data.email_addresses[0]?.linked_to[0]?.type ?? ''
+				)
+			) {
 				return new Response('User is not an allowed OAuth provider', {
 					status: 400
 				});

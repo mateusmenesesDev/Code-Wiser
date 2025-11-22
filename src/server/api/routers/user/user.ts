@@ -144,7 +144,9 @@ export const userRouter = createTRPCRouter({
 				id: z.string(),
 				credits: z.number().int().optional(),
 				mentorshipStatus: z.enum(['ACTIVE', 'INACTIVE']).optional(),
-				mentorshipType: z.enum(['MONTHLY', 'QUARTERLY', 'SEMIANNUAL']).optional(),
+				mentorshipType: z
+					.enum(['MONTHLY', 'QUARTERLY', 'SEMIANNUAL'])
+					.optional(),
 				mentorshipStartDate: z.coerce.date().nullable().optional(),
 				mentorshipEndDate: z.coerce.date().nullable().optional()
 			})

@@ -1,9 +1,9 @@
-import type { TaskStatusEnum } from "@prisma/client";
-import { api } from "~/trpc/react";
+import type { TaskStatusEnum } from '@prisma/client';
+import { api } from '~/trpc/react';
 
 export const useKanbanMutations = (projectId: string) => {
-    const utils = api.useUtils();
-    const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
+	const utils = api.useUtils();
+	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
 		onMutate: async ({ updates }) => {
 			// Cancel any outgoing refetches
 			await utils.kanban.getKanbanData.cancel({ projectId });
@@ -47,7 +47,7 @@ export const useKanbanMutations = (projectId: string) => {
 		}
 	});
 
-    return {
-        updateTaskOrdersMutation
-    };
+	return {
+		updateTaskOrdersMutation
+	};
 };

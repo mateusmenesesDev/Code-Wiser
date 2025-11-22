@@ -1,4 +1,4 @@
-import { api } from "~/trpc/react";
+import { api } from '~/trpc/react';
 
 export const useKanbanData = (projectId: string) => {
 	const { data: allTasks } = api.kanban.getKanbanData.useQuery({
