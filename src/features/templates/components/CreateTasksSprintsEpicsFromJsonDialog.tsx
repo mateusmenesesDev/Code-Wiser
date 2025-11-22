@@ -79,7 +79,7 @@ export function CreateTasksSprintsEpicsFromJsonDialog({
 		const validationResult = bulkCreateSchema.safeParse(parsedData);
 
 		if (!validationResult.success) {
-			const errors = validationResult.error.errors
+			const errors = validationResult.error.issues
 				.map((err) => `${err.path.join('.')}: ${err.message}`)
 				.join('\n');
 			setValidationError(`Validation errors:\n${errors}`);

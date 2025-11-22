@@ -1,9 +1,7 @@
 import { z } from 'zod';
 
 const sprintFields = {
-	title: z.string({
-		required_error: 'Title is required'
-	}),
+	title: z.string().min(1, { message: 'Title is required' }),
 	description: z.string().optional(),
 	startDate: z.string().optional(),
 	endDate: z.string().optional()
@@ -19,14 +17,12 @@ export const baseSprintSchema = z.object({
 export const newSprintSchema = z.object({
 	...sprintFields,
 	isTemplate: z.boolean(),
-	projectId: z.string({ required_error: 'Project ID is required' }).min(1, {
-		message: 'Project ID is required'
-	})
+	projectId: z.string().min(1, { message: 'Project ID is required' })
 });
 
 export const updateSprintSchema = z
 	.object({
-		id: z.string({ required_error: 'Sprint ID is required' }),
+		id: z.string().min(1, { message: 'Sprint ID is required' }),
 		...sprintFields
 	})
 	.partial()
