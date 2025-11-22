@@ -330,7 +330,7 @@ export function useTask({ projectId }: UseTaskProps) {
 		}
 	) =>
 		generateTaskDescriptionMutation.mutate(
-			{ projectId, taskDescription },
+			{ projectId, taskDescription, isTemplate },
 			{
 				onSuccess: (data) => {
 					toast.success('Task description generated successfully');

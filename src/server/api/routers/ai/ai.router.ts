@@ -8,26 +8,39 @@ export const aiRouter = createTRPCRouter({
 		.input(
 			z.object({
 				projectId: z.string(),
-				taskDescription: z.string()
+				taskDescription: z.string(),
+				isTemplate: z.boolean()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				const { projectId, taskDescription } = input;
-				const project = await ctx.db.project.findUnique({
-					where: {
-						id: projectId
-					},
-					select: {
-						description: true,
-						title: true
-					}
-				});
+				const { projectId, taskDescription, isTemplate } = input;
+				const project = isTemplate
+					? await ctx.db.projectTemplate.findUnique({
+							where: {
+								id: projectId
+							},
+							select: {
+								description: true,
+								title: true
+							}
+						})
+					: await ctx.db.project.findUnique({
+							where: {
+								id: projectId
+							},
+							select: {
+								description: true,
+								title: true
+							}
+						});
 
 				if (!project) {
 					throw new TRPCError({
 						code: 'NOT_FOUND',
-						message: 'Project not found'
+						message: isTemplate
+							? 'Project template not found'
+							: 'Project not found'
 					});
 				}
 
