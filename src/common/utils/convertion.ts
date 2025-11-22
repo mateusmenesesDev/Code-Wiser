@@ -68,3 +68,24 @@ export const getStatusLabel = (status: string) => {
 			return status;
 	}
 };
+
+/**
+ * Normalizes a date value from various input types to Date | undefined
+ * Handles Date objects, date strings, timestamps, and undefined/null
+ *
+ * Note: Uses native Date constructor (not dayjs) since the schema expects Date objects.
+ * Dayjs is used elsewhere for formatting and relative time, but not needed here.
+ */
+export const normalizeDate = (date: unknown): Date | undefined => {
+	if (date instanceof Date) {
+		return date;
+	}
+	if (date === null || date === undefined) {
+		return undefined;
+	}
+	if (typeof date === 'string' || typeof date === 'number') {
+		const dateObj = new Date(date);
+		return Number.isNaN(dateObj.getTime()) ? undefined : dateObj;
+	}
+	return undefined;
+};

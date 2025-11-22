@@ -1,5 +1,6 @@
 import { TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import { toast } from 'sonner';
+import { normalizeDate } from '~/common/utils/convertion';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { api } from '~/trpc/react';
 import type {
@@ -33,12 +34,18 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 				updateGetById: false
 			};
 
+			// Normalize dueDate to ensure proper typing
+			const typedNewTask: CreateTaskInput = {
+				...newTask,
+				dueDate: normalizeDate(newTask.dueDate)
+			};
+
 			const context = updateOptimisticData({
 				utils,
 				projectId: projectId as string,
 				isTemplate,
 				config,
-				data: newTask,
+				data: typedNewTask,
 				operation: 'create'
 			});
 
@@ -67,13 +74,19 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 				updateGetById: true
 			};
 
+			// Normalize dueDate to ensure proper typing
+			const typedTaskUpdate: UpdateTaskInput = {
+				...taskUpdate,
+				dueDate: normalizeDate(taskUpdate.dueDate)
+			};
+
 			const context = updateOptimisticData({
 				utils,
 				projectId,
 				isTemplate,
 				taskId: taskUpdate.id as string,
 				config,
-				data: taskUpdate,
+				data: typedTaskUpdate,
 				operation: 'update'
 			});
 
@@ -264,12 +277,16 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		}
 	});
 
+	const generateTaskDescriptionMutation =
+		api.ai.generateTaskDescription.useMutation();
+
 	return {
 		createTaskMutation,
 		updateTaskMutation,
 		deleteTaskMutation,
 		bulkDeleteTasksMutation,
-		updateTaskOrdersMutation
+		updateTaskOrdersMutation,
+		generateTaskDescriptionMutation
 	};
 };
 
@@ -280,7 +297,8 @@ export function useTask({ projectId }: UseTaskProps) {
 		updateTaskMutation,
 		deleteTaskMutation,
 		bulkDeleteTasksMutation,
-		updateTaskOrdersMutation
+		updateTaskOrdersMutation,
+		generateTaskDescriptionMutation
 	} = useTaskMutations({
 		projectId
 	});
@@ -304,12 +322,35 @@ export function useTask({ projectId }: UseTaskProps) {
 	const updateTaskOrders = (updates: { id: string; order: number }[]) =>
 		updateTaskOrdersMutation.mutate({ updates });
 
+	const generateTaskDescription = (
+		taskDescription: string,
+		options?: {
+			onSuccess?: (generatedText: string) => void;
+			onError?: (error: unknown) => void;
+		}
+	) =>
+		generateTaskDescriptionMutation.mutate(
+			{ projectId, taskDescription },
+			{
+				onSuccess: (data) => {
+					toast.success('Task description generated successfully');
+					options?.onSuccess?.(data);
+				},
+				onError: (error) => {
+					toast.error('Failed to generate task description');
+					options?.onError?.(error);
+				}
+			}
+		);
+
 	return {
 		createTask,
 		updateTask,
 		getAllTasksByProjectId,
 		deleteTask,
 		bulkDeleteTasks,
-		updateTaskOrders
+		updateTaskOrders,
+		generateTaskDescription,
+		isGeneratingDescription: generateTaskDescriptionMutation.isPending
 	};
 }

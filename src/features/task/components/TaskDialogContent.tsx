@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
-import { Clock, GitBranch, Loader2, Trash2 } from 'lucide-react';
+import { Protect } from '@clerk/nextjs';
+import { Clock, GitBranch, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
@@ -71,7 +72,13 @@ export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 		isTemplate
 	});
 
-	const { deleteTask, updateTask, createTask } = useTask({
+	const {
+		deleteTask,
+		updateTask,
+		createTask,
+		generateTaskDescription,
+		isGeneratingDescription
+	} = useTask({
 		projectId
 	});
 
@@ -177,7 +184,59 @@ export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 						</div>
 
 						{/* Description */}
-						<RichText />
+						<div className="space-y-2">
+							<RichText />
+							{/* biome-ignore lint/a11y/useValidAriaRole: Clerk Protect component uses role prop for authorization */}
+							<Protect role="org:admin">
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={isGeneratingDescription}
+									onClick={() => {
+										const currentDescription = form.watch('description') || '';
+										// Extract plain text from HTML if needed
+										const plainText = currentDescription
+											.replace(/<[^>]*>/g, '')
+											.trim();
+
+										generateTaskDescription(plainText, {
+											onSuccess: (generatedText) => {
+												// Convert plain text to HTML by wrapping in paragraphs
+												// Split by double newlines to create paragraphs, or single newlines for line breaks
+												const htmlContent = generatedText
+													.split(/\n\s*\n/)
+													.map((paragraph) => paragraph.trim())
+													.filter((p) => p.length > 0)
+													.map((paragraph) => {
+														// Replace single newlines within paragraphs with <br> tags
+														const withBreaks = paragraph.replace(/\n/g, '<br>');
+														return `<p>${withBreaks}</p>`;
+													})
+													.join('');
+
+												// Update the form description
+												form.setValue('description', htmlContent, {
+													shouldDirty: true
+												});
+											}
+										});
+									}}
+								>
+									{isGeneratingDescription ? (
+										<>
+											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											Generating...
+										</>
+									) : (
+										<>
+											<Sparkles className="mr-2 h-4 w-4" />
+											Generate Task Description
+										</>
+									)}
+								</Button>
+							</Protect>
+						</div>
 
 						{/* Code Review Request Section */}
 						<div
