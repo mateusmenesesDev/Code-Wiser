@@ -17,6 +17,16 @@ const config = {
 				hostname: 'img.clerk.com'
 			}
 		]
+	},
+	headers: async () => {
+		const isProduction = process.env.NODE_ENV === 'production';
+		const robotsTag = isProduction ? 'index, follow' : 'noindex, nofollow';
+		return [
+			{
+				source: '/(.*)',
+				headers: [{ key: 'X-Robots-Tag', value: robotsTag }]
+			},
+		];
 	}
 };
 
