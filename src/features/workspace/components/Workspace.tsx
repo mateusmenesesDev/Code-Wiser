@@ -17,12 +17,16 @@ import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
 import ProjectHeader from '~/features/workspace/components/ProjectHeader';
 import { columns } from '~/features/kanban/constants';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
+import { api } from '~/trpc/react';
 
 const Workspace = () => {
 	const { id } = useParams();
 	const projectId = id as string;
 	const { dialogState } = useDialog('task');
 	const { allTasks, members, sprints } = useKanbanData(projectId);
+	const { data: projectInfo } = api.project.getWorkspaceInfo.useQuery({
+		id: projectId
+	});
 	const { filterTasks } = useKanbanFilters();
 	const { updateTaskOrdersMutation } = useKanbanMutations(projectId);
 
@@ -57,6 +61,8 @@ const Workspace = () => {
 					tasks?.map((task) => ({ status: task.status as TaskStatusEnum })) ??
 					[]
 				}
+				projectTitle={projectInfo?.title ?? ''}
+				projectFigmaUrl={projectInfo?.figmaProjectUrl ?? ''}
 			/>
 			<div className="flex-1 overflow-hidden">
 				<KanbanProvider

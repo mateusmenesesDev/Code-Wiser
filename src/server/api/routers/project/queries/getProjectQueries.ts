@@ -4,6 +4,20 @@ import { protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
 
 export const getProjectQueries = {
+	getWorkspaceInfo: protectedProcedure
+		.input(z.object({ id: z.string() }))
+		.query(async ({ ctx, input }) => {
+			userHasAccessToProject(ctx, input.id);
+			const project = await ctx.db.project.findUnique({
+				where: { id: input.id },
+				select: {
+					title: true,
+					figmaProjectUrl: true
+				}
+			});
+
+			return project;
+		}),
 	getById: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {

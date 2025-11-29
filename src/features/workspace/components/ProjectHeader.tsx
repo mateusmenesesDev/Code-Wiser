@@ -1,5 +1,5 @@
 import { TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
-import { Filter, X } from 'lucide-react';
+import { Figma, Filter, X } from 'lucide-react';
 import { Button } from '~/common/components/ui/button';
 import {
 	Select,
@@ -16,12 +16,16 @@ interface ProjectHeaderProps {
 	members: RouterOutputs['project']['getMembers'];
 	sprints: { id: string; title: string }[];
 	stats: { status: TaskStatusEnum }[];
+	projectTitle: string;
+	projectFigmaUrl: string;
 }
 
 export default function ProjectHeader({
 	members,
 	sprints,
-	stats
+	stats,
+	projectTitle,
+	projectFigmaUrl
 }: ProjectHeaderProps) {
 	const {
 		sprintFilter,
@@ -37,11 +41,17 @@ export default function ProjectHeader({
 	return (
 		<div className="rounded-lg border-border/40 border-b bg-card p-4">
 			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="font-bold text-2xl">Project Board</h1>
+				<div className="space-y-0.5">
+					<h1 className="font-bold text-2xl">{projectTitle}</h1>
 					<p className="text-muted-foreground text-sm">
 						Manage your tasks across different stages
 					</p>
+					<a href={projectFigmaUrl} target="_blank" rel="noopener noreferrer">
+						<Button variant="primary" size="sm" className="gap-2">
+							<Figma className="h-4 w-4" />
+							Open in Figma
+						</Button>
+					</a>
 				</div>
 				<div className="flex flex-col">
 					<ProjectStatsCards tasks={stats ?? []} />

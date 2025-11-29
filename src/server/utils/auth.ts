@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 
 interface UserHasAccessToProjectContext {
 	db: PrismaClient;
@@ -17,8 +18,29 @@ export const userHasAccessToProject = async (
 
 	const project = await ctx.db.project.findUnique({
 		where: { id: projectId },
-		include: { members: true }
+		select: {
+			members: {
+				select: {
+					id: true
+				}
+			}
+		}
 	});
 
-	return project?.members.some((member) => member.id === userId) ?? false;
+	if (!project) {
+		throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+	}
+
+	const isMember = project.members.some(
+		(member: { id: string }) => member.id === userId
+	);
+
+	if (!isMember && !ctx.isAdmin) {
+		throw new TRPCError({
+			code: 'FORBIDDEN',
+			message: 'You do not have access to this project'
+		});
+	}
+
+	return isMember;
 };
