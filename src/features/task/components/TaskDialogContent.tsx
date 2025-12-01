@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import { Protect } from '@clerk/nextjs';
-import { Clock, GitBranch, Loader2, Sparkles, Trash2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
@@ -37,9 +37,12 @@ import {
 	SelectValue
 } from '~/common/components/ui/select';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { useUser } from '~/common/hooks/useUser';
 import { api } from '~/trpc/react';
 import { TagsInput } from './TagsInput';
 import { TaskComments } from './TaskComments';
+import { PullRequest } from './PullRequest';
+import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
 import { getStatusLabel, resetFormData } from '../utils';
 
@@ -57,6 +60,19 @@ type TaskFormData =
 export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 	const isTemplate = useIsTemplate();
 	const { closeDialog, isDialogOpen } = useDialog('task');
+	const { userHasMentorship, userCredits } = useUser();
+	const {
+		requestCodeReview,
+		isRequestingCodeReview,
+		updatePRReviewUrl,
+		isUpdatingPRUrl,
+		getActiveByTaskId
+	} = usePRReview();
+	const { data: activeReview } = getActiveByTaskId(
+		{ taskId: taskId || '' },
+		{ enabled: !!taskId }
+	);
+	const [prUrl, setPrUrl] = useState<string>('');
 
 	const { data: task } = api.task.getById.useQuery(
 		{ id: taskId || '' },
@@ -104,6 +120,13 @@ export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 		const formData = resetFormData(task, projectId, isTemplate);
 		form.reset(formData);
 	}, [form, projectId, task, isTemplate]);
+
+	// Update PR URL from active review
+	useEffect(() => {
+		if (activeReview?.prUrl) {
+			setPrUrl(activeReview.prUrl);
+		}
+	}, [activeReview]);
 
 	// Update epic and sprint values when epics/sprints are loaded
 	useEffect(() => {
@@ -239,66 +262,138 @@ export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 						</div>
 
 						{/* Code Review Request Section */}
-						<div
-							className={cn(
-								'rounded-lg border border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 p-4 dark:border-purple-700 dark:from-purple-900/20 dark:to-blue-900/20',
-								!isEditing && 'opacity-50'
-							)}
-						>
-							<div className="flex items-start justify-between">
-								<div className="flex-1">
-									<h3 className="mb-2 font-semibold text-purple-700 text-sm dark:text-purple-300">
-										Need help with this task?
-									</h3>
-									<p className="mb-3 text-purple-600 text-sm dark:text-purple-400">
-										Get your code reviewed by an experienced mentor. They'll
-										provide feedback on your implementation, suggest
-										improvements, and help you learn best practices.
-									</p>
-									<div className="flex items-center gap-2 text-purple-500 text-xs dark:text-purple-400">
-										<span>💳 Costs 5 credits</span>
-										<span>•</span>
-										<span>✨ Free with mentorship plan</span>
-									</div>
-								</div>
-								<Button
-									disabled={true}
-									className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
-									size="sm"
-								>
-									{!isEditing
-										? 'Available after creation'
-										: 'Request CR (Soon)'}
-								</Button>
-							</div>
-						</div>
-
-						{/* Links and Pull Request */}
-						<div className={cn('space-y-4', !isEditing && 'opacity-50')}>
-							<div>
-								<h3 className="mb-2 font-medium text-muted-foreground text-sm">
-									Pull Request
-								</h3>
-								<Input
-									type="url"
-									{...form.register('prUrl')}
-									placeholder="https://github.com/user/repo/pull/123"
-									className="flex-1"
-								/>
-								{form.watch('prUrl') && isEditing && (
-									<Button variant="outline" size="sm" className="mt-2" asChild>
-										<a
-											href={form.watch('prUrl')}
-											target="_blank"
-											rel="noopener noreferrer"
-										>
-											<GitBranch className="mr-2 h-4 w-4" />
-											View Pull Request
-										</a>
-									</Button>
+						{!isTemplate && (
+							<div
+								className={cn(
+									'rounded-lg border border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 p-4 dark:border-purple-700 dark:from-purple-900/20 dark:to-blue-900/20',
+									!isEditing && 'opacity-50'
 								)}
+							>
+								<div className="space-y-4">
+									<div className="flex items-start justify-between">
+										<div className="flex-1">
+											<h3 className="mb-2 font-semibold text-purple-700 text-sm dark:text-purple-300">
+												Need help with this task?
+											</h3>
+											<p className="mb-3 text-purple-600 text-sm dark:text-purple-400">
+												Get your code reviewed by an experienced mentor. They'll
+												provide feedback on your implementation, suggest
+												improvements, and help you learn best practices.
+											</p>
+											<div className="flex items-center gap-2 text-purple-500 text-xs dark:text-purple-400">
+												<span>💳 Costs 5 credits</span>
+												<span>•</span>
+												<span>✨ Free with mentorship plan</span>
+											</div>
+										</div>
+									</div>
+
+									{/* PR URL Input - Always editable when task exists */}
+									{isEditing && (
+										<div>
+											<Label
+												htmlFor="prUrl"
+												className="mb-2 block text-purple-700 text-sm dark:text-purple-300"
+											>
+												Pull Request URL
+											</Label>
+											<div className="flex gap-2">
+												<Input
+													id="prUrl"
+													type="url"
+													value={prUrl}
+													onChange={(e) => setPrUrl(e.target.value)}
+													placeholder="https://github.com/user/repo/pull/123"
+													className="flex-1"
+												/>
+												{activeReview &&
+													prUrl.trim() &&
+													prUrl.trim() !== activeReview.prUrl && (
+														<Button
+															type="button"
+															size="sm"
+															onClick={() => {
+																if (activeReview && prUrl.trim()) {
+																	updatePRReviewUrl({
+																		reviewId: activeReview.id,
+																		prUrl: prUrl.trim()
+																	});
+																}
+															}}
+															disabled={isUpdatingPRUrl}
+															className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+														>
+															{isUpdatingPRUrl ? (
+																<>
+																	<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+																	Updating...
+																</>
+															) : (
+																'Update'
+															)}
+														</Button>
+													)}
+											</div>
+											{activeReview?.prUrl && (
+												<p className="mt-1 text-purple-600 text-xs dark:text-purple-400">
+													You can update the PR URL at any time
+												</p>
+											)}
+										</div>
+									)}
+
+									{/* Request Code Review Button */}
+									{isEditing && taskId && prUrl?.trim() && !activeReview && (
+										<div>
+											<Button
+												type="button"
+												onClick={() => {
+													const trimmedPrUrl = prUrl.trim();
+													if (trimmedPrUrl && taskId) {
+														requestCodeReview({
+															taskId,
+															prUrl: trimmedPrUrl
+														});
+													}
+												}}
+												disabled={
+													isRequestingCodeReview ||
+													!prUrl?.trim() ||
+													(!userHasMentorship && userCredits < 5)
+												}
+												className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+												size="sm"
+											>
+												{isRequestingCodeReview ? (
+													<>
+														<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+														Requesting...
+													</>
+												) : (
+													<>
+														{userHasMentorship
+															? 'Request Code Review'
+															: `Request Code Review (${userCredits >= 5 ? '5 credits' : 'Insufficient credits'})`}
+													</>
+												)}
+											</Button>
+											{!userHasMentorship && userCredits < 5 && (
+												<p className="mt-2 text-red-600 text-xs dark:text-red-400">
+													You need at least 5 credits to request a code review
+												</p>
+											)}
+										</div>
+									)}
+
+									{/* PR Review Status */}
+									<PullRequest
+										taskId={taskId}
+										prUrl={prUrl || activeReview?.prUrl}
+										isEditing={isEditing}
+									/>
+								</div>
 							</div>
-						</div>
+						)}
 
 						{/* Comments - use taskId directly to allow parallel fetching */}
 						<TaskComments taskId={taskId || ''} isEditing={!!task} />

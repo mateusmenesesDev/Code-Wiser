@@ -18,10 +18,8 @@ model Task {
   blockedReason String?
 
   storyPoints Int?
-  prUrl       String?
-
-  assigneeId String?
-  assignee   User?   @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  assigneeId  String?
+  assignee    User?   @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
 
   projectId         String?
   project           Project?         @relation(fields: [projectId], references: [id])
@@ -32,6 +30,8 @@ model Task {
   epic     Epic?   @relation(fields: [epicId], references: [id])
   sprintId String?
   sprint   Sprint? @relation(fields: [sprintId], references: [id])
+
+  reviews PullRequestReview[]
 
   comments Comment[]
 
@@ -104,5 +104,28 @@ model Comment {
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId, createdAt])
+  @@schema("public")
+}
+
+model PullRequestReview {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prUrl String
+
+  status  PullRequestReviewStatusEnum @default(PENDING)
+  comment String?
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  reviewedById String
+  reviewedBy   User   @relation(fields: [reviewedById], references: [id], onDelete: Cascade)
+
+  isActive Boolean @default(true)
+
+  @@index([taskId, isActive])
+  @@index([reviewedById])
   @@schema("public")
 }

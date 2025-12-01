@@ -34,8 +34,7 @@ export const resetFormData = (
 			status: task.status ?? undefined,
 			dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
 			projectId,
-			storyPoints: task.storyPoints ?? undefined,
-			prUrl: task.prUrl && task.prUrl.trim() !== '' ? task.prUrl : undefined
+			storyPoints: task.storyPoints ?? undefined
 		};
 	} else {
 		formData = {
@@ -53,8 +52,7 @@ export const resetFormData = (
 			status: TaskStatusEnum.BACKLOG,
 			dueDate: undefined,
 			projectId,
-			storyPoints: undefined,
-			prUrl: undefined
+			storyPoints: undefined
 		};
 	}
 	return formData;

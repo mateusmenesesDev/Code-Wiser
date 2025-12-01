@@ -217,7 +217,6 @@ export const createOptimisticBacklogTask = (
 		blockedReason: newTask.blockedReason || null,
 		dueDate: newTask.dueDate || null,
 		storyPoints: newTask.storyPoints || null,
-		prUrl: newTask.prUrl || null,
 		epicId: newTask.epicId || null,
 		sprintId: newTask.sprintId || null,
 		assigneeId: newTask.assigneeId || null

@@ -76,6 +76,14 @@ enum EpicStatusEnum {
   @@schema("public")
 }
 
+enum PullRequestReviewStatusEnum {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+
+  @@schema("public")
+}
+
 // CockroachDB system enum for multi-region - do not modify
 // This enum is managed by CockroachDB and should not be altered
 // Adding it here prevents Prisma from trying to drop it

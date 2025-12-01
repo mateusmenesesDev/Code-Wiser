@@ -8,6 +8,7 @@ import { projectTemplateRouter } from './routers/template';
 import { userRouter } from './routers/user';
 import { kanbanRouter } from './routers/kanban';
 import { aiRouter } from './routers/ai/ai.router';
+import { prReviewRouter } from './routers/prReview/prReviewRouter';
 
 /**
  * This is the primary router for your server.
@@ -23,7 +24,8 @@ export const appRouter = createTRPCRouter({
 	epic: epicRouter,
 	comment: commentRouter,
 	kanban: kanbanRouter,
-	ai: aiRouter
+	ai: aiRouter,
+	prReview: prReviewRouter
 });
 
 // export type definition of API

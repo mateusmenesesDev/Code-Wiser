@@ -15,8 +15,7 @@ const bulkTaskSchema = z.object({
 	status: z.nativeEnum(TaskStatusEnum).optional(),
 	order: z.number().optional(),
 	storyPoints: z.number().optional(),
-	dueDate: z.string().optional(), // ISO date string
-	prUrl: z.string().optional()
+	dueDate: z.string().optional() // ISO date string
 });
 
 // Sprint schema for bulk creation
