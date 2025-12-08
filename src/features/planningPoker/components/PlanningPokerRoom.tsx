@@ -6,6 +6,7 @@ import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
 import { usePlanningPoker } from '../hooks/usePlanningPoker';
+import type { PlanningPokerStoryPoint } from '../types/planningPoker.types';
 import { TaskCard } from './TaskCard';
 import { VotingCards } from './VotingCards';
 import { MemberList } from './MemberList';
@@ -75,6 +76,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 							{session.project.title}
 						</p>
 					</div>
+					{/* biome-ignore lint/a11y/useValidAriaRole: <explanation> */}
 					<Protect role="org:admin">
 						{isCreator && (
 							<Button
@@ -145,11 +147,12 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 											userId: vote.userId,
 											userName: vote.user.name,
 											userEmail: vote.user.email, // email is required in User model, so it should always be present
-											storyPoints: vote.storyPoints
+											storyPoints: vote.storyPoints as PlanningPokerStoryPoint
 										}))}
 								/>
 
 								{/* Final Story Points Input (Admin only) */}
+								{/* biome-ignore lint/a11y/useValidAriaRole: <explanation> */}
 								<Protect role="org:admin">
 									{isCreator && (
 										<div className="space-y-4 rounded-lg border bg-card p-4">

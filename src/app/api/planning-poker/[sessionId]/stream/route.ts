@@ -3,8 +3,7 @@ import { db } from '~/server/db';
 import { userHasAccessToProject } from '~/server/utils/auth';
 import { setBroadcastFunction } from '~/server/api/routers/planningPoker/utils/sse';
 
-// Simple in-memory store for SSE connections
-// In production, consider using Redis or similar for multi-instance deployments
+//TODO: Use Redis for scalable SSE connections
 const sseClients = new Map<string, Set<ReadableStreamDefaultController>>();
 
 export async function GET(
@@ -102,7 +101,7 @@ export function broadcastToSession(
 	for (const controller of clients) {
 		try {
 			controller.enqueue(encoder.encode(message));
-		} catch (error) {
+		} catch {
 			// Client disconnected, remove from set
 			clients.delete(controller);
 		}

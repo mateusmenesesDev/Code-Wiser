@@ -7,9 +7,7 @@ import type {
 	PlanningPokerStoryPoint,
 	SSEMessage,
 	VoteSSEData,
-	MemberJoinedSSEData,
-	TaskFinalizedSSEData,
-	SessionEndedSSEData
+	MemberJoinedSSEData
 } from '~/features/planningPoker/types/planningPoker.types';
 import { toast } from 'sonner';
 
@@ -142,7 +140,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			setSelectedValue(undefined);
 			setFinalStoryPoints(null);
 		}
-	}, [currentTaskId, session?.currentTaskIndex]);
+	}, [currentTaskId]);
 
 	// Check if all members voted (only for current task)
 	useEffect(() => {
@@ -174,7 +172,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			const currentTaskVotes = votes.filter((v) => v.taskId === currentTaskId);
 			const userVote = currentTaskVotes.find((v) => v.userId === userId);
 			if (userVote) {
-				setSelectedValue(userVote.storyPoints);
+				setSelectedValue(userVote.storyPoints as PlanningPokerStoryPoint);
 			} else if (currentTaskId) {
 				// If user hasn't voted for current task, clear selection
 				setSelectedValue(undefined);
@@ -210,7 +208,6 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 						break;
 					}
 					case 'task-finalized': {
-						const data = message.data as TaskFinalizedSSEData;
 						// Reset state for next task
 						setShowResults(false);
 						setSelectedValue(undefined);
@@ -225,7 +222,6 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 						break;
 					}
 					case 'session-ended': {
-						const data = message.data as SessionEndedSSEData;
 						toast.success('Session ended!');
 						refetchSession();
 						break;
@@ -262,7 +258,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			joinSessionMutation.mutate({ sessionId });
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [sessionId, userId]);
+	}, [sessionId, userId, joinSessionMutation]);
 
 	const handleVote = useCallback(
 		(value: PlanningPokerStoryPoint) => {
