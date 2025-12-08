@@ -25,7 +25,7 @@ const config = {
 			{
 				source: '/(.*)',
 				headers: [{ key: 'X-Robots-Tag', value: robotsTag }]
-			},
+			}
 		];
 	}
 };
