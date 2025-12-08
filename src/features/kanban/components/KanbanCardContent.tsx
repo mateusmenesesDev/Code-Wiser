@@ -18,6 +18,14 @@ export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 	return (
 		<KanbanCard {...task} onTaskClick={() => openDialog('task', task.id)}>
 			<div className="flex flex-col gap-3">
+				{task.sprint && (
+					<Badge
+						variant="default"
+						className="hidden w-fit border-blue-200 bg-blue-100 text-blue-800 text-xs xl:block dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+					>
+						{task.sprint.title}
+					</Badge>
+				)}
 				<Badge
 					variant="default"
 					className="hidden w-fit border-blue-200 bg-blue-100 text-blue-800 text-xs xl:block dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"

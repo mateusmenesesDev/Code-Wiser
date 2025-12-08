@@ -33,7 +33,9 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 			<Tabs defaultValue="overview" className="w-full">
 				<TabsList className="mt-6 grid w-full grid-cols-3">
 					<TabsTrigger value="overview">Overview</TabsTrigger>
-					<TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+					{modules.length > 0 && (
+						<TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+					)}
 					<TabsTrigger value="prerequisites">Prerequisites</TabsTrigger>
 				</TabsList>
 
@@ -82,38 +84,32 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 					</div>
 				</TabsContent>
 
-				<TabsContent value="curriculum" className="p-6 pt-6">
-					<div className="space-y-4">
-						{modules.length > 0 ? (
-							modules.map((module) => (
-								<Card key={module.id} className="border-l-4 border-l-primary">
-									<CardHeader className="pb-3">
-										<div className="flex items-center justify-between">
-											<CardTitle level={3} className="text-base">
-												{module.title}
-											</CardTitle>
-											<Badge variant="default" className="text-xs">
-												{module.duration}
-											</Badge>
-										</div>
-									</CardHeader>
-									<CardContent>
-										<div className="text-muted-foreground text-sm">
-											{module.description}
-										</div>
-									</CardContent>
-								</Card>
-							))
-						) : (
-							<div className="py-8 text-center">
-								<div className="text-muted-foreground">
-									Curriculum modules will be available once the project
-									structure is defined.
-								</div>
-							</div>
-						)}
-					</div>
-				</TabsContent>
+				{modules.length > 0 && (
+					<TabsContent value="curriculum" className="p-6 pt-6">
+						<div className="space-y-4">
+							{modules.length > 0 &&
+								modules.map((module) => (
+									<Card key={module.id} className="border-l-4 border-l-primary">
+										<CardHeader className="pb-3">
+											<div className="flex items-center justify-between">
+												<CardTitle level={3} className="text-base">
+													{module.title}
+												</CardTitle>
+												<Badge variant="default" className="text-xs">
+													{module.duration}
+												</Badge>
+											</div>
+										</CardHeader>
+										<CardContent>
+											<div className="text-muted-foreground text-sm">
+												{module.description}
+											</div>
+										</CardContent>
+									</Card>
+								))}
+						</div>
+					</TabsContent>
+				)}
 
 				<TabsContent value="prerequisites" className="p-6 pt-6">
 					<div>
@@ -124,7 +120,9 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 						<div className="space-y-3">
 							{project.preRequisites?.map((prerequisite) => (
 								<div
-									key={`prereq-${prerequisite.replace(/\s+/g, '-').toLowerCase()}`}
+									key={`prereq-${prerequisite
+										.replace(/\s+/g, '-')
+										.toLowerCase()}`}
 									className="flex items-start gap-3 rounded-lg p-3"
 								>
 									<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
