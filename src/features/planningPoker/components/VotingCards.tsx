@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '~/lib/utils';
 import type { PlanningPokerStoryPoint } from '~/features/planningPoker/types/planningPoker.types';
+import { cn } from '~/lib/utils';
 
 interface VotingCardsProps {
 	selectedValue: PlanningPokerStoryPoint | undefined;
@@ -26,10 +26,11 @@ export function VotingCards({
 	disabled = false
 }: VotingCardsProps) {
 	return (
-		<div className="grid grid-cols-4 gap-4 md:grid-cols-8">
+		<div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8">
 			{FIBONACCI_VALUES.map((value) => {
 				const isSelected = selectedValue === value;
 				const displayValue = value === null ? '?' : value;
+				const isQuestionMark = value === null;
 
 				return (
 					<button
@@ -38,14 +39,57 @@ export function VotingCards({
 						onClick={() => !disabled && onSelect(value)}
 						disabled={disabled}
 						className={cn(
-							'flex h-20 items-center justify-center rounded-lg border-2 font-bold text-lg transition-all hover:scale-105',
+							'group relative flex aspect-[2/3] min-h-[120px] flex-col items-center justify-center rounded-xl border-2 transition-all duration-200',
+							// Base card styling - poker card look
+							'bg-gradient-to-br from-white to-gray-50 shadow-md',
+							'dark:from-gray-900 dark:to-gray-800',
+							// Hover effects
+							!disabled &&
+								'hover:scale-105 hover:shadow-primary/20 hover:shadow-xl',
+							// Selected state
 							isSelected
-								? 'border-primary bg-primary text-primary-foreground shadow-lg'
-								: 'border-border bg-card hover:border-primary/50',
+								? 'border-primary bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 shadow-xl ring-2 ring-primary/20'
+								: 'border-gray-300 dark:border-gray-700',
+							// Disabled state
 							disabled && 'cursor-not-allowed opacity-50'
 						)}
 					>
-						{displayValue}
+						{/* Corner decoration (like poker cards) */}
+						<div
+							className={cn(
+								'absolute top-2 left-2 font-bold text-xs',
+								isSelected
+									? 'text-primary-foreground/60'
+									: 'text-gray-400 dark:text-gray-500'
+							)}
+						>
+							{displayValue}
+						</div>
+						<div
+							className={cn(
+								'absolute right-2 bottom-2 rotate-180 font-bold text-xs',
+								isSelected
+									? 'text-primary-foreground/60'
+									: 'text-gray-400 dark:text-gray-500'
+							)}
+						>
+							{displayValue}
+						</div>
+
+						{/* Center value */}
+						<div
+							className={cn(
+								'flex items-center justify-center',
+								isQuestionMark ? 'font-bold text-4xl' : 'font-bold text-5xl'
+							)}
+						>
+							{displayValue}
+						</div>
+
+						{/* Shine effect on hover */}
+						{!disabled && !isSelected && (
+							<div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/0 via-white/0 to-white/20 opacity-0 transition-opacity group-hover:opacity-100 dark:from-white/0 dark:via-white/0 dark:to-white/10" />
+						)}
 					</button>
 				);
 			})}
