@@ -26,21 +26,24 @@ export function ReviewList({ reviews, isLoading }: ReviewListProps) {
 					variant: 'default' as const,
 					icon: CheckCircle2,
 					text: 'Approved',
-					className: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+					className:
+						'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
 				};
 			case PullRequestReviewStatusEnum.CHANGES_REQUESTED:
 				return {
 					variant: 'destructive' as const,
 					icon: XCircle,
 					text: 'Changes Requested',
-					className: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+					className:
+						'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
 				};
 			case PullRequestReviewStatusEnum.PENDING:
 				return {
 					variant: 'secondary' as const,
 					icon: AlertCircle,
 					text: 'Pending Review',
-					className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+					className:
+						'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
 				};
 			default:
 				return null;
@@ -94,7 +97,9 @@ export function ReviewList({ reviews, isLoading }: ReviewListProps) {
 						<CardHeader>
 							<div className="flex items-start justify-between">
 								<div className="flex-1">
-									<CardTitle className="mb-2 text-lg">{review.task.title}</CardTitle>
+									<CardTitle className="mb-2 text-lg">
+										{review.task.title}
+									</CardTitle>
 									{project && (
 										<CardDescription className="mb-1">
 											Project: {project.title}
@@ -136,25 +141,27 @@ export function ReviewList({ reviews, isLoading }: ReviewListProps) {
 							{review.comment && (
 								<div className="rounded-lg border bg-muted/20 p-3">
 									<p className="mb-1 font-medium text-xs">Review Comment:</p>
-									<p className="text-muted-foreground text-sm">{review.comment}</p>
+									<p className="text-muted-foreground text-sm">
+										{review.comment}
+									</p>
 								</div>
 							)}
 
-							{review.status === PullRequestReviewStatusEnum.CHANGES_REQUESTED &&
+							{review.status ===
+								PullRequestReviewStatusEnum.CHANGES_REQUESTED &&
 								!review.comment && (
 									<p className="text-muted-foreground text-sm italic">
-										Changes requested - please review the feedback and update your
-										PR
+										Changes requested - please review the feedback and update
+										your PR
 									</p>
 								)}
 
 							<div className="flex items-center justify-between border-t pt-4">
 								<p className="text-muted-foreground text-xs">
-									Reviewed by: {review.reviewedBy.name || review.reviewedBy.email}
+									Reviewed by:{' '}
+									{review.reviewedBy.name || review.reviewedBy.email}
 								</p>
-								{review.isActive && (
-									<ReviewActions taskId={review.taskId} />
-								)}
+								{review.isActive && <ReviewActions taskId={review.taskId} />}
 							</div>
 						</CardContent>
 					</Card>
@@ -163,4 +170,3 @@ export function ReviewList({ reviews, isLoading }: ReviewListProps) {
 		</div>
 	);
 }
-

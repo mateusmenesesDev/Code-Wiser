@@ -84,6 +84,13 @@ enum PullRequestReviewStatusEnum {
   @@schema("public")
 }
 
+enum PlanningPokerSessionStatusEnum {
+  ACTIVE
+  COMPLETED
+
+  @@schema("public")
+}
+
 // CockroachDB system enum for multi-region - do not modify
 // This enum is managed by CockroachDB and should not be altered
 // Adding it here prevents Prisma from trying to drop it
@@ -93,4 +100,3 @@ enum crdb_internal_region {
 
   @@schema("public")
 }
-

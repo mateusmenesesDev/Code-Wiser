@@ -33,7 +33,8 @@ model Task {
 
   reviews PullRequestReview[]
 
-  comments Comment[]
+  comments           Comment[]
+  planningPokerVotes PlanningPokerVote[]
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])

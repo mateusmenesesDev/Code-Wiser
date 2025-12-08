@@ -1,0 +1,41 @@
+model PlanningPokerSession {
+  id               String                         @id @default(cuid())
+  createdAt        DateTime                       @default(now())
+  updatedAt        DateTime                       @updatedAt
+  status           PlanningPokerSessionStatusEnum @default(ACTIVE)
+  currentTaskIndex Int                            @default(0)
+  taskIds          String[]
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("PlanningPokerSessionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  votes PlanningPokerVote[]
+
+  @@index([projectId, status])
+  @@index([createdById])
+  @@schema("public")
+}
+
+model PlanningPokerVote {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  storyPoints Int? // null representa "?" (não sei)
+
+  sessionId String
+  session   PlanningPokerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, taskId, userId])
+  @@index([sessionId, taskId])
+  @@index([userId])
+  @@schema("public")
+}

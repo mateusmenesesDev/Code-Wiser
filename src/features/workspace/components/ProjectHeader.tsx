@@ -1,6 +1,9 @@
 import { TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
-import { Figma, Filter, X } from 'lucide-react';
+import { Figma, Filter, X, Play } from 'lucide-react';
 import { Button } from '~/common/components/ui/button';
+import { Protect } from '@clerk/nextjs';
+import { TaskSelectionDialog } from '~/features/planningPoker/components/TaskSelectionDialog';
+import { useState } from 'react';
 import {
 	Select,
 	SelectContent,
@@ -13,6 +16,7 @@ import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { ProjectStatsCards } from './ProjectStatsCards';
 
 interface ProjectHeaderProps {
+	projectId: string;
 	members: RouterOutputs['project']['getMembers'];
 	sprints: { id: string; title: string }[];
 	stats: { status: TaskStatusEnum }[];
@@ -21,12 +25,15 @@ interface ProjectHeaderProps {
 }
 
 export default function ProjectHeader({
+	projectId,
 	members,
 	sprints,
 	stats,
 	projectTitle,
 	projectFigmaUrl
 }: ProjectHeaderProps) {
+	const [isPlanningPokerDialogOpen, setIsPlanningPokerDialogOpen] =
+		useState(false);
 	const {
 		sprintFilter,
 		priorityFilter,
@@ -46,12 +53,26 @@ export default function ProjectHeader({
 					<p className="text-muted-foreground text-sm">
 						Manage your tasks across different stages
 					</p>
-					<a href={projectFigmaUrl} target="_blank" rel="noopener noreferrer">
-						<Button variant="primary" size="sm" className="gap-2">
-							<Figma className="h-4 w-4" />
-							Open in Figma
-						</Button>
-					</a>
+					<div className="flex gap-2">
+						<a href={projectFigmaUrl} target="_blank" rel="noopener noreferrer">
+							<Button variant="primary" size="sm" className="gap-2">
+								<Figma className="h-4 w-4" />
+								Open in Figma
+							</Button>
+						</a>
+						{/* biome-ignore lint/a11y/useValidAriaRole: <explanation> */}
+						<Protect role="org:admin">
+							<Button
+								variant="outline"
+								size="sm"
+								className="gap-2"
+								onClick={() => setIsPlanningPokerDialogOpen(true)}
+							>
+								<Play className="h-4 w-4" />
+								Start Planning Poker
+							</Button>
+						</Protect>
+					</div>
 				</div>
 				<div className="flex flex-col">
 					<ProjectStatsCards tasks={stats ?? []} />
@@ -134,6 +155,11 @@ export default function ProjectHeader({
 					</div>
 				</div>
 			</div>
+			<TaskSelectionDialog
+				projectId={projectId}
+				open={isPlanningPokerDialogOpen}
+				onOpenChange={setIsPlanningPokerDialogOpen}
+			/>
 		</div>
 	);
 }

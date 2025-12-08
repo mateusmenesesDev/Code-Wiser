@@ -19,7 +19,8 @@ interface ReviewActionsProps {
 export function ReviewActions({ taskId }: ReviewActionsProps) {
 	const { approvePR, requestChanges, isApproving, isRequestingChanges } =
 		usePRReview();
-	const [showRequestChangesDialog, setShowRequestChangesDialog] = useState(false);
+	const [showRequestChangesDialog, setShowRequestChangesDialog] =
+		useState(false);
 	const [comment, setComment] = useState('');
 
 	const handleApprove = () => {
@@ -59,13 +60,17 @@ export function ReviewActions({ taskId }: ReviewActionsProps) {
 				</Button>
 			</div>
 
-			<Dialog open={showRequestChangesDialog} onOpenChange={setShowRequestChangesDialog}>
+			<Dialog
+				open={showRequestChangesDialog}
+				onOpenChange={setShowRequestChangesDialog}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Request Changes</DialogTitle>
 						<DialogDescription>
-							Add a comment explaining what needs to be changed (optional). If you
-							don't add a comment, a generic message will be shown to the student.
+							Add a comment explaining what needs to be changed (optional). If
+							you don't add a comment, a generic message will be shown to the
+							student.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
@@ -99,4 +104,3 @@ export function ReviewActions({ taskId }: ReviewActionsProps) {
 		</>
 	);
 }
-

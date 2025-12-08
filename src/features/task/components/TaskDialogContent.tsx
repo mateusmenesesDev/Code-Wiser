@@ -503,6 +503,25 @@ export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 							/>
 						</div>
 
+						{/* Story Points */}
+						<div>
+							<Label htmlFor="storyPoints" className="mb-2 block">
+								Story Points
+							</Label>
+							<Input
+								id="storyPoints"
+								type="number"
+								min="1"
+								placeholder="e.g. 1, 2, 3, 5, 8, 13, 21"
+								{...form.register('storyPoints', {
+									setValueAs: (value: string) => {
+										const num = Number.parseInt(value, 10);
+										return value && !Number.isNaN(num) ? num : undefined;
+									}
+								})}
+							/>
+						</div>
+
 						{/* Epic */}
 						<FormField
 							control={form.control}

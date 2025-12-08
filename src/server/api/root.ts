@@ -9,6 +9,7 @@ import { userRouter } from './routers/user';
 import { kanbanRouter } from './routers/kanban';
 import { aiRouter } from './routers/ai/ai.router';
 import { prReviewRouter } from './routers/prReview/prReviewRouter';
+import { planningPokerRouter } from './routers/planningPoker/planningPokerRouter';
 
 /**
  * This is the primary router for your server.
@@ -25,7 +26,8 @@ export const appRouter = createTRPCRouter({
 	comment: commentRouter,
 	kanban: kanbanRouter,
 	ai: aiRouter,
-	prReview: prReviewRouter
+	prReview: prReviewRouter,
+	planningPoker: planningPokerRouter
 });
 
 // export type definition of API

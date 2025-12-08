@@ -14,9 +14,10 @@ model Project {
   categoryId      String
   category        Category               @relation(fields: [categoryId], references: [id])
 
-  epics   Epic[]
-  sprints Sprint[]
-  members User[]
+  epics                 Epic[]
+  sprints               Sprint[]
+  members               User[]
+  planningPokerSessions PlanningPokerSession[]
 
   @@schema("public")
 }

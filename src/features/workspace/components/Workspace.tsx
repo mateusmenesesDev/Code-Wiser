@@ -55,6 +55,7 @@ const Workspace = () => {
 	return (
 		<div className="flex h-[calc(100vh-8rem)] flex-col">
 			<ProjectHeader
+				projectId={projectId}
 				members={members ?? []}
 				sprints={sprints ?? []}
 				stats={
