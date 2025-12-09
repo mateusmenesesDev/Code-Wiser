@@ -1,10 +1,10 @@
 import { auth } from '@clerk/nextjs/server';
 import { db } from '~/server/db';
 import { userHasAccessToProject } from '~/server/utils/auth';
-import { setBroadcastFunction } from '~/server/api/routers/planningPoker/utils/sse';
-
-//TODO: Use Redis for scalable SSE connections
-const sseClients = new Map<string, Set<ReadableStreamDefaultController>>();
+import {
+	addSSEClient,
+	removeSSEClient
+} from '~/server/api/routers/planningPoker/utils/sse';
 
 export async function GET(
 	request: Request,
@@ -55,10 +55,7 @@ export async function GET(
 	const stream = new ReadableStream({
 		start(controller) {
 			// Add client to the set
-			if (!sseClients.has(sessionId)) {
-				sseClients.set(sessionId, new Set());
-			}
-			sseClients.get(sessionId)?.add(controller);
+			addSSEClient(sessionId, controller);
 
 			// Send initial connection message
 			const encoder = new TextEncoder();
@@ -68,10 +65,7 @@ export async function GET(
 
 			// Handle client disconnect
 			request.signal.addEventListener('abort', () => {
-				sseClients.get(sessionId)?.delete(controller);
-				if (sseClients.get(sessionId)?.size === 0) {
-					sseClients.delete(sessionId);
-				}
+				removeSSEClient(sessionId, controller);
 				controller.close();
 			});
 		}
@@ -86,32 +80,3 @@ export async function GET(
 		}
 	});
 }
-
-// Helper function to broadcast events to all clients in a session
-export function broadcastToSession(
-	sessionId: string,
-	event: { type: string; data: unknown }
-) {
-	const clients = sseClients.get(sessionId);
-	if (!clients || clients.size === 0) return;
-
-	const encoder = new TextEncoder();
-	const message = `data: ${JSON.stringify(event)}\n\n`;
-
-	for (const controller of clients) {
-		try {
-			controller.enqueue(encoder.encode(message));
-		} catch {
-			// Client disconnected, remove from set
-			clients.delete(controller);
-		}
-	}
-
-	// Clean up empty sets
-	if (clients.size === 0) {
-		sseClients.delete(sessionId);
-	}
-}
-
-// Set up broadcast function for mutations to use
-setBroadcastFunction(broadcastToSession);
