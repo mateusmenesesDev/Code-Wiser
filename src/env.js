@@ -17,7 +17,10 @@ export const env = createEnv({
 		STRIPE_CREDITS_1500_PRICE_ID: z.string(),
 		STRIPE_CREDITS_3000_PRICE_ID: z.string(),
 		STRIPE_WEBHOOK_SECRET: z.string(),
-		CLERK_WEBHOOK_SECRET: z.string()
+		CLERK_WEBHOOK_SECRET: z.string(),
+		// Real-time communication (Pusher)
+		PUSHER_APP_ID: z.string(),
+		PUSHER_SECRET: z.string(),
 	},
 
 	/**
@@ -26,7 +29,9 @@ export const env = createEnv({
 	 * `NEXT_PUBLIC_`.
 	 */
 	client: {
-		// NEXT_PUBLIC_CLIENTVAR: z.string(),
+		// Real-time communication (Pusher) - client-side
+		NEXT_PUBLIC_PUSHER_KEY: z.string(),
+		NEXT_PUBLIC_PUSHER_CLUSTER: z.string()
 	},
 
 	/**
@@ -42,8 +47,12 @@ export const env = createEnv({
 		STRIPE_CREDITS_1500_PRICE_ID: process.env.STRIPE_CREDITS_1500_PRICE_ID,
 		STRIPE_CREDITS_3000_PRICE_ID: process.env.STRIPE_CREDITS_3000_PRICE_ID,
 		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-		CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET
-		// NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+		CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
+		// Real-time communication (Pusher)
+		PUSHER_APP_ID: process.env.PUSHER_APP_ID,
+		PUSHER_SECRET: process.env.PUSHER_SECRET,
+		NEXT_PUBLIC_PUSHER_KEY: process.env.NEXT_PUBLIC_PUSHER_KEY,
+		NEXT_PUBLIC_PUSHER_CLUSTER: process.env.NEXT_PUBLIC_PUSHER_CLUSTER
 	},
 	/**
 	 * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

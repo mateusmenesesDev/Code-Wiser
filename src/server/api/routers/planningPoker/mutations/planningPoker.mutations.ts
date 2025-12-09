@@ -9,7 +9,6 @@ import {
 } from '~/features/planningPoker/schemas/planningPoker.schema';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
-import { broadcastEvent } from '../utils/sse';
 
 export const planningPokerMutations = {
 	createSession: adminProcedure
@@ -87,17 +86,17 @@ export const planningPokerMutations = {
 				}
 			});
 
-			// Broadcast member joined event
 			if (user) {
-				broadcastEvent(session.id, {
-					type: 'member-joined',
-					data: {
+				await ctx.realtime.trigger(
+					`planning-poker-${session.id}`,
+					'member-joined',
+					{
 						sessionId: session.id,
 						userId: user.id,
 						userName: user.name,
 						userEmail: user.email
 					}
-				});
+				);
 			}
 
 			return session;
@@ -143,17 +142,17 @@ export const planningPokerMutations = {
 				}
 			});
 
-			// Broadcast member joined event
 			if (user) {
-				broadcastEvent(input.sessionId, {
-					type: 'member-joined',
-					data: {
+				await ctx.realtime.trigger(
+					`planning-poker-${input.sessionId}`,
+					'member-joined',
+					{
 						sessionId: input.sessionId,
 						userId: user.id,
 						userName: user.name,
 						userEmail: user.email
 					}
-				});
+				);
 			}
 
 			// Join is implicit - just return success
@@ -231,15 +230,11 @@ export const planningPokerMutations = {
 				}
 			});
 
-			// Broadcast vote event
-			broadcastEvent(input.sessionId, {
-				type: 'vote',
-				data: {
-					sessionId: input.sessionId,
-					taskId: currentTaskId,
-					userId: vote.user.id,
-					storyPoints: vote.storyPoints
-				}
+			await ctx.realtime.trigger(`planning-poker-${input.sessionId}`, 'vote', {
+				sessionId: input.sessionId,
+				taskId: currentTaskId,
+				userId: vote.user.id,
+				storyPoints: vote.storyPoints
 			});
 
 			return vote;
@@ -308,15 +303,11 @@ export const planningPokerMutations = {
 				}
 			});
 
-			// Broadcast vote change event
-			broadcastEvent(input.sessionId, {
-				type: 'vote',
-				data: {
-					sessionId: input.sessionId,
-					taskId: currentTaskId,
-					userId: vote.user.id,
-					storyPoints: vote.storyPoints
-				}
+			await ctx.realtime.trigger(`planning-poker-${input.sessionId}`, 'vote', {
+				sessionId: input.sessionId,
+				taskId: currentTaskId,
+				userId: vote.user.id,
+				storyPoints: vote.storyPoints
 			});
 
 			return vote;
@@ -394,16 +385,16 @@ export const planningPokerMutations = {
 				}
 			});
 
-			// Broadcast task finalized event
-			broadcastEvent(input.sessionId, {
-				type: 'task-finalized',
-				data: {
+			await ctx.realtime.trigger(
+				`planning-poker-${input.sessionId}`,
+				'task-finalized',
+				{
 					sessionId: input.sessionId,
 					taskId: currentTaskId,
 					finalStoryPoints: input.finalStoryPoints ?? null,
 					nextTaskIndex: isLastTask ? null : nextIndex
 				}
-			});
+			);
 
 			return {
 				session: updatedSession,
@@ -446,13 +437,13 @@ export const planningPokerMutations = {
 				}
 			});
 
-			// Broadcast session ended event
-			broadcastEvent(input.sessionId, {
-				type: 'session-ended',
-				data: {
+			await ctx.realtime.trigger(
+				`planning-poker-${input.sessionId}`,
+				'session-ended',
+				{
 					sessionId: input.sessionId
 				}
-			});
+			);
 
 			return updatedSession;
 		})

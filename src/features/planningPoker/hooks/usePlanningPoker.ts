@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
 import type {
@@ -10,6 +10,7 @@ import type {
 	MemberJoinedSSEData
 } from '~/features/planningPoker/types/planningPoker.types';
 import { toast } from 'sonner';
+import { useRealtimeClient } from './useRealtimeClient';
 
 interface UsePlanningPokerProps {
 	sessionId: string;
@@ -18,12 +19,12 @@ interface UsePlanningPokerProps {
 export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	const { user } = useUser();
 	const userId = user?.id;
+	const utils = api.useUtils();
 	const [selectedValue, setSelectedValue] = useState<
 		PlanningPokerStoryPoint | undefined
 	>();
 	const [allVoted, setAllVoted] = useState(false);
 	const [showResults, setShowResults] = useState(false);
-	const eventSourceRef = useRef<EventSource | null>(null);
 	const [finalStoryPoints, setFinalStoryPoints] = useState<number | null>(null);
 
 	const { data: session, refetch: refetchSession } =
@@ -42,7 +43,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			},
 			{
 				enabled: !!session && !!currentTaskId && session.taskIds.length > 0,
-				refetchInterval: 2000 // Poll every 2 seconds as fallback
+				refetchInterval: false
 			}
 		);
 
@@ -66,19 +67,16 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 
 	const finalizeTaskMutation = api.planningPoker.finalizeTask.useMutation({
 		onSuccess: () => {
-			// Reset state immediately
 			setShowResults(false);
 			setSelectedValue(undefined);
 			setFinalStoryPoints(null);
 			setAllVoted(false);
-			// Refetch will happen via SSE event, but we do it here too as fallback
 			setTimeout(() => {
 				refetchSession();
 				refetchVotes();
 			}, 100);
 		},
 		onError: (error) => {
-			// Extract error message from Zod validation error
 			const zodError = error.data?.zodError;
 			let errorMessage = 'Failed to finalize task';
 
@@ -101,7 +99,6 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		}
 	});
 
-	// Get current task - we need to fetch it separately
 	const { data: currentTaskData } = api.task.getById.useQuery(
 		{ id: currentTaskId },
 		{ enabled: !!currentTaskId && currentTaskId !== '' }
@@ -115,51 +112,50 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			}
 		: null;
 
-	// Get project members who have voted
-	const projectMembers = api.project.getMembers.useQuery(
-		{ projectId: session?.projectId ?? '' },
-		{ enabled: !!session?.projectId }
+	const sessionParticipants = api.planningPoker.getSessionParticipants.useQuery(
+		{ sessionId },
+		{ enabled: !!sessionId }
 	);
 
-	// Calculate who has voted (only for current task)
 	const currentTaskVotes =
 		votes?.filter((v) => v.taskId === currentTaskId) ?? [];
 	const votedUserIds = new Set(currentTaskVotes.map((v) => v.userId));
 	const membersWithVoteStatus =
-		projectMembers.data?.map((member) => ({
+		sessionParticipants.data?.map((member) => ({
 			...member,
 			hasVoted: votedUserIds.has(member.id)
 		})) ?? [];
 
-	// Reset state when task changes
 	useEffect(() => {
-		if (currentTaskId) {
-			// Reset all voting state when task changes
+		if (currentTaskId && session) {
 			setShowResults(false);
 			setAllVoted(false);
 			setSelectedValue(undefined);
 			setFinalStoryPoints(null);
-		}
-	}, [currentTaskId]);
+			const timeoutId = setTimeout(() => {
+				refetchVotes();
+			}, 100);
 
-	// Check if all members voted (only for current task)
+			return () => clearTimeout(timeoutId);
+		}
+	}, [currentTaskId, session, refetchVotes]);
+
 	useEffect(() => {
 		if (
-			projectMembers.data &&
+			sessionParticipants.data &&
 			currentTaskVotes &&
 			currentTaskId &&
-			projectMembers.data.length > 0
+			sessionParticipants.data.length > 0
 		) {
-			// Get unique user IDs who have voted for current task
 			const votedUserIds = new Set(currentTaskVotes.map((v) => v.userId));
-			// Get all member IDs
-			const allMemberIds = new Set(projectMembers.data.map((m) => m.id));
+			const allParticipantIds = new Set(
+				sessionParticipants.data.map((p) => p.id)
+			);
 
-			// Check if all members have voted (each member must have exactly one vote)
 			const allVoted =
-				allMemberIds.size > 0 &&
-				allMemberIds.size === votedUserIds.size &&
-				Array.from(allMemberIds).every((id) => votedUserIds.has(id));
+				allParticipantIds.size > 0 &&
+				allParticipantIds.size === votedUserIds.size &&
+				Array.from(allParticipantIds).every((id) => votedUserIds.has(id));
 
 			if (allVoted) {
 				setAllVoted(true);
@@ -172,95 +168,90 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			setAllVoted(false);
 			setShowResults(false);
 		}
-	}, [currentTaskVotes, projectMembers.data, currentTaskId]);
+	}, [currentTaskVotes, sessionParticipants.data, currentTaskId]);
 
-	// Get current user's vote (only for current task)
 	useEffect(() => {
 		if (votes && userId && currentTaskId) {
-			// Filter votes to ensure they're for the current task
 			const currentTaskVotes = votes.filter((v) => v.taskId === currentTaskId);
 			const userVote = currentTaskVotes.find((v) => v.userId === userId);
 			if (userVote) {
 				setSelectedValue(userVote.storyPoints as PlanningPokerStoryPoint);
 			} else if (currentTaskId) {
-				// If user hasn't voted for current task, clear selection
 				setSelectedValue(undefined);
 			}
 		}
 	}, [votes, userId, currentTaskId]);
 
-	// Setup SSE connection
-	useEffect(() => {
-		if (!sessionId) return;
-
-		const eventSource = new EventSource(
-			`/api/planning-poker/${sessionId}/stream`
-		);
-
-		eventSource.onmessage = (event) => {
-			try {
-				const message: SSEMessage = JSON.parse(event.data);
-
-				switch (message.type) {
-					case 'vote': {
-						const data = message.data as VoteSSEData;
-						// Update selected value if it's the current user's vote
-						if (data.userId === userId && data.taskId === currentTaskId) {
-							setSelectedValue(data.storyPoints);
-						}
-						// Always refetch votes to get updated list for all users
-						refetchVotes();
-						break;
+	const handleRealtimeEvent = useCallback(
+		(event: SSEMessage) => {
+			switch (event.type) {
+				case 'vote': {
+					const data = event.data as VoteSSEData;
+					if (data.userId === userId && data.taskId === currentTaskId) {
+						setSelectedValue(data.storyPoints);
 					}
-					case 'member-joined': {
-						const data = message.data as MemberJoinedSSEData;
-						toast.info(`${data.userName || data.userEmail} joined the session`);
-						// Refetch session to update member list
-						refetchSession();
-						break;
-					}
-					case 'task-finalized': {
-						// Reset state for next task - this should happen for all clients
-						setShowResults(false);
-						setSelectedValue(undefined);
-						setFinalStoryPoints(null);
-						setAllVoted(false);
-						// Refetch session and votes to get new task
-						refetchSession();
-						// Small delay to ensure session is updated before refetching votes
-						setTimeout(() => {
-							refetchVotes();
-						}, 200);
-						break;
-					}
-					case 'session-ended': {
-						toast.success('Session ended!');
-						refetchSession();
-						break;
-					}
+					refetchVotes();
+					break;
 				}
-			} catch (error) {
-				console.error('Error parsing SSE message:', error);
+				case 'member-joined': {
+					const data = event.data as MemberJoinedSSEData;
+					toast.info(`${data.userName || data.userEmail} joined the session`);
+					refetchSession();
+					break;
+				}
+				case 'task-finalized': {
+					setShowResults(false);
+					setSelectedValue(undefined);
+					setFinalStoryPoints(null);
+					setAllVoted(false);
+
+					void utils.planningPoker.getSession
+						.invalidate({ sessionId })
+						.then(() => {
+							return refetchSession();
+						});
+					break;
+				}
+				case 'session-ended': {
+					toast.success('Session ended!');
+					refetchSession();
+					break;
+				}
 			}
-		};
+		},
+		[userId, currentTaskId, refetchVotes, refetchSession, sessionId, utils]
+	);
 
-		eventSource.onerror = (error) => {
-			console.error('SSE error:', error);
-			// EventSource will automatically reconnect
-		};
+	const onConnected = useCallback(() => {}, []);
 
-		eventSourceRef.current = eventSource;
+	const onDisconnected = useCallback(() => {}, []);
 
-		return () => {
-			eventSource.close();
-		};
-	}, [sessionId, userId, currentTaskId, refetchVotes, refetchSession]);
+	const onError = useCallback(() => {}, []);
 
-	// Join session on mount (only once)
+	const onEvent = useCallback(
+		(event: { type: string; data: unknown }) => {
+			handleRealtimeEvent(event as SSEMessage);
+		},
+		[handleRealtimeEvent]
+	);
+
+	const realtimeCallbacks = useMemo(
+		() => ({
+			onConnected,
+			onDisconnected,
+			onError,
+			onEvent
+		}),
+		[onConnected, onDisconnected, onError, onEvent]
+	);
+
+	useRealtimeClient({
+		sessionId,
+		callbacks: realtimeCallbacks
+	});
+
 	const joinSessionMutation = api.planningPoker.joinSession.useMutation({
-		onError: (error) => {
-			console.error('Failed to join session:', error);
-		}
+		onError: () => {}
 	});
 
 	const hasJoinedRef = useRef(false);
@@ -279,13 +270,11 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			setSelectedValue(value);
 
 			if (selectedValue === undefined) {
-				// First vote
 				voteMutation.mutate({
 					sessionId,
 					storyPoints: value
 				});
 			} else {
-				// Change vote
 				changeVoteMutation.mutate({
 					sessionId,
 					storyPoints: value

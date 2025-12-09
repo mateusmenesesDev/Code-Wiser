@@ -12,6 +12,7 @@ import superjson from 'superjson';
 import { ZodError } from 'zod';
 
 import { db } from '~/server/db';
+import { getRealtimeService } from '~/server/realtime';
 
 type OrganizationData = {
 	id: string;
@@ -40,6 +41,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 
 	return {
 		db,
+		realtime: getRealtimeService(),
 		session,
 		isAdmin,
 		...opts

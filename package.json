@@ -66,6 +66,7 @@
 		"@trpc/client": "^11.0.0-rc.446",
 		"@trpc/react-query": "^11.0.0-rc.446",
 		"@trpc/server": "^11.0.0-rc.446",
+		"@types/ws": "^8.18.1",
 		"@uploadthing/react": "^7.3.2",
 		"ai": "^5.0.99",
 		"class-variance-authority": "^0.7.0",
@@ -81,6 +82,8 @@
 		"next": "^14.2.4",
 		"next-themes": "^0.3.0",
 		"nuqs": "^2.1.1",
+		"pusher": "^5.2.0",
+		"pusher-js": "^8.4.0",
 		"react": "^18.3.1",
 		"react-day-picker": "^9.7.0",
 		"react-dnd": "^16.0.1",
@@ -99,6 +102,7 @@
 		"tunnel-rat": "^0.1.2",
 		"uploadthing": "^7.7.3",
 		"uuid": "^11.0.2",
+		"ws": "^8.18.3",
 		"zod": "^3.23.8"
 	},
 	"devDependencies": {

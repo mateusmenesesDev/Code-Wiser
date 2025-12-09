@@ -54,20 +54,67 @@ export const userRouter = createTRPCRouter({
 		return userWithImageUrl;
 	}),
 
-	delete: adminProcedure.input(z.string()).mutation(async ({ input }) => {
-		try {
-			// Delete from Clerk first
-			await clerkClient.users.deleteUser(input);
-		} catch (error) {
-			// If Clerk user doesn't exist or deletion fails, log but continue
-			console.error(`Failed to delete Clerk user ${input}:`, error);
+	delete: adminProcedure.input(z.string()).mutation(async ({ input, ctx }) => {
+		// Check if user exists in database first
+		const dbUser = await ctx.db.user.findUnique({
+			where: { id: input }
+		});
+
+		if (!dbUser) {
 			throw new TRPCError({
-				code: 'INTERNAL_SERVER_ERROR',
-				message: 'Failed to delete user'
+				code: 'NOT_FOUND',
+				message: 'User not found in database'
 			});
 		}
 
-		return await deleteUser(input);
+		// Try to delete from Clerk, but don't fail if user doesn't exist there
+		try {
+			await clerkClient.users.deleteUser(input);
+		} catch (error: unknown) {
+			// If Clerk user doesn't exist or deletion fails, log but continue with DB deletion
+			// This handles cases where:
+			// - User was already deleted from Clerk
+			// - User doesn't exist in Clerk (orphaned DB record)
+			// - Other Clerk API errors
+			const clerkError = error as { status?: number; message?: string };
+			if (clerkError.status === 404) {
+				console.log(
+					`Clerk user ${input} not found (status 404), proceeding with database deletion`
+				);
+			} else {
+				console.error(
+					`Failed to delete Clerk user ${input}:`,
+					clerkError.message || error
+				);
+				// Continue with database deletion even if Clerk deletion fails
+			}
+		}
+
+		// Delete from database
+		try {
+			return await deleteUser(input);
+		} catch (error) {
+			console.error(`Failed to delete user from database ${input}:`, error);
+			const errorMessage =
+				error instanceof Error ? error.message : 'Unknown database error';
+
+			// Check if it's a foreign key constraint error
+			if (
+				errorMessage.includes('Foreign key constraint') ||
+				errorMessage.includes('violates foreign key constraint')
+			) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message:
+						'Cannot delete user: user has associated records that must be removed first'
+				});
+			}
+
+			throw new TRPCError({
+				code: 'INTERNAL_SERVER_ERROR',
+				message: `Failed to delete user from database: ${errorMessage}`
+			});
+		}
 	}),
 
 	getCredits: protectedProcedure.query(async ({ ctx }) => {
