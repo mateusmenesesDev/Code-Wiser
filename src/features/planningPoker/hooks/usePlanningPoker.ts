@@ -148,20 +148,29 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			projectMembers.data &&
 			currentTaskVotes &&
 			currentTaskId &&
-			projectMembers.data.length > 0 &&
-			currentTaskVotes.length >= projectMembers.data.length
+			projectMembers.data.length > 0
 		) {
-			setAllVoted(true);
-			setShowResults(true);
-		} else {
-			setAllVoted(false);
-			// Don't show results if not all voted
-			if (
-				!currentTaskVotes ||
-				currentTaskVotes.length < (projectMembers.data?.length ?? 0)
-			) {
+			// Get unique user IDs who have voted for current task
+			const votedUserIds = new Set(currentTaskVotes.map((v) => v.userId));
+			// Get all member IDs
+			const allMemberIds = new Set(projectMembers.data.map((m) => m.id));
+
+			// Check if all members have voted (each member must have exactly one vote)
+			const allVoted =
+				allMemberIds.size > 0 &&
+				allMemberIds.size === votedUserIds.size &&
+				Array.from(allMemberIds).every((id) => votedUserIds.has(id));
+
+			if (allVoted) {
+				setAllVoted(true);
+				setShowResults(true);
+			} else {
+				setAllVoted(false);
 				setShowResults(false);
 			}
+		} else {
+			setAllVoted(false);
+			setShowResults(false);
 		}
 	}, [currentTaskVotes, projectMembers.data, currentTaskId]);
 
@@ -195,20 +204,23 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 				switch (message.type) {
 					case 'vote': {
 						const data = message.data as VoteSSEData;
-						if (data.userId === userId) {
+						// Update selected value if it's the current user's vote
+						if (data.userId === userId && data.taskId === currentTaskId) {
 							setSelectedValue(data.storyPoints);
 						}
+						// Always refetch votes to get updated list for all users
 						refetchVotes();
 						break;
 					}
 					case 'member-joined': {
 						const data = message.data as MemberJoinedSSEData;
 						toast.info(`${data.userName || data.userEmail} joined the session`);
+						// Refetch session to update member list
 						refetchSession();
 						break;
 					}
 					case 'task-finalized': {
-						// Reset state for next task
+						// Reset state for next task - this should happen for all clients
 						setShowResults(false);
 						setSelectedValue(undefined);
 						setFinalStoryPoints(null);
@@ -242,7 +254,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		return () => {
 			eventSource.close();
 		};
-	}, [sessionId, userId, refetchVotes, refetchSession]);
+	}, [sessionId, userId, currentTaskId, refetchVotes, refetchSession]);
 
 	// Join session on mount (only once)
 	const joinSessionMutation = api.planningPoker.joinSession.useMutation({
