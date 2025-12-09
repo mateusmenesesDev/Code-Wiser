@@ -1,5 +1,6 @@
 'use client';
 
+import { useSetAtom } from 'jotai';
 import { Protect, useUser } from '@clerk/nextjs';
 import { Loader2, LogOut } from 'lucide-react';
 import { Button } from '~/common/components/ui/button';
@@ -7,10 +8,13 @@ import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
 import { usePlanningPoker } from '../hooks/usePlanningPoker';
 import type { PlanningPokerStoryPoint } from '../types/planningPoker.types';
+import { planningPokerDialogAtom } from '../atoms/planningPokerDialog.atom';
 import { TaskCard } from './TaskCard';
 import { VotingCards } from './VotingCards';
 import { MemberList } from './MemberList';
 import { VoteResults } from './VoteResults';
+import { EndSessionDialog } from './EndSessionDialog';
+import { FinalizeLastTaskDialog } from './FinalizeLastTaskDialog';
 import { useRouter } from 'next/navigation';
 
 interface PlanningPokerRoomProps {
@@ -21,6 +25,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 	const router = useRouter();
 	const { user } = useUser();
 	const userId = user?.id;
+	const setDialogState = useSetAtom(planningPokerDialogAtom);
 	const {
 		session,
 		currentTask,
@@ -42,6 +47,32 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		isFinalizing,
 		isEnding
 	} = usePlanningPoker({ sessionId });
+
+	const handleEndSessionClick = () => {
+		setDialogState((prev) => ({
+			...prev,
+			isEndSessionDialogOpen: true
+		}));
+	};
+
+	const handleEndSessionConfirm = () => {
+		handleEndSession();
+		router.push(`/workspace/${session?.projectId}`);
+	};
+
+	const handleFinalizeLastTaskClick = () => {
+		setDialogState((prev) => ({
+			...prev,
+			isFinalizeLastTaskDialogOpen: true
+		}));
+	};
+
+	const handleFinalizeLastTaskConfirm = () => {
+		handleFinalizeTask();
+		// After finalizing, end the session
+		handleEndSession();
+		router.push(`/workspace/${session?.projectId}`);
+	};
 
 	if (isLoading) {
 		return (
@@ -82,16 +113,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 							<Button
 								variant="destructive"
 								size="sm"
-								onClick={() => {
-									if (
-										confirm(
-											'Are you sure you want to end this session? All progress will be saved.'
-										)
-									) {
-										handleEndSession();
-										router.push(`/workspace/${session.projectId}`);
-									}
-								}}
+								onClick={handleEndSessionClick}
 								disabled={isEnding}
 							>
 								{isEnding ? (
@@ -176,8 +198,14 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 												Must follow Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21
 											</p>
 											<Button
-												onClick={handleFinalizeTask}
-												disabled={isFinalizing || isLastTask}
+												onClick={() => {
+													if (isLastTask) {
+														handleFinalizeLastTaskClick();
+													} else {
+														handleFinalizeTask();
+													}
+												}}
+												disabled={isFinalizing}
 												className="w-full"
 											>
 												{isFinalizing ? (
@@ -186,7 +214,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 														Finalizing...
 													</>
 												) : isLastTask ? (
-													'Last Task - End Session Instead'
+													'Finalize Last Task & End Session'
 												) : (
 													'Finalize & Move to Next Task'
 												)}
@@ -204,6 +232,17 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 					{userId && <MemberList members={members} currentUserId={userId} />}
 				</div>
 			</div>
+
+			{/* Dialogs */}
+			<EndSessionDialog
+				onConfirm={handleEndSessionConfirm}
+				isEnding={isEnding}
+			/>
+			<FinalizeLastTaskDialog
+				onConfirm={handleFinalizeLastTaskConfirm}
+				isFinalizing={isFinalizing}
+				isEnding={isEnding}
+			/>
 		</div>
 	);
 }
