@@ -168,6 +168,24 @@ export const taskMutations = {
 			}
 
 			await ctx.db.task.delete({ where: { id: taskId } });
+
+			if (existingTask.projectId) {
+				const { getBaseUrl } = await import('~/server/utils/getBaseUrl');
+				const baseUrl = getBaseUrl();
+				const workspaceUrl = `${baseUrl}/workspace/${existingTask.projectId}?taskId=${taskId}`;
+
+				await ctx.db.notification.deleteMany({
+					where: {
+						OR: [
+							{ type: 'TASK_COMMENT', link: workspaceUrl },
+							{
+								type: { in: ['PR_REQUESTED', 'PR_APPROVED', 'PR_CHANGES_REQUESTED'] },
+								link: { contains: `taskId=${taskId}` }
+							}
+						]
+					}
+				});
+			}
 		}),
 
 	bulkDelete: protectedProcedure

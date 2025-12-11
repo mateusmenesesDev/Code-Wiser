@@ -8,6 +8,10 @@ import {
 	updatePRReviewUrlSchema
 } from '~/features/prReview/schemas/prReview.schema';
 import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	notifyPRRequested,
+	notifyPRResponse
+} from '~/server/services/notification/notificationService';
 
 export const prReviewMutations = {
 	approve: adminProcedure
@@ -19,6 +23,27 @@ export const prReviewMutations = {
 				where: {
 					taskId,
 					isActive: true
+				},
+				include: {
+					reviewedBy: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					},
+					task: {
+						select: {
+							id: true,
+							title: true,
+							project: {
+								select: {
+									id: true,
+									title: true
+								}
+							}
+						}
+					}
 				}
 			});
 
@@ -36,6 +61,28 @@ export const prReviewMutations = {
 				}
 			});
 
+			const mentor = await ctx.db.user.findUnique({
+				where: { id: ctx.session.userId as string },
+				select: { name: true }
+			});
+
+			const mentorName = mentor?.name ?? (null as string | null | undefined);
+
+			await notifyPRResponse({
+				db: ctx.db,
+				memberId: activeReview.reviewedById,
+				memberName: activeReview.reviewedBy.name,
+				memberEmail: activeReview.reviewedBy.email,
+				mentorName,
+				projectId: activeReview.task.project?.id ?? '',
+				projectName: activeReview.task.project?.title ?? '',
+				taskId: activeReview.task.id,
+				taskTitle: activeReview.task.title,
+				status: 'APPROVED'
+			}).catch((error) => {
+				console.error('Failed to send notification:', error);
+			});
+
 			return { success: true };
 		}),
 
@@ -44,11 +91,31 @@ export const prReviewMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { taskId, comment } = input;
 
-			// Find the active review for this task
 			const activeReview = await ctx.db.pullRequestReview.findFirst({
 				where: {
 					taskId,
 					isActive: true
+				},
+				include: {
+					reviewedBy: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					},
+					task: {
+						select: {
+							id: true,
+							title: true,
+							project: {
+								select: {
+									id: true,
+									title: true
+								}
+							}
+						}
+					}
 				}
 			});
 
@@ -67,6 +134,29 @@ export const prReviewMutations = {
 				}
 			});
 
+			const mentor = await ctx.db.user.findUnique({
+				where: { id: ctx.session.userId as string },
+				select: { name: true }
+			});
+
+			const mentorName = mentor?.name ?? (null as string | null | undefined);
+
+			await notifyPRResponse({
+				db: ctx.db,
+				memberId: activeReview.reviewedById,
+				memberName: activeReview.reviewedBy.name,
+				memberEmail: activeReview.reviewedBy.email,
+				mentorName,
+				projectId: activeReview.task.project?.id ?? '',
+				projectName: activeReview.task.project?.title ?? '',
+				taskId: activeReview.task.id,
+				taskTitle: activeReview.task.title,
+				status: 'CHANGES_REQUESTED',
+				comment: comment || null
+			}).catch((error) => {
+				console.error('Failed to send notification:', error);
+			});
+
 			return { success: true };
 		}),
 
@@ -79,8 +169,13 @@ export const prReviewMutations = {
 			const task = await ctx.db.task.findUnique({
 				where: { id: taskId },
 				select: {
+					id: true,
+					title: true,
 					project: {
-						select: { id: true }
+						select: {
+							id: true,
+							title: true
+						}
 					}
 				}
 			});
@@ -97,6 +192,9 @@ export const prReviewMutations = {
 			const user = await ctx.db.user.findUnique({
 				where: { id: reviewerId },
 				select: {
+					id: true,
+					name: true,
+					email: true,
 					mentorshipStatus: true,
 					credits: true
 				}
@@ -136,6 +234,18 @@ export const prReviewMutations = {
 						isActive: true
 					}
 				});
+			});
+
+			await notifyPRRequested({
+				db: ctx.db,
+				memberName: user.name,
+				projectId: task.project.id,
+				projectName: task.project.title,
+				taskId: task.id,
+				taskTitle: task.title,
+				prUrl
+			}).catch((error) => {
+				console.error('Failed to send notification:', error);
 			});
 
 			return { success: true, message: 'Code review requested successfully' };

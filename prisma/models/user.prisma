@@ -34,6 +34,7 @@ model User {
   prReviews                    PullRequestReview[]
   createdPlanningPokerSessions PlanningPokerSession[] @relation("PlanningPokerSessionCreator")
   planningPokerVotes           PlanningPokerVote[]
+  notifications                Notification[]
 
   @@schema("public")
 }

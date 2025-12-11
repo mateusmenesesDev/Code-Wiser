@@ -1,5 +1,6 @@
 import type { TaskPriorityEnum } from '@prisma/client';
 import Image from 'next/image';
+import { useQueryState } from 'nuqs';
 import { Badge } from '~/common/components/ui/badge';
 import {
 	KanbanCard,
@@ -7,16 +8,15 @@ import {
 } from '~/common/components/ui/kanban';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import { api } from '~/trpc/react';
-import { useDialog } from '~/common/hooks/useDialog';
 
 export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
-	const { openDialog } = useDialog('task');
+	const [, setTaskId] = useQueryState('taskId');
 	const { data: assigneeImage } = api.task.getAssigneeImage.useQuery({
 		assigneeId: task.assignee?.id as string
 	});
 
 	return (
-		<KanbanCard {...task} onTaskClick={() => openDialog('task', task.id)}>
+		<KanbanCard {...task} onTaskClick={() => setTaskId(task.id)}>
 			<div className="flex flex-col gap-3">
 				{task.sprint && (
 					<Badge

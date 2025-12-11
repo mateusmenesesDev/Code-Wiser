@@ -19,6 +19,7 @@ import { api } from '~/trpc/react';
 import CodeWiseIcon from '../../icons/CodeWiseIcon';
 import HeaderAvatarMenu from './HeaderAvatarMenu';
 import { MenuItem, ProtectedMenuItem } from './HeaderItem';
+import { NotificationBell } from '~/features/notifications/components/NotificationBell';
 
 const Header = () => {
 	const { openDialog } = useDialog('signIn');
@@ -71,6 +72,9 @@ const Header = () => {
 									<Sparkles className="mr-1 h-3 w-3" />
 									{userCredits?.credits ?? 0} credits
 								</Badge>
+
+								{/* Notifications */}
+								<NotificationBell />
 
 								{/* User Menu */}
 								<HeaderAvatarMenu />

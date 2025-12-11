@@ -2,6 +2,7 @@
 
 import type { TaskStatusEnum } from '@prisma/client';
 import { useParams } from 'next/navigation';
+import { parseAsString, useQueryState } from 'nuqs';
 import {
 	KanbanBoard,
 	KanbanCards,
@@ -10,7 +11,6 @@ import {
 	KanbanProvider
 } from '~/common/components/ui/kanban';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
-import { useDialog } from '~/common/hooks/useDialog';
 import { useKanbanData } from '~/features/kanban/hooks/useKanbanData';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
@@ -22,7 +22,7 @@ import { api } from '~/trpc/react';
 const Workspace = () => {
 	const { id } = useParams();
 	const projectId = id as string;
-	const { dialogState } = useDialog('task');
+	const [taskId, setTaskId] = useQueryState('taskId', parseAsString);
 	const { allTasks, members, sprints } = useKanbanData(projectId);
 	const { data: projectInfo } = api.project.getWorkspaceInfo.useQuery({
 		id: projectId
@@ -111,7 +111,11 @@ const Workspace = () => {
 					}}
 				</KanbanProvider>
 			</div>
-			<TaskDialog taskId={dialogState.id ?? undefined} projectId={projectId} />
+			<TaskDialog
+				taskId={taskId ?? undefined}
+				projectId={projectId}
+				onClose={() => setTaskId(null)}
+			/>
 		</div>
 	);
 };

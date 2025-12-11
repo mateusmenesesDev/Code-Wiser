@@ -49,6 +49,7 @@ import { getStatusLabel, resetFormData } from '../utils';
 interface TaskDialogProps {
 	taskId?: string;
 	projectId: string;
+	onClose: () => void;
 }
 
 dayjs.extend(relativeTime);
@@ -57,9 +58,12 @@ type TaskFormData =
 	| z.infer<typeof createTaskSchema>
 	| z.infer<typeof updateTaskSchema>;
 
-export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
+export function TaskDialogContent({
+	taskId,
+	projectId,
+	onClose
+}: TaskDialogProps) {
 	const isTemplate = useIsTemplate();
-	const { closeDialog, isDialogOpen } = useDialog('task');
 	const { userHasMentorship, userCredits } = useUser();
 	const {
 		requestCodeReview,
@@ -76,7 +80,7 @@ export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 
 	const { data: task } = api.task.getById.useQuery(
 		{ id: taskId || '' },
-		{ enabled: !!taskId && isDialogOpen }
+		{ enabled: !!taskId }
 	);
 
 	const { data: epics } = api.epic.getAllByProjectId.useQuery({
@@ -172,13 +176,13 @@ export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 				isTemplate
 			} as CreateTaskInput);
 		}
-		closeDialog();
+		onClose();
 	};
 
 	const handleDelete = () => {
 		if (task) {
 			deleteTask(task.id);
-			closeDialog();
+			onClose();
 		}
 	};
 
@@ -722,7 +726,7 @@ export function TaskDialogContent({ taskId, projectId }: TaskDialogProps) {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={closeDialog}
+							onClick={onClose}
 							disabled={form.formState.isSubmitting}
 						>
 							Cancel

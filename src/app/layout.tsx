@@ -4,6 +4,8 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { auth } from '@clerk/nextjs/server';
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { GeistSans } from 'geist/font/sans';
 import { Provider as JotaiProvider } from 'jotai';
 import type { Metadata } from 'next';
@@ -14,6 +16,8 @@ import { ThemeProvider } from '~/providers/ThemeProvider';
 import { TRPCReactProvider } from '~/trpc/react';
 
 dayjs.extend(localizedFormat);
+dayjs.extend(relativeTime);
+dayjs.extend(isSameOrAfter);
 
 export const metadata: Metadata = {
 	title: {
