@@ -1,8 +1,11 @@
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { X } from 'lucide-react';
 import { Button } from '~/common/components/ui/button';
 import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
+
+dayjs.extend(relativeTime);
 
 type Notification =
 	RouterOutputs['notification']['getNotifications']['notifications'][number];
