@@ -1,9 +1,12 @@
 'use client';
 
 import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { Bell } from 'lucide-react';
 import type { RouterOutputs } from '~/trpc/react';
 import { NotificationItem } from './NotificationItem';
+
+dayjs.extend(isSameOrAfter);
 
 type Notification =
 	RouterOutputs['notification']['getNotifications']['notifications'][number];
