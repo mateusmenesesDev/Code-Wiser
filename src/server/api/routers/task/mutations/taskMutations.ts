@@ -7,6 +7,11 @@ import {
 } from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	notifyTaskAssigned,
+	notifyTaskStatusChanged,
+	notifyTaskBlocked
+} from '~/server/services/notification/notificationService';
 
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 
@@ -61,7 +66,18 @@ export const taskMutations = {
 				where: { id },
 				include: {
 					project: {
-						include: { members: true }
+						include: { members: true },
+						select: {
+							id: true,
+							title: true,
+							members: true
+						}
+					},
+					assignee: {
+						select: {
+							id: true,
+							name: true
+						}
 					}
 				}
 			});
@@ -81,6 +97,10 @@ export const taskMutations = {
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+
+			const oldAssigneeId = existingTask.assigneeId;
+			const oldStatus = existingTask.status;
+			const oldBlocked = existingTask.blocked;
 
 			const updateData = {
 				...rest,
@@ -102,8 +122,100 @@ export const taskMutations = {
 					...(input.isTemplate
 						? { projectTemplate: { connect: { id: input.projectId } } }
 						: { project: { connect: { id: input.projectId } } })
+				},
+				include: {
+					assignee: {
+						select: {
+							id: true,
+							name: true
+						}
+					},
+					project: {
+						select: {
+							id: true,
+							title: true
+						}
+					}
 				}
 			});
+
+			if (existingTask.projectId && existingTask.project) {
+				const changedByUser = await ctx.db.user.findUnique({
+					where: { id: ctx.session.userId as string },
+					select: { name: true }
+				});
+
+				const notificationPromises: Promise<void>[] = [];
+
+				// Notify if assignee changed
+				if (
+					assigneeId !== undefined &&
+					assigneeId !== oldAssigneeId &&
+					task.assignee &&
+					assigneeId
+				) {
+					notificationPromises.push(
+						notifyTaskAssigned({
+							db: ctx.db,
+							taskId: task.id,
+							taskTitle: task.title,
+							assigneeId,
+							projectId: existingTask.projectId,
+							projectName: existingTask.project.title
+						}).catch((error) => {
+							console.error(
+								'Failed to send task assigned notification:',
+								error
+							);
+						})
+					);
+				}
+
+				// Notify if status changed
+				if (rest.status && rest.status !== oldStatus) {
+					notificationPromises.push(
+						notifyTaskStatusChanged({
+							db: ctx.db,
+							taskId: task.id,
+							taskTitle: task.title,
+							oldStatus: oldStatus ?? '',
+							newStatus: rest.status,
+							assigneeId: task.assigneeId,
+							projectId: existingTask.projectId,
+							projectName: existingTask.project.title,
+							changedByUserId: ctx.session.userId as string,
+							changedByName: changedByUser?.name ?? null
+						}).catch((error) => {
+							console.error(
+								'Failed to send task status changed notification:',
+								error
+							);
+						})
+					);
+				}
+
+				// Notify if blocked status changed
+				if (rest.blocked !== undefined && rest.blocked !== oldBlocked) {
+					notificationPromises.push(
+						notifyTaskBlocked({
+							db: ctx.db,
+							taskId: task.id,
+							taskTitle: task.title,
+							isBlocked: rest.blocked,
+							assigneeId: task.assigneeId,
+							projectId: existingTask.projectId,
+							projectName: existingTask.project.title,
+							changedByUserId: ctx.session.userId as string,
+							changedByName: changedByUser?.name ?? null
+						}).catch((error) => {
+							console.error('Failed to send task blocked notification:', error);
+						})
+					);
+				}
+
+				await Promise.all(notificationPromises);
+			}
+
 			return task;
 		}),
 
@@ -179,7 +291,9 @@ export const taskMutations = {
 						OR: [
 							{ type: 'TASK_COMMENT', link: workspaceUrl },
 							{
-								type: { in: ['PR_REQUESTED', 'PR_APPROVED', 'PR_CHANGES_REQUESTED'] },
+								type: {
+									in: ['PR_REQUESTED', 'PR_APPROVED', 'PR_CHANGES_REQUESTED']
+								},
 								link: { contains: `taskId=${taskId}` }
 							}
 						]
