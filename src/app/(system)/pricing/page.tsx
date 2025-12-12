@@ -151,8 +151,9 @@ const PricingPage = () => {
 													})
 												}
 												variant="primary"
+												disabled
 											>
-												Buy Now
+												Buy Now (Coming Soon)
 											</Button>
 										</div>
 									</CardContent>
