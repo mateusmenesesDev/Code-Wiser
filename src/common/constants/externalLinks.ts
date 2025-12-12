@@ -1,3 +1,3 @@
 export const EXTERNAL_LINKS = {
-	MENTORSHIP: 'https://calendly.com/mateusmenesesdev/free-mentorship'
+	FREE_MENTORSHIP: 'https://cal.com/codewise/free-mentorship'
 };

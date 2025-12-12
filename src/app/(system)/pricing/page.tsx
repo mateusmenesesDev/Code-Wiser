@@ -72,7 +72,7 @@ const PricingPage = () => {
 	};
 
 	const handleScheduleMentorship = () => {
-		window.open(EXTERNAL_LINKS.MENTORSHIP, '_blank');
+		window.open(EXTERNAL_LINKS.FREE_MENTORSHIP, '_blank');
 		toast.info('Scheduling Discovery Call');
 	};
 
