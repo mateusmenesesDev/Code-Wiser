@@ -14,6 +14,7 @@ import {
 	getAllUsers,
 	updateUserAdmin
 } from './queries';
+import { adminResetUserSessions } from '~/server/services/mentorship/mentorshipService';
 
 export const userRouter = createTRPCRouter({
 	create: publicProcedure.input(userDbSchema).mutation(async ({ input }) => {
@@ -124,7 +125,7 @@ export const userRouter = createTRPCRouter({
 		});
 	}),
 
-	getMentorship: protectedProcedure.query(async ({ ctx }) => {
+	getMentorshipStatus: protectedProcedure.query(async ({ ctx }) => {
 		return ctx.db.user.findUnique({
 			where: { id: ctx.session.userId },
 			select: { mentorshipStatus: true }
@@ -195,11 +196,29 @@ export const userRouter = createTRPCRouter({
 					.enum(['MONTHLY', 'QUARTERLY', 'SEMIANNUAL'])
 					.optional(),
 				mentorshipStartDate: z.coerce.date().nullable().optional(),
-				mentorshipEndDate: z.coerce.date().nullable().optional()
+				mentorshipEndDate: z.coerce.date().nullable().optional(),
+				weeklyMentorshipSessions: z.number().int().min(1).max(3).optional()
 			})
 		)
 		.mutation(async ({ input }) => {
 			const { id, ...data } = input;
 			return await updateUserAdmin(id, data);
+		}),
+
+	resetUserWeeklySessions: adminProcedure
+		.input(z.object({ userId: z.string() }))
+		.mutation(async ({ input }) => {
+			try {
+				await adminResetUserSessions(input.userId);
+				return { success: true };
+			} catch (error) {
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message:
+						error instanceof Error
+							? error.message
+							: 'Failed to reset weekly sessions'
+				});
+			}
 		})
 });

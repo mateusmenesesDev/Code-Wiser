@@ -62,6 +62,9 @@ export async function getAllUsers(options?: {
 				mentorshipType: true,
 				mentorshipStartDate: true,
 				mentorshipEndDate: true,
+				weeklyMentorshipSessions: true,
+				remainingWeeklySessions: true,
+				weeklySessionsResetAt: true,
 				createdAt: true,
 				updatedAt: true,
 				stripeCustomerId: true,
@@ -82,8 +85,44 @@ export async function updateUserAdmin(
 		mentorshipType: MentorshipType;
 		mentorshipStartDate: Date | null;
 		mentorshipEndDate: Date | null;
+		weeklyMentorshipSessions: number;
 	}>
 ) {
+	// Get next Monday at midnight UTC
+	const getNextResetDate = () => {
+		const now = new Date();
+		const nextMonday = new Date(now);
+		nextMonday.setUTCDate(now.getUTCDate() + ((8 - now.getUTCDay()) % 7));
+		nextMonday.setUTCHours(0, 0, 0, 0);
+		return nextMonday;
+	};
+
+	// If mentorship status is being set to ACTIVE, initialize reset date and sessions
+	if (data.mentorshipStatus === 'ACTIVE') {
+		const user = await db.user.findUnique({
+			where: { id },
+			select: {
+				weeklySessionsResetAt: true,
+				weeklyMentorshipSessions: true
+			}
+		});
+
+		// Only set reset date if it's null
+		if (!user?.weeklySessionsResetAt) {
+			const weeklySessionCount =
+				data.weeklyMentorshipSessions ?? user?.weeklyMentorshipSessions ?? 1;
+
+			return await db.user.update({
+				where: { id },
+				data: {
+					...data,
+					weeklySessionsResetAt: getNextResetDate(),
+					remainingWeeklySessions: weeklySessionCount
+				}
+			});
+		}
+	}
+
 	return await db.user.update({
 		where: { id },
 		data

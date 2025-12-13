@@ -11,6 +11,7 @@ import { aiRouter } from './routers/ai/ai.router';
 import { prReviewRouter } from './routers/prReview/prReviewRouter';
 import { planningPokerRouter } from './routers/planningPoker/planningPokerRouter';
 import { notificationRouter } from './routers/notification/notificationRouter';
+import { mentorshipRouter } from './routers/mentorship/mentorship';
 
 /**
  * This is the primary router for your server.
@@ -29,7 +30,8 @@ export const appRouter = createTRPCRouter({
 	ai: aiRouter,
 	prReview: prReviewRouter,
 	planningPoker: planningPokerRouter,
-	notification: notificationRouter
+	notification: notificationRouter,
+	mentorship: mentorshipRouter
 });
 
 // export type definition of API

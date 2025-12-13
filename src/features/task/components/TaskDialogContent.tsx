@@ -18,7 +18,6 @@ import { Label } from '~/common/components/ui/label';
 import { Separator } from '~/common/components/ui/separator';
 import { Switch } from '~/common/components/ui/switch';
 import { Textarea } from '~/common/components/ui/textarea';
-import { useDialog } from '~/common/hooks/useDialog';
 import { useTask } from '~/features/task/hooks/useTask';
 import {
 	createTaskSchema,

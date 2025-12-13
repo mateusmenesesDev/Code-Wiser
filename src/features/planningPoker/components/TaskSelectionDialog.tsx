@@ -39,7 +39,7 @@ export function TaskSelectionDialog({
 	});
 
 	const createSession = api.planningPoker.createSession.useMutation({
-		onSuccess: (session) => {
+		onSuccess: () => {
 			toast.success('Planning Poker session created!');
 			onOpenChange(false);
 			router.push(`/workspace/${projectId}/planning-poker`);

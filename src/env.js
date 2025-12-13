@@ -23,6 +23,12 @@ export const env = createEnv({
 		PUSHER_SECRET: z.string(),
 		// Email service (Resend)
 		RESEND_API_KEY: z.string(),
+		// Cal.com integration
+		CALCOM_API_KEY: z.string(),
+		CALCOM_EVENT_TYPE_ID: z.string(),
+		CALCOM_WEBHOOK_SECRET: z.string(),
+		// Cron job security
+		CRON_SECRET: z.string(),
 	},
 
 	/**
@@ -33,7 +39,10 @@ export const env = createEnv({
 	client: {
 		// Real-time communication (Pusher) - client-side
 		NEXT_PUBLIC_PUSHER_KEY: z.string(),
-		NEXT_PUBLIC_PUSHER_CLUSTER: z.string()
+		NEXT_PUBLIC_PUSHER_CLUSTER: z.string(),
+		// Cal.com configuration
+		NEXT_PUBLIC_CALCOM_USERNAME: z.string(),
+		NEXT_PUBLIC_CALCOM_CLIENT_ID: z.string().optional()
 	},
 
 	/**
@@ -56,7 +65,15 @@ export const env = createEnv({
 		NEXT_PUBLIC_PUSHER_KEY: process.env.NEXT_PUBLIC_PUSHER_KEY,
 		NEXT_PUBLIC_PUSHER_CLUSTER: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
 		// Email service (Resend)
-		RESEND_API_KEY: process.env.RESEND_API_KEY
+		RESEND_API_KEY: process.env.RESEND_API_KEY,
+		// Cal.com integration
+		CALCOM_API_KEY: process.env.CALCOM_API_KEY,
+		CALCOM_EVENT_TYPE_ID: process.env.CALCOM_EVENT_TYPE_ID,
+		CALCOM_WEBHOOK_SECRET: process.env.CALCOM_WEBHOOK_SECRET,
+		NEXT_PUBLIC_CALCOM_USERNAME: process.env.NEXT_PUBLIC_CALCOM_USERNAME,
+		NEXT_PUBLIC_CALCOM_CLIENT_ID: process.env.NEXT_PUBLIC_CALCOM_CLIENT_ID,
+		// Cron job security
+		CRON_SECRET: process.env.CRON_SECRET
 	},
 	/**
 	 * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

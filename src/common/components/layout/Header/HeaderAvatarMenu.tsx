@@ -1,5 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
-import { ChevronDown, CreditCard, FolderOpen, LogIn, User } from 'lucide-react';
+import {
+	ChevronDown,
+	CreditCard,
+	FolderOpen,
+	LogIn,
+	User,
+	Calendar
+} from 'lucide-react';
 import Link from 'next/link';
 import {
 	Avatar,
@@ -17,9 +24,11 @@ import { Protect } from '@clerk/nextjs';
 import { Button } from '~/common/components/ui/button';
 import { MENU_ITEMS_WITH_PERMISSION } from '~/common/constants/menuItem';
 import { useAuth } from '~/features/auth/hooks/useAuth';
+import { api } from '~/trpc/react';
 
 export default function HeaderAvatarMenu() {
 	const { user, signOut } = useAuth();
+	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery();
 
 	return (
 		<DropdownMenu>
@@ -44,6 +53,14 @@ export default function HeaderAvatarMenu() {
 						My Projects
 					</Link>
 				</DropdownMenuItem>
+				{mentorshipStatus?.mentorshipStatus === 'ACTIVE' && (
+					<DropdownMenuItem asChild className="cursor-pointer">
+						<Link href="/mentorship" className="flex items-center gap-2">
+							<Calendar className="h-4 w-4" />
+							Mentorship
+						</Link>
+					</DropdownMenuItem>
+				)}
 				<DropdownMenuItem asChild className="cursor-pointer">
 					<Link href="/pricing" className="flex items-center gap-2">
 						<CreditCard className="h-4 w-4" />
