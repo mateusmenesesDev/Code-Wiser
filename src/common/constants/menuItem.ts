@@ -1,4 +1,10 @@
-import { FolderOpen, Users, UserCog, GitPullRequest } from 'lucide-react';
+import {
+	FolderOpen,
+	Users,
+	UserCog,
+	GitPullRequest,
+	Calendar
+} from 'lucide-react';
 
 type MenuItem = {
 	href: string;
@@ -8,6 +14,7 @@ type MenuItem = {
 	comingSoon?: boolean;
 	orgPermission?: ClerkAuthorization;
 	disabled?: boolean;
+	requiresMentorship?: boolean;
 };
 
 export const MENU_ITEMS: MenuItem[] = [
@@ -23,6 +30,13 @@ export const MENU_ITEMS: MenuItem[] = [
 		Icon: FolderOpen,
 		label: 'My Projects',
 		loginRequired: true
+	},
+	{
+		href: '/mentorship',
+		Icon: Calendar,
+		label: 'Mentorship',
+		loginRequired: true,
+		requiresMentorship: true
 	}
 	// {
 	// 	href: '/mentors',

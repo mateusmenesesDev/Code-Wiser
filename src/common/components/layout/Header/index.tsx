@@ -29,8 +29,22 @@ const Header = () => {
 	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
 		enabled: isLoggedIn
 	});
+	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
+		undefined,
+		{
+			enabled: isLoggedIn
+		}
+	);
 
-	const allMenuItems = [...MENU_ITEMS, ...MENU_ITEMS_WITH_PERMISSION];
+	// Filter menu items based on mentorship status
+	const filteredMenuItems = MENU_ITEMS.filter((item) => {
+		if (item.requiresMentorship) {
+			return mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+		}
+		return true;
+	});
+
+	const allMenuItems = [...filteredMenuItems, ...MENU_ITEMS_WITH_PERMISSION];
 
 	return (
 		<header className="border-b bg-background/80 backdrop-blur-md">

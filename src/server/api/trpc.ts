@@ -144,8 +144,41 @@ const isAuthed = t.middleware(({ next, ctx }) => {
  * This is used to protect routes that are only accessible to admins.
  */
 const isAdmin = t.middleware(({ next, ctx }) => {
+	if (!ctx.session.userId) {
+		throw new TRPCError({ code: 'UNAUTHORIZED' });
+	}
+
 	if (!ctx.isAdmin) {
 		throw new TRPCError({ code: 'FORBIDDEN' });
+	}
+
+	return next({ ctx: { ...ctx, session: { ...ctx.session } } });
+});
+
+const hasActiveMentorship = t.middleware(async ({ next, ctx }) => {
+	const userId = ctx.session.userId;
+
+	if (!ctx.session.userId) {
+		throw new TRPCError({ code: 'UNAUTHORIZED' });
+	}
+
+	const user = await ctx.db.user.findUnique({
+		where: { id: userId ?? '' },
+		select: { mentorshipStatus: true }
+	});
+
+	if (!user) {
+		throw new TRPCError({
+			code: 'NOT_FOUND',
+			message: 'User not found'
+		});
+	}
+
+	if (user.mentorshipStatus !== 'ACTIVE') {
+		throw new TRPCError({
+			code: 'FORBIDDEN',
+			message: 'You do not have an active mentorship'
+		});
 	}
 
 	return next({ ctx: { ...ctx, session: { ...ctx.session } } });
@@ -162,4 +195,22 @@ export const protectedProcedure = t.procedure
 	.use(isAuthed)
 	.use(timingMiddleware);
 
+/**
+ * Admin procedure
+ *
+ * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
+ * guarantee that a user querying is an admin, but you can still access user session data if they
+ * are an admin.
+ */
 export const adminProcedure = t.procedure.use(isAdmin).use(timingMiddleware);
+
+/**
+ * Mentorship procedure
+ *
+ * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
+ * guarantee that a user querying has an active mentorship, but you can still access user session data if they
+ * have an active mentorship.
+ */
+export const mentorshipProcedure = t.procedure
+	.use(hasActiveMentorship)
+	.use(timingMiddleware);

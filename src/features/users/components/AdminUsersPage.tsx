@@ -38,6 +38,7 @@ import { EditUserDialog } from './EditUserDialog';
 import { toast } from 'sonner';
 
 export default function AdminUsersPage() {
+	const utils = api.useUtils();
 	const [searchTerm, setSearchTerm] = useState('');
 	const [mentorshipStatusFilter, setMentorshipStatusFilter] = useState<
 		'all' | 'ACTIVE' | 'INACTIVE'
@@ -51,8 +52,10 @@ export default function AdminUsersPage() {
 	});
 
 	const deleteUserMutation = api.user.delete.useMutation({
-		onSuccess: () => {
+		onSuccess: async () => {
 			toast.success('User deleted successfully');
+			// Invalidate queries to refresh the UI
+			await utils.user.listAll.invalidate();
 			refetch();
 		},
 		onError: (error) => {
@@ -173,6 +176,8 @@ export default function AdminUsersPage() {
 										<TableHead>Credits</TableHead>
 										<TableHead>Mentorship</TableHead>
 										<TableHead>Mentorship Type</TableHead>
+										<TableHead>Weekly Sessions</TableHead>
+										<TableHead>Remaining</TableHead>
 										<TableHead>Joined</TableHead>
 										<TableHead className="text-right">Actions</TableHead>
 									</TableRow>
@@ -226,6 +231,22 @@ export default function AdminUsersPage() {
 														N/A
 													</span>
 												)}
+											</TableCell>
+											<TableCell>
+												<Badge variant="secondary">
+													{user.weeklyMentorshipSessions} / week
+												</Badge>
+											</TableCell>
+											<TableCell>
+												<Badge
+													variant={
+														user.remainingWeeklySessions > 0
+															? 'default'
+															: 'destructive'
+													}
+												>
+													{user.remainingWeeklySessions} left
+												</Badge>
 											</TableCell>
 											<TableCell className="text-muted-foreground text-sm">
 												{formatDate(user.createdAt)}

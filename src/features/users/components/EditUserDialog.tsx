@@ -39,7 +39,8 @@ const editUserSchema = z.object({
 		.nullable()
 		.optional(),
 	mentorshipStartDate: z.string().nullable().optional(),
-	mentorshipEndDate: z.string().nullable().optional()
+	mentorshipEndDate: z.string().nullable().optional(),
+	weeklyMentorshipSessions: z.number().int().min(1).max(3).optional()
 });
 
 type EditUserFormData = z.infer<typeof editUserSchema>;
@@ -57,18 +58,35 @@ export function EditUserDialog({
 	onOpenChange,
 	onUserUpdated
 }: EditUserDialogProps) {
+	const utils = api.useUtils();
 	const { data: user, isLoading } = api.user.getById.useQuery(userId, {
 		enabled: open && !!userId
 	});
 
 	const updateUserMutation = api.user.update.useMutation({
-		onSuccess: () => {
+		onSuccess: async () => {
 			toast.success('User updated successfully');
+			// Invalidate queries to refresh the UI
+			await utils.user.listAll.invalidate();
+			await utils.user.getById.invalidate(userId);
 			onUserUpdated();
 			onOpenChange(false);
 		},
 		onError: (error) => {
 			toast.error(`Failed to update user: ${error.message}`);
+		}
+	});
+
+	const resetSessionsMutation = api.user.resetUserWeeklySessions.useMutation({
+		onSuccess: async () => {
+			toast.success('Weekly sessions reset successfully');
+			// Invalidate queries to refresh the UI
+			await utils.user.listAll.invalidate();
+			await utils.user.getById.invalidate(userId);
+			onUserUpdated();
+		},
+		onError: (error) => {
+			toast.error(`Failed to reset sessions: ${error.message}`);
 		}
 	});
 
@@ -79,7 +97,8 @@ export function EditUserDialog({
 			mentorshipStatus: undefined,
 			mentorshipType: null,
 			mentorshipStartDate: null,
-			mentorshipEndDate: null
+			mentorshipEndDate: null,
+			weeklyMentorshipSessions: undefined
 		}
 	});
 
@@ -94,7 +113,8 @@ export function EditUserDialog({
 					: null,
 				mentorshipEndDate: user.mentorshipEndDate
 					? new Date(user.mentorshipEndDate).toISOString().split('T')[0]
-					: null
+					: null,
+				weeklyMentorshipSessions: user.weeklyMentorshipSessions
 			});
 		}
 	}, [user, form]);
@@ -110,7 +130,8 @@ export function EditUserDialog({
 				: null,
 			mentorshipEndDate: data.mentorshipEndDate
 				? new Date(data.mentorshipEndDate)
-				: null
+				: null,
+			weeklyMentorshipSessions: data.weeklyMentorshipSessions
 		});
 	};
 
@@ -239,19 +260,58 @@ export function EditUserDialog({
 									</FormItem>
 								)}
 							/>
+
+							<FormField
+								control={form.control}
+								name="weeklyMentorshipSessions"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Weekly Mentorship Sessions (1-3)</FormLabel>
+										<FormControl>
+											<Input
+												type="number"
+												min={1}
+												max={3}
+												{...field}
+												value={field.value ?? ''}
+												onChange={(e) =>
+													field.onChange(
+														e.target.value
+															? Number.parseInt(e.target.value, 10)
+															: undefined
+													)
+												}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 						</div>
 
-						<DialogFooter>
+						<DialogFooter className="flex items-center justify-between">
 							<Button
 								type="button"
-								variant="outline"
-								onClick={() => onOpenChange(false)}
+								variant="secondary"
+								onClick={() => resetSessionsMutation.mutate({ userId })}
+								disabled={resetSessionsMutation.isPending}
 							>
-								Cancel
+								{resetSessionsMutation.isPending
+									? 'Resetting...'
+									: 'Reset Weekly Sessions'}
 							</Button>
-							<Button type="submit" disabled={updateUserMutation.isPending}>
-								{updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
-							</Button>
+							<div className="flex gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => onOpenChange(false)}
+								>
+									Cancel
+								</Button>
+								<Button type="submit" disabled={updateUserMutation.isPending}>
+									{updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
+								</Button>
+							</div>
 						</DialogFooter>
 					</form>
 				</Form>

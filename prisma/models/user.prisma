@@ -20,13 +20,18 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  credits              Int              @default(0)
-  stripeCustomerId     String?          @unique
-  stripeSubscriptionId String?          @unique
-  mentorshipStatus     MentorshipStatus @default(INACTIVE)
-  mentorshipType       MentorshipType?  @default(MONTHLY)
-  mentorshipStartDate  DateTime?
-  mentorshipEndDate    DateTime?
+  credits              Int     @default(0)
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+
+  // Mentorship
+  mentorshipStatus         MentorshipStatus @default(INACTIVE)
+  mentorshipType           MentorshipType?  @default(MONTHLY)
+  mentorshipStartDate      DateTime?
+  mentorshipEndDate        DateTime?
+  weeklyMentorshipSessions Int              @default(1)
+  remainingWeeklySessions  Int              @default(1)
+  weeklySessionsResetAt    DateTime?
 
   tasks                        Task[]
   projects                     Project[]
@@ -35,6 +40,7 @@ model User {
   createdPlanningPokerSessions PlanningPokerSession[] @relation("PlanningPokerSessionCreator")
   planningPokerVotes           PlanningPokerVote[]
   notifications                Notification[]
+  mentorshipBookings           MentorshipBooking[]
 
   @@schema("public")
 }
