@@ -18,21 +18,21 @@ export const mentorshipQueries = {
 		});
 
 		const now = new Date();
-		const nextSunday = new Date(now);
+		const nextMonday = new Date(now);
 
-		// Get days until next Sunday (0 = Sunday, 1 = Monday, etc.)
+		// Get days until next Monday (1 = Monday, 0 = Sunday)
 		const currentDay = now.getUTCDay();
-		const daysUntilSunday = currentDay === 0 ? 7 : 7 - currentDay;
+		const daysUntilMonday = currentDay === 0 ? 7 : 8 - currentDay;
 
-		nextSunday.setUTCDate(now.getUTCDate() + daysUntilSunday);
-		nextSunday.setUTCHours(0, 0, 0, 0);
+		nextMonday.setUTCDate(now.getUTCDate() + daysUntilMonday);
+		nextMonday.setUTCHours(0, 0, 0, 0);
 
 		const hasAvailableSessions = (info?.remainingWeeklySessions ?? 0) > 0;
 
 		return {
 			remainingWeeklySessions: info?.remainingWeeklySessions ?? 0,
 			weeklyMentorshipSessions: info?.weeklyMentorshipSessions ?? 0,
-			weeklySessionsResetAt: nextSunday,
+			weeklySessionsResetAt: nextMonday,
 			hasAvailableSessions
 		};
 	}),
