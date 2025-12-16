@@ -71,27 +71,14 @@ export async function resetAllWeeklySessions(): Promise<{
 	try {
 		const nextReset = getNextResetDate();
 
-		// Update all users with active mentorship
-		await db.user.updateMany({
-			where: {
-				mentorshipStatus: 'ACTIVE'
-			},
-			data: {
-				remainingWeeklySessions: db.$queryRawUnsafe(
-					'weeklyMentorshipSessions'
-				) as never,
-				weeklySessionsResetAt: nextReset
-			}
-		});
-
-		// Since CockroachDB doesn't support referencing columns in updateMany,
-		// we need to do it differently
+		// Get all users with active mentorship
 		const activeUsers = await db.user.findMany({
 			where: { mentorshipStatus: 'ACTIVE' },
 			select: { id: true, weeklyMentorshipSessions: true }
 		});
 
 		// Update each user individually
+		// Note: We can't use updateMany with column references in Prisma
 		await Promise.all(
 			activeUsers.map((user) =>
 				db.user.update({
