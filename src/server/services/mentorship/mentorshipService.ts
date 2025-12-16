@@ -65,19 +65,24 @@ export function getWeekBoundaries(date: Date): {
 
 /**
  * Count how many bookings a user has for a specific week
+ * Only counts future bookings (not past ones)
  */
 export async function countBookingsForWeek(
 	userId: string,
 	targetDate: Date
 ): Promise<number> {
 	const { weekStart, weekEnd } = getWeekBoundaries(targetDate);
+	const now = new Date();
 
+	// Only count bookings that are in the future
+	// Past bookings shouldn't count against the weekly limit
 	const bookings = await db.mentorshipBooking.count({
 		where: {
 			userId,
 			scheduledAt: {
 				gte: weekStart,
-				lt: weekEnd
+				lt: weekEnd,
+				gt: now // Only count future bookings
 			},
 			status: {
 				in: ['SCHEDULED']
@@ -113,6 +118,11 @@ export async function canBookForWeek(
 
 	const currentCount = await countBookingsForWeek(userId, targetDate);
 	const maxSessions = user.weeklyMentorshipSessions;
+
+	// Log for debugging
+	console.log(
+		`[canBookForWeek] User ${userId}: ${currentCount}/${maxSessions} bookings for week starting ${getWeekBoundaries(targetDate).weekStart.toISOString()}`
+	);
 
 	if (currentCount >= maxSessions) {
 		return {

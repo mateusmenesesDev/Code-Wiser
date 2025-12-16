@@ -122,37 +122,81 @@ export async function createBooking(
  * Cancel a booking in Cal.com
  * Note: When using API key authentication, we authenticate as the host,
  * so Cal.com requires a cancellation reason.
+ *
+ * The reason must be a non-empty string. Cal.com validates this strictly.
  */
 export async function cancelBooking(
 	bookingUid: string,
 	reason?: string
 ): Promise<void> {
 	try {
-		// Ensure reason is always a non-empty string
+		// Ensure reason is always a non-empty string with minimum length
 		// Cal.com requires a reason when cancelling as the host (API key auth)
-		const cancellationReason =
-			reason && reason.trim().length > 0
-				? reason.trim()
-				: 'Cancelled by attendee';
+		// The reason must be a valid, non-empty string (minimum 1 character)
+		let cancellationReason: string;
 
-		const response = await fetch(
-			`${CALCOM_API_BASE_URL}/bookings/${bookingUid}/cancel`,
-			{
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					reason: cancellationReason
-				})
+		if (reason && typeof reason === 'string') {
+			const trimmed = reason.trim();
+			if (trimmed.length > 0) {
+				cancellationReason = trimmed;
+			} else {
+				cancellationReason = 'Booking cancelled by attendee';
 			}
+		} else {
+			cancellationReason = 'Booking cancelled by attendee';
+		}
+
+		// Final validation - ensure it's a non-empty string
+		if (
+			!cancellationReason ||
+			typeof cancellationReason !== 'string' ||
+			cancellationReason.length === 0
+		) {
+			throw new Error(
+				`Cancellation reason must be a non-empty string. Received: ${JSON.stringify(reason)}`
+			);
+		}
+
+		// Cal.com API v2 requires:
+		// 1. Field name: "cancellationReason" (not "reason")
+		// 2. Header: "cal-api-version: 2024-08-13"
+		// See: https://cal.com/docs/api-reference/v2/bookings/cancel-a-booking
+		const requestBody = {
+			cancellationReason: cancellationReason
+		};
+
+		const requestUrl = `${CALCOM_API_BASE_URL}/bookings/${bookingUid}/cancel`;
+		const requestPayload = JSON.stringify(requestBody);
+
+		console.log(
+			`[Cal.com] Cancelling booking ${bookingUid} with cancellationReason: "${cancellationReason}"`
 		);
+		console.log(`[Cal.com] Request URL: ${requestUrl}`);
+		console.log(`[Cal.com] Request payload: ${requestPayload}`);
+
+		const response = await fetch(requestUrl, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${env.CALCOM_API_KEY}`,
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+				'cal-api-version': '2024-08-13' // Required for API v2
+			},
+			body: requestPayload
+		});
 
 		if (!response.ok) {
 			const errorText = await response.text();
+			console.error(
+				`[Cal.com] Cancel booking failed: ${response.status} - ${errorText}`
+			);
+			console.error(
+				`[Cal.com] Request body was: ${JSON.stringify(requestBody)}`
+			);
 			throw new Error(`Cal.com API error: ${response.status} - ${errorText}`);
 		}
+
+		console.log(`[Cal.com] Booking ${bookingUid} cancelled successfully`);
 	} catch (error) {
 		console.error('Error cancelling Cal.com booking:', error);
 		throw new Error(
