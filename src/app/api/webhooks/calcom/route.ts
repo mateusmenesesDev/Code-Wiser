@@ -6,6 +6,10 @@ import type {
 	CalcomWebhookPayload,
 	CalcomBookingPayload
 } from '~/server/services/calcom/types';
+import {
+	isDateInCurrentWeek,
+	canBookForWeek
+} from '~/server/services/mentorship/mentorshipService';
 
 /**
  * Cal.com Webhook Handler
@@ -108,9 +112,14 @@ async function handleBookingCreated(eventData: CalcomBookingPayload) {
 			return;
 		}
 
-		// Check if user has remaining sessions
-		if (user.remainingWeeklySessions <= 0) {
-			console.error('User has no remaining sessions:', user.id);
+		const scheduledDate = new Date(startTime);
+
+		// Check if user can book for the target week
+		const bookingCheck = await canBookForWeek(user.id, scheduledDate);
+		if (!bookingCheck.canBook) {
+			console.error(
+				`User ${user.id} cannot book for this week: ${bookingCheck.reason}`
+			);
 			return;
 		}
 
@@ -132,22 +141,31 @@ async function handleBookingCreated(eventData: CalcomBookingPayload) {
 				userId: user.id,
 				calEventId: env.CALCOM_EVENT_TYPE_ID,
 				calBookingId: uid,
-				scheduledAt: new Date(startTime),
+				scheduledAt: scheduledDate,
 				status: 'SCHEDULED',
 				bookingUrl,
 				meetingUrl
 			}
 		});
 
-		// Decrement user's remaining sessions
-		await db.user.update({
-			where: { id: user.id },
-			data: {
-				remainingWeeklySessions: {
-					decrement: 1
+		// Only decrement remainingWeeklySessions if booking is for current week
+		// This keeps the UI counter in sync for the current week
+		const isCurrentWeek = isDateInCurrentWeek(scheduledDate);
+		if (isCurrentWeek) {
+			await db.user.update({
+				where: { id: user.id },
+				data: {
+					remainingWeeklySessions: {
+						decrement: 1
+					}
 				}
-			}
-		});
+			});
+			console.log('Decremented weekly sessions for current week booking');
+		} else {
+			console.log(
+				'Booking is for future week, not decrementing current week counter'
+			);
+		}
 
 		console.log('Booking created successfully for user:', user.id);
 	} catch (error) {
@@ -160,15 +178,105 @@ async function handleBookingRescheduled(eventData: CalcomBookingPayload) {
 	try {
 		const { uid, startTime } = eventData;
 
+		// Find the existing booking
+		const existingBooking = await db.mentorshipBooking.findFirst({
+			where: { calBookingId: uid }
+		});
+
+		if (!existingBooking) {
+			console.error('Booking not found for rescheduling:', uid);
+			return;
+		}
+
+		const oldDate = existingBooking.scheduledAt;
+		const newDate = new Date(startTime);
+
+		// Check if the new week has available slots
+		// We need to temporarily exclude the current booking from the count
+		const bookingCheck = await canBookForWeek(existingBooking.userId, newDate);
+
+		// If moving to a different week, we need to account for the fact that
+		// the old booking will be freed up
+		const oldWeekBoundaries = await import(
+			'~/server/services/mentorship/mentorshipService'
+		).then((m) => m.getWeekBoundaries(oldDate));
+		const newWeekBoundaries = await import(
+			'~/server/services/mentorship/mentorshipService'
+		).then((m) => m.getWeekBoundaries(newDate));
+
+		const isDifferentWeek =
+			oldWeekBoundaries.weekStart.getTime() !==
+			newWeekBoundaries.weekStart.getTime();
+
+		// If moving to a different week and that week is full, block it
+		if (isDifferentWeek && !bookingCheck.canBook) {
+			console.error(
+				`Cannot reschedule to new week: ${bookingCheck.reason}`,
+				uid
+			);
+			return;
+		}
+
+		// If staying in the same week, the booking count won't change
+		// If moving to a different week, we already validated above
+
+		const wasInCurrentWeek = isDateInCurrentWeek(oldDate);
+		const isInCurrentWeek = isDateInCurrentWeek(newDate);
+
 		// Update booking record
-		await db.mentorshipBooking.updateMany({
-			where: { calBookingId: uid },
+		await db.mentorshipBooking.update({
+			where: { id: existingBooking.id },
 			data: {
-				scheduledAt: new Date(startTime)
+				scheduledAt: newDate
 			}
 		});
 
-		console.log('Booking rescheduled:', uid);
+		// Handle session count changes based on week transitions
+		// Note: remainingWeeklySessions only tracks the CURRENT week
+		if (wasInCurrentWeek && !isInCurrentWeek) {
+			// Moved from current week to future week - restore current week counter
+			await db.user.update({
+				where: { id: existingBooking.userId },
+				data: {
+					remainingWeeklySessions: {
+						increment: 1
+					}
+				}
+			});
+			console.log(
+				'Booking rescheduled from current to future week, current week counter restored'
+			);
+		} else if (!wasInCurrentWeek && isInCurrentWeek) {
+			// Moved from future week to current week - deduct from current week counter
+			const user = await db.user.findUnique({
+				where: { id: existingBooking.userId },
+				select: { remainingWeeklySessions: true }
+			});
+
+			if (user && user.remainingWeeklySessions > 0) {
+				await db.user.update({
+					where: { id: existingBooking.userId },
+					data: {
+						remainingWeeklySessions: {
+							decrement: 1
+						}
+					}
+				});
+				console.log(
+					'Booking rescheduled from future to current week, current week counter deducted'
+				);
+			} else {
+				console.error(
+					'User has no remaining sessions in current week for rescheduled booking'
+				);
+			}
+		} else {
+			console.log(
+				'Booking rescheduled within same week period, no current week counter change'
+			);
+		}
+
+		console.log('Booking rescheduled successfully:', uid);
 	} catch (error) {
 		console.error('Error handling booking rescheduled:', error);
 		throw error;
@@ -195,17 +303,27 @@ async function handleBookingCancelled(eventData: CalcomBookingPayload) {
 			data: { status: 'CANCELLED' }
 		});
 
-		// Restore user's session count
-		await db.user.update({
-			where: { id: booking.userId },
-			data: {
-				remainingWeeklySessions: {
-					increment: 1
+		// Only restore session count if the booking was for the current week
+		const isCurrentWeek = isDateInCurrentWeek(booking.scheduledAt);
+		if (isCurrentWeek) {
+			await db.user.update({
+				where: { id: booking.userId },
+				data: {
+					remainingWeeklySessions: {
+						increment: 1
+					}
 				}
-			}
-		});
-
-		console.log('Booking cancelled and session restored:', uid);
+			});
+			console.log(
+				'Booking cancelled and session restored for current week:',
+				uid
+			);
+		} else {
+			console.log(
+				'Booking cancelled but was for future week, no session restored:',
+				uid
+			);
+		}
 	} catch (error) {
 		console.error('Error handling booking cancelled:', error);
 		throw error;

@@ -4,6 +4,10 @@ import { z } from 'zod';
 import { env } from '~/env';
 import { cancelBookingSchema } from '~/features/mentorship/schemas/mentorship.schema';
 import { cancelBooking as cancelCalcomBooking } from '~/server/services/calcom/calcomService';
+import {
+	isDateInCurrentWeek,
+	canBookForWeek
+} from '~/server/services/mentorship/mentorshipService';
 
 export const mentorshipMutations = {
 	bookSession: mentorshipProcedure
@@ -17,43 +21,44 @@ export const mentorshipMutations = {
 		)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.userId;
+			const scheduledDate = new Date(input.start);
 
-			// Check if user has available sessions
-			const remainingWeeklySessions = await ctx.db.user.findUnique({
-				where: { id: userId },
-				select: { remainingWeeklySessions: true }
-			});
-			const hasSlots =
-				(remainingWeeklySessions?.remainingWeeklySessions ?? 0) > 0;
-			if (!hasSlots) {
+			// Check if user can book for the target week
+			const bookingCheck = await canBookForWeek(userId, scheduledDate);
+
+			if (!bookingCheck.canBook) {
 				throw new TRPCError({
 					code: 'FORBIDDEN',
-					message: 'You have reached your weekly session limit'
+					message: bookingCheck.reason || 'Cannot book session for this week'
 				});
 			}
 
 			try {
 				// Save booking to database
-				// Cal.com Atoms already created the booking, we just track it
+				// Cal.com iframe already created the booking, we just track it
 				const booking = await ctx.db.mentorshipBooking.create({
 					data: {
 						userId,
 						calEventId: env.CALCOM_EVENT_TYPE_ID,
 						calBookingId: input.calBookingUid || `booking-${Date.now()}`,
-						scheduledAt: new Date(input.start),
+						scheduledAt: scheduledDate,
 						status: 'SCHEDULED'
 					}
 				});
 
-				// Decrement weekly sessions
-				await ctx.db.user.update({
-					where: { id: userId },
-					data: {
-						remainingWeeklySessions: {
-							decrement: 1
+				// Only decrement remainingWeeklySessions if booking is for current week
+				// This keeps the UI counter in sync for the current week
+				const isCurrentWeek = isDateInCurrentWeek(scheduledDate);
+				if (isCurrentWeek) {
+					await ctx.db.user.update({
+						where: { id: userId },
+						data: {
+							remainingWeeklySessions: {
+								decrement: 1
+							}
 						}
-					}
-				});
+					});
+				}
 
 				return booking;
 			} catch (error) {
@@ -112,7 +117,11 @@ export const mentorshipMutations = {
 
 			try {
 				// Cancel in Cal.com
-				await cancelCalcomBooking(booking.calBookingId, 'Cancelled by user');
+				// Note: Using API key authenticates as host, so reason is required
+				await cancelCalcomBooking(
+					booking.calBookingId,
+					'Booking cancelled by attendee'
+				);
 
 				// Update booking status
 				await ctx.db.mentorshipBooking.update({
@@ -120,15 +129,18 @@ export const mentorshipMutations = {
 					data: { status: 'CANCELLED' }
 				});
 
-				// Restore weekly sessions
-				await ctx.db.user.update({
-					where: { id: userId },
-					data: {
-						remainingWeeklySessions: {
-							increment: 1
+				// Only restore weekly sessions if the booking was for the current week
+				const isCurrentWeek = isDateInCurrentWeek(booking.scheduledAt);
+				if (isCurrentWeek) {
+					await ctx.db.user.update({
+						where: { id: userId },
+						data: {
+							remainingWeeklySessions: {
+								increment: 1
+							}
 						}
-					}
-				});
+					});
+				}
 
 				return { success: true };
 			} catch (error) {

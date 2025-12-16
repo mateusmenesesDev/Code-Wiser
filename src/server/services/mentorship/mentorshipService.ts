@@ -18,6 +18,117 @@ export function getNextResetDate(): Date {
 }
 
 /**
+ * Get the start of the current week (Monday at midnight UTC)
+ */
+export function getCurrentWeekStart(): Date {
+	const now = new Date();
+	const currentDay = now.getUTCDay();
+	const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
+
+	const weekStart = new Date(now);
+	weekStart.setUTCDate(now.getUTCDate() - daysFromMonday);
+	weekStart.setUTCHours(0, 0, 0, 0);
+
+	return weekStart;
+}
+
+/**
+ * Check if a date is in the current week (Monday to Sunday)
+ */
+export function isDateInCurrentWeek(date: Date): boolean {
+	const weekStart = getCurrentWeekStart();
+	const weekEnd = getNextResetDate();
+
+	return date >= weekStart && date < weekEnd;
+}
+
+/**
+ * Get the week boundaries (start and end) for a given date
+ */
+export function getWeekBoundaries(date: Date): {
+	weekStart: Date;
+	weekEnd: Date;
+} {
+	const targetDate = new Date(date);
+	const currentDay = targetDate.getUTCDay();
+	const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
+
+	const weekStart = new Date(targetDate);
+	weekStart.setUTCDate(targetDate.getUTCDate() - daysFromMonday);
+	weekStart.setUTCHours(0, 0, 0, 0);
+
+	const weekEnd = new Date(weekStart);
+	weekEnd.setUTCDate(weekStart.getUTCDate() + 7);
+
+	return { weekStart, weekEnd };
+}
+
+/**
+ * Count how many bookings a user has for a specific week
+ */
+export async function countBookingsForWeek(
+	userId: string,
+	targetDate: Date
+): Promise<number> {
+	const { weekStart, weekEnd } = getWeekBoundaries(targetDate);
+
+	const bookings = await db.mentorshipBooking.count({
+		where: {
+			userId,
+			scheduledAt: {
+				gte: weekStart,
+				lt: weekEnd
+			},
+			status: {
+				in: ['SCHEDULED']
+			}
+		}
+	});
+
+	return bookings;
+}
+
+/**
+ * Check if user can book a session for a specific week
+ */
+export async function canBookForWeek(
+	userId: string,
+	targetDate: Date
+): Promise<{ canBook: boolean; reason?: string; currentCount: number }> {
+	const user = await db.user.findUnique({
+		where: { id: userId },
+		select: {
+			weeklyMentorshipSessions: true,
+			mentorshipStatus: true
+		}
+	});
+
+	if (!user || user.mentorshipStatus !== 'ACTIVE') {
+		return {
+			canBook: false,
+			reason: 'User does not have active mentorship',
+			currentCount: 0
+		};
+	}
+
+	const currentCount = await countBookingsForWeek(userId, targetDate);
+	const maxSessions = user.weeklyMentorshipSessions;
+
+	if (currentCount >= maxSessions) {
+		return {
+			canBook: false,
+			reason: `You have reached your weekly limit of ${maxSessions} sessions for this week`,
+			currentCount
+		};
+	}
+
+	return {
+		canBook: true,
+		currentCount
+	};
+}
+
+/**
  * Decrement weekly sessions count after booking
  */
 export async function decrementWeeklySessions(userId: string): Promise<void> {

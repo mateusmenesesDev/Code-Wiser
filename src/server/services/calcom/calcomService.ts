@@ -120,12 +120,21 @@ export async function createBooking(
 
 /**
  * Cancel a booking in Cal.com
+ * Note: When using API key authentication, we authenticate as the host,
+ * so Cal.com requires a cancellation reason.
  */
 export async function cancelBooking(
 	bookingUid: string,
 	reason?: string
 ): Promise<void> {
 	try {
+		// Ensure reason is always a non-empty string
+		// Cal.com requires a reason when cancelling as the host (API key auth)
+		const cancellationReason =
+			reason && reason.trim().length > 0
+				? reason.trim()
+				: 'Cancelled by attendee';
+
 		const response = await fetch(
 			`${CALCOM_API_BASE_URL}/bookings/${bookingUid}/cancel`,
 			{
@@ -135,7 +144,7 @@ export async function cancelBooking(
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
-					reason: reason || 'User cancelled'
+					reason: cancellationReason
 				})
 			}
 		);
