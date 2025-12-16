@@ -35,8 +35,10 @@ export function MyBookingsList() {
 	const cancelBookingMutation = api.mentorship.cancelBooking.useMutation({
 		onSuccess: async () => {
 			toast.success('Booking cancelled successfully');
+
 			await utils.mentorship.getMyBookings.invalidate();
 			await utils.mentorship.getMyMentorshipWeekInfo.invalidate();
+
 			setCancellingId(null);
 		},
 		onError: (error) => {
