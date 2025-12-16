@@ -297,31 +297,59 @@ async function handleBookingCancelled(eventData: CalcomBookingPayload) {
 			return;
 		}
 
-		// Update booking status
-		await db.mentorshipBooking.update({
-			where: { id: booking.id },
-			data: { status: 'CANCELLED' }
-		});
+		// Check if booking is already cancelled
+		// If it is, the mutation already handled the cancellation and session restoration
+		// We should only update status if it's not already cancelled
+		const wasAlreadyCancelled =
+			booking.status === 'CANCELLED' || booking.status === 'MENTOR_CANCELLED';
 
-		// Only restore session count if the booking was for the current week
-		const isCurrentWeek = isDateInCurrentWeek(booking.scheduledAt);
-		if (isCurrentWeek) {
-			await db.user.update({
-				where: { id: booking.userId },
-				data: {
-					remainingWeeklySessions: {
-						increment: 1
-					}
-				}
+		if (!wasAlreadyCancelled) {
+			// Update booking status
+			await db.mentorshipBooking.update({
+				where: { id: booking.id },
+				data: { status: 'CANCELLED' }
 			});
-			console.log(
-				'Booking cancelled and session restored for current week:',
-				uid
-			);
+
+			// Only restore session count if the booking was for the current week
+			// Note: If booking was already cancelled, the mutation already restored sessions
+			const isCurrentWeek = isDateInCurrentWeek(booking.scheduledAt);
+			if (isCurrentWeek) {
+				// Get current user data to ensure we don't exceed the weekly limit
+				const user = await db.user.findUnique({
+					where: { id: booking.userId },
+					select: {
+						remainingWeeklySessions: true,
+						weeklyMentorshipSessions: true
+					}
+				});
+
+				if (user) {
+					// Don't exceed the weekly limit - only increment by 1
+					const newCount = Math.min(
+						user.remainingWeeklySessions + 1,
+						user.weeklyMentorshipSessions
+					);
+
+					await db.user.update({
+						where: { id: booking.userId },
+						data: {
+							remainingWeeklySessions: newCount
+						}
+					});
+
+					console.log(
+						`Booking cancelled via webhook and session restored for current week: ${uid}. Sessions: ${user.remainingWeeklySessions} -> ${newCount}`
+					);
+				}
+			} else {
+				console.log(
+					'Booking cancelled via webhook but was for future week, no session restored:',
+					uid
+				);
+			}
 		} else {
 			console.log(
-				'Booking cancelled but was for future week, no session restored:',
-				uid
+				`Booking ${uid} was already cancelled (likely by mutation), skipping webhook restoration to prevent double restore`
 			);
 		}
 	} catch (error) {

@@ -124,22 +124,54 @@ export const mentorshipMutations = {
 				);
 
 				// Update booking status
-				await ctx.db.mentorshipBooking.update({
-					where: { id: input.bookingId },
+				// Use updateMany with a where clause to ensure we only update if still SCHEDULED
+				// This prevents double restoration if webhook arrives first
+				const updateResult = await ctx.db.mentorshipBooking.updateMany({
+					where: {
+						id: input.bookingId,
+						status: 'SCHEDULED' // Only update if still scheduled
+					},
 					data: { status: 'CANCELLED' }
 				});
 
-				// Only restore weekly sessions if the booking was for the current week
-				const isCurrentWeek = isDateInCurrentWeek(booking.scheduledAt);
-				if (isCurrentWeek) {
-					await ctx.db.user.update({
-						where: { id: userId },
-						data: {
-							remainingWeeklySessions: {
-								increment: 1
+				// Only restore weekly sessions if we actually updated the booking
+				// (i.e., it was still SCHEDULED and not already cancelled by webhook)
+				if (updateResult.count > 0) {
+					// Only restore weekly sessions if the booking was for the current week
+					const isCurrentWeek = isDateInCurrentWeek(booking.scheduledAt);
+					if (isCurrentWeek) {
+						// Get current user data to ensure we don't exceed the weekly limit
+						const user = await ctx.db.user.findUnique({
+							where: { id: userId },
+							select: {
+								remainingWeeklySessions: true,
+								weeklyMentorshipSessions: true
 							}
+						});
+
+						if (user) {
+							// Don't exceed the weekly limit
+							const newCount = Math.min(
+								user.remainingWeeklySessions + 1,
+								user.weeklyMentorshipSessions
+							);
+
+							await ctx.db.user.update({
+								where: { id: userId },
+								data: {
+									remainingWeeklySessions: newCount
+								}
+							});
+
+							console.log(
+								`Booking cancelled via mutation and session restored: ${input.bookingId}. Sessions: ${user.remainingWeeklySessions} -> ${newCount}`
+							);
 						}
-					});
+					}
+				} else {
+					console.log(
+						`Booking ${input.bookingId} was already cancelled (likely by webhook), skipping mutation restoration to prevent double restore`
+					);
 				}
 
 				return { success: true };
