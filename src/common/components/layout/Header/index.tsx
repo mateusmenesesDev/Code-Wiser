@@ -104,9 +104,9 @@ const Header = () => {
 									Sign In
 								</Button>
 								<Button
-									onClick={() => openDialog('signUp')}
+									onClick={() => openDialog('signIn')}
 									size="sm"
-									className="bg-gradient-to-r from-dev-blue-600 to-dev-purple-600 hover:from-dev-blue-700 hover:to-dev-purple-700"
+									className="bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
 								>
 									Get Started
 								</Button>

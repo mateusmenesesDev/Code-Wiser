@@ -16,7 +16,7 @@ const badgeVariants = cva(
 					'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
 				outline: 'text-foreground',
 				'purple-gradient':
-					'border-dev-purple-200 bg-gradient-to-r from-dev-purple-50 to-dev-blue-50 text-dev-purple-700 dark:border-dev-purple-700 dark:from-dev-purple-900/20 dark:to-dev-blue-900/20 dark:text-dev-purple-300',
+					'border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 text-purple-700 dark:border-purple-700 dark:from-purple-900/20 dark:to-blue-900/20 dark:text-purple-300',
 				success:
 					'border-transparent bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400',
 				warning:

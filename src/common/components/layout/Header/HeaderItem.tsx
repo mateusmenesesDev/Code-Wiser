@@ -9,7 +9,7 @@ export const MenuItem = ({ item }: { item: (typeof MENU_ITEMS)[number] }) => {
 		<Link
 			key={item.href}
 			href={item.href}
-			className="group flex items-center gap-2 font-medium text-muted-foreground transition-colors hover:text-dev-blue-600"
+			className="flex items-center gap-2 font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
 		>
 			<Icon className="h-4 w-4" />
 			{item.label}
