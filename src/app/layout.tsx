@@ -38,13 +38,6 @@ export default function RootLayout({
 			<JotaiProvider>
 				<SyncActiveOrganization membership={sessionClaims?.membership} />
 				<html lang="pt-BR" className={`${GeistSans.variable}`}>
-					<head>
-						<script
-							async
-							crossOrigin="anonymous"
-							src="https://tweakcn.com/live-preview.min.js"
-						/>
-					</head>
 					<body>
 						<TRPCReactProvider>
 							<NuqsAdapter>
