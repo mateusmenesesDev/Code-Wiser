@@ -22,10 +22,7 @@ interface SprintListProps {
 const SprintListSkeleton = () => (
 	<div className="space-y-4">
 		{[1, 2, 3].map((i) => (
-			<div
-				key={i}
-				className="animate-pulse rounded-lg border bg-white p-6 dark:bg-slate-950"
-			>
+			<div key={i} className="animate-pulse rounded-lg border bg-card p-6">
 				<div className="space-y-4">
 					<div className="flex items-center gap-4">
 						<div className="h-5 w-5 rounded-full bg-muted" />
@@ -115,7 +112,7 @@ export default function SprintList({
 				<div className="flex items-center justify-between">
 					<div className="space-y-1">
 						<div className="flex items-center gap-2">
-							<Timer className="h-6 w-6 text-blue-500" />
+							<Timer className="h-6 w-6 text-info" />
 							<h2 className="font-semibold text-2xl">Sprints</h2>
 						</div>
 						<p className="text-muted-foreground text-sm">
@@ -127,7 +124,7 @@ export default function SprintList({
 							setSelectedSprint(null);
 							openDialog('sprint');
 						}}
-						className="bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+						className="bg-info text-info-foreground hover:bg-info/90"
 					>
 						<Plus className="mr-2 h-4 w-4" />
 						Add Sprint
@@ -172,7 +169,7 @@ export default function SprintList({
 										setSelectedSprint(null);
 										openDialog('sprint');
 									}}
-									className="border-blue-200 bg-blue-50/50 text-blue-600 hover:bg-blue-100 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+									className="border-info-border bg-info-muted/50 text-info-muted-foreground hover:bg-info-muted"
 								>
 									<Plus className="mr-2 h-4 w-4" />
 									Create Sprint

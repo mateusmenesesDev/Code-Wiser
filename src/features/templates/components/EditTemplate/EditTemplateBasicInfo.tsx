@@ -471,7 +471,7 @@ export default function EditTemplateBasicInfo({
 					<Button
 						type="submit"
 						disabled={updateTemplateMutation.isPending}
-						className="bg-blue-600 hover:bg-blue-700"
+						className="bg-info text-info-foreground hover:bg-info/90"
 					>
 						{updateTemplateMutation.isPending ? 'Saving...' : 'Save Changes'}
 					</Button>

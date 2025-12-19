@@ -41,15 +41,14 @@ export function VotingCards({
 						className={cn(
 							'group relative flex aspect-[2/3] min-h-[120px] flex-col items-center justify-center rounded-xl border-2 transition-all duration-200',
 							// Base card styling - poker card look
-							'bg-gradient-to-br from-white to-gray-50 shadow-md',
-							'dark:from-gray-900 dark:to-gray-800',
+							'bg-gradient-to-br from-background to-muted shadow-md',
 							// Hover effects
 							!disabled &&
 								'hover:scale-105 hover:shadow-primary/20 hover:shadow-xl',
 							// Selected state
 							isSelected
 								? 'border-primary bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-primary/30 shadow-xl ring-2 ring-primary/20'
-								: 'border-gray-300 dark:border-gray-700',
+								: 'border-border',
 							// Disabled state
 							disabled && 'cursor-not-allowed opacity-50'
 						)}
@@ -60,7 +59,7 @@ export function VotingCards({
 								'absolute top-2 left-2 font-bold text-xs',
 								isSelected
 									? 'text-primary-foreground/60'
-									: 'text-gray-400 dark:text-gray-500'
+									: 'text-muted-foreground'
 							)}
 						>
 							{displayValue}
@@ -70,7 +69,7 @@ export function VotingCards({
 								'absolute right-2 bottom-2 rotate-180 font-bold text-xs',
 								isSelected
 									? 'text-primary-foreground/60'
-									: 'text-gray-400 dark:text-gray-500'
+									: 'text-muted-foreground'
 							)}
 						>
 							{displayValue}

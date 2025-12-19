@@ -74,7 +74,7 @@ export default function Projects({
 				</p>
 				<div className="flex items-center justify-center gap-6 text-muted-foreground text-sm">
 					<div className="flex items-center gap-2">
-						<Code2 className="h-5 w-5 text-blue-600" />
+						<Code2 className="h-5 w-5 text-info" />
 						<span>50+ Projects</span>
 					</div>
 					<div className="flex items-center gap-2">
@@ -82,7 +82,7 @@ export default function Projects({
 						<span>Expert Mentors</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<Award className="h-5 w-5 text-green-600" />
+						<Award className="h-5 w-5 text-success" />
 						<span>Real-world Skills</span>
 					</div>
 				</div>
@@ -175,7 +175,7 @@ export default function Projects({
 				<>
 					{filteredProjects?.length === 0 ? (
 						<div className="py-16 text-center">
-							<div className="mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gray-100">
+							<div className="mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-muted">
 								<Search className="h-16 w-16 text-muted-foreground" />
 							</div>
 							<h2 className="mb-2 font-semibold text-2xl">No projects found</h2>

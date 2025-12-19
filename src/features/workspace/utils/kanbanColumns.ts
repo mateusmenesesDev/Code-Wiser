@@ -16,45 +16,39 @@ export const KANBAN_COLUMN_CONFIG: Record<
 > = {
 	[TaskStatusEnum.BACKLOG]: {
 		title: 'Backlog',
-		color:
-			'bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-700',
-		bgClass: 'bg-slate-50 dark:bg-slate-900/50',
-		borderClass: 'border-slate-200 dark:border-slate-700'
+		color: 'bg-status-backlog-muted border-status-backlog-border',
+		bgClass: 'bg-status-backlog-muted',
+		borderClass: 'border-status-backlog-border'
 	},
 	[TaskStatusEnum.READY_TO_DEVELOP]: {
 		title: 'Ready to Develop',
-		color:
-			'bg-blue-50 border-blue-200 dark:bg-blue-950/50 dark:border-blue-800',
-		bgClass: 'bg-blue-50 dark:bg-blue-950/50',
-		borderClass: 'border-blue-200 dark:border-blue-800'
+		color: 'bg-status-ready-muted border-status-ready-border',
+		bgClass: 'bg-status-ready-muted',
+		borderClass: 'border-status-ready-border'
 	},
 	[TaskStatusEnum.IN_PROGRESS]: {
 		title: 'In Progress',
-		color:
-			'bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:border-amber-800',
-		bgClass: 'bg-amber-50 dark:bg-amber-950/50',
-		borderClass: 'border-amber-200 dark:border-amber-800'
+		color: 'bg-status-in-progress-muted border-status-in-progress-border',
+		bgClass: 'bg-status-in-progress-muted',
+		borderClass: 'border-status-in-progress-border'
 	},
 	[TaskStatusEnum.CODE_REVIEW]: {
 		title: 'Code Review',
-		color:
-			'bg-violet-50 border-violet-200 dark:bg-violet-950/50 dark:border-violet-800',
-		bgClass: 'bg-violet-50 dark:bg-violet-950/50',
-		borderClass: 'border-violet-200 dark:border-violet-800'
+		color: 'bg-status-review-muted border-status-review-border',
+		bgClass: 'bg-status-review-muted',
+		borderClass: 'border-status-review-border'
 	},
 	[TaskStatusEnum.TESTING]: {
 		title: 'Testing',
-		color:
-			'bg-orange-50 border-orange-200 dark:bg-orange-950/50 dark:border-orange-800',
-		bgClass: 'bg-orange-50 dark:bg-orange-950/50',
-		borderClass: 'border-orange-200 dark:border-orange-800'
+		color: 'bg-status-testing-muted border-status-testing-border',
+		bgClass: 'bg-status-testing-muted',
+		borderClass: 'border-status-testing-border'
 	},
 	[TaskStatusEnum.DONE]: {
 		title: 'Done',
-		color:
-			'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-800',
-		bgClass: 'bg-emerald-50 dark:bg-emerald-950/50',
-		borderClass: 'border-emerald-200 dark:border-emerald-800'
+		color: 'bg-status-done-muted border-status-done-border',
+		bgClass: 'bg-status-done-muted',
+		borderClass: 'border-status-done-border'
 	}
 };
 

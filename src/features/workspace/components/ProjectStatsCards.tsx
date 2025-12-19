@@ -37,22 +37,22 @@ export function ProjectStatsCards({ tasks }: ProjectStatsCardsProps) {
 	return (
 		<div className="ml-auto flex w-fit flex-wrap items-center justify-end gap-6 rounded-lg bg-card/30 px-3 py-1 text-sm 2xl:py-3">
 			<StatItem
-				icon={<TrendingUp className="h-4 w-4 text-blue-600" />}
+				icon={<TrendingUp className="h-4 w-4 text-info" />}
 				value={progressPercentage}
 				label="%"
 			/>
 			<StatItem
-				icon={<CheckCircle className="h-4 w-4 text-green-600" />}
+				icon={<CheckCircle className="h-4 w-4 text-success" />}
 				value={completedTasks}
 				label="done"
 			/>
 			<StatItem
-				icon={<Clock className="h-4 w-4 text-orange-600" />}
+				icon={<Clock className="h-4 w-4 text-status-testing" />}
 				value={inProgressTasks}
 				label="active"
 			/>
 			<StatItem
-				icon={<Clock className="h-4 w-4 text-gray-600" />}
+				icon={<Clock className="h-4 w-4 text-muted-foreground" />}
 				value={totalTasks - completedTasks}
 				label="left"
 			/>

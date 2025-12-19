@@ -56,7 +56,7 @@ export function ProjectImageGallery({
 	return (
 		<>
 			{/* Main Gallery */}
-			<div className="group relative w-full animate-fade-in overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-2xl transition-all duration-300 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)]">
+			<div className="group relative w-full animate-fade-in overflow-hidden rounded-2xl bg-gradient-to-br from-muted to-muted/80 shadow-2xl transition-all duration-300 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)]">
 				{/* Main Image - Much larger and more prominent */}
 				<button
 					type="button"
@@ -64,7 +64,7 @@ export function ProjectImageGallery({
 					className="relative block w-full cursor-zoom-in overflow-hidden"
 					aria-label="View full-size image"
 				>
-					<div className="relative aspect-video w-full overflow-hidden bg-gray-200">
+					<div className="relative aspect-video w-full overflow-hidden bg-muted">
 						<Image
 							src={currentImage?.url ?? ''}
 							alt={
@@ -80,7 +80,7 @@ export function ProjectImageGallery({
 						{/* Overlay with zoom icon */}
 						<div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 group-hover:bg-black/10">
 							<div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 opacity-0 shadow-lg transition-opacity duration-300 group-hover:opacity-100">
-								<ZoomIn className="h-6 w-6 text-gray-900" />
+								<ZoomIn className="h-6 w-6 text-foreground" />
 							</div>
 						</div>
 					</div>
@@ -95,10 +95,10 @@ export function ProjectImageGallery({
 								e.stopPropagation();
 								handlePrevious();
 							}}
-							className="-translate-y-1/2 absolute top-1/2 left-4 rounded-full bg-white/90 p-2 opacity-0 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 group-hover:opacity-100"
+							className="-translate-y-1/2 absolute top-1/2 left-4 rounded-full bg-background/90 p-2 opacity-0 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-background focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-info group-hover:opacity-100"
 							aria-label="Previous image"
 						>
-							<ChevronLeft className="h-6 w-6 text-gray-900" />
+							<ChevronLeft className="h-6 w-6 text-foreground" />
 						</button>
 						<button
 							type="button"
@@ -106,10 +106,10 @@ export function ProjectImageGallery({
 								e.stopPropagation();
 								handleNext();
 							}}
-							className="-translate-y-1/2 absolute top-1/2 right-4 rounded-full bg-white/90 p-2 opacity-0 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 group-hover:opacity-100"
+							className="-translate-y-1/2 absolute top-1/2 right-4 rounded-full bg-background/90 p-2 opacity-0 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-background focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-info group-hover:opacity-100"
 							aria-label="Next image"
 						>
-							<ChevronRight className="h-6 w-6 text-gray-900" />
+							<ChevronRight className="h-6 w-6 text-foreground" />
 						</button>
 					</>
 				)}
@@ -132,8 +132,8 @@ export function ProjectImageGallery({
 							onClick={() => setSelectedImage(index)}
 							className={`relative flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ${
 								selectedImage === index
-									? 'border-blue-500 shadow-lg ring-4 ring-blue-200 ring-offset-2'
-									: 'border-gray-200 hover:border-blue-300'
+									? 'border-info shadow-lg ring-4 ring-info/20 ring-offset-2'
+									: 'border-border hover:border-info'
 							}`}
 							aria-label={`View image ${index + 1}`}
 						>

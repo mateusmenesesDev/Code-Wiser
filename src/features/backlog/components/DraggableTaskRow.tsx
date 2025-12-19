@@ -159,7 +159,7 @@ export function DraggableTaskRow({
 							onConfirm={() => deleteTask(task.id)}
 						>
 							<DropdownMenuItem
-								className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+								className="text-destructive focus:text-destructive"
 								onSelect={(e) => {
 									e.preventDefault();
 								}}

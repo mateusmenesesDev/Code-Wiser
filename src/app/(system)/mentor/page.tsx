@@ -1,7 +1,7 @@
 'use client';
 
 import { Protect } from '@clerk/nextjs';
-import { Calendar, Clock, MessageSquare, Play, Users } from 'lucide-react';
+import { Calendar, Clock, Play, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import {
@@ -11,15 +11,17 @@ import {
 } from '~/common/components/ui/avatar';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle
-} from '~/common/components/ui/card';
+import { Card, CardContent } from '~/common/components/ui/card';
 import { Input } from '~/common/components/ui/input';
 import { Progress } from '~/common/components/ui/progress';
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow
+} from '~/common/components/ui/table';
 import { api } from '~/trpc/react';
 
 function StudentAvatar({
@@ -100,7 +102,7 @@ function MentorDashboardContent() {
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
-						<Users className="h-5 w-5 text-blue-600" />
+						<Users className="h-5 w-5 text-info" />
 						<span className="text-muted-foreground text-sm">
 							{projects.length} Active Projects
 						</span>
@@ -118,23 +120,61 @@ function MentorDashboardContent() {
 			</div>
 
 			{isLoading ? (
-				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-					{Array.from({ length: 6 }, () => (
-						<Card key={crypto.randomUUID()} className="animate-pulse">
-							<CardHeader>
-								<div className="h-4 w-3/4 rounded bg-muted" />
-								<div className="h-3 w-1/2 rounded bg-muted" />
-							</CardHeader>
-							<CardContent>
-								<div className="space-y-3">
-									<div className="h-3 rounded bg-muted" />
-									<div className="h-3 w-2/3 rounded bg-muted" />
-									<div className="h-2 w-1/3 rounded bg-muted" />
-								</div>
-							</CardContent>
-						</Card>
-					))}
-				</div>
+				<Card>
+					<CardContent className="p-0">
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Project</TableHead>
+									<TableHead>Student</TableHead>
+									<TableHead>Progress</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Category</TableHead>
+									<TableHead>Difficulty</TableHead>
+									<TableHead>Created</TableHead>
+									<TableHead>Updated</TableHead>
+									<TableHead className="text-right">Actions</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{Array.from({ length: 5 }, () => (
+									<TableRow key={crypto.randomUUID()}>
+										<TableCell>
+											<div className="space-y-1">
+												<div className="h-4 w-40 animate-pulse rounded bg-muted" />
+												<div className="h-3 w-32 animate-pulse rounded bg-muted" />
+											</div>
+										</TableCell>
+										<TableCell>
+											<div className="h-4 w-28 animate-pulse rounded bg-muted" />
+										</TableCell>
+										<TableCell>
+											<div className="h-2 w-24 animate-pulse rounded bg-muted" />
+										</TableCell>
+										<TableCell>
+											<div className="h-5 w-20 animate-pulse rounded bg-muted" />
+										</TableCell>
+										<TableCell>
+											<div className="h-5 w-16 animate-pulse rounded bg-muted" />
+										</TableCell>
+										<TableCell>
+											<div className="h-5 w-16 animate-pulse rounded bg-muted" />
+										</TableCell>
+										<TableCell>
+											<div className="h-4 w-20 animate-pulse rounded bg-muted" />
+										</TableCell>
+										<TableCell>
+											<div className="h-4 w-20 animate-pulse rounded bg-muted" />
+										</TableCell>
+										<TableCell>
+											<div className="ml-auto h-8 w-24 animate-pulse rounded bg-muted" />
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
 			) : filteredProjects.length === 0 ? (
 				<Card className="py-16 text-center">
 					<CardContent>
@@ -149,91 +189,102 @@ function MentorDashboardContent() {
 				</Card>
 			) : (
 				<>
-					<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{filteredProjects.map((project) => {
-							const progress = getProgressForProject(project);
-							const status = getStatusBadge(progress);
-							const student = project.members[0];
+					<Card>
+						<CardContent className="p-0">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Project</TableHead>
+										<TableHead>Student</TableHead>
+										<TableHead>Progress</TableHead>
+										<TableHead>Status</TableHead>
+										<TableHead>Category</TableHead>
+										<TableHead>Difficulty</TableHead>
+										<TableHead>Created</TableHead>
+										<TableHead>Updated</TableHead>
+										<TableHead className="text-right">Actions</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{filteredProjects.map((project) => {
+										const progress = getProgressForProject(project);
+										const status = getStatusBadge(progress);
+										const student = project.members[0];
 
-							return (
-								<Card
-									key={project.id}
-									className="transition-shadow hover:shadow-lg"
-								>
-									<CardHeader>
-										<div className="flex items-start justify-between">
-											<div className="flex-1">
-												<CardTitle level={2} className="mb-2 text-lg">
-													{project.title}
-												</CardTitle>
-												<CardDescription className="line-clamp-2">
-													{project.description}
-												</CardDescription>
-											</div>
-											<Badge variant={status.variant}>{status.text}</Badge>
-										</div>
-									</CardHeader>
-
-									<CardContent className="space-y-4">
-										{student && (
-											<div className="flex items-center gap-2 text-muted-foreground text-sm">
-												<StudentAvatar
-													userId={student.id}
-													name={student.name}
-													email={student.email}
-												/>
-												<span>{student.name || student.email}</span>
-											</div>
-										)}
-
-										<div>
-											<div className="mb-2 flex items-center justify-between text-sm">
-												<span className="text-muted-foreground">Progress</span>
-												<span>{progress}%</span>
-											</div>
-											<Progress value={progress} className="h-2" />
-										</div>
-
-										<div className="flex items-center justify-between text-muted-foreground text-sm">
-											<div className="flex items-center gap-1">
-												<Calendar className="h-3 w-3" />
-												<span>
-													Started{' '}
-													{new Date(project.createdAt).toLocaleDateString()}
-												</span>
-											</div>
-											<div className="flex items-center gap-1">
-												<Clock className="h-3 w-3" />
-												<span>
-													Updated{' '}
-													{new Date(project.updatedAt).toLocaleDateString()}
-												</span>
-											</div>
-										</div>
-
-										<div className="flex items-center gap-2">
-											<Badge variant="outline">
-												{project.category?.name || 'General'}
-											</Badge>
-											<Badge variant="outline">{project.difficulty}</Badge>
-										</div>
-
-										<div className="flex gap-2">
-											<Button asChild className="flex-1">
-												<Link href={`/workspace/${project.id}`}>
-													<Play className="mr-2 h-4 w-4" />
-													View Workspace
-												</Link>
-											</Button>
-											<Button variant="outline" size="icon" disabled>
-												<MessageSquare className="h-4 w-4" />
-											</Button>
-										</div>
-									</CardContent>
-								</Card>
-							);
-						})}
-					</div>
+										return (
+											<TableRow key={project.id}>
+												<TableCell>
+													<div className="space-y-1">
+														<div className="font-medium">{project.title}</div>
+														<div className="line-clamp-1 text-muted-foreground text-sm">
+															{project.description}
+														</div>
+													</div>
+												</TableCell>
+												<TableCell>
+													{student ? (
+														<div className="flex items-center gap-2">
+															<StudentAvatar
+																userId={student.id}
+																name={student.name}
+																email={student.email}
+															/>
+															<span className="text-muted-foreground text-sm">
+																{student.name || student.email}
+															</span>
+														</div>
+													) : (
+														<span className="text-muted-foreground text-sm">
+															N/A
+														</span>
+													)}
+												</TableCell>
+												<TableCell>
+													<div className="space-y-1">
+														<Progress value={progress} className="h-2 w-24" />
+														<span className="text-muted-foreground text-sm">
+															{progress}%
+														</span>
+													</div>
+												</TableCell>
+												<TableCell>
+													<Badge variant={status.variant}>{status.text}</Badge>
+												</TableCell>
+												<TableCell>
+													<Badge variant="outline">
+														{project.category?.name || 'General'}
+													</Badge>
+												</TableCell>
+												<TableCell>
+													<Badge variant="outline">{project.difficulty}</Badge>
+												</TableCell>
+												<TableCell>
+													<div className="flex items-center gap-1 text-muted-foreground text-sm">
+														<Calendar className="h-3 w-3" />
+														{new Date(project.createdAt).toLocaleDateString()}
+													</div>
+												</TableCell>
+												<TableCell>
+													<div className="flex items-center gap-1 text-muted-foreground text-sm">
+														<Clock className="h-3 w-3" />
+														{new Date(project.updatedAt).toLocaleDateString()}
+													</div>
+												</TableCell>
+												<TableCell className="text-right">
+													<Button asChild size="sm">
+														<Link href={`/workspace/${project.id}`}>
+															<Play className="mr-2 h-4 w-4" />
+															View Workspace
+														</Link>
+													</Button>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
 
 					{hasNextPage && (
 						<div className="mt-8 text-center">

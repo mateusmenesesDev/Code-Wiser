@@ -46,17 +46,12 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 				className={cn(
 					'flex w-full gap-4 rounded-lg border px-6 py-4 transition-colors hover:no-underline',
 					isCompleted
-						? 'border-purple-200 bg-purple-50/30 hover:bg-purple-50/50 dark:border-purple-900/50 dark:bg-purple-900/10 dark:hover:bg-purple-900/20'
-						: 'hover:bg-slate-50 dark:hover:bg-slate-900/50'
+						? 'border-epic-border bg-epic-muted/30 hover:bg-epic-muted/50'
+						: 'hover:bg-muted/50'
 				)}
 			>
 				<div className="flex flex-1 items-center gap-4">
-					<Lightbulb
-						className={cn(
-							'h-5 w-5',
-							isCompleted ? 'text-purple-500' : 'text-purple-500'
-						)}
-					/>
+					<Lightbulb className="h-5 w-5 text-epic" />
 					<div className="flex flex-1 items-center justify-between">
 						<div className="flex items-center gap-6">
 							<div className="flex items-center gap-4">
@@ -66,12 +61,7 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 								</div>
 								<Progress
 									value={progress}
-									className={cn(
-										'h-2 w-24',
-										isCompleted
-											? 'bg-purple-100 dark:bg-purple-900/20 [&>div]:bg-purple-500'
-											: 'bg-purple-100 dark:bg-purple-900/20 [&>div]:bg-purple-500'
-									)}
+									className="h-2 w-24 bg-epic-muted [&>div]:bg-epic"
 								/>
 							</div>
 							<div className="flex items-center gap-2">
@@ -121,7 +111,7 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 										onClick={(e) => {
 											e.stopPropagation();
 										}}
-										className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300"
+										className="text-destructive hover:bg-destructive/10 hover:text-destructive"
 									>
 										<Trash2 className="h-4 w-4" />
 									</Button>
@@ -141,15 +131,15 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 								className={cn(
 									'flex items-center justify-between rounded-lg border px-4 py-3 transition-colors',
 									task.status === 'DONE'
-										? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-400'
-										: 'hover:border-purple-200 hover:bg-purple-50/50 dark:hover:border-purple-900/50 dark:hover:bg-purple-900/10'
+										? 'border-success-border bg-success-muted text-success-muted-foreground'
+										: 'hover:border-epic-border hover:bg-epic-muted/50'
 								)}
 							>
 								<div className="flex items-center gap-3">
 									{task.status === 'DONE' ? (
-										<CheckCircle2 className="h-4 w-4 text-green-500" />
+										<CheckCircle2 className="h-4 w-4 text-success" />
 									) : (
-										<Clock className="h-4 w-4 text-purple-500" />
+										<Clock className="h-4 w-4 text-epic" />
 									)}
 									<div className="space-y-1">
 										<span className="font-medium">{task.title}</span>
@@ -181,7 +171,7 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 						<Button
 							variant="outline"
 							onClick={onEdit}
-							className="border-purple-200 bg-purple-50/50 text-purple-600 hover:bg-purple-100 dark:border-purple-900/50 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/30"
+							className="border-epic-border bg-epic-muted/50 text-epic-muted-foreground hover:bg-epic-muted"
 						>
 							<Plus className="mr-2 h-4 w-4" />
 							Add Task

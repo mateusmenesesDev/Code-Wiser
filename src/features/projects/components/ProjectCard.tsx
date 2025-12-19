@@ -113,7 +113,7 @@ export function ProjectCard({
 
 	return (
 		<>
-			<Card className="group hover:-translate-y-2 h-full overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl">
+			<Card className="group hover:-translate-y-2 flex h-full flex-col overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl">
 				{/* Thumbnail placeholder */}
 				{projectTemplate.images.length > 0 && (
 					<div className="relative h-48 w-full overflow-hidden">
@@ -135,12 +135,12 @@ export function ProjectCard({
 				)}
 				{!projectTemplate.images.length && (
 					<div className="relative overflow-hidden">
-						<div className="flex h-48 w-full items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+						<div className="flex h-48 w-full items-center justify-center bg-linear-to-br from-info-muted to-epic-muted">
 							<div className="text-center">
 								<div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
-									<Code2 className="h-8 w-8 text-blue-600" />
+									<Code2 className="h-8 w-8 text-info" />
 								</div>
-								<p className="font-medium text-blue-700">
+								<p className="font-medium text-info-muted-foreground">
 									{projectTemplate.category.name}
 								</p>
 							</div>
@@ -156,11 +156,11 @@ export function ProjectCard({
 					</div>
 				)}
 
-				<CardHeader className="pb-3">
+				<CardHeader className="">
 					<div className="flex items-start justify-between gap-3">
 						<CardTitle
 							level={2}
-							className="line-clamp-2 font-bold text-lg transition-colors group-hover:text-blue-600"
+							className="line-clamp-2 font-bold text-lg transition-colors group-hover:text-info"
 						>
 							{projectTemplate.title}
 						</CardTitle>
@@ -171,7 +171,7 @@ export function ProjectCard({
 					</CardDescription>
 				</CardHeader>
 
-				<CardContent className="space-y-4">
+				<CardContent className="space-y-4 pb-4">
 					{/* Category and Difficulty */}
 					<div className="flex items-center gap-2">
 						<Badge variant="outline">{projectTemplate.category.name}</Badge>
@@ -200,7 +200,7 @@ export function ProjectCard({
 						)}
 
 					{/* Project Info */}
-					<div className="flex items-center justify-between text-gray-500 text-sm">
+					<div className="flex items-center justify-between text-muted-foreground text-sm">
 						<div className="flex items-center gap-2">
 							<Clock className="h-4 w-4" />
 							<span>{estimatedTime}</span>
@@ -217,8 +217,8 @@ export function ProjectCard({
 							className={cn(
 								'flex items-center gap-2 text-sm',
 								projectTemplate.credits && userCredits < projectTemplate.credits
-									? 'text-red-600'
-									: 'text-gray-500'
+									? 'text-destructive'
+									: 'text-muted-foreground'
 							)}
 						>
 							{projectTemplate.credits && (
@@ -231,42 +231,35 @@ export function ProjectCard({
 					)}
 				</CardContent>
 
-				<CardFooter className="pt-0">
-					<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						{projectId ? (
-							<Button
-								size="sm"
-								className="w-full bg-blue-600 hover:bg-blue-700 sm:w-auto"
-								onClick={handleContinue}
-							>
-								<Check className="mr-2 h-4 w-4" />
-								Continue
-							</Button>
-						) : (
-							<Button
-								size="sm"
-								className="w-full bg-gray-100 text-gray-700 transition-colors hover:bg-blue-600 hover:text-white group-hover:bg-blue-600 group-hover:text-white sm:w-auto"
-								onClick={handleCreateProject}
-								disabled={isCreateProjectPending}
-								variant="secondary"
-							>
-								<Play className="mr-2 h-4 w-4" />
-								Start Project
-							</Button>
-						)}
-
-						<Button
-							variant="outline"
-							size="sm"
-							asChild
-							className="w-full sm:w-auto"
-						>
-							<Link href={`/project/${projectTemplate.id}`}>
-								<Eye className="mr-2 h-4 w-4" />
-								See More
-							</Link>
+				<CardFooter className="mt-auto flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ">
+					{projectId ? (
+						<Button size="sm" onClick={handleContinue}>
+							<Check className="mr-2 h-4 w-4" />
+							Continue
 						</Button>
-					</div>
+					) : (
+						<Button
+							size="sm"
+							onClick={handleCreateProject}
+							disabled={isCreateProjectPending}
+							variant="secondary"
+						>
+							<Play className="mr-2 h-4 w-4" />
+							Start Project
+						</Button>
+					)}
+
+					<Button
+						variant="outline"
+						size="sm"
+						asChild
+						className="w-full sm:w-auto"
+					>
+						<Link href={`/project/${projectTemplate.id}`}>
+							<Eye className="mr-2 h-4 w-4" />
+							See More
+						</Link>
+					</Button>
 				</CardFooter>
 			</Card>
 		</>

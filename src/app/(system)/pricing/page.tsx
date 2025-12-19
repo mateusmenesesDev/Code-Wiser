@@ -102,7 +102,7 @@ const PricingPage = () => {
 					{/* Credits Section */}
 					<div>
 						<div className="mb-8 text-center">
-							<CreditCard className="mx-auto mb-4 h-12 w-12 text-blue-600" />
+							<CreditCard className="mx-auto mb-4 h-12 w-12 text-info" />
 							<h2 className="mb-3 font-bold text-3xl text-foreground">
 								Need more credits?
 							</h2>
@@ -116,7 +116,7 @@ const PricingPage = () => {
 							{creditPackages.map((pkg) => (
 								<Card
 									key={pkg.id}
-									className={`relative ${pkg.popular ? 'border-blue-500 shadow-lg' : ''}`}
+									className={`relative ${pkg.popular ? 'border-info shadow-lg' : ''}`}
 								>
 									{pkg.popular && (
 										<div className="-top-3 -translate-x-1/2 absolute left-1/2 transform">
@@ -135,7 +135,7 @@ const PricingPage = () => {
 														<Badge variant="success">{pkg.savings}</Badge>
 													)}
 												</div>
-												<p className="font-bold text-3xl text-blue-600">
+												<p className="font-bold text-3xl text-info">
 													${pkg.price}
 												</p>
 												<p className="text-muted-foreground text-sm">
@@ -161,11 +161,11 @@ const PricingPage = () => {
 							))}
 						</div>
 
-						<div className="mt-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-							<h4 className="mb-2 font-semibold text-blue-700 dark:text-blue-300">
+						<div className="mt-6 rounded-lg bg-info-muted p-4">
+							<h4 className="mb-2 font-semibold text-info-muted-foreground">
 								What can you do with credits?
 							</h4>
-							<ul className="space-y-1 text-blue-600 text-sm dark:text-blue-400">
+							<ul className="space-y-1 text-info-muted-foreground text-sm">
 								<li className="flex items-center gap-2">
 									<Check className="h-4 w-4" />
 									Unlock premium project templates
@@ -185,7 +185,7 @@ const PricingPage = () => {
 					{/* Mentorship Section */}
 					<div>
 						<div className="mb-8 text-center">
-							<Calendar className="mx-auto mb-4 h-12 w-12 text-purple-600" />
+							<Calendar className="mx-auto mb-4 h-12 w-12 text-epic" />
 							<h2 className="mb-3 font-bold text-3xl text-foreground">
 								Want direct mentorship?
 							</h2>
@@ -196,11 +196,11 @@ const PricingPage = () => {
 							</p>
 						</div>
 
-						<Card className="border-purple-200 dark:border-purple-700">
+						<Card className="border-epic-border">
 							<CardHeader>
 								<CardTitle
 									level={3}
-									className="text-center text-purple-700 dark:text-purple-300"
+									className="text-center text-epic-muted-foreground"
 								>
 									1-on-1 Mentorship
 								</CardTitle>
@@ -210,33 +210,33 @@ const PricingPage = () => {
 									<h4 className="font-semibold">What you'll get:</h4>
 									<ul className="space-y-3">
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
 											<span>Personalized code reviews and feedback</span>
 										</li>
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
 											<span>Career guidance and industry insights</span>
 										</li>
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
 											<span>Technical interview preparation</span>
 										</li>
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
 											<span>Architecture and best practices guidance</span>
 										</li>
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
 											<span>Project planning and roadmap development</span>
 										</li>
 									</ul>
 								</div>
 
-								<div className="rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 p-4 dark:from-purple-900/20 dark:to-blue-900/20">
-									<h5 className="mb-2 font-semibold text-purple-700 dark:text-purple-300">
+								<div className="rounded-lg bg-gradient-to-r from-epic-muted to-info-muted p-4">
+									<h5 className="mb-2 font-semibold text-epic-muted-foreground">
 										Discovery Call - Free
 									</h5>
-									<p className="mb-4 text-purple-600 text-sm dark:text-purple-400">
+									<p className="mb-4 text-epic-muted-foreground text-sm">
 										Start with a 30-minute discovery call to discuss your goals
 										and see if mentorship is right for you.
 									</p>

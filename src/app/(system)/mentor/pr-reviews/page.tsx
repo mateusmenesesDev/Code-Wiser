@@ -9,7 +9,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '~/common/components/ui/select';
-import { ReviewList } from '~/features/prReview/components/ReviewList';
+import { ReviewTable } from '~/features/prReview/components/ReviewTable';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import { parseAsString, useQueryStates } from 'nuqs';
 
@@ -111,7 +111,7 @@ function PRReviewsContent() {
 				</div>
 			</div>
 
-			<ReviewList reviews={filteredReviews} isLoading={isLoading} />
+			<ReviewTable reviews={filteredReviews} isLoading={isLoading} />
 		</div>
 	);
 }

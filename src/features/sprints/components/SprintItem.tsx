@@ -121,23 +121,23 @@ export default function SprintItem({
 			data-handler-id={handlerId}
 		>
 			{isOver && (
-				<div className="-top-2 absolute inset-x-0 h-1 rounded-full bg-blue-500" />
+				<div className="-top-2 absolute inset-x-0 h-1 rounded-full bg-info" />
 			)}
 
 			<AccordionItem
 				value={sprint.id}
 				className={cn(
-					'relative border-0 bg-white transition-all dark:bg-slate-950',
+					'relative border-0 bg-card transition-all',
 					!isDragging && 'hover:shadow-md',
 					isDragging && 'scale-[0.98] shadow-2xl',
-					isOver && 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/10'
+					isOver && 'border-info bg-info-muted/30'
 				)}
 			>
 				<div className="-translate-y-1/2 absolute top-1/2 left-2 cursor-move opacity-0 transition-opacity group-hover:opacity-100">
 					<GripVertical
 						className={cn(
 							'h-5 w-5 text-muted-foreground',
-							isDragging && 'text-blue-500'
+							isDragging && 'text-info'
 						)}
 					/>
 				</div>
@@ -146,17 +146,16 @@ export default function SprintItem({
 					className={cn(
 						'flex w-full gap-4 rounded-lg border px-10 py-4 transition-colors hover:no-underline',
 						isCompleted
-							? 'border-green-200 bg-green-50/30 hover:bg-green-50/50 dark:border-green-900/50 dark:bg-green-900/10 dark:hover:bg-green-900/20'
-							: 'hover:bg-slate-50 dark:hover:bg-slate-900/50',
-						isDragging &&
-							'border-blue-200 bg-blue-50/30 dark:border-blue-900/50 dark:bg-blue-900/10'
+							? 'border-success-border bg-success-muted/30 hover:bg-success-muted/50'
+							: 'hover:bg-muted/50',
+						isDragging && 'border-info-border bg-info-muted/30'
 					)}
 				>
 					<div className="flex flex-1 items-center gap-4">
 						<Timer
 							className={cn(
 								'h-5 w-5',
-								isCompleted ? 'text-green-500' : 'text-blue-500'
+								isCompleted ? 'text-success' : 'text-info'
 							)}
 						/>
 						<div className="flex flex-1 items-center justify-between">
@@ -185,8 +184,8 @@ export default function SprintItem({
 										className={cn(
 											'h-2 w-24',
 											isCompleted
-												? 'bg-green-100 dark:bg-green-900/20 [&>div]:bg-green-500'
-												: 'bg-blue-100 dark:bg-blue-900/20 [&>div]:bg-blue-500'
+												? 'bg-success-muted [&>div]:bg-success'
+												: 'bg-info-muted [&>div]:bg-info'
 										)}
 									/>
 								</div>
@@ -229,7 +228,7 @@ export default function SprintItem({
 											onClick={(e) => {
 												e.stopPropagation();
 											}}
-											className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300"
+											className="text-destructive hover:bg-destructive/10 hover:text-destructive"
 										>
 											<Trash2 className="h-4 w-4" />
 										</Button>
@@ -249,15 +248,15 @@ export default function SprintItem({
 									className={cn(
 										'flex items-center justify-between rounded-lg border px-4 py-3 transition-colors',
 										task.status === 'DONE'
-											? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-400'
-											: 'hover:border-blue-200 hover:bg-blue-50/50 dark:hover:border-blue-900/50 dark:hover:bg-blue-900/10'
+											? 'border-success-border bg-success-muted text-success-muted-foreground'
+											: 'hover:border-info-border hover:bg-info-muted/50'
 									)}
 								>
 									<div className="flex items-center gap-3">
 										{task.status === 'DONE' ? (
-											<CheckCircle2 className="h-4 w-4 text-green-500" />
+											<CheckCircle2 className="h-4 w-4 text-success" />
 										) : (
-											<Clock className="h-4 w-4 text-blue-500" />
+											<Clock className="h-4 w-4 text-info" />
 										)}
 										<span className="font-medium">{task.title}</span>
 									</div>
@@ -280,7 +279,7 @@ export default function SprintItem({
 							<Button
 								variant="outline"
 								onClick={onEdit}
-								className="border-blue-200 bg-blue-50/50 text-blue-600 hover:bg-blue-100 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+								className="border-info-border bg-info-muted/50 text-info-muted-foreground hover:bg-info-muted"
 							>
 								<Plus className="mr-2 h-4 w-4" />
 								Add Task

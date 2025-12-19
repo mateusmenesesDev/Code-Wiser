@@ -49,7 +49,7 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 							<div className="grid gap-3">
 								{project.learningOutcomes?.map((outcome) => (
 									<div key={outcome.id} className="flex items-start gap-3">
-										<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+										<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
 										<span>{outcome.value}</span>
 									</div>
 								))}

@@ -143,7 +143,7 @@ export default function EpicDialog({
 							<Button
 								type="submit"
 								disabled={isPending}
-								className="bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+								className="bg-epic text-epic-foreground hover:bg-epic/90"
 							>
 								{isPending
 									? 'Saving...'

@@ -10,18 +10,22 @@ import {
 	DialogHeader,
 	DialogTitle
 } from '~/common/components/ui/dialog';
+import { PullRequestReviewStatusEnum } from '@prisma/client';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 
 interface ReviewActionsProps {
 	taskId: string;
+	status?: PullRequestReviewStatusEnum;
 }
 
-export function ReviewActions({ taskId }: ReviewActionsProps) {
+export function ReviewActions({ taskId, status }: ReviewActionsProps) {
 	const { approvePR, requestChanges, isApproving, isRequestingChanges } =
 		usePRReview();
 	const [showRequestChangesDialog, setShowRequestChangesDialog] =
 		useState(false);
 	const [comment, setComment] = useState('');
+
+	const isApproved = status === PullRequestReviewStatusEnum.APPROVED;
 
 	const handleApprove = () => {
 		approvePR({ taskId });
@@ -43,8 +47,8 @@ export function ReviewActions({ taskId }: ReviewActionsProps) {
 					variant="default"
 					size="sm"
 					onClick={handleApprove}
-					disabled={isApproving || isRequestingChanges}
-					className="bg-green-600 hover:bg-green-700"
+					disabled={isApproving || isRequestingChanges || isApproved}
+					className="bg-success hover:bg-success/90"
 				>
 					<CheckCircle2 className="mr-2 h-4 w-4" />
 					Approve

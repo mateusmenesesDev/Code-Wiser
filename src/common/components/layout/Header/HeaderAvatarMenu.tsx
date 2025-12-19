@@ -88,7 +88,7 @@ export default function HeaderAvatarMenu() {
 				})}
 				<DropdownMenuItem
 					onClick={signOut}
-					className="flex items-center gap-2 text-red-600 dark:text-red-400"
+					className="flex items-center gap-2 text-destructive"
 				>
 					<LogIn className="h-4 w-4 rotate-180" />
 					Sign Out

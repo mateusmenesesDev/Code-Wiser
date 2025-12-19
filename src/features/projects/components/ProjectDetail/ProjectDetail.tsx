@@ -58,7 +58,7 @@ export default function ProjectDetail({
 					<Card className="animate-fade-in overflow-hidden shadow-lg">
 						<CardContent className="p-8">
 							<section>
-								<p className="text-gray-700 leading-relaxed dark:text-gray-300">
+								<p className="text-foreground leading-relaxed">
 									{project.description}
 								</p>
 							</section>

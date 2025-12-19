@@ -203,7 +203,7 @@ export function CreateTasksSprintsEpicsFromJsonDialog({
 							type="button"
 							onClick={handleCreate}
 							disabled={bulkCreateMutation.isPending || !jsonInput.trim()}
-							className="bg-blue-600 hover:bg-blue-700"
+							className="bg-info text-info-foreground hover:bg-info/90"
 						>
 							{bulkCreateMutation.isPending
 								? 'Creating...'

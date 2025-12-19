@@ -30,7 +30,7 @@ export function MemberList({ members, currentUserId }: MemberListProps) {
 						)}
 					>
 						{member.hasVoted ? (
-							<CheckCircle2 className="h-5 w-5 text-green-500" />
+							<CheckCircle2 className="h-5 w-5 text-success" />
 						) : (
 							<Circle className="h-5 w-5 text-muted-foreground" />
 						)}

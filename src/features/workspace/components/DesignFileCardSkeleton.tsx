@@ -3,7 +3,7 @@ import { Skeleton } from '~/common/components/ui/skeleton';
 
 export function DesignFileCardSkeleton() {
 	return (
-		<Card className="mb-8 border-0 bg-gradient-to-r from-purple-50 to-pink-50 shadow-lg backdrop-blur-sm dark:from-purple-900/20 dark:to-pink-900/20">
+		<Card className="mb-8 border-0 bg-gradient-to-r from-epic-muted to-epic-muted/80 shadow-lg backdrop-blur-sm">
 			<CardContent className="p-6">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-4">

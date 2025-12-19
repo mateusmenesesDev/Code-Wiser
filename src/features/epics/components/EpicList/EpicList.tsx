@@ -41,7 +41,7 @@ export default function EpicList({
 			<div className="flex items-center justify-between">
 				<div className="space-y-1">
 					<div className="flex items-center gap-2">
-						<Lightbulb className="h-6 w-6 text-purple-500" />
+						<Lightbulb className="h-6 w-6 text-epic" />
 						<h2 className="font-semibold text-2xl">Epics</h2>
 					</div>
 					<p className="text-muted-foreground text-sm">
@@ -53,7 +53,7 @@ export default function EpicList({
 						setSelectedEpic(null);
 						openDialog('epic');
 					}}
-					className="bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+					className="bg-epic text-epic-foreground hover:bg-epic/90"
 				>
 					<Plus className="mr-2 h-4 w-4" />
 					Add Epic
@@ -95,7 +95,7 @@ export default function EpicList({
 									setSelectedEpic(null);
 									openDialog('epic');
 								}}
-								className="border-purple-200 bg-purple-50/50 text-purple-600 hover:bg-purple-100 dark:border-purple-900/50 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/30"
+								className="border-epic-border bg-epic-muted/50 text-epic-muted-foreground hover:bg-epic-muted"
 							>
 								<Plus className="mr-2 h-4 w-4" />
 								Create Epic

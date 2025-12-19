@@ -94,7 +94,7 @@ export default function AdminTemplatesPage() {
 						</Button>
 						<Button
 							onClick={() => setShowCreateDialog(true)}
-							className="bg-blue-600 hover:bg-blue-700"
+							className="bg-info text-info-foreground hover:bg-info/90"
 						>
 							<Plus className="mr-2 h-4 w-4" />
 							Add New Project
@@ -204,7 +204,7 @@ export default function AdminTemplatesPage() {
 					<CardContent className="p-0">
 						{isLoading ? (
 							<div className="p-8 text-center">
-								<div className="mx-auto h-8 w-8 animate-spin rounded-full border-blue-600 border-b-2" />
+								<div className="mx-auto h-8 w-8 animate-spin rounded-full border-info border-b-2" />
 								<p className="mt-2 text-muted-foreground">
 									Loading templates...
 								</p>

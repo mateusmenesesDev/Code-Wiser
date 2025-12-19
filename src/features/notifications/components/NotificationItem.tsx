@@ -33,14 +33,14 @@ export function NotificationItem({
 	return (
 		<div
 			className={cn(
-				'group flex w-full items-start gap-2 px-3 py-2 transition-colors hover:bg-accent',
+				'group flex w-full items-start gap-2 px-3 py-2 transition-colors hover:bg-secondary',
 				!notification.read && 'bg-accent/50'
 			)}
 		>
 			<button
 				type="button"
 				onClick={() => onClick(notification)}
-				className="flex-1 text-left"
+				className="flex-1 cursor-pointer text-left"
 			>
 				<div className="flex items-start gap-2">
 					<div className="flex-1">

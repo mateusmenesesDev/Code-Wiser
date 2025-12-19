@@ -110,7 +110,9 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								<span
 									className={cn(
 										'font-medium text-sm',
-										hasInsufficientCredits ? 'text-red-600' : 'text-foreground'
+										hasInsufficientCredits
+											? 'text-destructive'
+											: 'text-foreground'
 									)}
 								>
 									{project.credits} credits
@@ -118,7 +120,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 							</div>
 						)}
 						{isCreditProject && hasInsufficientCredits && (
-							<div className="rounded-lg bg-red-50 p-3 text-red-700 text-sm">
+							<div className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm">
 								You need {(project.credits || 0) - userCredits} more credits to
 								start this project.
 							</div>
@@ -128,7 +130,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 					{isEnrolledId ? (
 						<Button
 							onClick={() => router.push(`/workspace/${isEnrolledId}`)}
-							className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 font-semibold text-lg text-white hover:from-blue-700 hover:to-purple-700"
+							className='w-full bg-gradient-to-r from-info to-epic py-3 font-semibold text-info-foreground text-lg hover:from-info/90 hover:to-epic/90'
 							size="lg"
 						>
 							<Check className="mr-2 h-5 w-5" />
@@ -138,7 +140,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 						<Button
 							onClick={handleStartProject}
 							disabled={isStartProjectDisabled}
-							className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 font-semibold text-lg text-white hover:from-blue-700 hover:to-purple-700"
+							className='w-full bg-gradient-to-r from-info to-epic py-3 font-semibold text-info-foreground text-lg hover:from-info/90 hover:to-epic/90'
 							size="lg"
 						>
 							<Play className="mr-2 h-5 w-5" />

@@ -12,7 +12,7 @@ export function ErrorMessage({ message, className }: ErrorMessageProps) {
 	return (
 		<div ref={animateRef}>
 			{message && (
-				<p className={cn('text-red-500 text-sm', className)}>{message}</p>
+				<p className={cn('text-destructive text-sm', className)}>{message}</p>
 			)}
 		</div>
 	);

@@ -28,7 +28,7 @@ export const env = createEnv({
 		CALCOM_EVENT_TYPE_ID: z.string(),
 		CALCOM_WEBHOOK_SECRET: z.string(),
 		// Cron job security
-		CRON_SECRET: z.string(),
+		CRON_SECRET: z.string()
 	},
 
 	/**

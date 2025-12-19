@@ -203,7 +203,7 @@ export function TaskDialogContent({
 								className="w-full"
 							/>
 							{form.formState.errors.title && (
-								<p className="mt-1 text-red-500 text-sm">
+								<p className="mt-1 text-destructive text-sm">
 									{form.formState.errors.title.message}
 								</p>
 							)}
@@ -268,22 +268,22 @@ export function TaskDialogContent({
 						{!isTemplate && (
 							<div
 								className={cn(
-									'rounded-lg border border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 p-4 dark:border-purple-700 dark:from-purple-900/20 dark:to-blue-900/20',
+									'rounded-lg border border-epic-border bg-gradient-to-r from-epic-muted to-info-muted p-4',
 									!isEditing && 'opacity-50'
 								)}
 							>
 								<div className="space-y-4">
 									<div className="flex items-start justify-between">
 										<div className="flex-1">
-											<h3 className="mb-2 font-semibold text-purple-700 text-sm dark:text-purple-300">
+											<h3 className="mb-2 font-semibold text-epic-muted-foreground text-sm">
 												Need help with this task?
 											</h3>
-											<p className="mb-3 text-purple-600 text-sm dark:text-purple-400">
+											<p className="mb-3 text-epic-muted-foreground text-sm">
 												Get your code reviewed by an experienced mentor. They'll
 												provide feedback on your implementation, suggest
 												improvements, and help you learn best practices.
 											</p>
-											<div className="flex items-center gap-2 text-purple-500 text-xs dark:text-purple-400">
+											<div className="flex items-center gap-2 text-epic text-xs">
 												<span>💳 Costs 5 credits</span>
 												<span>•</span>
 												<span>✨ Free with mentorship plan</span>
@@ -296,7 +296,7 @@ export function TaskDialogContent({
 										<div>
 											<Label
 												htmlFor="prUrl"
-												className="mb-2 block text-purple-700 text-sm dark:text-purple-300"
+												className="mb-2 block text-epic-muted-foreground text-sm"
 											>
 												Pull Request URL
 											</Label>
@@ -324,7 +324,7 @@ export function TaskDialogContent({
 																}
 															}}
 															disabled={isUpdatingPRUrl}
-															className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+															className="bg-gradient-to-r from-epic to-info text-epic-foreground hover:from-epic/90 hover:to-info/90"
 														>
 															{isUpdatingPRUrl ? (
 																<>
@@ -338,7 +338,7 @@ export function TaskDialogContent({
 													)}
 											</div>
 											{activeReview?.prUrl && (
-												<p className="mt-1 text-purple-600 text-xs dark:text-purple-400">
+												<p className="mt-1 text-epic-muted-foreground text-xs">
 													You can update the PR URL at any time
 												</p>
 											)}
@@ -381,7 +381,7 @@ export function TaskDialogContent({
 												)}
 											</Button>
 											{!userHasMentorship && userCredits < 5 && (
-												<p className="mt-2 text-red-600 text-xs dark:text-red-400">
+												<p className="mt-2 text-destructive text-xs">
 													You need at least 5 credits to request a code review
 												</p>
 											)}

@@ -22,27 +22,24 @@ export function PullRequest({ taskId, prUrl, isEditing }: PullRequestProps) {
 		switch (status) {
 			case PullRequestReviewStatusEnum.APPROVED:
 				return {
-					variant: 'default' as const,
+					variant: 'success' as const,
 					icon: CheckCircle2,
 					text: 'Approved',
-					className:
-						'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+					className: ''
 				};
 			case PullRequestReviewStatusEnum.CHANGES_REQUESTED:
 				return {
 					variant: 'destructive' as const,
 					icon: XCircle,
 					text: 'Changes Requested',
-					className:
-						'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+					className: ''
 				};
 			case PullRequestReviewStatusEnum.PENDING:
 				return {
-					variant: 'secondary' as const,
+					variant: 'warning' as const,
 					icon: AlertCircle,
 					text: 'Pending Review',
-					className:
-						'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+					className: ''
 				};
 			default:
 				return null;

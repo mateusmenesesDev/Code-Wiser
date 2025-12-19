@@ -9,15 +9,6 @@ import type {
 	TaskPriorityEnum
 } from '@prisma/client';
 
-const green =
-	'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800';
-const yellow =
-	'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
-const blue =
-	'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
-const gray =
-	'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
-
 export const getDifficultyBadgeColor = (
 	difficulty: ProjectDifficultyEnum
 ): 'success' | 'warning' | 'destructive' | 'outline' => {
@@ -79,17 +70,18 @@ export const getTaskStatusColor = (status: string) => {
 	switch (status) {
 		case 'TODO':
 		case 'BACKLOG':
-			return gray;
+			return 'bg-status-backlog-muted text-status-backlog-muted-foreground border-status-backlog-border';
 		case 'IN_PROGRESS':
+			return 'bg-status-in-progress-muted text-status-in-progress-muted-foreground border-status-in-progress-border';
 		case 'READY_TO_DEVELOP':
-			return blue;
+			return 'bg-status-ready-muted text-status-ready-muted-foreground border-status-ready-border';
 		case 'IN_REVIEW':
 		case 'CODE_REVIEW':
-			return yellow;
+			return 'bg-status-review-muted text-status-review-muted-foreground border-status-review-border';
 		case 'DONE':
-			return green;
+			return 'bg-status-done-muted text-status-done-muted-foreground border-status-done-border';
 		default:
-			return gray;
+			return 'bg-status-backlog-muted text-status-backlog-muted-foreground border-status-backlog-border';
 	}
 };
 

@@ -134,7 +134,7 @@ export default function SprintDialog({
 						<Button
 							type="submit"
 							disabled={isPending}
-							className="bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+							className="bg-info text-info-foreground hover:bg-info/90"
 						>
 							{isPending
 								? 'Saving...'

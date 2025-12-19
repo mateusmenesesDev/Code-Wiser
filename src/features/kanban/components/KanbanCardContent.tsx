@@ -21,7 +21,7 @@ export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 				{task.sprint && (
 					<Badge
 						variant="default"
-						className="hidden w-fit border-blue-200 bg-blue-100 text-blue-800 text-xs xl:block dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+						className="hidden w-fit border-info-border bg-info-muted text-info-muted-foreground text-xs xl:block"
 					>
 						{task.sprint.title}
 					</Badge>
