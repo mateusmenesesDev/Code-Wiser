@@ -23,6 +23,7 @@ import {
 import { arrayMove, SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
+	Fragment,
 	createContext,
 	type HTMLAttributes,
 	type ReactNode,
@@ -184,13 +185,15 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
 			<SortableContext items={items}>
 				<div
 					className={cn(
-						'flex min-h-[120px] flex-grow flex-col gap-2 p-3',
+						'flex min-h-[120px] grow flex-col gap-2 p-3',
 						className
 					)}
 					{...props}
 				>
 					{filteredData.length > 0 ? (
-						filteredData.map(children)
+						filteredData.map((item) => (
+							<Fragment key={item.id}>{children(item)}</Fragment>
+						))
 					) : (
 						<div className="flex h-20 items-center justify-center rounded-lg border-2 border-border/40 border-dashed text-muted-foreground text-xs">
 							Drop tasks here
