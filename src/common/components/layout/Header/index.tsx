@@ -2,6 +2,7 @@
 
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -24,6 +25,12 @@ import { NotificationBell } from '~/features/notifications/components/Notificati
 const Header = () => {
 	const { openDialog } = useDialog('signIn');
 	const { theme, setTheme } = useTheme();
+	const [mounted, setMounted] = useState(false);
+
+	// Avoid hydration mismatch by only rendering theme-dependent UI after mount
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 	const { user } = useAuth();
 	const isLoggedIn = !!user;
 	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
@@ -70,12 +77,16 @@ const Header = () => {
 					<div className="flex items-center gap-4">
 						<div className="flex items-center gap-2">
 							<Sun className="h-4 w-4" />
-							<Switch
-								checked={theme === 'dark'}
-								onCheckedChange={() =>
-									setTheme(theme === 'dark' ? 'light' : 'dark')
-								}
-							/>
+							{mounted ? (
+								<Switch
+									checked={theme === 'dark'}
+									onCheckedChange={() =>
+										setTheme(theme === 'dark' ? 'light' : 'dark')
+									}
+								/>
+							) : (
+								<Switch checked={false} disabled />
+							)}
 							<Moon className="h-4 w-4" />
 						</div>
 

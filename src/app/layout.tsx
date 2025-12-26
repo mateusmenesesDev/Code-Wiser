@@ -37,7 +37,11 @@ export default function RootLayout({
 		<ClerkProvider>
 			<JotaiProvider>
 				<SyncActiveOrganization membership={sessionClaims?.membership} />
-				<html lang="pt-BR" className={`${GeistSans.variable}`}>
+				<html
+					lang="pt-BR"
+					className={`${GeistSans.variable}`}
+					suppressHydrationWarning
+				>
 					<body>
 						<TRPCReactProvider>
 							<NuqsAdapter>
