@@ -1,5 +1,6 @@
 import type { NotificationType, PrismaClient } from '@prisma/client';
 import { clerkClient } from '@clerk/nextjs/server';
+import { getBaseUrl } from '~/server/utils/getBaseUrl';
 
 interface CreateNotificationParams {
 	db: PrismaClient;
@@ -8,6 +9,28 @@ interface CreateNotificationParams {
 	title: string;
 	message: string;
 	link?: string;
+}
+
+/**
+ * Ensures that a link is always a complete URL (with protocol and domain).
+ * If the link is already a complete URL, it's returned as-is.
+ * If it's a relative path, it's converted to a complete URL using the base URL.
+ */
+function ensureCompleteUrl(link: string | undefined): string | undefined {
+	if (!link) {
+		return undefined;
+	}
+
+	// If it's already a complete URL (starts with http:// or https://), return as-is
+	if (link.startsWith('http://') || link.startsWith('https://')) {
+		return link;
+	}
+
+	// If it's a relative path, prepend the base URL
+	const baseUrl = getBaseUrl();
+	// Remove leading slash if present to avoid double slashes
+	const cleanPath = link.startsWith('/') ? link : `/${link}`;
+	return `${baseUrl}${cleanPath}`;
 }
 
 export async function createNotification(
@@ -21,7 +44,7 @@ export async function createNotification(
 			type,
 			title,
 			message,
-			link
+			link: ensureCompleteUrl(link)
 		}
 	});
 }

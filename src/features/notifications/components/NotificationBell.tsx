@@ -32,30 +32,9 @@ export function NotificationBell() {
 	const handleNotificationClick = (notification: Notification) => {
 		markAsRead(notification.id);
 
-		const isPRNotification = notification.type.includes('PR_');
-		const isTaskNotification = notification.type.includes('TASK_');
-
-		if (isPRNotification) {
-			return router.push('/mentor/pr-reviews');
-		}
-		if (isTaskNotification && notification.link) {
-			const url = new URL(notification.link, window.location.origin);
-			const pathname = url.pathname;
-			const searchParams = url.searchParams;
-			const taskId = searchParams.get('taskId');
-
-			if (pathname.includes('/workspace/')) {
-				const projectId = pathname.split('/workspace/')[1]?.split('?')[0];
-				if (projectId) {
-					if (taskId) {
-						router.push(`/workspace/${projectId}?taskId=${taskId}`);
-					} else {
-						router.push(`/workspace/${projectId}`);
-					}
-				} else {
-					router.push(notification.link);
-				}
-			}
+		if (notification.link) {
+			const url = new URL(notification.link);
+			router.push(url.pathname + url.search);
 		}
 	};
 
