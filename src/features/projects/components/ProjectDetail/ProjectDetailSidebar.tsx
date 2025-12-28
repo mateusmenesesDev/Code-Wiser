@@ -1,7 +1,7 @@
 'use client';
 
 import { ProjectAccessTypeEnum } from '@prisma/client';
-import { Check, ExternalLink, Play, Users } from 'lucide-react';
+import { Check, ExternalLink, Loader2, Play, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
@@ -30,7 +30,7 @@ interface ProjectDetailSidebarProps {
 export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 	const router = useRouter();
 
-	const { isEnrolledProject } = useMyProjects();
+	const { isEnrolledProject, isLoading } = useMyProjects();
 	const isEnrolledId = isEnrolledProject(project.title);
 
 	const { createProject, isCreateProjectPending } = useProjectMutations();
@@ -56,6 +56,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 	};
 
 	const isStartProjectDisabled =
+		isLoading ||
 		isCreateProjectPending ||
 		(isCreditProject && hasInsufficientCredits) ||
 		(isMentorshipProject && !userHasMentorship);
@@ -127,20 +128,21 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 						)}
 					</div>
 
-					{isEnrolledId ? (
+					{isEnrolledId && !isLoading && (
 						<Button
 							onClick={() => router.push(`/workspace/${isEnrolledId}`)}
-							className='w-full bg-gradient-to-r from-info to-epic py-3 font-semibold text-info-foreground text-lg hover:from-info/90 hover:to-epic/90'
+							className="w-full bg-linear-to-r from-info to-epic py-3 font-semibold text-info-foreground text-lg hover:from-info/90 hover:to-epic/90"
 							size="lg"
 						>
 							<Check className="mr-2 h-5 w-5" />
 							Continue Project
 						</Button>
-					) : (
+					)}
+					{!isLoading && !isEnrolledId && (
 						<Button
 							onClick={handleStartProject}
 							disabled={isStartProjectDisabled}
-							className='w-full bg-gradient-to-r from-info to-epic py-3 font-semibold text-info-foreground text-lg hover:from-info/90 hover:to-epic/90'
+							className="w-full bg-linear-to-r from-info to-epic py-3 font-semibold text-info-foreground text-lg hover:from-info/90 hover:to-epic/90"
 							size="lg"
 						>
 							<Play className="mr-2 h-5 w-5" />
@@ -154,6 +156,16 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								'Mentorship Required'}
 							{isMentorshipProject && userHasMentorship && 'Start Project'}
 							{isFreeProject && 'Start Project'}
+						</Button>
+					)}
+					{isLoading && (
+						<Button
+							className="w-full bg-linear-to-r from-info to-epic py-3 font-semibold text-info-foreground text-lg hover:from-info/90 hover:to-epic/90"
+							size="lg"
+							disabled
+						>
+							<Loader2 className="mr-2 h-5 w-5 animate-spin" />
+							Loading...
 						</Button>
 					)}
 

@@ -83,6 +83,7 @@ export function useMyProjects() {
 	return {
 		projects: projectsWithProgress,
 		isLoading,
+		isProjectsLoading,
 		error,
 		isEnrolledProject
 	};
