@@ -18,6 +18,9 @@ export function useProjectMutations() {
 			utils.project.getEnrolled.invalidate();
 			utils.projectTemplate.getApproved.invalidate();
 			utils.user.getCredits.invalidate();
+		},
+		onError: (error) => {
+			toast.error(error.message);
 		}
 	});
 

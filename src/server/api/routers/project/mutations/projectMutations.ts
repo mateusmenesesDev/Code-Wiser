@@ -47,6 +47,23 @@ export const projectMutations = {
 						});
 					}
 
+					const userHasProject = await prisma.project.findFirst({
+						where: {
+							title: projectTemplate.title,
+							members: {
+								some: {
+									id: user.id
+								}
+							}
+						}
+					});
+					if (userHasProject) {
+						throw new TRPCError({
+							code: 'CONFLICT',
+							message: 'User already has a project with this template'
+						});
+					}
+
 					const templateSprints = projectTemplate.sprints;
 					const templateEpics = projectTemplate.epics;
 					const templateTasks = projectTemplate.tasks;
