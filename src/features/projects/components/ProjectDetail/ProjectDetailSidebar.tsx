@@ -61,6 +61,14 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 		(isCreditProject && hasInsufficientCredits) ||
 		(isMentorshipProject && !userHasMentorship);
 
+	const handleConnectWithMentor = () => {
+		if (!userHasMentorship) {
+			return router.push('/pricing');
+		}
+
+		router.push('/mentorship');
+	};
+
 	return (
 		<div className="sticky top-24">
 			<Card className="border-0 shadow-lg">
@@ -188,9 +196,13 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 						Get personalized guidance from experienced fullstack developers
 						throughout your journey.
 					</div>
-					<Button variant="outline" className="w-full" disabled>
+					<Button
+						variant="outline"
+						className="w-full"
+						onClick={handleConnectWithMentor}
+					>
 						<Users className="mr-2 h-4 w-4" />
-						Connect with Mentor (Coming Soon)
+						Connect with Mentor
 					</Button>
 				</CardContent>
 			</Card>
