@@ -14,6 +14,8 @@ import { Toaster } from 'sonner';
 import { SyncActiveOrganization } from '~/features/auth/components/SyncActiveOrganizations';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { TRPCReactProvider } from '~/trpc/react';
+import Header from '~/common/components/layout/Header';
+import { HydrateClient } from '~/trpc/server';
 
 dayjs.extend(localizedFormat);
 dayjs.extend(relativeTime);
@@ -51,7 +53,10 @@ export default function RootLayout({
 									enableSystem
 									disableTransitionOnChange
 								>
-									{children}
+									<HydrateClient>
+										<Header />
+										<main className="p-6">{children}</main>
+									</HydrateClient>
 									<Toaster richColors />
 								</ThemeProvider>
 							</NuqsAdapter>
