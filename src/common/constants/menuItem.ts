@@ -84,7 +84,7 @@ export const MENU_ITEMS: MenuItem[] = [
 
 export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 	{
-		href: '/mentor',
+		href: '/admin',
 		Icon: Users,
 		label: 'Mentor Dashboard',
 		orgPermission: {
@@ -111,7 +111,7 @@ export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 		}
 	},
 	{
-		href: '/mentor/pr-reviews',
+		href: '/admin/pr-reviews',
 		Icon: GitPullRequest,
 		label: 'PR Reviews',
 		orgPermission: {
