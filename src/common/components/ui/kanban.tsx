@@ -32,13 +32,10 @@ import {
 	useState
 } from 'react';
 import { createPortal } from 'react-dom';
-import tunnel from 'tunnel-rat';
 import { Card } from '~/common/components/ui/card';
 import { ScrollArea, ScrollBar } from '~/common/components/ui/scroll-area';
 import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
-
-const t = tunnel();
 
 export type { DragEndEvent } from '@dnd-kit/core';
 
@@ -78,10 +75,10 @@ export const KanbanBoard = ({ id, children, className }: KanbanBoardProps) => {
 	return (
 		<div
 			className={cn(
-				'flex size-full min-h-[200px] flex-col overflow-hidden rounded-xl border border-border/40 text-xs shadow-sm ring-2 transition-all duration-200',
+				'flex size-full min-h-[200px] flex-col overflow-hidden rounded-xl border text-xs shadow-sm ring-2 transition-all duration-200',
 				isOver
-					? 'border-primary/50 shadow-lg ring-primary/50'
-					: 'ring-transparent',
+					? 'border-primary/60 bg-primary/5 shadow-lg ring-primary/40'
+					: 'border-border/40 ring-transparent',
 				className
 			)}
 			ref={setNodeRef}
@@ -117,7 +114,7 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
 	const { activeCardId } = useContext(KanbanContext) as KanbanContextProps;
 
 	const style = {
-		transition,
+		transition: isDragging ? 'none' : transition,
 		transform: CSS.Transform.toString(transform)
 	};
 
@@ -130,38 +127,24 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
 	};
 
 	return (
-		<>
-			<div
-				style={style}
-				{...listeners}
-				{...attributes}
-				ref={setNodeRef}
-				onClick={handleClick}
+		<div
+			style={style}
+			{...listeners}
+			{...attributes}
+			ref={setNodeRef}
+			onClick={handleClick}
+			className={cn('relative', isDragging && 'z-0 opacity-40')}
+		>
+			<Card
+				className={cn(
+					'group cursor-grab gap-4 rounded-lg border-border/50 bg-card p-3 shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-border hover:shadow-md',
+					isDragging && 'cursor-grabbing',
+					className
+				)}
 			>
-				<Card
-					className={cn(
-						'group cursor-grab gap-4 rounded-lg border-border/50 bg-card p-3 shadow-sm transition-all duration-200 hover:border-border hover:shadow-md',
-						isDragging && 'pointer-events-none cursor-grabbing opacity-30',
-						!isDragging && 'hover:scale-[1.02]',
-						className
-					)}
-				>
-					{children ?? <p className="m-0 font-medium text-sm">{title}</p>}
-				</Card>
-			</div>
-			{activeCardId === id && (
-				<t.In>
-					<Card
-						className={cn(
-							'cursor-grabbing gap-4 rounded-lg border-2 border-primary/50 bg-card p-3 shadow-xl ring-4 ring-primary/20',
-							className
-						)}
-					>
-						{children ?? <p className="m-0 font-medium text-sm">{title}</p>}
-					</Card>
-				</t.In>
-			)}
-		</>
+				{children ?? <p className="m-0 font-medium text-sm">{title}</p>}
+			</Card>
+		</div>
 	);
 };
 
@@ -176,16 +159,23 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
 	className,
 	...props
 }: KanbanCardsProps<T>) => {
-	const { data } = useContext(KanbanContext) as KanbanContextProps<T>;
+	const { data, activeCardId } = useContext(
+		KanbanContext
+	) as KanbanContextProps<T>;
 	const filteredData = data.filter((item) => item.status === props.id);
 	const items = filteredData.map((item) => item.id);
+	const { isOver, setNodeRef } = useDroppable({
+		id: props.id
+	});
 
 	return (
 		<ScrollArea className="flex-1 overflow-hidden">
 			<SortableContext items={items}>
 				<div
+					ref={setNodeRef}
 					className={cn(
-						'flex min-h-[120px] grow flex-col gap-2 p-3',
+						'flex min-h-[120px] grow flex-col gap-2 p-3 transition-colors duration-200',
+						isOver && activeCardId && 'bg-primary/5',
 						className
 					)}
 					{...props}
@@ -195,7 +185,14 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
 							<Fragment key={item.id}>{children(item)}</Fragment>
 						))
 					) : (
-						<div className="flex h-20 items-center justify-center rounded-lg border-2 border-border/40 border-dashed text-muted-foreground text-xs">
+						<div
+							className={cn(
+								'flex h-20 items-center justify-center rounded-lg border-2 border-dashed text-xs transition-all duration-200',
+								isOver && activeCardId
+									? 'border-primary/60 bg-primary/10 text-primary'
+									: 'border-border/40 text-muted-foreground'
+							)}
+						>
 							Drop tasks here
 						</div>
 					)}
@@ -247,11 +244,12 @@ export const KanbanProvider = <
 	...props
 }: KanbanProviderProps<T, C>) => {
 	const [activeCardId, setActiveCardId] = useState<string | null>(null);
+	const [activeCard, setActiveCard] = useState<T | null>(null);
 
 	const sensors = useSensors(
 		useSensor(MouseSensor, {
 			activationConstraint: {
-				distance: 8 // Require 8px of movement before drag starts
+				distance: 8 // Standard distance for reliable drag detection
 			}
 		}),
 		useSensor(TouchSensor, {
@@ -263,20 +261,22 @@ export const KanbanProvider = <
 		useSensor(KeyboardSensor)
 	);
 
-	// Custom collision detection that prioritizes droppables (columns) over sortables (cards)
+	// Optimized collision detection for better performance
 	const collisionDetection: CollisionDetection = (args) => {
-		// First, check if pointer is within any droppable (column)
+		// Use pointerWithin for columns (droppables) - faster and more accurate
 		const pointerCollisions = pointerWithin(args);
-
-		// Filter to only droppables (columns)
 		const columnIds = new Set(columns.map((col) => col.id));
 		const droppableCollisions = pointerCollisions.filter((collision) =>
 			columnIds.has(collision.id as string)
 		);
 
-		// If we found a column, return it
+		// If we're over a column, check for nearby cards for precise positioning
 		if (droppableCollisions.length > 0) {
-			return droppableCollisions;
+			const cardCollisions = closestCenter(args);
+			// Prioritize cards for better positioning, but keep column for empty areas
+			return cardCollisions.length > 0
+				? [...cardCollisions, ...droppableCollisions]
+				: droppableCollisions;
 		}
 
 		// Otherwise, use closestCenter for cards
@@ -287,6 +287,7 @@ export const KanbanProvider = <
 		const card = data.find((item) => item.id === event.active.id);
 		if (card) {
 			setActiveCardId(event.active.id as string);
+			setActiveCard(card as T);
 		}
 		onDragStart?.(event);
 	};
@@ -299,6 +300,7 @@ export const KanbanProvider = <
 
 	const handleDragEnd = (event: DragEndEvent) => {
 		setActiveCardId(null);
+		setActiveCard(null);
 
 		onDragEnd?.(event);
 
@@ -417,9 +419,23 @@ export const KanbanProvider = <
 					{columns.map((column) => children(column))}
 				</div>
 				{typeof window !== 'undefined' &&
+					activeCard &&
 					createPortal(
-						<DragOverlay>
-							<t.Out />
+						<DragOverlay
+							dropAnimation={{
+								duration: 200,
+								easing: 'ease-out'
+							}}
+							style={{
+								cursor: 'grabbing',
+								zIndex: 9999
+							}}
+						>
+							<Card className="cursor-grabbing gap-4 rounded-lg border-2 border-primary/50 bg-card p-3 shadow-2xl ring-4 ring-primary/30">
+								<p className="m-0 font-medium text-sm leading-snug">
+									{activeCard.title}
+								</p>
+							</Card>
 						</DragOverlay>,
 						document.body
 					)}
