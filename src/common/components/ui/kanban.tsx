@@ -114,7 +114,7 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
 	const { activeCardId } = useContext(KanbanContext) as KanbanContextProps;
 
 	const style = {
-		transition: isDragging ? 'none' : transition,
+		transition,
 		transform: CSS.Transform.toString(transform)
 	};
 
@@ -133,7 +133,7 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
 			{...attributes}
 			ref={setNodeRef}
 			onClick={handleClick}
-			className={cn('relative', isDragging && 'z-0 opacity-40')}
+			className={cn('relative', isDragging && 'opacity-50')}
 		>
 			<Card
 				className={cn(
