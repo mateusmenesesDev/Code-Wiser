@@ -1,10 +1,10 @@
 'use client';
 
-import { useUser } from '~/common/hooks/useUser';
 import { env } from '~/env';
+import { useAuth } from '~/features/auth/hooks/useAuth';
 
 export function InlineBooker() {
-	const { userEmail, userName } = useUser();
+	const { userEmail, userName } = useAuth();
 
 	return (
 		<div className="w-full overflow-hidden rounded-lg border">

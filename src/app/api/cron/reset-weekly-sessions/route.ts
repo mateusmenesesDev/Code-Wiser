@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { env } from '~/env';
 import { resetAllWeeklySessions } from '~/server/services/mentorship/mentorshipService';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
 	try {
 		// Verify the cron secret

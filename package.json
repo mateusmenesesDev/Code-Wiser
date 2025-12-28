@@ -20,6 +20,7 @@
 		"dev": "infisical run -- next dev",
 		"dev:ngr": "ngrok http 3000",
 		"postinstall": "prisma generate",
+		"local:start": "infisical run -- bun next start",
 		"start": "next start",
 		"lint": "biome lint",
 		"lint:fix": "biome lint --fix",

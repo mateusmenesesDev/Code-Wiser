@@ -31,10 +31,23 @@ export const metadata: Metadata = {
 	icons: [{ rel: 'icon', url: '/favicon.svg' }]
 };
 
-export default function RootLayout({
+async function getSessionClaims() {
+	// During static build, auth() throws because clerkMiddleware() is not detected
+	// We need to handle this gracefully to allow static pages to build
+	try {
+		const authResult = auth();
+		return authResult.sessionClaims ?? undefined;
+	} catch {
+		// During static build or when auth is not available, return undefined
+		// This allows static pages like /pricing to build successfully
+		return undefined;
+	}
+}
+
+export default async function RootLayout({
 	children
 }: Readonly<{ children: React.ReactNode }>) {
-	const { sessionClaims } = auth();
+	const sessionClaims = await getSessionClaims();
 	return (
 		<ClerkProvider>
 			<JotaiProvider>

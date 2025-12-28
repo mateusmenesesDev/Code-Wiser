@@ -43,6 +43,8 @@ export const useAuth = () => {
 		signInWithOAuth,
 		error,
 		user,
-		signOut
+		signOut,
+		userEmail: user?.emailAddresses[0]?.emailAddress,
+		userName: user?.fullName
 	};
 };

@@ -1,81 +1,51 @@
-'use client';
-
-import { Calendar, Check, CreditCard, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { Calendar, Check, CreditCard } from 'lucide-react';
+import type { Metadata } from 'next';
 import { Badge } from '~/common/components/ui/badge';
-import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
-import { EXTERNAL_LINKS } from '~/common/constants/externalLinks';
-import { useUser } from '~/common/hooks/useUser';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-import type {
-	CheckoutInput,
-	CreditOptions
-} from '~/features/checkout/types/Checkout.type';
+import {
+	BuyCreditsButton,
+	PricingClient
+} from '~/features/checkout/components/PricingClient';
+import { MentorshipClient } from '~/features/checkout/components/MentorshipClient';
+import type { CreditOptions } from '~/features/checkout/types/Checkout.type';
 
-const PricingPage = () => {
-	const { user } = useAuth();
-	const { userCredits } = useUser();
+export const dynamic = 'force-static';
 
-	const creditPackages = [
-		{
-			id: 'credits_500' as CreditOptions,
-			credits: 500,
-			price: 25,
-			popular: false
-		},
-		{
-			id: 'credits_1500' as CreditOptions,
-			credits: 1500,
-			price: 67,
-			popular: true,
-			savings: 'Save 10%'
-		},
-		{
-			id: 'credits_3000' as CreditOptions,
-			credits: 3000,
-			price: 120,
-			popular: false,
-			savings: 'Save 20%'
-		}
-	];
+export const metadata: Metadata = {
+	title: 'Pricing | Code-Wiser',
+	description:
+		'Upgrade your experience with credits or work directly with a mentor to accelerate your growth.'
+};
 
-	const handleBuyCredits = async (data: CheckoutInput) => {
-		if (!user) {
-			toast.error('Authentication Required');
-			return;
-		}
+const creditPackages = [
+	{
+		id: 'credits_500' as CreditOptions,
+		credits: 500,
+		price: 25,
+		popular: false
+	},
+	{
+		id: 'credits_1500' as CreditOptions,
+		credits: 1500,
+		price: 67,
+		popular: true,
+		savings: 'Save 10%'
+	},
+	{
+		id: 'credits_3000' as CreditOptions,
+		credits: 3000,
+		price: 120,
+		popular: false,
+		savings: 'Save 20%'
+	}
+];
 
-		try {
-			toast.info('Payment Processing');
-			const response = await fetch('/api/checkout_sessions', {
-				method: 'POST',
-				body: JSON.stringify(data)
-			});
-
-			if (!response.ok) {
-				throw new Error('Failed to create checkout session');
-			}
-
-			const responseData = await response.json();
-
-			window.location.href = responseData.url;
-		} catch (error) {
-			console.error(error);
-			toast.error('Payment Failed');
-		}
-	};
-
-	const handleScheduleMentorship = () => {
-		window.open(EXTERNAL_LINKS.FREE_MENTORSHIP, '_blank');
-		toast.info('Scheduling Discovery Call');
-	};
-
+export default function PricingPage() {
 	return (
 		<div className="container mx-auto px-4 py-8">
 			<div className="mx-auto max-w-6xl">
@@ -87,15 +57,6 @@ const PricingPage = () => {
 						Get more credits or work directly with a mentor to accelerate your
 						growth
 					</p>
-
-					{user && (
-						<div className="flex justify-center">
-							<Badge variant="purple-gradient" className="px-4 py-2 text-lg ">
-								<Sparkles className="mr-2 h-4 w-4" />
-								Current Balance: {userCredits} credits
-							</Badge>
-						</div>
-					)}
 				</div>
 
 				<div className="grid gap-12 lg:grid-cols-2">
@@ -111,6 +72,8 @@ const PricingPage = () => {
 								enhanced AI assistance to boost your development workflow.
 							</p>
 						</div>
+
+						<PricingClient />
 
 						<div className="space-y-4">
 							{creditPackages.map((pkg) => (
@@ -143,18 +106,7 @@ const PricingPage = () => {
 												</p>
 											</div>
 
-											<Button
-												onClick={() =>
-													handleBuyCredits({
-														credit: pkg.id,
-														mode: 'payment'
-													})
-												}
-												variant="primary"
-												disabled
-											>
-												Buy Now (Coming Soon)
-											</Button>
+											<BuyCreditsButton creditId={pkg.id} />
 										</div>
 									</CardContent>
 								</Card>
@@ -232,24 +184,7 @@ const PricingPage = () => {
 									</ul>
 								</div>
 
-								<div className="rounded-lg bg-linear-to-r from-epic-muted to-info-muted p-4">
-									<h5 className="mb-2 font-semibold text-epic-muted-foreground">
-										Discovery Call - Free
-									</h5>
-									<p className="mb-4 text-epic-muted-foreground text-sm">
-										Start with a 30-minute discovery call to discuss your goals
-										and see if mentorship is right for you.
-									</p>
-
-									<Button
-										onClick={handleScheduleMentorship}
-										className="w-full"
-										variant="primary"
-									>
-										<Calendar className="mr-2 h-4 w-4" />
-										Schedule Discovery Call
-									</Button>
-								</div>
+								<MentorshipClient />
 
 								<div className="border-t pt-4 text-center">
 									<p className="text-muted-foreground text-sm">
@@ -264,6 +199,4 @@ const PricingPage = () => {
 			</div>
 		</div>
 	);
-};
-
-export default PricingPage;
+}
