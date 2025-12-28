@@ -1,7 +1,7 @@
 import type { PullRequestReviewStatusEnum } from '@prisma/client';
 import { z } from 'zod';
-import { protectedProcedure } from '~/server/api/trpc';
 import { filterPRReviewsSchema } from '~/features/prReview/schemas/prReview.schema';
+import { protectedProcedure } from '~/server/api/trpc';
 
 export const prReviewQueries = {
 	getAll: protectedProcedure

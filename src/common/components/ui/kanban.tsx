@@ -8,25 +8,26 @@ import type {
 	DragStartEvent
 } from '@dnd-kit/core';
 import {
-	closestCenter,
+	type CollisionDetection,
 	DndContext,
 	DragOverlay,
 	KeyboardSensor,
 	MouseSensor,
 	TouchSensor,
+	closestCenter,
+	pointerWithin,
 	useDroppable,
 	useSensor,
-	useSensors,
-	pointerWithin,
-	type CollisionDetection
+	useSensors
 } from '@dnd-kit/core';
-import { arrayMove, SortableContext, useSortable } from '@dnd-kit/sortable';
+import { SortableContext, arrayMove, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import type { TaskStatusEnum } from '@prisma/client';
 import {
 	Fragment,
-	createContext,
 	type HTMLAttributes,
 	type ReactNode,
+	createContext,
 	useContext,
 	useState
 } from 'react';
@@ -35,7 +36,6 @@ import tunnel from 'tunnel-rat';
 import { Card } from '~/common/components/ui/card';
 import { ScrollArea, ScrollBar } from '~/common/components/ui/scroll-area';
 import { cn } from '~/lib/utils';
-import type { TaskStatusEnum } from '@prisma/client';
 import type { RouterOutputs } from '~/trpc/react';
 
 const t = tunnel();

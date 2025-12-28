@@ -2,9 +2,11 @@
 
 import { Protect } from '@clerk/nextjs';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '~/common/components/ui/button';
+import { Checkbox } from '~/common/components/ui/checkbox';
 import {
 	Dialog,
 	DialogContent,
@@ -12,10 +14,8 @@ import {
 	DialogHeader,
 	DialogTitle
 } from '~/common/components/ui/dialog';
-import { Checkbox } from '~/common/components/ui/checkbox';
 import { Label } from '~/common/components/ui/label';
 import { api } from '~/trpc/react';
-import { toast } from 'sonner';
 
 interface TaskSelectionDialogProps {
 	projectId: string;

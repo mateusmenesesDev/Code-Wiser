@@ -14,9 +14,9 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
+import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useTask } from '~/features/task/hooks/useTask';
 import { cn } from '~/lib/utils';
-import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 
 interface SprintCellProps {
 	sprintId: string | null;

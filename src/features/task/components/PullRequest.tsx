@@ -1,9 +1,9 @@
-import { GitBranch, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import { Button } from '~/common/components/ui/button';
+import { PullRequestReviewStatusEnum } from '@prisma/client';
+import { AlertCircle, CheckCircle2, GitBranch, XCircle } from 'lucide-react';
 import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import { Separator } from '~/common/components/ui/separator';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
-import { PullRequestReviewStatusEnum } from '@prisma/client';
 import { cn } from '~/lib/utils';
 
 interface PullRequestProps {

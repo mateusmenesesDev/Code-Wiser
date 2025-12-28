@@ -16,11 +16,11 @@ import {
 import { useDialog } from '~/common/hooks/useDialog';
 import SignInDialog from '~/features/auth/components/Signin/SigninDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
+import { NotificationBell } from '~/features/notifications/components/NotificationBell';
 import { api } from '~/trpc/react';
 import CodeWiseIcon from '../../icons/CodeWiseIcon';
 import HeaderAvatarMenu from './HeaderAvatarMenu';
 import { MenuItem, ProtectedMenuItem } from './HeaderItem';
-import { NotificationBell } from '~/features/notifications/components/NotificationBell';
 
 const Header = () => {
 	const { openDialog } = useDialog('signIn');

@@ -1,16 +1,16 @@
-import {
-	Card,
-	CardTitle,
-	CardHeader,
-	CardContent,
-	CardDescription
-} from '~/common/components/ui/card';
-import { SessionLimitAlert } from '../session-limit-alert';
 import { Calendar, Clock } from 'lucide-react';
 import { CheckCircle2 } from 'lucide-react';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle
+} from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
 import { formatSessionDate } from '~/features/mentorship/utils/mentorshipAccess';
 import type { api } from '~/trpc/server';
+import { SessionLimitAlert } from '../session-limit-alert';
 
 export default function WeeklyInfo({
 	weekInfo,

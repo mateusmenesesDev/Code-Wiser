@@ -15,8 +15,8 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
-import { useTask } from '~/features/task/hooks/useTask';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { useTask } from '~/features/task/hooks/useTask';
 
 interface TagsCellProps {
 	tags: string[];

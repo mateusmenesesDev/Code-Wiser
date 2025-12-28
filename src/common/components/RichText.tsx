@@ -1,21 +1,22 @@
 import Image from '@tiptap/extension-image';
 import { type Editor, EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useEffect } from 'react';
-import { useFormContext } from 'react-hook-form';
 import {
 	Bold,
+	Code,
 	Italic,
-	Strikethrough,
 	List,
 	ListOrdered,
-	Code,
-	Undo,
 	Redo,
-	Type
+	Strikethrough,
+	Type,
+	Undo
 } from 'lucide-react';
+import { useEffect } from 'react';
+import { useFormContext } from 'react-hook-form';
+import { cn } from '~/lib/utils';
+import { uploadFiles } from '../utils/uploadthing';
 import { Button } from './ui/button';
-import { Separator } from './ui/separator';
 import {
 	Select,
 	SelectContent,
@@ -23,8 +24,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from './ui/select';
-import { cn } from '~/lib/utils';
-import { uploadFiles } from '../utils/uploadthing';
+import { Separator } from './ui/separator';
 
 export default function RichText() {
 	const { setValue, watch } = useFormContext();

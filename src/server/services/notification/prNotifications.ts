@@ -1,9 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
+import { getBaseUrl } from '~/server/utils/getBaseUrl';
 import {
 	sendPRRequestedEmail,
 	sendPRResponseEmail
 } from '../email/emailService';
-import { getBaseUrl } from '~/server/utils/getBaseUrl';
 import { createNotification, getAdminUsers } from './base';
 
 interface NotifyPRRequestedParams {

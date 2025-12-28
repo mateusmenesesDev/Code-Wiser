@@ -1,6 +1,6 @@
+import { Protect } from '@clerk/nextjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
-import { Protect } from '@clerk/nextjs';
 import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -37,13 +37,13 @@ import {
 } from '~/common/components/ui/select';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useUser } from '~/common/hooks/useUser';
-import { api } from '~/trpc/react';
-import { TagsInput } from './TagsInput';
-import { TaskComments } from './TaskComments';
-import { PullRequest } from './PullRequest';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
+import { api } from '~/trpc/react';
 import { getStatusLabel, resetFormData } from '../utils';
+import { PullRequest } from './PullRequest';
+import { TagsInput } from './TagsInput';
+import { TaskComments } from './TaskComments';
 
 interface TaskDialogProps {
 	taskId?: string;

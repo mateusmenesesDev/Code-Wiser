@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { api } from '~/trpc/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import type {
+	MemberJoinedSSEData,
 	PlanningPokerStoryPoint,
 	SSEMessage,
-	VoteSSEData,
-	MemberJoinedSSEData
+	VoteSSEData
 } from '~/features/planningPoker/types/planningPoker.types';
-import { toast } from 'sonner';
+import { api } from '~/trpc/react';
 import { useRealtimeClient } from './useRealtimeClient';
 
 interface UsePlanningPokerProps {

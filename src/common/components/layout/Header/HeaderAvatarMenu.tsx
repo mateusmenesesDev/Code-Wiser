@@ -1,11 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+	Calendar,
 	ChevronDown,
 	CreditCard,
 	FolderOpen,
 	LogIn,
-	User,
-	Calendar
+	User
 } from 'lucide-react';
 import Link from 'next/link';
 import {

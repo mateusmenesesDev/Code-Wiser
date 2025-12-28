@@ -10,13 +10,13 @@ import {
 	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
-import { TaskDialog } from '~/features/task/components/TaskDialog';
+import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
+import { columns } from '~/features/kanban/constants';
 import { useKanbanData } from '~/features/kanban/hooks/useKanbanData';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
+import { TaskDialog } from '~/features/task/components/TaskDialog';
 import ProjectHeader from '~/features/workspace/components/ProjectHeader';
-import { columns } from '~/features/kanban/constants';
-import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 import { api } from '~/trpc/react';
 
 const Workspace = () => {

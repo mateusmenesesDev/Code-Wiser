@@ -2,6 +2,7 @@
 
 import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
 	DropdownMenu,
@@ -9,10 +10,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
-import { Badge } from '~/common/components/ui/badge';
+import type { RouterOutputs } from '~/trpc/react';
 import { useNotifications } from '../hooks/useNotifications';
 import { NotificationList } from './NotificationList';
-import type { RouterOutputs } from '~/trpc/react';
 
 type Notification =
 	RouterOutputs['notification']['getNotifications']['notifications'][number];

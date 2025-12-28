@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { PullRequestReviewStatusEnum } from '@prisma/client';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '~/common/components/ui/button';
-import { Textarea } from '~/common/components/ui/textarea';
 import {
 	Dialog,
 	DialogContent,
@@ -10,7 +10,7 @@ import {
 	DialogHeader,
 	DialogTitle
 } from '~/common/components/ui/dialog';
-import { PullRequestReviewStatusEnum } from '@prisma/client';
+import { Textarea } from '~/common/components/ui/textarea';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 
 interface ReviewActionsProps {

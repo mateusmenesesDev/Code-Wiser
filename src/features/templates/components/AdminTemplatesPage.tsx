@@ -37,8 +37,8 @@ import {
 } from '~/common/utils/colorUtils';
 import { formatTemplateStatus } from '~/common/utils/projectUtils';
 import { useAdminTemplates } from '../hook/useAdminTemplates';
-import { CreateProjectTemplateDialog } from './CreateProjectTemplateDialog';
 import { CreateProjectFromJsonDialog } from './CreateProjectFromJsonDialog';
+import { CreateProjectTemplateDialog } from './CreateProjectTemplateDialog';
 
 export default function AdminTemplatesPage() {
 	const {

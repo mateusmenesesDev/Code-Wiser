@@ -1,3 +1,4 @@
+import { Calendar, CheckCircle2, Clock } from 'lucide-react';
 import {
 	Card,
 	CardContent,
@@ -5,7 +6,6 @@ import {
 	CardTitle
 } from '~/common/components/ui/card';
 import { Skeleton } from '~/common/components/ui/skeleton';
-import { Calendar, CheckCircle2, Clock } from 'lucide-react';
 
 export function WeeklyInfoSkeleton() {
 	return (

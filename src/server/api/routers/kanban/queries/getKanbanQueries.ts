@@ -1,7 +1,7 @@
-import { protectedProcedure } from '~/server/api/trpc';
-import { kanbanDataSchema } from '../schemas';
 import { TRPCError } from '@trpc/server';
+import { protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
+import { kanbanDataSchema } from '../schemas';
 
 export const getKanbanQueries = {
 	getKanbanData: protectedProcedure

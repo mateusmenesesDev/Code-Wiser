@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import Pusher from 'pusher-js';
-import type { RealtimeCallbacks } from '~/server/realtime/types';
+import { useEffect, useRef, useState } from 'react';
 import { env } from '~/env';
+import type { RealtimeCallbacks } from '~/server/realtime/types';
 
 interface UseRealtimeClientProps {
 	sessionId: string;

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Copy } from 'lucide-react';
-import { Card, CardContent } from '~/common/components/ui/card';
+import { useState } from 'react';
 import { Button } from '~/common/components/ui/button';
+import { Card, CardContent } from '~/common/components/ui/card';
 import { ProjectHeader } from '~/features/projects/components/ProjectHeader';
 import { CloneTemplateDialog } from '~/features/templates/components/CloneTemplateDialog';
 import { api } from '~/trpc/react';

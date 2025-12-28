@@ -1,18 +1,18 @@
 import { TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import { toast } from 'sonner';
-import { normalizeDate } from '~/common/utils/convertion';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { normalizeDate } from '~/common/utils/convertion';
 import { api } from '~/trpc/react';
 import type {
 	CreateTaskInput,
 	UpdateTaskInput
 } from '../../workspace/types/Task.type';
-import { createInvalidateHelpers } from '../utils/optimisticDataHelpers';
 import {
-	updateOptimisticData,
+	type OptimisticUpdateConfig,
 	rollbackOptimisticData,
-	type OptimisticUpdateConfig
+	updateOptimisticData
 } from '../utils/optimisticData';
+import { createInvalidateHelpers } from '../utils/optimisticDataHelpers';
 
 type UseTaskProps = {
 	projectId: string;

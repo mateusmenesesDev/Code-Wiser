@@ -13,8 +13,8 @@ import {
 import { TableCell, TableRow } from '~/common/components/ui/table';
 import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
 import { useTask } from '~/features/task/hooks/useTask';
-import { cn } from '~/lib/utils';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
+import { cn } from '~/lib/utils';
 import { EpicCell } from './EpicCell';
 import { PriorityCell } from './PriorityCell';
 import { SprintCell } from './SprintCell';

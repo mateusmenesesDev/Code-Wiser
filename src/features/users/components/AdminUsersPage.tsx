@@ -3,6 +3,7 @@
 import { Protect } from '@clerk/nextjs';
 import { Edit, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import {
 	Avatar,
@@ -35,7 +36,6 @@ import {
 } from '~/common/components/ui/table';
 import { api } from '~/trpc/react';
 import { EditUserDialog } from './EditUserDialog';
-import { toast } from 'sonner';
 
 export default function AdminUsersPage() {
 	const utils = api.useUtils();

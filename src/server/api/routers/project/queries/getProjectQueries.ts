@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { protectedProcedure } from '~/server/api/trpc';
+import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
 
 export const getProjectQueries = {
@@ -92,7 +92,7 @@ export const getProjectQueries = {
 		})
 	),
 
-	getActiveProjects: protectedProcedure
+	getActiveProjects: adminProcedure
 		.input(
 			z.object({
 				limit: z.number().min(1).max(100).default(20),

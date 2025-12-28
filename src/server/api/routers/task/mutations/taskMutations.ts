@@ -1,17 +1,17 @@
-import { TRPCError } from '@trpc/server';
 import type { TaskStatusEnum } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
 	createTaskSchema,
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
 import {
 	notifyTaskAssigned,
-	notifyTaskStatusChanged,
-	notifyTaskBlocked
+	notifyTaskBlocked,
+	notifyTaskStatusChanged
 } from '~/server/services/notification/notificationService';
+import { userHasAccessToProject } from '~/server/utils/auth';
 
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 

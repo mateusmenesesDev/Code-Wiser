@@ -1,5 +1,5 @@
-import type { NotificationType, PrismaClient } from '@prisma/client';
 import { clerkClient } from '@clerk/nextjs/server';
+import type { NotificationType, PrismaClient } from '@prisma/client';
 import { getBaseUrl } from '~/server/utils/getBaseUrl';
 
 interface CreateNotificationParams {

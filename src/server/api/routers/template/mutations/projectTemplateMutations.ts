@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { UTApi } from 'uploadthing/server';
 import { z } from 'zod';
+import { bulkCreateSchema } from '~/features/templates/schemas/bulkCreate.schema';
 import {
 	cloneTemplateSchema,
 	createProjectTemplateSchema,
@@ -9,7 +10,6 @@ import {
 	updateTemplateBasicInfoInputSchema,
 	updateTemplateStatusSchema
 } from '~/features/templates/schemas/template.schema';
-import { bulkCreateSchema } from '~/features/templates/schemas/bulkCreate.schema';
 import { adminProcedure } from '~/server/api/trpc';
 import { createProjectTemplateData } from '../actions/projectTemplateActions';
 

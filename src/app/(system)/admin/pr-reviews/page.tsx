@@ -2,6 +2,7 @@
 
 import { Protect } from '@clerk/nextjs';
 import { PullRequestReviewStatusEnum } from '@prisma/client';
+import { parseAsString, useQueryStates } from 'nuqs';
 import {
 	Select,
 	SelectContent,
@@ -11,7 +12,6 @@ import {
 } from '~/common/components/ui/select';
 import { ReviewTable } from '~/features/prReview/components/ReviewTable';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
-import { parseAsString, useQueryStates } from 'nuqs';
 
 const filtersSearchParams = {
 	status: parseAsString.withDefault('all'),
@@ -124,4 +124,3 @@ export default function PRReviewsPage() {
 		</Protect>
 	);
 }
-

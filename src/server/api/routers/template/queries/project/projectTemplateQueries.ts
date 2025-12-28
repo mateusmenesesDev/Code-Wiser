@@ -1,10 +1,6 @@
 import { ProjectStatusEnum } from '@prisma/client';
 import { z } from 'zod';
-import {
-	adminProcedure,
-	protectedProcedure,
-	publicProcedure
-} from '~/server/api/trpc';
+import { adminProcedure, publicProcedure } from '~/server/api/trpc';
 
 export const projectTemplateQueries = {
 	getApproved: publicProcedure.query(({ ctx }) =>
@@ -107,7 +103,7 @@ export const projectTemplateQueries = {
 			})
 		),
 
-	getById: protectedProcedure
+	getById: adminProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
 			try {
@@ -162,7 +158,7 @@ export const projectTemplateQueries = {
 			}
 		}),
 
-	getImages: protectedProcedure
+	getImages: adminProcedure
 		.input(z.object({ projectTemplateId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const projectTemplate = await ctx.db.projectTemplate.findUnique({

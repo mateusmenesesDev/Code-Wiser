@@ -210,29 +210,29 @@ const PricingPage = () => {
 									<h4 className="font-semibold">What you'll get:</h4>
 									<ul className="space-y-3">
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+											<Check className="mt-0.5 h-5 w-5 shrink-0 text-success" />
 											<span>Personalized code reviews and feedback</span>
 										</li>
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+											<Check className="mt-0.5 h-5 w-5 shrink-0 text-success" />
 											<span>Career guidance and industry insights</span>
 										</li>
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+											<Check className="mt-0.5 h-5 w-5 shrink-0 text-success" />
 											<span>Technical interview preparation</span>
 										</li>
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+											<Check className="mt-0.5 h-5 w-5 shrink-0 text-success" />
 											<span>Architecture and best practices guidance</span>
 										</li>
 										<li className="flex items-start gap-3">
-											<Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+											<Check className="mt-0.5 h-5 w-5 shrink-0 text-success" />
 											<span>Project planning and roadmap development</span>
 										</li>
 									</ul>
 								</div>
 
-								<div className="rounded-lg bg-gradient-to-r from-epic-muted to-info-muted p-4">
+								<div className="rounded-lg bg-linear-to-r from-epic-muted to-info-muted p-4">
 									<h5 className="mb-2 font-semibold text-epic-muted-foreground">
 										Discovery Call - Free
 									</h5>

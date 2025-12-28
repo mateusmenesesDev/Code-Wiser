@@ -1,5 +1,5 @@
-import { CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { TaskStatusEnum } from '@prisma/client';
+import { CheckCircle, Clock, TrendingUp } from 'lucide-react';
 
 type StatItemProps = {
 	icon: React.ReactNode;

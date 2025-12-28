@@ -1,4 +1,7 @@
 import { LogIn } from 'lucide-react';
+import { GitHubIcon } from '~/common/components/icons/GitHubIcon';
+import { GoogleIcon } from '~/common/components/icons/GoogleIcon';
+import { Button } from '~/common/components/ui/button';
 import {
 	Dialog,
 	DialogContent,
@@ -6,11 +9,8 @@ import {
 	DialogHeader,
 	DialogTitle
 } from '~/common/components/ui/dialog';
-import { useDialog } from '~/common/hooks/useDialog';
-import { Button } from '~/common/components/ui/button';
-import { GoogleIcon } from '~/common/components/icons/GoogleIcon';
-import { GitHubIcon } from '~/common/components/icons/GitHubIcon';
 import { Separator } from '~/common/components/ui/separator';
+import { useDialog } from '~/common/hooks/useDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 
 const SignInDialog = () => {

@@ -3,6 +3,7 @@
 import { TaskStatusEnum } from '@prisma/client';
 import { Plus } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useCallback } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -23,11 +24,10 @@ import {
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useSprintQueries } from '~/features/sprints/hooks/useSprintQueries';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
-import { api } from '~/trpc/react';
 import { useTask } from '~/features/task/hooks/useTask';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
+import { api } from '~/trpc/react';
 import { DraggableTaskRow } from './DraggableTaskRow';
-import { parseAsString, useQueryState } from 'nuqs';
 
 /**
  * Backlog Component

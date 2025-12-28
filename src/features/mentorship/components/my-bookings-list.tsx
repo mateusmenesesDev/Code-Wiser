@@ -1,7 +1,8 @@
 'use client';
 
 import { Calendar, Clock, ExternalLink, Video, X } from 'lucide-react';
-import { useState } from 'react';
+import { toast } from 'sonner';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -20,17 +21,14 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import { api } from '~/trpc/react';
-import { toast } from 'sonner';
 import {
 	formatSessionDate,
 	formatSessionTime
 } from '../utils/mentorshipAccess';
-import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 
 export function MyBookingsList() {
 	const utils = api.useUtils();
 	const { data: bookings, isLoading } = api.mentorship.getMyBookings.useQuery();
-	const [_cancellingId, setCancellingId] = useState<string | null>(null);
 
 	const cancelBookingMutation = api.mentorship.cancelBooking.useMutation({
 		onSuccess: async () => {
@@ -38,8 +36,6 @@ export function MyBookingsList() {
 
 			await utils.mentorship.getMyBookings.invalidate();
 			await utils.mentorship.getMyMentorshipWeekInfo.invalidate();
-
-			setCancellingId(null);
 		},
 		onError: (error) => {
 			toast.error(`Failed to cancel booking: ${error.message}`);

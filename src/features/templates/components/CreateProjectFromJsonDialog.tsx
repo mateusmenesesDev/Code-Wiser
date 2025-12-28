@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '~/common/components/ui/button';
@@ -17,8 +17,8 @@ import {
 } from '~/common/components/ui/dialog';
 import { Textarea } from '~/common/components/ui/textarea';
 import { api } from '~/trpc/react';
-import { createProjectTemplateSchema } from '../schemas/template.schema';
 import { TEMPLATE_JSON_EXAMPLE } from '../constants';
+import { createProjectTemplateSchema } from '../schemas/template.schema';
 
 interface CreateProjectFromJsonDialogProps {
 	open: boolean;

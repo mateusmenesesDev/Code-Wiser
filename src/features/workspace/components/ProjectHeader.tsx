@@ -1,9 +1,8 @@
-import { TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
-import { Figma, Filter, X, Play } from 'lucide-react';
-import { Button } from '~/common/components/ui/button';
 import { Protect } from '@clerk/nextjs';
-import { TaskSelectionDialog } from '~/features/planningPoker/components/TaskSelectionDialog';
+import { TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
+import { Figma, Filter, Play, X } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '~/common/components/ui/button';
 import {
 	Select,
 	SelectContent,
@@ -11,8 +10,9 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '~/common/components/ui/select';
-import type { RouterOutputs } from '~/trpc/react';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
+import { TaskSelectionDialog } from '~/features/planningPoker/components/TaskSelectionDialog';
+import type { RouterOutputs } from '~/trpc/react';
 import { ProjectStatsCards } from './ProjectStatsCards';
 
 interface ProjectHeaderProps {

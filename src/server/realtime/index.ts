@@ -6,8 +6,8 @@
  */
 
 import { env } from '~/env';
-import { PusherRealtimeService } from './pusher-adapter';
 import type { IRealtimeService } from './interface';
+import { PusherRealtimeService } from './pusher-adapter';
 
 let realtimeServiceInstance: IRealtimeService | null = null;
 

@@ -12,12 +12,12 @@ import { ProjectAccessTypeEnum, ProjectMethodologyEnum } from '@prisma/client';
 import { ArrowLeft, FileJson } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Backlog from '~/features/backlog/components/Backlog';
 import EpicList from '~/features/epics/components/EpicList/EpicList';
 import SprintList from '~/features/sprints/components/SprintList';
+import { CreateTasksSprintsEpicsFromJsonDialog } from '~/features/templates/components/CreateTasksSprintsEpicsFromJsonDialog';
 import EditTemplateBasicInfo from '~/features/templates/components/EditTemplate/EditTemplateBasicInfo';
 import EditTemplateImages from '~/features/templates/components/EditTemplate/EditTemplateImages';
-import { CreateTasksSprintsEpicsFromJsonDialog } from '~/features/templates/components/CreateTasksSprintsEpicsFromJsonDialog';
-import Backlog from '~/features/backlog/components/Backlog';
 import { api } from '~/trpc/react';
 
 const AdminProjectEdit = () => {

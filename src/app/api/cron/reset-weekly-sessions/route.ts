@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { resetAllWeeklySessions } from '~/server/services/mentorship/mentorshipService';
 import { env } from '~/env';
+import { resetAllWeeklySessions } from '~/server/services/mentorship/mentorshipService';
 
 export async function GET(request: Request) {
 	try {

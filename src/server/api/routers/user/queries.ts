@@ -1,5 +1,5 @@
-import { db } from '~/server/db';
 import type { MentorshipStatus, MentorshipType } from '@prisma/client';
+import { db } from '~/server/db';
 
 type UserData = {
 	email: string;

@@ -1,6 +1,6 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { adminProcedure, createTRPCRouter } from '../../trpc';
-import { TRPCError } from '@trpc/server';
 import { generateTaskDescription } from './services/ai.service';
 
 export const aiRouter = createTRPCRouter({

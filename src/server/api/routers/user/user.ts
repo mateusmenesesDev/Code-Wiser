@@ -2,6 +2,7 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { userDbSchema } from '~/features/schemas/auth.schema';
+import { adminResetUserSessions } from '~/server/services/mentorship/mentorshipService';
 import {
 	adminProcedure,
 	createTRPCRouter,
@@ -14,7 +15,6 @@ import {
 	getAllUsers,
 	updateUserAdmin
 } from './queries';
-import { adminResetUserSessions } from '~/server/services/mentorship/mentorshipService';
 
 export const userRouter = createTRPCRouter({
 	create: publicProcedure.input(userDbSchema).mutation(async ({ input }) => {

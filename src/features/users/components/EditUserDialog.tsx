@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -29,7 +30,6 @@ import {
 	SelectValue
 } from '~/common/components/ui/select';
 import { api } from '~/trpc/react';
-import { toast } from 'sonner';
 
 const editUserSchema = z.object({
 	credits: z.number().int().min(0).optional(),

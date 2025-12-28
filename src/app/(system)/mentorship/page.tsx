@@ -1,6 +1,6 @@
+import { redirect } from 'next/navigation';
 import { MentorshipDashboard } from '~/features/mentorship/components/mentorship-dashboard';
 import { api } from '~/trpc/server';
-import { redirect } from 'next/navigation';
 
 export default async function MentorshipPage() {
 	const status = await api.user.getMentorshipStatus();

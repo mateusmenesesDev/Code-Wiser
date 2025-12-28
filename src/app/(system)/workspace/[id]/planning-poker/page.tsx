@@ -1,10 +1,10 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { PlanningPokerRoom } from '~/features/planningPoker/components/PlanningPokerRoom';
 import { api } from '~/trpc/react';
-import { Loader2 } from 'lucide-react';
 
 export default function PlanningPokerPage() {
 	const params = useParams();

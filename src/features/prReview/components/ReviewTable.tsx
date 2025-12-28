@@ -1,12 +1,17 @@
+import { PullRequestReviewStatusEnum } from '@prisma/client';
 import {
-	CheckCircle2,
-	XCircle,
 	AlertCircle,
+	CheckCircle2,
+	ExternalLink,
 	GitBranch,
-	ExternalLink
+	XCircle
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
+import { Skeleton } from '~/common/components/ui/skeleton';
 import {
 	Table,
 	TableBody,
@@ -15,14 +20,9 @@ import {
 	TableHeader,
 	TableRow
 } from '~/common/components/ui/table';
-import { Button } from '~/common/components/ui/button';
-import { PullRequestReviewStatusEnum } from '@prisma/client';
-import { ReviewActions } from './ReviewActions';
 import type { PRReviewApiOutput } from '~/features/prReview/types/prReview.type';
 import { cn } from '~/lib/utils';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Skeleton } from '~/common/components/ui/skeleton';
+import { ReviewActions } from './ReviewActions';
 
 interface ReviewListProps {
 	reviews: PRReviewApiOutput[];

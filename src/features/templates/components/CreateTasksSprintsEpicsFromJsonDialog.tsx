@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '~/common/components/ui/button';
@@ -17,8 +17,8 @@ import {
 } from '~/common/components/ui/dialog';
 import { Textarea } from '~/common/components/ui/textarea';
 import { api } from '~/trpc/react';
-import { bulkCreateSchema } from '../schemas/bulkCreate.schema';
 import { TASKS_SPRINTS_EPICS_JSON_EXAMPLE } from '../constants';
+import { bulkCreateSchema } from '../schemas/bulkCreate.schema';
 
 interface CreateTasksSprintsEpicsFromJsonDialogProps {
 	open: boolean;

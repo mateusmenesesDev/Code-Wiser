@@ -1,7 +1,7 @@
+import { clerkClient } from '@clerk/nextjs/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
-import { clerkClient } from '@clerk/nextjs/server';
 import { userHasAccessToProject } from '~/server/utils/auth';
 
 export const taskQueries = {

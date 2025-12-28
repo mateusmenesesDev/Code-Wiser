@@ -1,13 +1,13 @@
-import { mentorshipProcedure } from '../../trpc';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { env } from '~/env';
 import { cancelBookingSchema } from '~/features/mentorship/schemas/mentorship.schema';
 import { cancelBooking as cancelCalcomBooking } from '~/server/services/calcom/calcomService';
 import {
-	isDateInCurrentWeek,
-	canBookForWeek
+	canBookForWeek,
+	isDateInCurrentWeek
 } from '~/server/services/mentorship/mentorshipService';
+import { mentorshipProcedure } from '../../trpc';
 
 export const mentorshipMutations = {
 	bookSession: mentorshipProcedure

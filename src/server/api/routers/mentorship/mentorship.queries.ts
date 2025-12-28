@@ -1,7 +1,7 @@
-import { mentorshipProcedure, protectedProcedure } from '../../trpc';
+import { TRPCError } from '@trpc/server';
 import { getAvailableSlotsSchema } from '~/features/mentorship/schemas/mentorship.schema';
 import { getAvailableSlots } from '~/server/services/calcom/calcomService';
-import { TRPCError } from '@trpc/server';
+import { mentorshipProcedure, protectedProcedure } from '../../trpc';
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

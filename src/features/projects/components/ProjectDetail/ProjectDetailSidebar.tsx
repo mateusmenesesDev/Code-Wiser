@@ -96,13 +96,6 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								{project.difficulty}
 							</Badge>
 						</div>
-						{/* TODO: Add duration */}
-						{/* <div className="flex items-center justify-between">
-							<span className="text-muted-foreground text-sm">Duration:</span>
-							<span className="font-medium text-sm">
-								{project.expectedDuration || '6-8 weeks'}
-							</span>
-						</div> */}
 						<div className="flex items-center justify-between">
 							<span className="text-muted-foreground text-sm">
 								Participants:

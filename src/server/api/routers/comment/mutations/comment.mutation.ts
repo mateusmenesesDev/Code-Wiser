@@ -5,9 +5,9 @@ import {
 	updateCommentSchema
 } from '~/features/workspace/schemas/comment.schema';
 import { protectedProcedure } from '~/server/api/trpc';
-import { checkUserHasAccessToTask } from '../utils/comment.utils';
-import { getBaseUrl } from '~/server/utils/getBaseUrl';
 import { notifyTaskComment } from '~/server/services/notification/notificationService';
+import { getBaseUrl } from '~/server/utils/getBaseUrl';
+import { checkUserHasAccessToTask } from '../utils/comment.utils';
 
 export const commentMutations = {
 	create: protectedProcedure
