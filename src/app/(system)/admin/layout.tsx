@@ -4,6 +4,12 @@ import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+type OrganizationData = {
+	id: string;
+	rol: string;
+	slg: string;
+};
+
 export const metadata: Metadata = {
 	title: {
 		template: '%s | CodeWise - Admin Panel',
@@ -16,10 +22,15 @@ export const metadata: Metadata = {
 export default function Layout({
 	children
 }: Readonly<{ children: React.ReactNode }>) {
-	const { has } = auth();
-	console.log(has({ role: 'org:admin' }));
-	if (!has({ role: 'org:admin' })) {
+	const session = auth();
+
+	const orgRole = (session.sessionClaims?.o as OrganizationData)?.rol;
+
+	const isAdmin = orgRole === 'admin' || session.has({ role: 'org:admin' });
+
+	if (!isAdmin) {
 		return redirect('/');
 	}
+
 	return <>{children}</>;
 }
