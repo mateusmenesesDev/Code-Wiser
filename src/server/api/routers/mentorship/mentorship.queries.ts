@@ -3,11 +3,8 @@ import { getAvailableSlotsSchema } from '~/features/mentorship/schemas/mentorshi
 import { getAvailableSlots } from '~/server/services/calcom/calcomService';
 import { mentorshipProcedure, protectedProcedure } from '../../trpc';
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export const mentorshipQueries = {
 	getMyMentorshipWeekInfo: protectedProcedure.query(async ({ ctx }) => {
-		await wait(4000);
 		const info = await ctx.db.user.findUnique({
 			where: { id: ctx.session.userId },
 			select: {
