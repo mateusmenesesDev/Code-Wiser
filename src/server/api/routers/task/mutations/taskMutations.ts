@@ -64,13 +64,22 @@ export const taskMutations = {
 			// Verify access through existing task
 			const existingTask = await ctx.db.task.findUnique({
 				where: { id },
-				include: {
+				select: {
+					id: true,
+					projectId: true,
+					assigneeId: true,
+					status: true,
+					blocked: true,
+					title: true,
 					project: {
-						include: { members: true },
 						select: {
 							id: true,
 							title: true,
-							members: true
+							members: {
+								select: {
+									id: true
+								}
+							}
 						}
 					},
 					assignee: {
