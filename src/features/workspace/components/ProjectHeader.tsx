@@ -81,9 +81,7 @@ export default function ProjectHeader({
 						<span className="text-muted-foreground text-sm">Filters:</span>
 						<Select
 							value={assigneeFilter ?? 'all'}
-							onValueChange={(value) =>
-								setAssigneeFilter(value === 'all' ? 'all' : value)
-							}
+							onValueChange={(value) => setAssigneeFilter(value)}
 						>
 							<SelectTrigger className="h-8 w-[180px]">
 								<SelectValue placeholder="Assignee" />
@@ -100,9 +98,7 @@ export default function ProjectHeader({
 						<Select
 							value={priorityFilter ?? 'all'}
 							onValueChange={(value) =>
-								setPriorityFilter(
-									value === 'all' ? 'all' : (value as TaskPriorityEnum)
-								)
+								setPriorityFilter(value as TaskPriorityEnum | 'all')
 							}
 						>
 							<SelectTrigger className="h-8 w-[150px]">
@@ -121,9 +117,7 @@ export default function ProjectHeader({
 						</Select>
 						<Select
 							value={sprintFilter ?? 'all'}
-							onValueChange={(value) =>
-								setSprintFilter(value === 'all' ? 'all' : value)
-							}
+							onValueChange={(value) => setSprintFilter(value)}
 						>
 							<SelectTrigger className="h-8 w-[180px]">
 								<SelectValue placeholder="Sprint" />
