@@ -64,6 +64,7 @@ const Workspace = () => {
 				}
 				projectTitle={projectInfo?.title ?? ''}
 				projectFigmaUrl={projectInfo?.figmaProjectUrl ?? ''}
+				onCreateTask={() => setTaskId('new')}
 			/>
 			<div className="flex-1 overflow-hidden">
 				<KanbanProvider

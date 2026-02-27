@@ -51,15 +51,15 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 
 			return context;
 		},
-		onError: (_error, _newTask, ctx) => {
-			rollbackOptimisticData({
-				utils,
-				context: ctx,
-				projectId: projectId as string,
-				isTemplate
-			});
-			toast.error('Failed to create task');
-		},
+	onError: (error, _newTask, ctx) => {
+		rollbackOptimisticData({
+			utils,
+			context: ctx,
+			projectId: projectId as string,
+			isTemplate
+		});
+		toast.error(error.message || 'Failed to create task');
+	},
 		onSettled: () => {
 			invalidateKanbanData();
 			invalidateBacklogData();

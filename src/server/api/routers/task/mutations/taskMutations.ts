@@ -1,4 +1,5 @@
 import type { TaskStatusEnum } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
@@ -34,18 +35,34 @@ export const taskMutations = {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
 
-			const task = await ctx.db.task.create({
-				data: {
-					...rest,
-					...(isTemplate
-						? { projectTemplate: { connect: { id: projectId } } }
-						: { project: { connect: { id: projectId } } }),
-					assignee: assigneeId ? { connect: { id: assigneeId } } : undefined,
-					epic: epicId ? { connect: { id: epicId } } : undefined,
-					sprint: sprintId ? { connect: { id: sprintId } } : undefined
+			try {
+				const task = await ctx.db.task.create({
+					data: {
+						...rest,
+						...(isTemplate
+							? { projectTemplate: { connect: { id: projectId } } }
+							: { project: { connect: { id: projectId } } }),
+						assignee: assigneeId ? { connect: { id: assigneeId } } : undefined,
+						epic: epicId ? { connect: { id: epicId } } : undefined,
+						sprint: sprintId ? { connect: { id: sprintId } } : undefined
+					}
+				});
+				return task;
+			} catch (error) {
+				if (
+					error instanceof Prisma.PrismaClientKnownRequestError &&
+					error.code === 'P2002'
+				) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: `A task with the title "${rest.title}" already exists in this project`
+					});
 				}
-			});
-			return task;
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Something went wrong while creating the task'
+				});
+			}
 		}),
 
 	update: protectedProcedure

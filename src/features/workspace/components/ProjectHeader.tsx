@@ -1,6 +1,6 @@
 import { Protect } from '@clerk/nextjs';
 import { TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
-import { Figma, Filter, Play, X } from 'lucide-react';
+import { Figma, Filter, Play, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -22,6 +22,7 @@ interface ProjectHeaderProps {
 	stats: { status: TaskStatusEnum }[];
 	projectTitle: string;
 	projectFigmaUrl: string;
+	onCreateTask: () => void;
 }
 
 export default function ProjectHeader({
@@ -30,7 +31,8 @@ export default function ProjectHeader({
 	sprints,
 	stats,
 	projectTitle,
-	projectFigmaUrl
+	projectFigmaUrl,
+	onCreateTask
 }: ProjectHeaderProps) {
 	const [isPlanningPokerDialogOpen, setIsPlanningPokerDialogOpen] =
 		useState(false);
@@ -54,6 +56,15 @@ export default function ProjectHeader({
 						Manage your tasks across different stages
 					</p>
 					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							className="gap-2"
+							onClick={onCreateTask}
+						>
+							<Plus className="h-4 w-4" />
+							Create Task
+						</Button>
 						<a href={projectFigmaUrl} target="_blank" rel="noopener noreferrer">
 							<Button variant="primary" size="sm" className="gap-2">
 								<Figma className="h-4 w-4" />
