@@ -182,6 +182,7 @@ export const createOptimisticKanbanTask = (
 		status: newTask.status || TaskStatusEnum.BACKLOG,
 		priority: newTask.priority || null,
 		order: null,
+		storyPoints: null,
 		sprint: null,
 		epic: null,
 		assignee: null

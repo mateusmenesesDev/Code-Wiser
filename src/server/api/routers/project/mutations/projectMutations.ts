@@ -1,6 +1,10 @@
 import { TRPCError } from '@trpc/server';
-import { createProjectSchema } from '~/features/projects/schemas/projects.schema';
+import {
+	createProjectSchema,
+	updateProjectSchema
+} from '~/features/projects/schemas/projects.schema';
 import { protectedProcedure } from '~/server/api/trpc';
+import { userHasAccessToProject } from '~/server/utils/auth';
 import { userHasAccess } from '../utils/userHasAccess';
 
 export const projectMutations = {
@@ -146,5 +150,24 @@ export const projectMutations = {
 				console.error('Create project error:', error);
 				throw error;
 			}
+		}),
+
+	updateProject: protectedProcedure
+		.input(updateProjectSchema)
+		.mutation(async ({ ctx, input }) => {
+			const { id, ...data } = input;
+
+			await userHasAccessToProject(ctx, id);
+
+			return ctx.db.project.update({
+				where: { id },
+				data,
+				select: {
+					id: true,
+					title: true,
+					description: true,
+					methodology: true
+				}
+			});
 		})
 };
