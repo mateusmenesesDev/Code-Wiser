@@ -40,16 +40,16 @@ export const sprintMutations = {
 				};
 			};
 
-			const sprint = await ctx.db.sprint.create({
-				data: {
-					title,
-					description,
-					startDate,
-					endDate,
-					order: sprintCount,
-					...createProjectConnection(isTemplate)
-				}
-			});
+		const sprint = await ctx.db.sprint.create({
+			data: {
+				title,
+				description,
+				startDate: startDate ? new Date(startDate) : undefined,
+				endDate: endDate ? new Date(endDate) : undefined,
+				order: sprintCount,
+				...createProjectConnection(isTemplate)
+			}
+		});
 
 			return sprint;
 		}),
@@ -134,10 +134,15 @@ export const sprintMutations = {
 				}
 			}
 
-			return ctx.db.sprint.update({
-				where: { id },
-				data: updateData
-			});
+		const { startDate, endDate, ...rest } = updateData;
+		return ctx.db.sprint.update({
+			where: { id },
+			data: {
+				...rest,
+				startDate: startDate ? new Date(startDate) : undefined,
+				endDate: endDate ? new Date(endDate) : undefined
+			}
+		});
 		}),
 
 	updateOrder: protectedProcedure

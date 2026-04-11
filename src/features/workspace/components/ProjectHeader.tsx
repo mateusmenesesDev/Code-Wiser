@@ -144,6 +144,7 @@ export default function ProjectHeader({
 								)}
 							</SelectContent>
 						</Select>
+					{methodology !== ProjectMethodologyEnum.SCRUM && (
 						<Select
 							value={sprintFilter ?? 'all'}
 							onValueChange={(value) => setSprintFilter(value)}
@@ -162,6 +163,7 @@ export default function ProjectHeader({
 									))}
 							</SelectContent>
 						</Select>
+					)}
 						{hasActiveFilters && (
 							<Button
 								variant="ghost"
