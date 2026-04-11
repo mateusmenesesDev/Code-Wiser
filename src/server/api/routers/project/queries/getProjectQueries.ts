@@ -10,11 +10,12 @@ export const getProjectQueries = {
 			userHasAccessToProject(ctx, input.id);
 			const project = await ctx.db.project.findUnique({
 				where: { id: input.id },
-				select: {
-					title: true,
-					figmaProjectUrl: true,
-					methodology: true
-				}
+			select: {
+				title: true,
+				description: true,
+				figmaProjectUrl: true,
+				methodology: true
+			}
 			});
 
 			return project;

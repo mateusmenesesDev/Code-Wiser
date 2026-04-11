@@ -3,7 +3,7 @@
 import { ProjectMethodologyEnum, type TaskStatusEnum } from '@prisma/client';
 import { useParams } from 'next/navigation';
 import { parseAsString, useQueryState, useQueryStates } from 'nuqs';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import {
 	KanbanBoard,
 	KanbanCards,
@@ -21,6 +21,7 @@ import SprintBoard from '~/features/sprints/components/SprintBoard';
 import SprintSidebar from '~/features/sprints/components/SprintSidebar';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import ProjectHeader from '~/features/workspace/components/ProjectHeader';
+import { ProjectSettingsModal } from '~/features/workspace/components/ProjectSettingsModal';
 import { api } from '~/trpc/react';
 
 const Workspace = () => {
@@ -38,9 +39,16 @@ const Workspace = () => {
 	});
 	const { filterTasks } = useKanbanFilters();
 	const { updateTaskOrdersMutation } = useKanbanMutations(projectId);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	const tasks = filterTasks(allTasks ?? []);
 	const isScrum = projectInfo?.methodology === ProjectMethodologyEnum.SCRUM;
+
+	useEffect(() => {
+		if (!isScrum) {
+			setViewParams({ view: null, sprintId: null });
+		}
+	}, [isScrum, setViewParams]);
 
 	const selectedSprint =
 		view === 'sprint' && sprintId
@@ -81,7 +89,9 @@ const Workspace = () => {
 					}
 					projectTitle={projectInfo?.title ?? ''}
 					projectFigmaUrl={projectInfo?.figmaProjectUrl ?? ''}
+					methodology={projectInfo?.methodology ?? ProjectMethodologyEnum.SCRUM}
 					onCreateTask={() => setTaskId('new')}
+					onOpenSettings={() => setIsSettingsOpen(true)}
 				/>
 			)}
 			<div className="flex flex-1 overflow-hidden">
@@ -100,12 +110,12 @@ const Workspace = () => {
 					/>
 				)}
 				<div className="flex-1 overflow-hidden">
-					{view === 'sprint' && selectedSprint ? (
+					{isScrum && view === 'sprint' && selectedSprint ? (
 						<SprintBoard
 							sprint={selectedSprint}
 							projectId={projectId}
 						/>
-					) : view === 'backlog' ? (
+					) : isScrum && view === 'backlog' ? (
 						<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading backlog...</div>}>
 							<div className="h-full overflow-y-auto p-6">
 								<Backlog projectId={projectId} />
@@ -161,15 +171,20 @@ const Workspace = () => {
 					)}
 				</div>
 			</div>
-			{view !== 'backlog' && (
-				<TaskDialog
-					taskId={taskId ?? undefined}
-					projectId={projectId}
-					onClose={() => setTaskId(null)}
-				/>
-			)}
-		</div>
-	);
+		{view !== 'backlog' && (
+			<TaskDialog
+				taskId={taskId ?? undefined}
+				projectId={projectId}
+				onClose={() => setTaskId(null)}
+			/>
+		)}
+		<ProjectSettingsModal
+			projectId={projectId}
+			open={isSettingsOpen}
+			onOpenChange={setIsSettingsOpen}
+		/>
+	</div>
+);
 };
 
 export default Workspace;

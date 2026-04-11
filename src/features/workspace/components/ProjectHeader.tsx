@@ -1,6 +1,6 @@
 import { Protect } from '@clerk/nextjs';
-import { TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
-import { Figma, Filter, Play, Plus, X } from 'lucide-react';
+import { ProjectMethodologyEnum, TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
+import { Figma, Filter, Play, Plus, Settings, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -22,7 +22,9 @@ interface ProjectHeaderProps {
 	stats: { status: TaskStatusEnum }[];
 	projectTitle: string;
 	projectFigmaUrl: string;
+	methodology: ProjectMethodologyEnum;
 	onCreateTask: () => void;
+	onOpenSettings: () => void;
 }
 
 export default function ProjectHeader({
@@ -32,7 +34,9 @@ export default function ProjectHeader({
 	stats,
 	projectTitle,
 	projectFigmaUrl,
-	onCreateTask
+	methodology,
+	onCreateTask,
+	onOpenSettings
 }: ProjectHeaderProps) {
 	const [isPlanningPokerDialogOpen, setIsPlanningPokerDialogOpen] =
 		useState(false);
@@ -51,7 +55,21 @@ export default function ProjectHeader({
 		<div className="rounded-lg border-border/40 border-b bg-card p-4">
 			<div className="flex items-center justify-between">
 				<div className="space-y-0.5">
-					<h1 className="font-bold text-2xl">{projectTitle}</h1>
+					<div className="flex items-center gap-2">
+						<h1 className="font-bold text-2xl">{projectTitle}</h1>
+						<span className="rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
+							{methodology === ProjectMethodologyEnum.SCRUM ? 'Scrum' : 'Kanban'}
+						</span>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7"
+							onClick={onOpenSettings}
+							aria-label="Project settings"
+						>
+							<Settings className="h-4 w-4" />
+						</Button>
+					</div>
 					<p className="text-muted-foreground text-sm">
 						Manage your tasks across different stages
 					</p>
