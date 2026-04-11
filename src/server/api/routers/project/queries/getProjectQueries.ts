@@ -12,7 +12,8 @@ export const getProjectQueries = {
 				where: { id: input.id },
 				select: {
 					title: true,
-					figmaProjectUrl: true
+					figmaProjectUrl: true,
+					methodology: true
 				}
 			});
 

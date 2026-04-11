@@ -1,3 +1,4 @@
+import { SprintStatusEnum } from '@prisma/client';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
@@ -21,7 +22,11 @@ const getPrismaFields = (
 		endDate: sprint.endDate ? new Date(sprint.endDate) : null,
 		id: '',
 		order: 0,
-		tasks: []
+		status: SprintStatusEnum.PLANNING,
+		tasks: [],
+		taskCount: 0,
+		doneCount: 0,
+		totalPoints: 0
 	};
 };
 
@@ -141,9 +146,31 @@ export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 		}
 	});
 
+	const startSprint = api.sprint.start.useMutation({
+		onSuccess: () => {
+			toast.success('Sprint started');
+			invalidateSprints();
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		}
+	});
+
+	const completeSprint = api.sprint.complete.useMutation({
+		onSuccess: () => {
+			toast.success('Sprint completed. Incomplete tasks moved to backlog.');
+			invalidateSprints();
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		}
+	});
+
 	return {
 		createSprint,
 		deleteSprint,
-		updateSprint
+		updateSprint,
+		startSprint,
+		completeSprint
 	};
 };

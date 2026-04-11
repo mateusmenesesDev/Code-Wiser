@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import dayjs from 'dayjs';
 import { useEffect } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
@@ -46,7 +47,9 @@ export default function SprintDialog({
 			title: '',
 			description: '',
 			projectId,
-			isTemplate
+			isTemplate,
+			startDate: '',
+			endDate: ''
 		}
 	});
 
@@ -56,14 +59,22 @@ export default function SprintDialog({
 				title: sprint.title,
 				description: sprint.description || '',
 				projectId: sprint.projectId || projectId,
-				isTemplate
+				isTemplate,
+				startDate: sprint.startDate
+					? dayjs(sprint.startDate).format('YYYY-MM-DD')
+					: '',
+				endDate: sprint.endDate
+					? dayjs(sprint.endDate).format('YYYY-MM-DD')
+					: ''
 			});
 		} else {
 			form.reset({
 				title: '',
 				description: '',
 				projectId,
-				isTemplate
+				isTemplate,
+				startDate: '',
+				endDate: ''
 			});
 		}
 	}, [sprint, form, projectId, isTemplate]);
@@ -126,6 +137,36 @@ export default function SprintDialog({
 							</FormItem>
 						)}
 					/>
+
+					<div className="grid grid-cols-2 gap-4">
+						<FormField
+							control={form.control}
+							name="startDate"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Start Date</FormLabel>
+									<FormControl>
+										<Input type="date" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="endDate"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>End Date</FormLabel>
+									<FormControl>
+										<Input type="date" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
 
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={onCancel}>

@@ -76,6 +76,14 @@ enum EpicStatusEnum {
   @@schema("public")
 }
 
+enum SprintStatusEnum {
+  PLANNING
+  ACTIVE
+  COMPLETED
+
+  @@schema("public")
+}
+
 enum PullRequestReviewStatusEnum {
   PENDING
   APPROVED

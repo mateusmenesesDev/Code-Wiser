@@ -75,6 +75,8 @@ model Sprint {
   description String?
   order       Int     @default(0)
 
+  status SprintStatusEnum @default(PLANNING)
+
   projectTemplateId String?
   projectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
 

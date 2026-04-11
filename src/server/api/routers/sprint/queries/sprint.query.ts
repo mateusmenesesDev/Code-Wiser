@@ -4,7 +4,21 @@ import { protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
 
 const sprintInclude = {
-	tasks: true
+	tasks: {
+		select: {
+			id: true,
+			title: true,
+			status: true,
+			priority: true,
+			storyPoints: true,
+			order: true,
+			sprintId: true,
+			assigneeId: true,
+			assignee: {
+				select: { id: true, name: true }
+			}
+		}
+	}
 };
 
 export const sprintQueries = {
@@ -30,17 +44,38 @@ export const sprintQueries = {
 				orderBy: { order: 'asc' }
 			});
 
-			return sprints;
+			return sprints.map((sprint) => {
+				const taskCount = sprint.tasks.length;
+				const doneCount = sprint.tasks.filter(
+					(t) => t.status === 'DONE'
+				).length;
+				const totalPoints = sprint.tasks.reduce(
+					(sum, t) => sum + (t.storyPoints ?? 0),
+					0
+				);
+				return { ...sprint, taskCount, doneCount, totalPoints };
+			});
 		}),
 
 	getById: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
+			const { id } = input;
+
 			const sprint = await ctx.db.sprint.findUnique({
-				where: { id: input.id },
+				where: { id },
 				include: sprintInclude
 			});
 
-			return sprint;
+			if (!sprint) return null;
+
+			const taskCount = sprint.tasks.length;
+			const doneCount = sprint.tasks.filter((t) => t.status === 'DONE').length;
+			const totalPoints = sprint.tasks.reduce(
+				(sum, t) => sum + (t.storyPoints ?? 0),
+				0
+			);
+
+			return { ...sprint, taskCount, doneCount, totalPoints };
 		})
 };
