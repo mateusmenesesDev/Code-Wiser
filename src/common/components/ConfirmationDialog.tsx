@@ -13,28 +13,46 @@ import {
 interface ConfirmationDialogProps {
 	title: string;
 	description: string;
-	children: React.ReactNode;
+	children?: React.ReactNode;
 	onConfirm: () => void;
+	onCancel?: () => void;
+	confirmLabel?: string;
+	cancelLabel?: string;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 export default function ConfirmationDialog({
 	title,
 	description,
 	children,
-	onConfirm
+	onConfirm,
+	onCancel,
+	confirmLabel = 'Confirm',
+	cancelLabel = 'Cancel',
+	open: controlledOpen,
+	onOpenChange: controlledOnOpenChange
 }: ConfirmationDialogProps) {
-	const [isOpen, setIsOpen] = useState(false);
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+
+	const isControlled = controlledOpen !== undefined;
+	const isOpen = isControlled ? controlledOpen : uncontrolledOpen;
+	const setIsOpen = isControlled
+		? (open: boolean) => controlledOnOpenChange?.(open)
+		: setUncontrolledOpen;
 
 	const handleClick = (confirm: boolean) => {
 		if (confirm) {
 			onConfirm();
+		} else {
+			onCancel?.();
 		}
 		setIsOpen(false);
 	};
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
-			<DialogTrigger asChild>{children}</DialogTrigger>
+			{children && <DialogTrigger asChild>{children}</DialogTrigger>}
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>
@@ -42,10 +60,10 @@ export default function ConfirmationDialog({
 				</DialogHeader>
 				<DialogFooter>
 					<Button variant="outline" onClick={() => handleClick(false)}>
-						Cancel
+						{cancelLabel}
 					</Button>
 					<Button variant="destructive" onClick={() => handleClick(true)}>
-						Confirm
+						{confirmLabel}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

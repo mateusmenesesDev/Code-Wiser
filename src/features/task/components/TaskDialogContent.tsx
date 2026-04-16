@@ -2,7 +2,7 @@ import { Protect } from '@clerk/nextjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
@@ -49,6 +49,7 @@ interface TaskDialogProps {
 	taskId?: string;
 	projectId: string;
 	onClose: () => void;
+	onDirtyChange?: (isDirty: boolean) => void;
 }
 
 dayjs.extend(relativeTime);
@@ -60,7 +61,8 @@ type TaskFormData =
 export function TaskDialogContent({
 	taskId,
 	projectId,
-	onClose
+	onClose,
+	onDirtyChange
 }: TaskDialogProps) {
 	const isTemplate = useIsTemplate();
 	const { userHasMentorship, userCredits } = useUser();
@@ -119,10 +121,25 @@ export function TaskDialogContent({
 		}
 	});
 
+	const prevTaskIdRef = useRef<string | undefined>(undefined);
+
 	useEffect(() => {
-		const formData = resetFormData(task, projectId, isTemplate);
-		form.reset(formData);
+		const currentTaskId = task?.id;
+		const taskIdChanged = currentTaskId !== prevTaskIdRef.current;
+		prevTaskIdRef.current = currentTaskId;
+
+		// Only reset when safe: task ID changed (switching tasks) or form is clean.
+		// Skipping reset when dirty prevents a background refetch from wiping in-progress edits.
+		if (taskIdChanged || !form.formState.isDirty) {
+			const formData = resetFormData(task, projectId, isTemplate);
+			form.reset(formData);
+		}
 	}, [form, projectId, task, isTemplate]);
+
+	const { isDirty } = form.formState;
+	useEffect(() => {
+		onDirtyChange?.(isDirty);
+	}, [isDirty, onDirtyChange]);
 
 	// Update PR URL from active review
 	useEffect(() => {
@@ -161,7 +178,6 @@ export function TaskDialogContent({
 	}, [task, epics, sprints, form]);
 
 	const onSubmit = async (data: TaskFormData) => {
-		console.log('data', data);
 		if (isEditing && task) {
 			updateTask({
 				id: task.id,
@@ -721,31 +737,36 @@ export function TaskDialogContent({
 							</Button>
 						</ConfirmationDialog>
 					)}
-					<div className="ml-auto flex gap-2">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={onClose}
-							disabled={form.formState.isSubmitting}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							disabled={form.formState.isSubmitting || !form.formState.isDirty}
-						>
-							{form.formState.isSubmitting && (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-							)}
-							{form.formState.isSubmitting
-								? isEditing
-									? 'Updating...'
-									: 'Creating...'
-								: isEditing
-									? 'Update Task'
-									: 'Create Task'}
-						</Button>
-					</div>
+			<div className="ml-auto flex items-center gap-2">
+					{form.formState.isDirty && (
+						<span className="text-muted-foreground text-xs">
+							Unsaved changes
+						</span>
+					)}
+					<Button
+						type="button"
+						variant="outline"
+						onClick={onClose}
+						disabled={form.formState.isSubmitting}
+					>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						disabled={form.formState.isSubmitting || !form.formState.isDirty}
+					>
+						{form.formState.isSubmitting && (
+							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+						)}
+						{form.formState.isSubmitting
+							? isEditing
+								? 'Updating...'
+								: 'Creating...'
+							: isEditing
+								? 'Update Task'
+								: 'Create Task'}
+					</Button>
+				</div>
 				</div>
 			</form>
 		</FormProvider>
