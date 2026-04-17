@@ -15,7 +15,6 @@ export const resetFormData = (
 	projectId: string,
 	isTemplate: boolean
 ) => {
-	console.log('projectId', projectId);
 	let formData: TaskFormData;
 	if (task) {
 		formData = {
