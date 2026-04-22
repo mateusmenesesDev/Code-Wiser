@@ -97,12 +97,20 @@ Every story MUST include all of the following fields:
 
 | Field | Requirement |
 |---|---|
-| **Title** | "As a `<actor>`, I want `<feature>`, so that `<benefit>`." |
-| **Description** | Full INVEST-aligned narrative (Independent, Negotiable, Valuable, Estimable, Small, Testable). Min 3 sentences. |
+| **Title** | Short verb phrase, ≤ 6 words. Captures the action without naming an actor (e.g. "Scaffold the Project", "Authenticate Users", "Display Blog Post"). **Never** use the "As a…" sentence format here. |
+| **Description** | First line MUST be the full user story sentence: "As a `<actor>`, I want `<feature>`, so that `<benefit>`." — followed by a full INVEST-aligned narrative (Independent, Negotiable, Valuable, Estimable, Small, Testable). Min 3 additional sentences after the opening line. |
 | **Acceptance Criteria** | Numbered list of ≥ 3 concrete, testable conditions. Each starts with "Given / When / Then" or a clear pass/fail statement. |
 | **Type** | One of: `USER_STORY`, `TASK`, `SUBTASK`, `BUG` (default: `USER_STORY`) |
 | **Priority** | One of: `LOWEST`, `LOW`, `MEDIUM`, `HIGH`, `HIGHEST` |
 | **Tags** | At least one tag (e.g., `frontend`, `backend`, `auth`, `database`, `api`, `ui`) |
+
+**Worked example — correct format:**
+
+| Field | Example value |
+|---|---|
+| **Title** | `Scaffold the Project` |
+| **Description** | `As a developer, I want to scaffold the project with Next.js 15 and TypeScript, so that I have a type-safe foundation ready for development.` _(followed by INVEST narrative)_ |
+| **Acceptance Criteria** | `1. Running bun install && bun run dev starts the server on port 3000 without errors.` … |
 
 Present the story clearly, then ask:
 
@@ -126,6 +134,7 @@ After each approval, display:
 
 - Generate stories in logical order: core domain entities first, then features, then cross-cutting concerns (auth, notifications, etc.)
 - Never generate two stories with the same `title`
+- **A title that matches the "As a `<actor>`, I want…" pattern is invalid.** If you catch yourself writing such a title, regenerate it as a verb phrase before presenting the story to the admin.
 - Stop generating new stories when the admin signals `done` / `stop`, or when you judge all meaningful slices of the project have been covered (and ask for confirmation before stopping)
 - The loop is resumable: if `template-wip.json` already contains stories, announce how many are already approved and continue from where the session left off
 
