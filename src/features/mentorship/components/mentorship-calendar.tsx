@@ -55,7 +55,6 @@ type DayState = 'available' | 'fullyBooked' | 'weeklyLocked' | 'past';
 
 interface SlotOption {
 	start: string;
-	end: string;
 }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
@@ -233,7 +232,6 @@ export function MentorshipCalendar() {
 		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 		bookMutation.mutate({
 			start: selectedSlot.start,
-			end: selectedSlot.end,
 			timeZone: tz,
 			attendeeName: userName,
 			attendeeEmail: userEmail

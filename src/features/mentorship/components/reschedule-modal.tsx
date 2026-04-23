@@ -40,7 +40,6 @@ function formatSlotTime(isoString: string): string {
 
 interface SlotOption {
 	start: string;
-	end: string;
 }
 
 interface RescheduleModalProps {
@@ -160,8 +159,7 @@ export function RescheduleModal({
 		if (!selectedSlot) return;
 		rescheduleMutation.mutate({
 			bookingId,
-			newStart: selectedSlot.start,
-			newEnd: selectedSlot.end
+			newStart: selectedSlot.start
 		});
 		setConfirmOpen(false);
 	};

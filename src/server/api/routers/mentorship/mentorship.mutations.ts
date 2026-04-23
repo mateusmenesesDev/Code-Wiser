@@ -19,7 +19,6 @@ export const mentorshipMutations = {
 		.input(
 			z.object({
 				start: z.string().datetime(),
-				end: z.string().datetime(),
 				timeZone: z.string().default('UTC'),
 				attendeeName: z.string(),
 				attendeeEmail: z.string().email()
@@ -38,11 +37,11 @@ export const mentorshipMutations = {
 			}
 
 			try {
-				// Create booking in Cal.com first to get the real calBookingId
+				// Create booking in Cal.com first to get the real calBookingId.
+				// end is omitted — Cal.com derives it from the event type's duration.
 				const calBooking = await createBooking({
 					eventTypeId: env.CALCOM_EVENT_TYPE_ID,
 					start: input.start,
-					end: input.end,
 					attendee: {
 						name: input.attendeeName,
 						email: input.attendeeEmail,
@@ -211,8 +210,7 @@ export const mentorshipMutations = {
 		.input(
 			z.object({
 				bookingId: z.string().uuid(),
-				newStart: z.string().datetime(),
-				newEnd: z.string().datetime()
+				newStart: z.string().datetime()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {

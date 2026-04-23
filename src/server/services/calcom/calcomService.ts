@@ -2,9 +2,14 @@ import { env } from '~/env';
 
 const CALCOM_API_BASE_URL = 'https://api.cal.com/v2';
 
-interface CalcomAvailabilitySlot {
+/** Shape Cal.com v2 /slots/available returns per slot */
+interface CalcomRawSlot {
+	time: string;
+}
+
+/** Normalised slot shape used throughout the app */
+export interface CalcomAvailabilitySlot {
 	start: string;
-	end: string;
 }
 
 interface CalcomBookingResponse {
@@ -21,7 +26,7 @@ interface CalcomBookingResponse {
 interface CalcomCreateBookingParams {
 	eventTypeId: string;
 	start: string;
-	end: string;
+	end?: string;
 	attendee: {
 		name: string;
 		email: string;
@@ -60,10 +65,17 @@ export async function getAvailableSlots(
 		}
 
 		const data = (await response.json()) as {
-			data?: { slots?: Record<string, CalcomAvailabilitySlot[]> };
+			data?: { slots?: Record<string, CalcomRawSlot[]> };
 		};
 
-		return data.data?.slots ?? {};
+		// Normalise Cal.com's { time } shape to { start } so callers use a
+		// consistent interface and never accidentally read an undefined field.
+		const rawSlots = data.data?.slots ?? {};
+		const normalised: Record<string, CalcomAvailabilitySlot[]> = {};
+		for (const [date, slots] of Object.entries(rawSlots)) {
+			normalised[date] = slots.map((s) => ({ start: s.time }));
+		}
+		return normalised;
 	} catch (error) {
 		console.error('Error fetching Cal.com availability:', error);
 		throw new Error(
@@ -88,7 +100,7 @@ export async function createBooking(
 			body: JSON.stringify({
 				eventTypeId: Number.parseInt(params.eventTypeId, 10),
 				start: params.start,
-				end: params.end,
+				...(params.end && { end: params.end }),
 				attendee: params.attendee,
 				metadata: params.metadata || {}
 			})
