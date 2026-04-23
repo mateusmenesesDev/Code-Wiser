@@ -1,6 +1,7 @@
 'use client';
 
-import { Calendar, Clock, ExternalLink, Video, X } from 'lucide-react';
+import { Calendar, Clock, ExternalLink, RefreshCw, Video, X } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
@@ -25,10 +26,14 @@ import {
 	formatSessionDate,
 	formatSessionTime
 } from '../utils/mentorshipAccess';
+import { RescheduleModal } from './reschedule-modal';
 
 export function MyBookingsList() {
 	const utils = api.useUtils();
 	const { data: bookings, isLoading } = api.mentorship.getMyBookings.useQuery();
+	const [rescheduleBookingId, setRescheduleBookingId] = useState<
+		string | undefined
+	>();
 
 	const cancelBookingMutation = api.mentorship.cancelBooking.useMutation({
 		onSuccess: async () => {
@@ -36,6 +41,7 @@ export function MyBookingsList() {
 
 			await utils.mentorship.getMyBookings.invalidate();
 			await utils.mentorship.getMyMentorshipWeekInfo.invalidate();
+			await utils.mentorship.getAvailableSlots.invalidate();
 		},
 		onError: (error) => {
 			toast.error(`Failed to cancel booking: ${error.message}`);
@@ -44,6 +50,13 @@ export function MyBookingsList() {
 
 	const handleCancelBooking = (bookingId: string) => {
 		cancelBookingMutation.mutate({ bookingId });
+	};
+
+	const handleRescheduleSuccess = async () => {
+		toast.success('Session rescheduled successfully');
+		await utils.mentorship.getMyBookings.invalidate();
+		await utils.mentorship.getMyMentorshipWeekInfo.invalidate();
+		await utils.mentorship.getAvailableSlots.invalidate();
 	};
 
 	const getStatusBadge = (status: string) => {
@@ -100,16 +113,16 @@ export function MyBookingsList() {
 							<p>No upcoming sessions scheduled</p>
 						</div>
 					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Date</TableHead>
-									<TableHead>Time</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Links</TableHead>
-									<TableHead className="text-right">Actions</TableHead>
-								</TableRow>
-							</TableHeader>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Date</TableHead>
+								<TableHead>Time</TableHead>
+								<TableHead>Status</TableHead>
+								<TableHead>Links</TableHead>
+								<TableHead className="text-right">Actions</TableHead>
+							</TableRow>
+						</TableHeader>
 							<TableBody>
 								{upcomingBookings.map((booking) => (
 									<TableRow key={booking.id}>
@@ -163,8 +176,20 @@ export function MyBookingsList() {
 												)}
 											</div>
 										</TableCell>
-										<TableCell className="text-right">
-											{booking.status === 'SCHEDULED' && (
+									<TableCell className="text-right">
+										{booking.status === 'SCHEDULED' && (
+											<div className="flex items-center justify-end gap-1">
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() =>
+														setRescheduleBookingId(booking.id)
+													}
+													disabled={cancelBookingMutation.isPending}
+												>
+													<RefreshCw className="mr-1 h-4 w-4" />
+													Reschedule
+												</Button>
 												<ConfirmationDialog
 													title="Cancel Session"
 													description="Are you sure you want to cancel this session? Your weekly session count will be restored."
@@ -179,8 +204,9 @@ export function MyBookingsList() {
 														Cancel
 													</Button>
 												</ConfirmationDialog>
-											)}
-										</TableCell>
+											</div>
+										)}
+									</TableCell>
 									</TableRow>
 								))}
 							</TableBody>
@@ -227,6 +253,16 @@ export function MyBookingsList() {
 						</Table>
 					</CardContent>
 				</Card>
+			)}
+			{rescheduleBookingId && (
+				<RescheduleModal
+					bookingId={rescheduleBookingId}
+					open={!!rescheduleBookingId}
+					onOpenChange={(open) => {
+						if (!open) setRescheduleBookingId(undefined);
+					}}
+					onSuccess={handleRescheduleSuccess}
+				/>
 			)}
 		</div>
 	);

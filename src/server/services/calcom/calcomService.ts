@@ -32,12 +32,13 @@ interface CalcomCreateBookingParams {
 }
 
 /**
- * Get available time slots from Cal.com for a specific date range
+ * Get available time slots from Cal.com for a specific date range.
+ * Returns slots grouped by date key (YYYY-MM-DD) in UTC.
  */
 export async function getAvailableSlots(
 	startDate: Date,
 	endDate: Date
-): Promise<CalcomAvailabilitySlot[]> {
+): Promise<Record<string, CalcomAvailabilitySlot[]>> {
 	try {
 		const startISO = startDate.toISOString();
 		const endISO = endDate.toISOString();
@@ -53,8 +54,6 @@ export async function getAvailableSlots(
 			}
 		);
 
-		console.log('response', response);
-
 		if (!response.ok) {
 			const errorText = await response.text();
 			throw new Error(`Cal.com API error: ${response.status} - ${errorText}`);
@@ -64,15 +63,7 @@ export async function getAvailableSlots(
 			data?: { slots?: Record<string, CalcomAvailabilitySlot[]> };
 		};
 
-		// Cal.com returns slots grouped by date
-		const allSlots: CalcomAvailabilitySlot[] = [];
-		if (data.data?.slots) {
-			for (const dateSlots of Object.values(data.data.slots)) {
-				allSlots.push(...dateSlots);
-			}
-		}
-
-		return allSlots;
+		return data.data?.slots ?? {};
 	} catch (error) {
 		console.error('Error fetching Cal.com availability:', error);
 		throw new Error(
@@ -201,6 +192,46 @@ export async function cancelBooking(
 		console.error('Error cancelling Cal.com booking:', error);
 		throw new Error(
 			`Failed to cancel booking: ${error instanceof Error ? error.message : 'Unknown error'}`
+		);
+	}
+}
+
+/**
+ * Reschedule an existing booking in Cal.com
+ */
+export async function rescheduleBooking(
+	bookingUid: string,
+	newStart: string,
+	reason?: string
+): Promise<CalcomBookingResponse> {
+	try {
+		const response = await fetch(
+			`${CALCOM_API_BASE_URL}/bookings/${bookingUid}/reschedule`,
+			{
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
+					'Content-Type': 'application/json',
+					'cal-api-version': '2024-08-13'
+				},
+				body: JSON.stringify({
+					start: newStart,
+					reschedulingReason: reason ?? 'Rescheduled by attendee'
+				})
+			}
+		);
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			throw new Error(`Cal.com API error: ${response.status} - ${errorText}`);
+		}
+
+		const data = (await response.json()) as { data: CalcomBookingResponse };
+		return data.data;
+	} catch (error) {
+		console.error('Error rescheduling Cal.com booking:', error);
+		throw new Error(
+			`Failed to reschedule booking: ${error instanceof Error ? error.message : 'Unknown error'}`
 		);
 	}
 }

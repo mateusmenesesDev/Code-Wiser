@@ -1,12 +1,14 @@
-import { TRPCError } from '@trpc/server';
 import { getAvailableSlotsSchema } from '~/features/mentorship/schemas/mentorship.schema';
 import { getAvailableSlots } from '~/server/services/calcom/calcomService';
+import { getWeekBoundaries } from '~/server/services/mentorship/mentorshipService';
 import { mentorshipProcedure, protectedProcedure } from '../../trpc';
 
 export const mentorshipQueries = {
 	getMyMentorshipWeekInfo: protectedProcedure.query(async ({ ctx }) => {
+		const userId = ctx.session.userId;
+
 		const info = await ctx.db.user.findUnique({
-			where: { id: ctx.session.userId },
+			where: { id: userId },
 			select: {
 				remainingWeeklySessions: true,
 				weeklyMentorshipSessions: true,
@@ -16,46 +18,50 @@ export const mentorshipQueries = {
 
 		const now = new Date();
 		const nextMonday = new Date(now);
-
-		// Get days until next Monday (1 = Monday, 0 = Sunday)
 		const currentDay = now.getUTCDay();
 		const daysUntilMonday = currentDay === 0 ? 7 : 8 - currentDay;
-
 		nextMonday.setUTCDate(now.getUTCDate() + daysUntilMonday);
 		nextMonday.setUTCHours(0, 0, 0, 0);
 
 		const hasAvailableSessions = (info?.remainingWeeklySessions ?? 0) > 0;
 
+		// Build per-week scheduled booking counts for the 4-week calendar window
+		// so the client can compute lock states without additional round-trips.
+		const weeklyBookingCounts: { weekStart: Date; scheduledCount: number }[] =
+			[];
+
+		for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
+			const weekAnchor = new Date(now);
+			weekAnchor.setUTCDate(now.getUTCDate() + weekOffset * 7);
+			const { weekStart, weekEnd } = getWeekBoundaries(weekAnchor);
+
+			const scheduledCount = await ctx.db.mentorshipBooking.count({
+				where: {
+					userId,
+					scheduledAt: { gte: weekStart, lt: weekEnd },
+					status: 'SCHEDULED'
+				}
+			});
+
+			weeklyBookingCounts.push({ weekStart, scheduledCount });
+		}
+
 		return {
 			remainingWeeklySessions: info?.remainingWeeklySessions ?? 0,
 			weeklyMentorshipSessions: info?.weeklyMentorshipSessions ?? 0,
 			weeklySessionsResetAt: nextMonday,
-			hasAvailableSessions
+			hasAvailableSessions,
+			weeklyBookingCounts
 		};
 	}),
 
 	getAvailableSlots: mentorshipProcedure
 		.input(getAvailableSlotsSchema)
-		.query(async ({ ctx, input }) => {
-			const remainingWeeklySessions = await ctx.db.user.findUnique({
-				where: { id: ctx.session.userId },
-				select: { remainingWeeklySessions: true }
-			});
-			const hasSlots =
-				(remainingWeeklySessions?.remainingWeeklySessions ?? 0) > 0;
-			if (!hasSlots) {
-				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message: 'You have reached your weekly session limit'
-				});
-			}
-
+		.query(async ({ input }) => {
 			const startDate = new Date(input.startDate);
 			const endDate = new Date(input.endDate);
 
-			const slots = await getAvailableSlots(startDate, endDate);
-
-			return slots;
+			return getAvailableSlots(startDate, endDate);
 		}),
 
 	getMyBookings: mentorshipProcedure.query(async ({ ctx }) => {
