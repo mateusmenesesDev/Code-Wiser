@@ -1,17 +1,19 @@
 'use client';
 
 import type { DayButtonProps } from 'react-day-picker';
-import { CalendarDays, Lock, RefreshCw, X } from 'lucide-react';
-import { useState } from 'react';
+import {
+	CalendarDays,
+	Clock,
+	Globe,
+	Lock,
+	RefreshCw,
+	Video,
+	X
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '~/common/components/ui/button';
 import { Calendar } from '~/common/components/ui/calendar';
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle
-} from '~/common/components/ui/card';
 import {
 	Dialog,
 	DialogContent,
@@ -22,7 +24,10 @@ import {
 } from '~/common/components/ui/dialog';
 import { ScrollArea } from '~/common/components/ui/scroll-area';
 import { Skeleton } from '~/common/components/ui/skeleton';
+import { Switch } from '~/common/components/ui/switch';
+import { env } from '~/env';
 import { useAuth } from '~/features/auth/hooks/useAuth';
+import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 import { formatSessionDateTime } from '../utils/mentorshipAccess';
 
@@ -38,18 +43,27 @@ function todayStart(): Date {
 	return d;
 }
 
-function formatSlotTime(isoString: string): string {
+/** Derive a readable host label from the public Cal.com username slug */
+function hostDisplayFromCalUsername(username: string): string {
+	return username
+		.split(/[-_]/)
+		.filter(Boolean)
+		.map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
+		.join(' ');
+}
+
+function formatSlotTime(isoString: string, use24Hour: boolean): string {
 	return new Intl.DateTimeFormat(undefined, {
 		hour: 'numeric',
 		minute: '2-digit',
-		hour12: true
+		hour12: !use24Hour
 	}).format(new Date(isoString));
 }
 
-function formatSelectedDate(date: Date): string {
+/** Compact header like Cal.com: "Thu 23" */
+function formatSlotColumnHeading(date: Date): string {
 	return new Intl.DateTimeFormat(undefined, {
-		weekday: 'long',
-		month: 'long',
+		weekday: 'short',
 		day: 'numeric'
 	}).format(date);
 }
@@ -66,56 +80,59 @@ interface SlotOption {
 
 function CalendarSkeleton() {
 	return (
-		<Card>
-			<CardHeader>
-				<Skeleton className="h-6 w-48" />
-			</CardHeader>
-			<CardContent>
-				<div className="flex flex-col gap-6 md:flex-row md:divide-x">
-					<div className="flex-1 space-y-3">
-						<Skeleton className="h-8 w-full" />
-						{Array.from({ length: 5 }).map((_, i) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton
-							<Skeleton key={i} className="h-12 w-full" />
-						))}
-					</div>
-					<div className="space-y-2 md:w-72">
-						<Skeleton className="h-6 w-40" />
-						{Array.from({ length: 5 }).map((_, i) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton
-							<Skeleton key={i} className="h-10 w-full" />
-						))}
-					</div>
+		<div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-sm">
+			<div className="grid grid-cols-1 divide-y lg:grid-cols-[minmax(0,280px)_1fr_minmax(0,280px)] lg:divide-x lg:divide-y-0">
+				<div className="space-y-4 p-6">
+					<Skeleton className="h-12 w-12 rounded-full" />
+					<Skeleton className="h-5 w-40" />
+					<Skeleton className="h-8 w-56" />
+					<Skeleton className="h-4 w-full" />
+					<Skeleton className="h-4 w-full" />
 				</div>
-			</CardContent>
-		</Card>
+				<div className="flex justify-center p-6">
+					<Skeleton className="h-[300px] w-full max-w-[340px]" />
+				</div>
+				<div className="space-y-3 p-6">
+					<Skeleton className="h-6 w-24" />
+					{Array.from({ length: 5 }).map((_, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: skeleton
+						<Skeleton key={i} className="h-11 w-full" />
+					))}
+				</div>
+			</div>
+		</div>
 	);
 }
 
 function CalendarError({ onRetry }: { onRetry: () => void }) {
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Book Your Next Session</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<div className="flex flex-col items-center gap-3 py-12 text-center text-muted-foreground">
-					<p>Failed to load available slots. Please try again.</p>
-					<Button variant="outline" size="sm" onClick={onRetry}>
-						<RefreshCw className="mr-2 h-4 w-4" />
-						Retry
-					</Button>
-				</div>
-			</CardContent>
-		</Card>
+		<div className="mx-auto max-w-lg overflow-hidden rounded-2xl border bg-card p-8 text-center shadow-sm">
+			<p className="text-muted-foreground">
+				Failed to load available slots. Please try again.
+			</p>
+			<Button className="mt-4" variant="outline" size="sm" onClick={onRetry}>
+				<RefreshCw className="mr-2 h-4 w-4" />
+				Retry
+			</Button>
+		</div>
 	);
 }
 
 // ─── main component ───────────────────────────────────────────────────────────
 
+const EVENT_TITLE = 'Individual Mentorship';
+const DURATION_LABEL = '1h';
+
 export function MentorshipCalendar() {
 	const { userEmail, userName } = useAuth();
 	const utils = api.useUtils();
+
+	const hostName = useMemo(
+		() => hostDisplayFromCalUsername(env.NEXT_PUBLIC_CALCOM_USERNAME),
+		[]
+	);
+	const hostInitial = hostName.charAt(0).toUpperCase() || 'M';
+	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 	const today = todayStart();
 	const windowEnd = new Date(today);
@@ -136,6 +153,7 @@ export function MentorshipCalendar() {
 	const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 	const [selectedSlot, setSelectedSlot] = useState<SlotOption | undefined>();
 	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [use24Hour, setUse24Hour] = useState(false);
 
 	const bookMutation = api.mentorship.bookSession.useMutation({
 		onSuccess: async () => {
@@ -182,8 +200,6 @@ export function MentorshipCalendar() {
 		}
 	}
 
-	// ── modifiers ─────────────────────────────────────────────────────────────
-
 	const available: Date[] = [];
 	const fullyBooked: Date[] = [];
 	const weeklyLocked: Date[] = [];
@@ -200,13 +216,9 @@ export function MentorshipCalendar() {
 		else if (state === 'weeklyLocked') weeklyLocked.push(d);
 	}
 
-	// ── slot picker ───────────────────────────────────────────────────────────
-
 	const selectedDateKey = selectedDate ? toLocalDateKey(selectedDate) : null;
 	const slotsForSelectedDay: SlotOption[] =
 		selectedDateKey && slotsGrouped ? (slotsGrouped[selectedDateKey] ?? []) : [];
-
-	// ── handlers ──────────────────────────────────────────────────────────────
 
 	const handleDayClick = (day: Date) => {
 		const state = dayStates.get(toLocalDateKey(day));
@@ -220,170 +232,207 @@ export function MentorshipCalendar() {
 		if (!selectedSlot || !userEmail || !userName) return;
 		bookMutation.mutate({
 			start: selectedSlot.start,
-			timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+			timeZone,
 			attendeeName: userName,
 			attendeeEmail: userEmail
 		});
 		setConfirmOpen(false);
 	};
 
-	// ── early states ──────────────────────────────────────────────────────────
-
 	if (slotsLoading) return <CalendarSkeleton />;
 	if (slotsError) return <CalendarError onRetry={() => void refetchSlots()} />;
 
-	// ── render ────────────────────────────────────────────────────────────────
-
 	return (
-		<Card className="overflow-hidden">
-			<CardHeader className="border-b pb-4">
-				<CardTitle>Book Your Next Session</CardTitle>
-
-				{/* Legend */}
-				<div className="flex flex-wrap gap-4 text-muted-foreground text-xs">
-					<span className="flex items-center gap-1.5">
-						<span className="inline-block h-3 w-3 rounded-full bg-primary" />
-						Available
-					</span>
-					<span className="flex items-center gap-1.5">
-						<X className="h-3 w-3 text-muted-foreground/60" />
-						No slots
-					</span>
-					<span className="flex items-center gap-1.5">
-						<Lock className="h-3 w-3 text-amber-500" />
-						Weekly limit reached
-					</span>
-				</div>
-			</CardHeader>
-
-			<CardContent className="p-0">
-				<div className="flex flex-col divide-y md:flex-row md:divide-x md:divide-y-0">
-
-					{/* ── Left: Calendar ─────────────────────────────────────── */}
-					<div className="flex flex-1 items-start justify-center p-6">
-						<Calendar
-							mode="single"
-							selected={selectedDate}
-							onSelect={(day) => day && handleDayClick(day)}
-							disabled={(day) => day < today || day >= windowEnd}
-							fromDate={today}
-							toDate={windowEnd}
-							modifiers={{ available, fullyBooked, weeklyLocked }}
-							classNames={{
-								// Override cell sizes to be larger than the default w-9/h-9
-								weekday:
-									'w-12 rounded-md text-center text-[0.8rem] font-normal text-muted-foreground',
-								day: 'relative h-12 w-12 p-0 text-center text-sm focus-within:relative focus-within:z-20',
-								day_button:
-									'h-12 w-12 rounded-md p-0 font-normal transition-colors hover:bg-accent hover:text-accent-foreground aria-selected:opacity-100'
-							}}
-							components={{
-								DayButton: ({
-									day,
-									modifiers,
-									...btnProps
-								}: DayButtonProps) => {
-									const isFullyBooked =
-										modifiers.fullyBooked as boolean | undefined;
-									const isWeeklyLocked =
-										modifiers.weeklyLocked as boolean | undefined;
-									const isDisabled = modifiers.disabled as boolean | undefined;
-
-									const extraClasses = [
-										isFullyBooked && !isDisabled && 'cursor-not-allowed opacity-40',
-										isWeeklyLocked && !isDisabled && 'cursor-not-allowed opacity-60'
-									]
-										.filter(Boolean)
-										.join(' ');
-
-									return (
-										<button
-											{...btnProps}
-											className={[btnProps.className, 'relative', extraClasses]
-												.filter(Boolean)
-												.join('')}
-											disabled={
-												btnProps.disabled || isFullyBooked || isWeeklyLocked
-											}
-											title={
-												isWeeklyLocked
-													? 'Weekly session limit reached'
-													: isFullyBooked && !isDisabled
-														? 'No available slots'
-														: undefined
-											}
-										>
-											{btnProps.children}
-											{isFullyBooked && !isDisabled && (
-												<span className="-translate-x-1/2 absolute bottom-1 left-1/2">
-													<X className="h-2 w-2 text-muted-foreground/50" />
-												</span>
-											)}
-											{isWeeklyLocked && !isDisabled && (
-												<span className="-translate-x-1/2 absolute bottom-1 left-1/2">
-													<Lock className="h-2 w-2 text-amber-500" />
-												</span>
-											)}
-										</button>
-									);
-								}
-							}}
-						/>
+		<div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+			{/* Cal.com–style 3-column embed */}
+			<div className="grid grid-cols-1 divide-y lg:grid-cols-[minmax(0,280px)_1fr_minmax(0,280px)] lg:divide-x lg:divide-y-0">
+				{/* ── Left: event summary (like Cal.com embed sidebar) ───────── */}
+				<aside className="flex flex-col gap-6 bg-muted/15 p-6 lg:min-h-[420px]">
+					<div className="flex items-start gap-4">
+						<div
+							className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-lg text-primary-foreground"
+							aria-hidden
+						>
+							{hostInitial}
+						</div>
+						<div className="min-w-0 space-y-1">
+							<p className="truncate text-muted-foreground text-sm">{hostName}</p>
+							<h2 className="font-semibold text-foreground text-xl leading-tight tracking-tight">
+								{EVENT_TITLE}
+							</h2>
+						</div>
 					</div>
 
-					{/* ── Right: Slot picker ─────────────────────────────────── */}
-					<div className="flex flex-col gap-3 p-6 md:w-72">
-						{selectedDate ? (
-							<>
-								<p className="font-semibold text-sm">
-									{formatSelectedDate(selectedDate)}
-								</p>
+					<ul className="space-y-3 text-muted-foreground text-sm">
+						<li className="flex items-center gap-2.5">
+							<Clock className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+							<span>{DURATION_LABEL}</span>
+						</li>
+						<li className="flex items-center gap-2.5">
+							<Video className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+							<span>Video call</span>
+						</li>
+						<li className="flex items-start gap-2.5">
+							<Globe className="mt-0.5 h-4 w-4 shrink-0 opacity-70" aria-hidden />
+							<span className="break-all">{timeZone}</span>
+						</li>
+					</ul>
 
-								{slotsForSelectedDay.length === 0 ? (
-									<p className="text-muted-foreground text-sm">
-										No available times for this date.
-									</p>
-								) : (
-									<ScrollArea className="h-[320px] pr-2">
-										<div className="flex flex-col gap-2">
-											{slotsForSelectedDay.map((slot) => (
-												<Button
-													key={slot.start}
-													variant="outline"
-													className="w-full justify-center font-normal"
-													onClick={() => {
-														setSelectedSlot(slot);
-														setConfirmOpen(true);
-													}}
-												>
-													{formatSlotTime(slot.start)}
-												</Button>
-											))}
-										</div>
-									</ScrollArea>
-								)}
-							</>
-						) : (
-							<div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-2 text-center text-muted-foreground">
-								<CalendarDays className="h-8 w-8 opacity-40" />
-								<p className="text-sm">
-									Select a date on the calendar to see available times.
+					<div className="mt-auto flex flex-wrap gap-3 border-border/60 border-t pt-4 text-[11px] text-muted-foreground">
+						<span className="inline-flex items-center gap-1">
+							<span className="h-2 w-2 rounded-full bg-primary" /> Available
+						</span>
+						<span className="inline-flex items-center gap-1">
+							<X className="h-2.5 w-2.5 opacity-60" /> No slots
+						</span>
+						<span className="inline-flex items-center gap-1">
+							<Lock className="h-2.5 w-2.5 text-amber-500" /> Weekly cap
+						</span>
+					</div>
+				</aside>
+
+				{/* ── Center: calendar ─────────────────────────────────────────── */}
+				<div className="flex justify-center p-5 sm:p-6">
+					<Calendar
+						mode="single"
+						selected={selectedDate}
+						onSelect={(day) => day && handleDayClick(day)}
+						disabled={(day) => day < today || day >= windowEnd}
+						fromDate={today}
+						toDate={windowEnd}
+						modifiers={{ available, fullyBooked, weeklyLocked }}
+						modifiersClassNames={{
+							available: '[&_button]:bg-muted/50 [&_button]:font-medium',
+							fullyBooked: 'rdp-day_fullyBooked',
+							weeklyLocked: 'rdp-day_weeklyLocked'
+						}}
+						classNames={{
+							root: 'w-full max-w-[360px]',
+							weekday:
+								'w-10 text-center font-medium text-[0.7rem] uppercase tracking-wide text-muted-foreground',
+							day: 'relative h-10 w-10 p-0 text-center text-sm focus-within:relative focus-within:z-20',
+							day_button:
+								'h-10 w-10 rounded-lg p-0 font-normal transition-colors hover:bg-accent hover:text-accent-foreground aria-selected:opacity-100',
+							selected:
+								'!bg-foreground !text-background hover:!bg-foreground hover:!text-background focus:!bg-foreground focus:!text-background rounded-lg font-semibold shadow-sm'
+						}}
+						components={{
+							DayButton: ({
+								day,
+								modifiers,
+								...btnProps
+							}: DayButtonProps) => {
+								const isFullyBooked =
+									modifiers.fullyBooked as boolean | undefined;
+								const isWeeklyLocked =
+									modifiers.weeklyLocked as boolean | undefined;
+								const isDisabled = modifiers.disabled as boolean | undefined;
+
+								return (
+									<button
+										{...btnProps}
+										className={cn(
+											btnProps.className,
+											'relative',
+											isFullyBooked &&
+												!isDisabled &&
+												'cursor-not-allowed opacity-40',
+											isWeeklyLocked &&
+												!isDisabled &&
+												'cursor-not-allowed opacity-60'
+										)}
+										disabled={
+											btnProps.disabled || isFullyBooked || isWeeklyLocked
+										}
+										title={
+											isWeeklyLocked
+												? 'Weekly session limit reached'
+												: isFullyBooked && !isDisabled
+													? 'No available slots'
+													: undefined
+										}
+									>
+										{btnProps.children}
+										{isFullyBooked && !isDisabled && (
+											<span className="-translate-x-1/2 absolute bottom-1 left-1/2">
+												<X className="h-2 w-2 text-muted-foreground/50" />
+											</span>
+										)}
+										{isWeeklyLocked && !isDisabled && (
+											<span className="-translate-x-1/2 absolute bottom-1 left-1/2">
+												<Lock className="h-2 w-2 text-amber-500" />
+											</span>
+										)}
+									</button>
+								);
+							}
+						}}
+					/>
+				</div>
+
+				{/* ── Right: times (Cal.com slot column) ───────────────────────── */}
+				<div className="flex flex-col border-border/60 bg-muted/10 p-5 sm:p-6 lg:min-h-[420px]">
+					{selectedDate ? (
+						<>
+							<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+								<p className="font-semibold text-foreground text-lg tracking-tight">
+									{formatSlotColumnHeading(selectedDate)}
 								</p>
+								<div className="flex items-center gap-2">
+									<span className="text-muted-foreground text-xs">12h</span>
+									<Switch
+										id="time-format"
+										checked={use24Hour}
+										onCheckedChange={setUse24Hour}
+										aria-label="Use 24-hour time"
+									/>
+									<span className="text-muted-foreground text-xs">24h</span>
+								</div>
 							</div>
-						)}
-					</div>
-				</div>
-			</CardContent>
 
-			{/* Confirmation dialog */}
+							{slotsForSelectedDay.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No available times for this date.
+								</p>
+							) : (
+								<ScrollArea className="min-h-0 flex-1 pr-2 lg:h-[min(340px,60vh)]">
+									<div className="flex flex-col gap-2 pb-1">
+										{slotsForSelectedDay.map((slot) => (
+											<Button
+												key={slot.start}
+												variant="outline"
+												className="h-11 w-full justify-center rounded-lg border-border/80 bg-background/50 font-normal text-base hover:bg-accent"
+												onClick={() => {
+													setSelectedSlot(slot);
+													setConfirmOpen(true);
+												}}
+											>
+												{formatSlotTime(slot.start, use24Hour)}
+											</Button>
+										))}
+									</div>
+								</ScrollArea>
+							)}
+						</>
+					) : (
+						<div className="flex flex-1 flex-col items-center justify-center gap-3 px-2 text-center text-muted-foreground">
+							<CalendarDays className="h-10 w-10 opacity-35" aria-hidden />
+							<p className="max-w-[220px] text-sm leading-relaxed">
+								Select a date in the calendar to see available times.
+							</p>
+						</div>
+					)}
+				</div>
+			</div>
+
 			<Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Confirm Booking</DialogTitle>
+						<DialogTitle>Confirm booking</DialogTitle>
 						<DialogDescription>
 							{selectedSlot && (
 								<>
-									You are about to book a session on{' '}
+									You are about to book{' '}
 									<strong>
 										{formatSessionDateTime(new Date(selectedSlot.start))}
 									</strong>{' '}
@@ -409,6 +458,6 @@ export function MentorshipCalendar() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-		</Card>
+		</div>
 	);
 }
