@@ -23,6 +23,7 @@ import { Textarea } from '~/common/components/ui/textarea';
 import { useTask } from '~/features/task/hooks/useTask';
 import {
 	createTaskSchema,
+	FIBONACCI_STORY_POINTS,
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { cn } from '~/lib/utils';
@@ -220,6 +221,11 @@ export function TaskDialogContent({
 				: 'Please fix the highlighted fields.';
 		toast.error(msg);
 	};
+
+	const storyPointsWatch = form.watch('storyPoints');
+	const storyPointsIsFibonacci =
+		storyPointsWatch == null ||
+		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
 
 	return (
 		<FormProvider {...form}>
@@ -549,18 +555,37 @@ export function TaskDialogContent({
 							<Label htmlFor="storyPoints" className="mb-2 block">
 								Story Points
 							</Label>
-							<Input
-								id="storyPoints"
-								type="number"
-								min="1"
-								placeholder="e.g. 1, 2, 3, 5, 8, 13, 21"
-								{...form.register('storyPoints', {
-									setValueAs: (value: string) => {
-										const num = Number.parseInt(value, 10);
-										return value && !Number.isNaN(num) ? num : undefined;
-									}
-								})}
-							/>
+							<Select
+								value={
+									storyPointsWatch == null ? 'none' : String(storyPointsWatch)
+								}
+								onValueChange={(value) => {
+									const next =
+										value === 'none'
+											? undefined
+											: Number.parseInt(value, 10);
+									if (next === form.getValues('storyPoints')) return;
+									form.setValue('storyPoints', next, { shouldDirty: true });
+								}}
+							>
+								<SelectTrigger id="storyPoints">
+									<SelectValue placeholder="Fibonacci estimate" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">None</SelectItem>
+									{FIBONACCI_STORY_POINTS.map((n) => (
+										<SelectItem key={n} value={String(n)}>
+											{n}
+										</SelectItem>
+									))}
+									{!storyPointsIsFibonacci && storyPointsWatch != null && (
+										<SelectItem value={String(storyPointsWatch)}>
+											{storyPointsWatch} (not in Fibonacci — pick a standard
+											value)
+										</SelectItem>
+									)}
+								</SelectContent>
+							</Select>
 						</div>
 
 						{/* Epic */}
