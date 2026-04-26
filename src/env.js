@@ -24,7 +24,7 @@ export const env = createEnv({
 		// Email service (Resend)
 		RESEND_API_KEY: z.string(),
 		// Cal.com integration
-		CALCOM_API_KEY: z.string(),
+		CALCOM_API_KEY: z.string().trim().min(1),
 		CALCOM_EVENT_TYPE_ID: z.string(),
 		CALCOM_WEBHOOK_SECRET: z.string(),
 		// Cron job security

@@ -1,4 +1,5 @@
-export const CALCOM_API_VERSION = '2024-08-13';
+/** Cal.com v2 docs: create/cancel/reschedule booking require this header value. */
+export const CALCOM_API_VERSION = '2026-02-25';
 
 export function normalizeIanaTimeZoneForCalcom(input: string): string {
 	const trimmed = input.trim();

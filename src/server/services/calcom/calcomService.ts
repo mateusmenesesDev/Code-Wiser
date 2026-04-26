@@ -165,7 +165,7 @@ export async function cancelBooking(
 
 		// Cal.com API v2 requires:
 		// 1. Field name: "cancellationReason" (not "reason")
-		// 2. Header: "cal-api-version: 2024-08-13"
+		// 2. Header: cal-api-version (see CALCOM_API_VERSION)
 		// See: https://cal.com/docs/api-reference/v2/bookings/cancel-a-booking
 		const requestBody = {
 			cancellationReason: cancellationReason
