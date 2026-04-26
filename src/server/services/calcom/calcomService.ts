@@ -1,4 +1,5 @@
 import { env } from '~/env';
+import { calcomBearerAuthHeader } from './calcomAuthorizationHeader';
 import {
 	buildCalcomCreateBookingBody,
 	CALCOM_API_VERSION,
@@ -61,7 +62,7 @@ export async function getAvailableSlots(
 			{
 				method: 'GET',
 				headers: {
-					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
+					Authorization: calcomBearerAuthHeader(env.CALCOM_API_KEY),
 					'Content-Type': 'application/json',
 					Accept: 'application/json',
 					'cal-api-version': CALCOM_API_VERSION_SLOTS
@@ -101,7 +102,7 @@ export async function createBooking(
 		const response = await fetch(`${CALCOM_API_BASE_URL}/bookings`, {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${env.CALCOM_API_KEY}`,
+				Authorization: calcomBearerAuthHeader(env.CALCOM_API_KEY),
 				'Content-Type': 'application/json',
 				Accept: 'application/json',
 				'cal-api-version': CALCOM_API_VERSION
@@ -183,7 +184,7 @@ export async function cancelBooking(
 		const response = await fetch(requestUrl, {
 			method: 'POST',
 			headers: {
-				Authorization: `Bearer ${env.CALCOM_API_KEY}`,
+				Authorization: calcomBearerAuthHeader(env.CALCOM_API_KEY),
 				'Content-Type': 'application/json',
 				Accept: 'application/json',
 				'cal-api-version': CALCOM_API_VERSION
@@ -225,7 +226,7 @@ export async function rescheduleBooking(
 			{
 				method: 'POST',
 				headers: {
-					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
+					Authorization: calcomBearerAuthHeader(env.CALCOM_API_KEY),
 					'Content-Type': 'application/json',
 					'cal-api-version': CALCOM_API_VERSION
 				},
@@ -263,7 +264,7 @@ export async function getBooking(
 			{
 				method: 'GET',
 				headers: {
-					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
+					Authorization: calcomBearerAuthHeader(env.CALCOM_API_KEY),
 					'Content-Type': 'application/json',
 					Accept: 'application/json',
 					'cal-api-version': CALCOM_API_VERSION
