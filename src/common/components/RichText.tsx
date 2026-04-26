@@ -12,7 +12,7 @@ import {
 	Type,
 	Undo
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { cn } from '~/lib/utils';
 import { uploadFiles } from '../utils/uploadthing';
@@ -32,48 +32,36 @@ export default function RichText() {
 	const isApplyingDescriptionFromForm = useRef(false);
 	/** Skips one form→editor sync when `content` just changed from our own onUpdate (avoids setContent clearing isDirty). */
 	const ignoreNextFormContentSync = useRef(false);
+	const editorRef = useRef<Editor | null>(null);
 
-	const handleImageUpload = async (
-		file: File,
-		editorInstance: Editor | null
-	) => {
-		if (!editorInstance) return;
+	const handleImageUpload = useCallback(
+		async (file: File, editorInstance: Editor | null) => {
+			if (!editorInstance) return;
 
-		try {
-			const [res] = await uploadFiles('imageUploader', {
-				files: [file]
-			});
-			if (!res) return;
+			try {
+				const [res] = await uploadFiles('imageUploader', {
+					files: [file]
+				});
+				if (!res) return;
 
-			editorInstance.chain().focus().setImage({ src: res.url }).run();
-		} catch (error) {
-			console.error('Image upload failed:', error);
-		}
-	};
-
-	const editor = useEditor({
-		immediatelyRender: false,
-		extensions: [StarterKit, Image],
-		content,
-		onCreate({ editor: created }) {
-			setValue('description', created.getHTML(), { shouldDirty: false });
-		},
-		onUpdate({ editor }) {
-			const html = editor.getHTML();
-			if (isApplyingDescriptionFromForm.current) {
-				setValue('description', html, { shouldDirty: false });
-				return;
+				editorInstance.chain().focus().setImage({ src: res.url }).run();
+			} catch (error) {
+				console.error('Image upload failed:', error);
 			}
-			ignoreNextFormContentSync.current = true;
-			setValue('description', html, { shouldDirty: true });
 		},
-		editorProps: {
+		[]
+	);
+
+	const extensions = useMemo(() => [StarterKit, Image], []);
+
+	const editorProps = useMemo(
+		() => ({
 			attributes: {
-				spellcheck: 'true',
+				spellcheck: 'true' as const,
 				class:
 					'min-h-[150px] max-h-[300px] overflow-y-auto p-2 rounded-md border border-input bg-background text-sm'
 			},
-			handlePaste(_, event) {
+			handlePaste(_: unknown, event: ClipboardEvent) {
 				const items = event.clipboardData?.items;
 				if (!items) return false;
 
@@ -81,7 +69,7 @@ export default function RichText() {
 					if (item.type.indexOf('image') === 0) {
 						const file = item.getAsFile();
 						if (file) {
-							void handleImageUpload(file, editor);
+							void handleImageUpload(file, editorRef.current);
 							event.preventDefault();
 							return true;
 						}
@@ -89,19 +77,50 @@ export default function RichText() {
 				}
 				return false;
 			},
-			handleDrop(_, event) {
+			handleDrop(_: unknown, event: DragEvent) {
 				const files = event.dataTransfer?.files;
 				if (!files || files.length === 0) return false;
 
 				const file = files[0];
 				if (file?.type?.startsWith('image/')) {
-					void handleImageUpload(file, editor);
+					void handleImageUpload(file, editorRef.current);
 					event.preventDefault();
 					return true;
 				}
 				return false;
 			}
-		}
+		}),
+		[handleImageUpload]
+	);
+
+	const onCreate = useCallback(
+		({ editor: created }: { editor: Editor }) => {
+			setValue('description', created.getHTML(), { shouldDirty: false });
+		},
+		[setValue]
+	);
+
+	const onUpdate = useCallback(
+		({ editor: ed }: { editor: Editor }) => {
+			const html = ed.getHTML();
+			if (isApplyingDescriptionFromForm.current) {
+				setValue('description', html, { shouldDirty: false });
+				return;
+			}
+			ignoreNextFormContentSync.current = true;
+			setValue('description', html, { shouldDirty: true });
+		},
+		[setValue]
+	);
+
+	const editor = useEditor({
+		immediatelyRender: false,
+		extensions,
+		// Do not pass `content` here — it comes from watch() and changes every keystroke,
+		// which makes TipTap call setOptions every render and breaks RHF dirty state.
+		onCreate,
+		onUpdate,
+		editorProps
 	});
 
 	// Update editor content when form value changes (reset, AI, etc.) — not when echoing our own onUpdate
@@ -119,6 +138,10 @@ export default function RichText() {
 			isApplyingDescriptionFromForm.current = false;
 		});
 	}, [content, editor]);
+
+	useEffect(() => {
+		editorRef.current = editor;
+	}, [editor]);
 
 	if (!editor) {
 		return null;

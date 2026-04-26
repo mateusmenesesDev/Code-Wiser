@@ -2,7 +2,9 @@ import { Protect } from '@clerk/nextjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useEffect, useRef, useState } from 'react';
+import type { FieldErrors } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
@@ -210,9 +212,21 @@ export function TaskDialogContent({
 		}
 	};
 
+	const onInvalidSubmit = (errors: FieldErrors<TaskFormData>) => {
+		const first = Object.values(errors)[0];
+		const msg =
+			first && typeof first === 'object' && 'message' in first
+				? String(first.message)
+				: 'Please fix the highlighted fields.';
+		toast.error(msg);
+	};
+
 	return (
 		<FormProvider {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+			<form
+				onSubmit={form.handleSubmit(onSubmit, onInvalidSubmit)}
+				className="space-y-6"
+			>
 				<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 					{/* Main Content */}
 					<div className="space-y-6 lg:col-span-2">
