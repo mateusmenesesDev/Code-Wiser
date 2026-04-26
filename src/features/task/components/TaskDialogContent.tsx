@@ -236,7 +236,7 @@ export function TaskDialogContent({
 
 						{/* Description */}
 						<div className="space-y-2">
-							<RichText />
+							<RichText key={task?.id ?? `new-${projectId}`} />
 							{/* biome-ignore lint/a11y/useValidAriaRole: Clerk Protect component uses role prop for authorization */}
 							<Protect role="org:admin">
 								<Button
@@ -436,11 +436,11 @@ export function TaskDialogContent({
 							</Label>
 							<Select
 								value={form.watch('status')}
-								onValueChange={(value) =>
-									form.setValue('status', value as TaskStatusEnum, {
-										shouldDirty: true
-									})
-								}
+								onValueChange={(value) => {
+									const next = value as TaskStatusEnum;
+									if (next === form.getValues('status')) return;
+									form.setValue('status', next, { shouldDirty: true });
+								}}
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Select status" />
@@ -462,11 +462,11 @@ export function TaskDialogContent({
 							</Label>
 							<Select
 								value={form.watch('priority')}
-								onValueChange={(value) =>
-									form.setValue('priority', value as TaskPriorityEnum, {
-										shouldDirty: true
-									})
-								}
+								onValueChange={(value) => {
+									const next = value as TaskPriorityEnum;
+									if (next === form.getValues('priority')) return;
+									form.setValue('priority', next, { shouldDirty: true });
+								}}
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Select priority" />
@@ -488,13 +488,12 @@ export function TaskDialogContent({
 							</Label>
 							<Select
 								value={form.watch('assigneeId') ?? 'none'}
-								onValueChange={(value) =>
-									form.setValue(
-										'assigneeId',
-										value === 'none' ? undefined : value,
-										{ shouldDirty: true }
-									)
-								}
+								onValueChange={(value) => {
+									const next =
+										value === 'none' ? undefined : value;
+									if (next === form.getValues('assigneeId')) return;
+									form.setValue('assigneeId', next, { shouldDirty: true });
+								}}
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Select assignee" />
@@ -655,6 +654,7 @@ export function TaskDialogContent({
 									id="blocked"
 									checked={form.watch('blocked') ?? false}
 									onCheckedChange={(checked) => {
+										if (checked === (form.getValues('blocked') ?? false)) return;
 										form.setValue('blocked', checked, {
 											shouldDirty: true
 										});
@@ -695,7 +695,16 @@ export function TaskDialogContent({
 						<div>
 							<TagsInput
 								value={form.watch('tags') || []}
-								onChange={(tags) => form.setValue('tags', tags)}
+								onChange={(tags) => {
+									const prev = form.getValues('tags') || [];
+									if (
+										prev.length === tags.length &&
+										prev.every((t, i) => t === tags[i])
+									) {
+										return;
+									}
+									form.setValue('tags', tags, { shouldDirty: true });
+								}}
 							/>
 						</div>
 

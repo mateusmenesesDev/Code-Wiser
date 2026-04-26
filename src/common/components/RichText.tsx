@@ -27,9 +27,11 @@ import {
 import { Separator } from './ui/separator';
 
 export default function RichText() {
-	const { setValue, watch, getValues } = useFormContext();
+	const { setValue, watch } = useFormContext();
 	const content = watch('description') || '';
 	const isApplyingDescriptionFromForm = useRef(false);
+	/** Skips one form→editor sync when `content` just changed from our own onUpdate (avoids setContent clearing isDirty). */
+	const ignoreNextFormContentSync = useRef(false);
 
 	const handleImageUpload = async (
 		file: File,
@@ -62,13 +64,7 @@ export default function RichText() {
 				setValue('description', html, { shouldDirty: false });
 				return;
 			}
-			const formDesc = getValues('description');
-			const prev =
-				formDesc === undefined || formDesc === null ? '' : String(formDesc);
-			if (html === prev) {
-				setValue('description', html, { shouldDirty: false });
-				return;
-			}
+			ignoreNextFormContentSync.current = true;
 			setValue('description', html, { shouldDirty: true });
 		},
 		editorProps: {
@@ -108,15 +104,20 @@ export default function RichText() {
 		}
 	});
 
-	// Update editor content when form value changes
+	// Update editor content when form value changes (reset, AI, etc.) — not when echoing our own onUpdate
 	useEffect(() => {
-		if (editor && content !== editor.getHTML()) {
-			isApplyingDescriptionFromForm.current = true;
-			editor.commands.setContent(content || '');
-			queueMicrotask(() => {
-				isApplyingDescriptionFromForm.current = false;
-			});
+		if (!editor || content === editor.getHTML()) return;
+
+		if (ignoreNextFormContentSync.current) {
+			ignoreNextFormContentSync.current = false;
+			if (content === editor.getHTML()) return;
 		}
+
+		isApplyingDescriptionFromForm.current = true;
+		editor.commands.setContent(content || '');
+		queueMicrotask(() => {
+			isApplyingDescriptionFromForm.current = false;
+		});
 	}, [content, editor]);
 
 	if (!editor) {
