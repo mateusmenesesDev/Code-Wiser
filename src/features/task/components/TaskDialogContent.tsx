@@ -48,7 +48,8 @@ import { TaskComments } from './TaskComments';
 interface TaskDialogProps {
 	taskId?: string;
 	projectId: string;
-	onClose: () => void;
+	onRequestClose: () => void;
+	onCloseAfterSuccess: () => void;
 	onDirtyChange?: (isDirty: boolean) => void;
 }
 
@@ -61,7 +62,8 @@ type TaskFormData =
 export function TaskDialogContent({
 	taskId,
 	projectId,
-	onClose,
+	onRequestClose,
+	onCloseAfterSuccess,
 	onDirtyChange
 }: TaskDialogProps) {
 	const isTemplate = useIsTemplate();
@@ -94,9 +96,9 @@ export function TaskDialogContent({
 	});
 
 	const {
-		deleteTask,
-		updateTask,
-		createTask,
+		deleteTaskAsync,
+		updateTaskAsync,
+		createTaskAsync,
 		generateTaskDescription,
 		isGeneratingDescription
 	} = useTask({
@@ -178,26 +180,33 @@ export function TaskDialogContent({
 	}, [task, epics, sprints, form]);
 
 	const onSubmit = async (data: TaskFormData) => {
-		if (isEditing && task) {
-			updateTask({
-				id: task.id,
-				...data,
-				isTemplate
-			});
-		} else {
-			createTask({
-				...data,
-				status: TaskStatusEnum.BACKLOG,
-				isTemplate
-			} as CreateTaskInput);
+		try {
+			if (isEditing && task) {
+				await updateTaskAsync({
+					id: task.id,
+					...data,
+					isTemplate
+				});
+			} else {
+				await createTaskAsync({
+					...data,
+					status: TaskStatusEnum.BACKLOG,
+					isTemplate
+				} as CreateTaskInput);
+			}
+			onCloseAfterSuccess();
+		} catch {
+			// Errors are surfaced via mutation onError / toast
 		}
-		onClose();
 	};
 
-	const handleDelete = () => {
-		if (task) {
-			deleteTask(task.id);
-			onClose();
+	const handleDelete = async () => {
+		if (!task) return;
+		try {
+			await deleteTaskAsync(task.id);
+			onCloseAfterSuccess();
+		} catch {
+			// Errors are surfaced via mutation onError / toast
 		}
 	};
 
@@ -746,7 +755,7 @@ export function TaskDialogContent({
 					<Button
 						type="button"
 						variant="outline"
-						onClick={onClose}
+						onClick={onRequestClose}
 						disabled={form.formState.isSubmitting}
 					>
 						Cancel

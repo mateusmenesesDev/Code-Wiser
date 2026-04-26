@@ -48,7 +48,8 @@ export function TaskDialog({ taskId, projectId, onClose }: TaskDialogProps) {
 					<TaskDialogContent
 						taskId={actualTaskId}
 						projectId={projectId}
-						onClose={guardedClose}
+						onRequestClose={guardedClose}
+						onCloseAfterSuccess={onClose}
 						onDirtyChange={setIsDirty}
 					/>
 

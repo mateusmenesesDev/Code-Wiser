@@ -306,6 +306,9 @@ export function useTask({ projectId }: UseTaskProps) {
 	const createTask = (createTaskInput: CreateTaskInput) =>
 		createTaskMutation.mutate(createTaskInput);
 
+	const createTaskAsync = (createTaskInput: CreateTaskInput) =>
+		createTaskMutation.mutateAsync(createTaskInput);
+
 	const getAllTasksByProjectId = (projectId: string) =>
 		api.task.getAllByProjectId.useSuspenseQuery({
 			projectId,
@@ -315,7 +318,13 @@ export function useTask({ projectId }: UseTaskProps) {
 	const updateTask = (updateTaskInput: UpdateTaskInput) =>
 		updateTaskMutation.mutate(updateTaskInput);
 
+	const updateTaskAsync = (updateTaskInput: UpdateTaskInput) =>
+		updateTaskMutation.mutateAsync(updateTaskInput);
+
 	const deleteTask = (taskId: string) => deleteTaskMutation.mutate({ taskId });
+
+	const deleteTaskAsync = (taskId: string) =>
+		deleteTaskMutation.mutateAsync({ taskId });
 	const bulkDeleteTasks = (taskIds: string[]) =>
 		bulkDeleteTasksMutation.mutate({ taskIds });
 
@@ -345,9 +354,12 @@ export function useTask({ projectId }: UseTaskProps) {
 
 	return {
 		createTask,
+		createTaskAsync,
 		updateTask,
+		updateTaskAsync,
 		getAllTasksByProjectId,
 		deleteTask,
+		deleteTaskAsync,
 		bulkDeleteTasks,
 		updateTaskOrders,
 		generateTaskDescription,
