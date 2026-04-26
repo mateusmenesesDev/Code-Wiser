@@ -1,15 +1,12 @@
 import { env } from '~/env';
 import {
 	buildCalcomCreateBookingBody,
-	CALCOM_API_VERSION
+	CALCOM_API_VERSION,
+	CALCOM_API_VERSION_SLOTS
 } from './calcomCreateBookingPayload';
+import { extractSlotsByDate, slotEntryToIsoStart } from './calcomSlotsResponse';
 
 const CALCOM_API_BASE_URL = 'https://api.cal.com/v2';
-
-/** Shape Cal.com v2 /slots/available returns per slot */
-interface CalcomRawSlot {
-	time: string;
-}
 
 /** Normalised slot shape used throughout the app */
 export interface CalcomAvailabilitySlot {
@@ -53,15 +50,21 @@ export async function getAvailableSlots(
 		const startISO = startDate.toISOString();
 		const endISO = endDate.toISOString();
 
+		const params = new URLSearchParams({
+			eventTypeId: env.CALCOM_EVENT_TYPE_ID,
+			start: startISO,
+			end: endISO
+		});
+
 		const response = await fetch(
-			`${CALCOM_API_BASE_URL}/slots/available?eventTypeId=${env.CALCOM_EVENT_TYPE_ID}&startTime=${startISO}&endTime=${endISO}`,
+			`${CALCOM_API_BASE_URL}/slots?${params.toString()}`,
 			{
 				method: 'GET',
 				headers: {
 					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
 					'Content-Type': 'application/json',
 					Accept: 'application/json',
-					'cal-api-version': CALCOM_API_VERSION
+					'cal-api-version': CALCOM_API_VERSION_SLOTS
 				}
 			}
 		);
@@ -71,16 +74,13 @@ export async function getAvailableSlots(
 			throw new Error(`Cal.com API error: ${response.status} - ${errorText}`);
 		}
 
-		const data = (await response.json()) as {
-			data?: { slots?: Record<string, CalcomRawSlot[]> };
-		};
-
-		// Normalise Cal.com's { time } shape to { start } so callers use a
-		// consistent interface and never accidentally read an undefined field.
-		const rawSlots = data.data?.slots ?? {};
+		const rawSlots = extractSlotsByDate(await response.json());
 		const normalised: Record<string, CalcomAvailabilitySlot[]> = {};
 		for (const [date, slots] of Object.entries(rawSlots)) {
-			normalised[date] = slots.map((s) => ({ start: s.time }));
+			normalised[date] = (Array.isArray(slots) ? slots : [])
+				.map(slotEntryToIsoStart)
+				.filter((s): s is string => s !== null)
+				.map((start) => ({ start }));
 		}
 		return normalised;
 	} catch (error) {

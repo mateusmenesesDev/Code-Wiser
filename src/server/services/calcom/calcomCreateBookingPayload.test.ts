@@ -2,12 +2,17 @@ import { describe, expect, it } from 'vitest';
 import {
 	buildCalcomCreateBookingBody,
 	CALCOM_API_VERSION,
+	CALCOM_API_VERSION_SLOTS,
 	normalizeIanaTimeZoneForCalcom
 } from './calcomCreateBookingPayload';
 
 describe('CALCOM_API_VERSION', () => {
 	it('matches Cal.com v2 booking docs (create/cancel use the same pin)', () => {
 		expect(CALCOM_API_VERSION).toBe('2026-02-25');
+	});
+
+	it('uses a separate pin for GET /v2/slots per Cal.com docs', () => {
+		expect(CALCOM_API_VERSION_SLOTS).toBe('2024-09-04');
 	});
 });
 
