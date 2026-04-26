@@ -142,12 +142,22 @@ export const mentorshipMutations = {
 			}
 
 			try {
-				// Cancel in Cal.com
-				// Note: Using API key authenticates as host, so reason is required
-				await cancelCalcomBooking(
-					booking.calBookingId,
-					'Booking cancelled by attendee'
-				);
+				try {
+					await cancelCalcomBooking(
+						booking.calBookingId,
+						'Booking cancelled by attendee'
+					);
+				} catch (calError) {
+					const calMsg =
+						calError instanceof Error ? calError.message : String(calError);
+					const alreadyCancelled =
+						calMsg.includes('400') &&
+						/(already cancelled|has been cancelled)/i.test(calMsg);
+					if (!alreadyCancelled) throw calError;
+					console.warn(
+						`[mentorship.cancelBooking] Cal.com uid ${booking.calBookingId} already cancelled; syncing local row only`
+					);
+				}
 
 				// Update booking status
 				// Use updateMany with a where clause to ensure we only update if still SCHEDULED
@@ -262,16 +272,26 @@ export const mentorshipMutations = {
 			}
 
 			try {
-				await rescheduleCalcomBooking(
+				const calBooking = await rescheduleCalcomBooking(
 					booking.calBookingId,
 					input.newStart,
 					'Rescheduled by attendee'
 				);
 
-				// Upsert so a concurrent webhook fire doesn't re-update with stale data
+				const newCalUid = calBooking.uid;
+				const newMeetingUrl =
+					(calBooking as { meetingUrl?: string | null }).meetingUrl ?? undefined;
+
 				await ctx.db.mentorshipBooking.update({
 					where: { id: booking.id },
-					data: { scheduledAt: newDate }
+					data: {
+						scheduledAt: newDate,
+						calBookingId: newCalUid,
+						bookingUrl: `https://cal.com/booking/${newCalUid}`,
+						...(typeof newMeetingUrl === 'string' && newMeetingUrl.length > 0
+							? { meetingUrl: newMeetingUrl }
+							: {})
+					}
 				});
 
 				// Adjust remainingWeeklySessions based on week-boundary crossing

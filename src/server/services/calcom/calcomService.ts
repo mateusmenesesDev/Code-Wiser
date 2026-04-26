@@ -39,6 +39,7 @@ interface CalcomBookingResponse {
 	startTime: string;
 	endTime: string;
 	status: string;
+	meetingUrl?: string | null;
 }
 
 interface CalcomCreateBookingParams {

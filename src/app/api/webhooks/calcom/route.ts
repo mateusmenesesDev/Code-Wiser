@@ -188,15 +188,21 @@ async function handleBookingCreated(eventData: CalcomBookingPayload) {
 
 async function handleBookingRescheduled(eventData: CalcomBookingPayload) {
 	try {
-		const { uid, startTime } = eventData;
+		const { uid, startTime, videoCallData, metadata } = eventData;
+		const rescheduledFromUid = eventData.rescheduledFromUid;
 
-		// Find the existing booking
 		const existingBooking = await db.mentorshipBooking.findFirst({
-			where: { calBookingId: uid }
+			where: rescheduledFromUid
+				? { OR: [{ calBookingId: uid }, { calBookingId: rescheduledFromUid }] }
+				: { calBookingId: uid }
 		});
 
 		if (!existingBooking) {
-			console.error('Booking not found for rescheduling:', uid);
+			console.error(
+				'Booking not found for rescheduling:',
+				uid,
+				rescheduledFromUid ?? '(no rescheduledFromUid)'
+			);
 			return;
 		}
 
@@ -235,9 +241,16 @@ async function handleBookingRescheduled(eventData: CalcomBookingPayload) {
 		const wasInCurrentWeek = isDateInCurrentWeek(oldDate);
 		const isInCurrentWeek = isDateInCurrentWeek(newDate);
 
-	// Idempotent update: only proceed if the booking hasn't already been moved to newDate
-	// (a concurrent rescheduleBooking mutation may have already updated it)
-	if (existingBooking.scheduledAt.getTime() === newDate.getTime()) {
+	const bookingUrl = `https://cal.com/booking/${uid}`;
+	const meetingUrl =
+		(metadata as { videoCallUrl?: string })?.videoCallUrl ||
+		videoCallData?.url ||
+		existingBooking.meetingUrl;
+
+	if (
+		existingBooking.scheduledAt.getTime() === newDate.getTime() &&
+		existingBooking.calBookingId === uid
+	) {
 		console.log(
 			`Booking ${uid} already rescheduled by mutation, skipping webhook update`
 		);
@@ -246,7 +259,12 @@ async function handleBookingRescheduled(eventData: CalcomBookingPayload) {
 
 	await db.mentorshipBooking.update({
 		where: { id: existingBooking.id },
-		data: { scheduledAt: newDate }
+		data: {
+			scheduledAt: newDate,
+			calBookingId: uid,
+			bookingUrl,
+			meetingUrl
+		}
 	});
 
 	if (wasInCurrentWeek && !isInCurrentWeek) {
