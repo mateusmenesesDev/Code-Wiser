@@ -27,6 +27,8 @@ export const env = createEnv({
 		CALCOM_API_KEY: z.string().trim().min(1),
 		CALCOM_EVENT_TYPE_ID: z.string(),
 		CALCOM_WEBHOOK_SECRET: z.string(),
+		/** Cal.com Platform: OAuth client secret (with NEXT_PUBLIC_CALCOM_CLIENT_ID). */
+		CALCOM_OAUTH_CLIENT_SECRET: z.string().trim().min(1).optional(),
 		// Cron job security
 		CRON_SECRET: z.string()
 	},
@@ -70,6 +72,7 @@ export const env = createEnv({
 		CALCOM_API_KEY: process.env.CALCOM_API_KEY,
 		CALCOM_EVENT_TYPE_ID: process.env.CALCOM_EVENT_TYPE_ID,
 		CALCOM_WEBHOOK_SECRET: process.env.CALCOM_WEBHOOK_SECRET,
+		CALCOM_OAUTH_CLIENT_SECRET: process.env.CALCOM_OAUTH_CLIENT_SECRET,
 		NEXT_PUBLIC_CALCOM_USERNAME: process.env.NEXT_PUBLIC_CALCOM_USERNAME,
 		NEXT_PUBLIC_CALCOM_CLIENT_ID: process.env.NEXT_PUBLIC_CALCOM_CLIENT_ID,
 		// Cron job security

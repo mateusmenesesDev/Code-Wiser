@@ -9,6 +9,22 @@ import { extractSlotsByDate, slotEntryToIsoStart } from './calcomSlotsResponse';
 
 const CALCOM_API_BASE_URL = 'https://api.cal.com/v2';
 
+function calcomV2Headers(calApiVersion: string): Record<string, string> {
+	const headers: Record<string, string> = {
+		Authorization: bearerAuthorizationHeader(env.CALCOM_API_KEY),
+		'Content-Type': 'application/json',
+		Accept: 'application/json',
+		'cal-api-version': calApiVersion
+	};
+	const clientId = env.NEXT_PUBLIC_CALCOM_CLIENT_ID;
+	const oauthSecret = env.CALCOM_OAUTH_CLIENT_SECRET;
+	if (clientId && oauthSecret) {
+		headers['x-cal-client-id'] = clientId;
+		headers['x-cal-secret-key'] = oauthSecret.trim();
+	}
+	return headers;
+}
+
 /** Normalised slot shape used throughout the app */
 export interface CalcomAvailabilitySlot {
 	start: string;
@@ -61,12 +77,7 @@ export async function getAvailableSlots(
 			`${CALCOM_API_BASE_URL}/slots?${params.toString()}`,
 			{
 				method: 'GET',
-				headers: {
-					Authorization: bearerAuthorizationHeader(env.CALCOM_API_KEY),
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					'cal-api-version': CALCOM_API_VERSION_SLOTS
-				}
+				headers: calcomV2Headers(CALCOM_API_VERSION_SLOTS)
 			}
 		);
 
@@ -101,12 +112,7 @@ export async function createBooking(
 	try {
 		const response = await fetch(`${CALCOM_API_BASE_URL}/bookings`, {
 			method: 'POST',
-			headers: {
-				Authorization: bearerAuthorizationHeader(env.CALCOM_API_KEY),
-				'Content-Type': 'application/json',
-				Accept: 'application/json',
-				'cal-api-version': CALCOM_API_VERSION
-			},
+			headers: calcomV2Headers(CALCOM_API_VERSION),
 			body: JSON.stringify(buildCalcomCreateBookingBody(params))
 		});
 
@@ -183,12 +189,7 @@ export async function cancelBooking(
 
 		const response = await fetch(requestUrl, {
 			method: 'POST',
-			headers: {
-				Authorization: bearerAuthorizationHeader(env.CALCOM_API_KEY),
-				'Content-Type': 'application/json',
-				Accept: 'application/json',
-				'cal-api-version': CALCOM_API_VERSION
-			},
+			headers: calcomV2Headers(CALCOM_API_VERSION),
 			body: requestPayload
 		});
 
@@ -225,11 +226,7 @@ export async function rescheduleBooking(
 			`${CALCOM_API_BASE_URL}/bookings/${bookingUid}/reschedule`,
 			{
 				method: 'POST',
-				headers: {
-					Authorization: bearerAuthorizationHeader(env.CALCOM_API_KEY),
-					'Content-Type': 'application/json',
-					'cal-api-version': CALCOM_API_VERSION
-				},
+				headers: calcomV2Headers(CALCOM_API_VERSION),
 				body: JSON.stringify({
 					start: newStart,
 					reschedulingReason: reason ?? 'Rescheduled by attendee'
@@ -263,12 +260,7 @@ export async function getBooking(
 			`${CALCOM_API_BASE_URL}/bookings/${bookingUid}`,
 			{
 				method: 'GET',
-				headers: {
-					Authorization: bearerAuthorizationHeader(env.CALCOM_API_KEY),
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					'cal-api-version': CALCOM_API_VERSION
-				}
+				headers: calcomV2Headers(CALCOM_API_VERSION)
 			}
 		);
 
