@@ -1,8 +1,9 @@
 /**
  * Cal.com GET /v2/slots returns `data` as a date → slots map.
- * Older integrations used `data.slots` with slot shape `{ time }`.
  */
-export function extractSlotsByDate(payload: unknown): Record<string, unknown[]> {
+export function extractSlotsByDate(
+	payload: unknown
+): Record<string, unknown[]> {
 	if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
 		return {};
 	}
