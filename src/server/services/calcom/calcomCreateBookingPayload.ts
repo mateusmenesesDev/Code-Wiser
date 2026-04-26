@@ -34,8 +34,6 @@ export function buildCalcomCreateBookingBody(params: {
 	return {
 		eventTypeId: Number.parseInt(params.eventTypeId, 10),
 		start: params.start,
-		timeZone,
-		language,
 		...(params.end ? { end: params.end } : {}),
 		attendee: {
 			name: params.attendee.name,

@@ -46,8 +46,6 @@ describe('buildCalcomCreateBookingBody', () => {
 		expect(body).toMatchObject({
 			eventTypeId: 4141124,
 			start: '2026-04-27T20:00:00.000Z',
-			timeZone: 'America/New_York',
-			language: 'en',
 			attendee: {
 				name: 'Test User',
 				email: 'test@example.com',
@@ -56,6 +54,8 @@ describe('buildCalcomCreateBookingBody', () => {
 			},
 			metadata: {}
 		});
+		expect(body).not.toHaveProperty('timeZone');
+		expect(body).not.toHaveProperty('language');
 	});
 
 	it('uses attendee language when provided', () => {
@@ -70,11 +70,10 @@ describe('buildCalcomCreateBookingBody', () => {
 			}
 		});
 
-		expect(body.language).toBe('pt');
 		expect((body.attendee as { language: string }).language).toBe('pt');
 	});
 
-	it('normalizes invalid attendee time zone on root and attendee', () => {
+	it('normalizes invalid attendee time zone on attendee only', () => {
 		const body = buildCalcomCreateBookingBody({
 			eventTypeId: '1',
 			start: '2026-01-01T12:00:00.000Z',
@@ -85,7 +84,7 @@ describe('buildCalcomCreateBookingBody', () => {
 			}
 		});
 
-		expect(body.timeZone).toBe('UTC');
+		expect(body).not.toHaveProperty('timeZone');
 		expect((body.attendee as { timeZone: string }).timeZone).toBe('UTC');
 	});
 });
