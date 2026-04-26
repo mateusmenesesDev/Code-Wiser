@@ -84,10 +84,15 @@ export const mentorshipMutations = {
 				return booking;
 			} catch (error) {
 				console.error('Error creating booking:', error);
+				const raw =
+					error instanceof Error ? error.message : 'Failed to create booking';
+				const calRejectedKey =
+					raw.includes('401') && /api key is not valid/i.test(raw);
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
-					message:
-						error instanceof Error ? error.message : 'Failed to create booking'
+					message: calRejectedKey
+						? 'Cal.com rejected the server API key. In Cal.com (same account that owns this event type), open Settings → Developer, create an API key, and set CALCOM_API_KEY to the exact secret shown (no surrounding quotes, no extra Bearer prefix).'
+						: raw
 				});
 			}
 		}),

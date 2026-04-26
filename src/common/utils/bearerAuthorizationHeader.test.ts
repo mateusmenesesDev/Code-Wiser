@@ -14,4 +14,10 @@ describe('bearerAuthorizationHeader', () => {
 			'Bearer cal_live_abc'
 		);
 	});
+
+	it('strips wrapping quotes and line breaks from pasted secrets', () => {
+		expect(bearerAuthorizationHeader('"cal_live_abc"')).toBe('Bearer cal_live_abc');
+		expect(bearerAuthorizationHeader("'cal_live_abc'\n")).toBe('Bearer cal_live_abc');
+		expect(bearerAuthorizationHeader('cal_live_abc\r\n')).toBe('Bearer cal_live_abc');
+	});
 });
