@@ -43,7 +43,7 @@ import { useUser } from '~/common/hooks/useUser';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
 import { api } from '~/trpc/react';
-import { getStatusLabel, resetFormData } from '../utils';
+import { getStatusLabel, normalizeStoryPointsForForm, resetFormData } from '../utils';
 import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
 import { TaskComments } from './TaskComments';
@@ -222,7 +222,9 @@ export function TaskDialogContent({
 		toast.error(msg);
 	};
 
-	const storyPointsWatch = form.watch('storyPoints');
+	const storyPointsWatch = normalizeStoryPointsForForm(
+		form.watch('storyPoints')
+	);
 	const storyPointsIsFibonacci =
 		storyPointsWatch == null ||
 		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
@@ -560,12 +562,29 @@ export function TaskDialogContent({
 									storyPointsWatch == null ? 'none' : String(storyPointsWatch)
 								}
 								onValueChange={(value) => {
-									const next =
-										value === 'none'
-											? undefined
-											: Number.parseInt(value, 10);
-									if (next === form.getValues('storyPoints')) return;
-									form.setValue('storyPoints', next, { shouldDirty: true });
+									const current = normalizeStoryPointsForForm(
+										form.getValues('storyPoints')
+									);
+									if (value === 'none') {
+										const raw = form.getValues(
+											'storyPoints'
+										) as unknown;
+										if (
+											raw === undefined ||
+											raw === null ||
+											raw === ''
+										) {
+											return;
+										}
+										form.setValue('storyPoints', undefined, {
+											shouldDirty: true
+										});
+										return;
+									}
+									const parsed = Number.parseInt(value, 10);
+									if (!Number.isFinite(parsed)) return;
+									if (parsed === current) return;
+									form.setValue('storyPoints', parsed, { shouldDirty: true });
 								}}
 							>
 								<SelectTrigger id="storyPoints">
