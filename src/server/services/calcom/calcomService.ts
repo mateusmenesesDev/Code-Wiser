@@ -1,4 +1,8 @@
 import { env } from '~/env';
+import {
+	buildCalcomCreateBookingBody,
+	CALCOM_API_VERSION
+} from './calcomCreateBookingPayload';
 
 const CALCOM_API_BASE_URL = 'https://api.cal.com/v2';
 
@@ -31,6 +35,7 @@ interface CalcomCreateBookingParams {
 		name: string;
 		email: string;
 		timeZone: string;
+		language?: string;
 	};
 	meetingUrl?: string;
 	metadata?: Record<string, unknown>;
@@ -54,7 +59,9 @@ export async function getAvailableSlots(
 				method: 'GET',
 				headers: {
 					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+					'cal-api-version': CALCOM_API_VERSION
 				}
 			}
 		);
@@ -95,15 +102,11 @@ export async function createBooking(
 			method: 'POST',
 			headers: {
 				Authorization: `Bearer ${env.CALCOM_API_KEY}`,
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+				'cal-api-version': CALCOM_API_VERSION
 			},
-			body: JSON.stringify({
-				eventTypeId: Number.parseInt(params.eventTypeId, 10),
-				start: params.start,
-				...(params.end && { end: params.end }),
-				attendee: params.attendee,
-				metadata: params.metadata || {}
-			})
+			body: JSON.stringify(buildCalcomCreateBookingBody(params))
 		});
 
 		if (!response.ok) {
@@ -183,7 +186,7 @@ export async function cancelBooking(
 				Authorization: `Bearer ${env.CALCOM_API_KEY}`,
 				'Content-Type': 'application/json',
 				Accept: 'application/json',
-				'cal-api-version': '2024-08-13' // Required for API v2
+				'cal-api-version': CALCOM_API_VERSION
 			},
 			body: requestPayload
 		});
@@ -224,7 +227,7 @@ export async function rescheduleBooking(
 				headers: {
 					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
 					'Content-Type': 'application/json',
-					'cal-api-version': '2024-08-13'
+					'cal-api-version': CALCOM_API_VERSION
 				},
 				body: JSON.stringify({
 					start: newStart,
@@ -261,7 +264,9 @@ export async function getBooking(
 				method: 'GET',
 				headers: {
 					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+					'cal-api-version': CALCOM_API_VERSION
 				}
 			}
 		);
