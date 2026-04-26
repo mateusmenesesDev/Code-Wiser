@@ -91,7 +91,7 @@ export const mentorshipMutations = {
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
 					message: calRejectedKey
-						? 'Cal.com rejected authentication. Set CALCOM_API_KEY (Settings → Developer → API keys). If your organization is a Cal.com Platform org, also set CALCOM_OAUTH_CLIENT_SECRET (OAuth client secret from Settings → Organizations → Platform → OAuth clients) alongside NEXT_PUBLIC_CALCOM_CLIENT_ID.'
+						? 'Cal.com rejected CALCOM_API_KEY. Use Settings → Developer → API keys for the user who owns this event type, update the env var, restart the app. (Optional: if you use Platform OAuth, set CALCOM_OAUTH_CLIENT_SECRET and NEXT_PUBLIC_CALCOM_CLIENT_ID.)'
 						: raw
 				});
 			}
