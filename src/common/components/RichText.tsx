@@ -12,7 +12,7 @@ import {
 	Type,
 	Undo
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { cn } from '~/lib/utils';
 import { uploadFiles } from '../utils/uploadthing';
@@ -27,8 +27,9 @@ import {
 import { Separator } from './ui/separator';
 
 export default function RichText() {
-	const { setValue, watch } = useFormContext();
+	const { setValue, watch, getValues } = useFormContext();
 	const content = watch('description') || '';
+	const isApplyingDescriptionFromForm = useRef(false);
 
 	const handleImageUpload = async (
 		file: File,
@@ -52,8 +53,23 @@ export default function RichText() {
 		immediatelyRender: false,
 		extensions: [StarterKit, Image],
 		content,
+		onCreate({ editor: created }) {
+			setValue('description', created.getHTML(), { shouldDirty: false });
+		},
 		onUpdate({ editor }) {
-			setValue('description', editor.getHTML(), { shouldDirty: true });
+			const html = editor.getHTML();
+			if (isApplyingDescriptionFromForm.current) {
+				setValue('description', html, { shouldDirty: false });
+				return;
+			}
+			const formDesc = getValues('description');
+			const prev =
+				formDesc === undefined || formDesc === null ? '' : String(formDesc);
+			if (html === prev) {
+				setValue('description', html, { shouldDirty: false });
+				return;
+			}
+			setValue('description', html, { shouldDirty: true });
 		},
 		editorProps: {
 			attributes: {
@@ -95,7 +111,11 @@ export default function RichText() {
 	// Update editor content when form value changes
 	useEffect(() => {
 		if (editor && content !== editor.getHTML()) {
+			isApplyingDescriptionFromForm.current = true;
 			editor.commands.setContent(content || '');
+			queueMicrotask(() => {
+				isApplyingDescriptionFromForm.current = false;
+			});
 		}
 	}, [content, editor]);
 
