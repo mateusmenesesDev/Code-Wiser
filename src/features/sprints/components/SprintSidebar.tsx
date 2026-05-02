@@ -3,14 +3,15 @@
 import { SprintStatusEnum } from '@prisma/client';
 import dayjs from 'dayjs';
 import {
+	CheckCircle2,
 	ChevronLeft,
 	ChevronRight,
 	Circle,
 	ClipboardList,
 	Clock,
+	Kanban,
 	Plus,
-	Play,
-	CheckCircle2
+	Play
 } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
@@ -30,6 +31,7 @@ interface SprintSidebarProps {
 	sprints: SprintsApiOutput;
 	selectedSprintId: string | null;
 	currentView: string | null;
+	onSelectBoard: () => void;
 	onSelectSprint: (id: string) => void;
 	onSelectBacklog: () => void;
 }
@@ -174,6 +176,7 @@ export default function SprintSidebar({
 	sprints,
 	selectedSprintId,
 	currentView,
+	onSelectBoard,
 	onSelectSprint,
 	onSelectBacklog
 }: SprintSidebarProps) {
@@ -221,7 +224,20 @@ export default function SprintSidebar({
 			</div>
 
 			<div className="flex-1 space-y-1 overflow-y-auto p-2">
-				{/* Backlog entry */}
+				<button
+					type="button"
+					onClick={onSelectBoard}
+					className={cn(
+						'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all',
+						currentView !== 'backlog' && currentView !== 'sprint'
+							? 'bg-info-muted font-medium text-info-muted-foreground'
+							: 'hover:bg-muted/50'
+					)}
+				>
+					<Kanban className="h-4 w-4 shrink-0" />
+					<span>Board</span>
+				</button>
+
 				<button
 					type="button"
 					onClick={onSelectBacklog}

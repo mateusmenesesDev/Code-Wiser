@@ -101,6 +101,7 @@ const Workspace = () => {
 						sprints={sprints ?? []}
 						selectedSprintId={sprintId}
 						currentView={view}
+						onSelectBoard={() => setViewParams({ view: null, sprintId: null })}
 						onSelectSprint={(id) =>
 							setViewParams({ view: 'sprint', sprintId: id })
 						}
