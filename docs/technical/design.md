@@ -1,86 +1,52 @@
-## System Design Overview
+# System design
 
-This document outlines the high-level architecture and design choices for the app.
+Architecture guidance for maintainers and agents. `AGENTS.MD` is canonical; this file explains the runtime shape and where ownership lives.
 
-### Stack
+## Runtime shape
 
-- Next.js App Router (server components + client components)
-- tRPC v11 for type-safe API between server and client
-- Prisma + PostgreSQL for data access
-- Clerk for auth and org roles
-- React Query for client-side caching/hydration
-- Stripe for payments; UploadThing for file uploads
-- TailwindCSS, Radix UI, ShadCN components
+- Next.js App Router owns routing and server/client boundaries in `src/app`.
+- `src/app/layout.tsx` installs global providers: Clerk, Jotai, tRPC/React Query, nuqs, theme, header, toaster, and hydration.
+- `src/middleware.ts` runs Clerk middleware so `auth()` and session claims work during requests.
+- tRPC is the main application API. HTTP entrypoint is `src/app/api/trpc/[trpc]/route.ts`; routers are composed in `src/server/api/root.ts`.
+- Prisma access starts at `src/server/db.ts` and should stay behind server code: tRPC procedures, route handlers, or RSC helpers.
+- React Server Components can call tRPC through `src/trpc/server.ts`; Client Components use hooks from `src/trpc/react.tsx`.
 
-### Runtime Architecture
+## Boundaries
 
-- App entry: `src/app/layout.tsx` wraps with `ClerkProvider`, `JotaiProvider`, `TRPCReactProvider`, `NuqsAdapter`, and `ThemeProvider`. It also syncs the active organization via `SyncActiveOrganization`.
-- Middleware: `src/middleware.ts` runs Clerk middleware to attach session/claims to requests.
-- Server API: tRPC handlers exposed at `src/app/api/trpc/[trpc]/route.ts`, wired to `appRouter` and `createTRPCContext`.
-- Webhooks: `src/app/api/webhooks/*` for Clerk and Stripe events.
-- Uploads: `src/app/api/uploadthing/*` for authenticated uploads.
+- `src/app`: pages, layouts, route handlers, providers, and other framework boundary code. Keep it thin.
+- `src/features/*`: domain UI, hooks, schemas, types, atoms, utilities, and feature-specific behavior.
+- `src/server/api/routers/*`: domain API procedures. Validate inputs here and enforce authorization here.
+- `src/common`: shared UI primitives, layout pieces, hooks, atoms, constants, and utilities that are genuinely cross-feature.
+- `src/server/services/*` and `src/server/realtime/*`: external/server integrations and adapters.
+- `prisma/models/*`: database model ownership. Schema changes usually require matching router and feature updates.
 
-### Data Access
+## Data flow
 
-- Prisma client is created in `src/server/db.ts` with global reuse in dev.
-- All DB access flows through tRPC procedures, which receive `{ db, session, isAdmin }` in context.
+1. Route/page in `src/app` composes feature components or fetches server data.
+2. Client features call `api.<router>.<procedure>.useQuery/useMutation`.
+3. tRPC context in `src/server/api/trpc.ts` provides `{ db, realtime, session, isAdmin, headers }`.
+4. Procedures validate input with Zod schemas near the owning feature/domain and perform DB/service work.
+5. React Query caches server data; invalidate affected procedures after mutations.
+6. UI-only state stays local, in Jotai atoms, or in URL state via `nuqs`.
 
-### API Layer (tRPC)
+## Authorization
 
-- Root router: `src/server/api/root.ts` aggregates routers: `user`, `project`, `projectTemplate`, `task`, `sprint`, `epic`, `comment`.
-- Context: `src/server/api/trpc.ts` builds context with Clerk `auth()` and computes `isAdmin` from org claims.
-- Procedures: `publicProcedure`, `protectedProcedure`, `adminProcedure` implement auth/role checks and unified error/transformer config (SuperJSON).
-- Clients:
-  - RSC: `src/trpc/server.ts` creates a cached caller with auth-aware headers.
-  - Client: `src/trpc/react.tsx` sets up `api` with `httpBatchStreamLink`, `loggerLink`, and shared `QueryClient`.
+- Server checks are mandatory. Use `protectedProcedure`, `adminProcedure`, or `mentorshipProcedure` in `src/server/api/trpc.ts`.
+- UI checks such as Clerk `<Protect role="org:admin">` are only presentation guards.
+- Route handlers that bypass tRPC must call `auth()` and validate inputs themselves.
 
-### Feature Modules
+## Feature map
 
-- Projects: list enrolled, get by id, compute progress, create from template. UI for catalog, detail, and workspace.
-- Project Templates: admin CRUD, images, status, and public queries for catalog.
-- Tasks: list/create/update/delete, ordering, relations to sprint/epic, comments.
-- Sprints: list and CRUD; ordering.
-- Epics: list and CRUD.
-- Comments: list and CRUD.
+- Projects/templates/workspace/task/sprints/epics/comments: project catalog and work management.
+- Kanban/backlog/planningPoker: workspace interaction and realtime planning flows.
+- Auth/users/checkout/mentorship/notifications/prReview/feedback: supporting product domains and integrations.
+- AI, Stripe, Clerk, UploadThing, Cal.com, email, and realtime code live at route-handler or server-service boundaries.
 
-### Client State and Data Fetching
+## Where to look first
 
-- React Query is used under the hood by tRPC React bindings for caching, hydration, and request batching.
-- `src/trpc/query-client.ts` configures SuperJSON serialization and hydration behavior.
-- URL state and filters use `nuqs` where applicable (e.g., task filters).
-
-### AuthN/AuthZ
-
-- Clerk provides session and org claims via middleware and `auth()`.
-- UI authorization uses `<Protect role="org:admin">`.
-- Server authorization uses `protectedProcedure` and `adminProcedure`.
-- See `docs/technical/authentication.md` for full details.
-
-### Payments and Credits
-
-- Checkout: `src/app/api/checkout_sessions/route.ts` creates Stripe sessions tied to the user and specific price IDs.
-- Webhooks: `src/app/api/webhooks/stripe/route.ts` handles credit addition and mentorship subscription updates.
-
-### Uploads
-
-- `src/app/api/uploadthing/core.ts` enforces auth in middleware for image uploads.
-
-### UI Composition
-
-- Reusable UI components in `src/common/components/ui`.
-- Feature-oriented components in `src/features/*/components`.
-- Workspace: Kanban board, Backlog with DnD, Stats, Header, and Design file card.
-
-### Error Handling
-
-- tRPC error formatter includes Zod errors; client logs enabled in development.
-- Route handlers use `NextResponse.json` with status codes for failures.
-
-### Testing
-
-- Example tests: `src/server/api/routers/template/tests/project.test.ts` use mocked DB and mocked Clerk `auth()`.
-
-### Conventions
-
-- Type-safe schemas via Zod in `src/features/*/schemas`.
-- Single-responsibility modules and DRY utilities.
+- Runtime/API setup: `src/app/layout.tsx`, `src/server/api/trpc.ts`, `src/server/api/root.ts`, `src/trpc/*`.
+- Ownership/placement: `docs/technical/folder-structure.md`.
+- Auth and roles: `docs/technical/authentication.md`.
+- Forms/schemas: `docs/technical/forms.md`.
+- Queries/mutations/cache: `docs/technical/query.md`.
+- Development principles: `docs/technical/principles.md`.
