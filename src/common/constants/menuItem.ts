@@ -2,6 +2,7 @@ import {
 	Calendar,
 	FolderOpen,
 	GitPullRequest,
+	MessageSquare,
 	UserCog,
 	Users
 } from 'lucide-react';
@@ -65,6 +66,15 @@ export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 		href: '/admin/pr-reviews',
 		Icon: GitPullRequest,
 		label: 'PR Reviews',
+		orgPermission: {
+			permission: 'org:project:create',
+			role: 'org:admin'
+		}
+	},
+	{
+		href: '/admin/feedback',
+		Icon: MessageSquare,
+		label: 'Feedback Inbox',
 		orgPermission: {
 			permission: 'org:project:create',
 			role: 'org:admin'

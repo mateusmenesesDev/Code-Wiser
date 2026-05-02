@@ -59,6 +59,12 @@ export const env = createEnv({
 - **UPLOADTHING_TOKEN**: Authentication token for UploadThing service
   - Used in `src/app/api/uploadthing/core.ts` for file upload handling
 
+#### Email
+
+- **RESEND_API_KEY**: Resend API key for outbound notifications
+- **SUPPORT_EMAIL**: Optional recipient for feedback inbox email alerts
+  - When omitted, feedback is still stored and email alerts are skipped
+
 #### Runtime Environment
 
 - **NODE_ENV**: Application environment (`development` | `test` | `production`)
@@ -123,7 +129,7 @@ const isProduction = env.NODE_ENV === "production";
 - **URL validation**: DATABASE_URL must be a valid URL
 - **Enum validation**: NODE_ENV restricted to specific values
 - **Empty string handling**: Empty strings treated as undefined
-- **Required validation**: All variables must be present (no optional server vars)
+- **Required validation**: Required variables must be present; explicitly optional variables can be omitted
 
 ### Development Setup
 
@@ -152,6 +158,10 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 
 # File Uploads
 UPLOADTHING_TOKEN="sk_live_..."
+
+# Email
+RESEND_API_KEY="re_..."
+SUPPORT_EMAIL="support@example.com"
 ```
 
 #### Prisma Configuration

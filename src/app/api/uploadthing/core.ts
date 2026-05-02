@@ -28,6 +28,22 @@ export const ourFileRouter = {
 		})
 		.onUploadComplete(async ({ metadata }) => {
 			return { uploadedBy: metadata.userId };
+		}),
+	feedbackScreenshot: f({
+		image: {
+			maxFileSize: '4MB',
+			maxFileCount: 1
+		}
+	})
+		.middleware(async () => {
+			const { userId } = auth();
+
+			if (!userId) throw new UploadThingError('Unauthorized');
+
+			return { userId };
+		})
+		.onUploadComplete(async ({ metadata }) => {
+			return { uploadedBy: metadata.userId };
 		})
 } satisfies FileRouter;
 

@@ -1,0 +1,47 @@
+enum FeedbackType {
+  BUG
+  SUGGESTION
+  QUESTION
+  OTHER
+
+  @@schema("public")
+}
+
+enum FeedbackStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+
+  @@schema("public")
+}
+
+model FeedbackReport {
+  id        String         @id @default(uuid())
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  type      FeedbackType
+  status    FeedbackStatus @default(OPEN)
+
+  title       String
+  description String
+
+  url            String
+  userAgent      String
+  browser        String?
+  viewportWidth  Int?
+  viewportHeight Int?
+
+  screenshotUrl String?
+  screenshotKey String?
+
+  reporterEmail String
+  reporterName  String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, type, createdAt])
+  @@index([userId, createdAt])
+  @@schema("public")
+}

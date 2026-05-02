@@ -2,6 +2,7 @@ import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 import { aiRouter } from './routers/ai/ai.router';
 import { commentRouter } from './routers/comment';
 import { epicRouter } from './routers/epic/epic.router';
+import { feedbackRouter } from './routers/feedback';
 import { kanbanRouter } from './routers/kanban';
 import { mentorshipRouter } from './routers/mentorship/mentorship';
 import { notificationRouter } from './routers/notification/notificationRouter';
@@ -31,7 +32,8 @@ export const appRouter = createTRPCRouter({
 	prReview: prReviewRouter,
 	planningPoker: planningPokerRouter,
 	notification: notificationRouter,
-	mentorship: mentorshipRouter
+	mentorship: mentorshipRouter,
+	feedback: feedbackRouter
 });
 
 // export type definition of API
