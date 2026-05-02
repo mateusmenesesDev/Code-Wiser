@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 
-import { LogIn, Moon, Sparkles, Sun } from 'lucide-react';
+import { Calendar, LogIn, Moon, Sparkles, Sun } from 'lucide-react';
 import { Switch } from '~/common/components/ui/switch';
 import {
 	MENU_ITEMS,
@@ -33,20 +33,25 @@ const Header = () => {
 	}, []);
 	const { user } = useAuth();
 	const isLoggedIn = !!user;
-	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
+	const {
+		data: mentorshipStatus,
+		isError: mentorshipStatusErrored,
+		isLoading: mentorshipStatusLoading
+	} = api.user.getMentorshipStatus.useQuery(undefined, {
 		enabled: isLoggedIn
 	});
-	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
-		undefined,
-		{
-			enabled: isLoggedIn
-		}
-	);
+	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+	const shouldShowCreditsBadge =
+		isLoggedIn &&
+		(mentorshipStatus?.mentorshipStatus === 'INACTIVE' || mentorshipStatusErrored);
+	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
+		enabled: shouldShowCreditsBadge
+	});
 
 	// Filter menu items based on mentorship status
 	const filteredMenuItems = MENU_ITEMS.filter((item) => {
 		if (item.requiresMentorship) {
-			return mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+			return hasActiveMentorship;
 		}
 		return true;
 	});
@@ -92,11 +97,19 @@ const Header = () => {
 
 						{isLoggedIn ? (
 							<>
-								{/* Credits Badge */}
-								<Badge variant="purple-gradient">
-									<Sparkles className="mr-1 h-3 w-3" />
-									{userCredits?.credits ?? 0} credits
-								</Badge>
+								{hasActiveMentorship ? (
+									<Link href="/mentorship">
+										<Badge variant="success">
+											<Calendar className="mr-1 h-3 w-3" />
+											Mentorship Active
+										</Badge>
+									</Link>
+								) : shouldShowCreditsBadge && !mentorshipStatusLoading ? (
+									<Badge variant="purple-gradient">
+										<Sparkles className="mr-1 h-3 w-3" />
+										{userCredits?.credits ?? 0} credits
+									</Badge>
+								) : null}
 
 								{/* Notifications */}
 								<NotificationBell />
