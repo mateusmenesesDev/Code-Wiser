@@ -40,6 +40,8 @@ model User {
   createdPlanningPokerSessions PlanningPokerSession[] @relation("PlanningPokerSessionCreator")
   planningPokerVotes           PlanningPokerVote[]
   notifications                Notification[]
+  projectInvitationsReceived   ProjectInvitation[]  @relation("ProjectInvitationsReceived")
+  projectInvitationsSent       ProjectInvitation[]  @relation("ProjectInvitationsSent")
   mentorshipBookings           MentorshipBooking[]
   feedbackReports              FeedbackReport[]
 

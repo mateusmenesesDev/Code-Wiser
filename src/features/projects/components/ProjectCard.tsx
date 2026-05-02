@@ -35,6 +35,7 @@ import { cn } from '~/lib/utils';
 import type { AppRouter } from '~/server/api/root';
 import { useProjectMutations } from '../hooks/useProjectMutations';
 import type { ProjectTemplateApiOutput } from '../types/Projects.type';
+import { isMentorshipLockedProject } from '../utils/projectStartAccess';
 import InsufficientCreditsError from './InsufficientCreditsError';
 
 type ProjectCardProps = {
@@ -42,26 +43,38 @@ type ProjectCardProps = {
 	userCredits: number;
 	projectId?: string;
 	userHasMentorship: boolean;
+	isUserMentorshipLoading: boolean;
 };
 
 export function ProjectCard({
 	projectTemplate,
 	userCredits,
 	userHasMentorship,
+	isUserMentorshipLoading,
 	projectId
 }: ProjectCardProps) {
 	const router = useRouter();
 	const { user } = useAuth();
-	const { openDialog } = useDialog('signUp');
+	const { openDialog } = useDialog('signIn');
 	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
 
 	const handleContinue = () => {
 		router.push(`/workspace/${projectId}`);
 	};
 
+	const isMentorshipProject =
+		projectTemplate.accessType === ProjectAccessTypeEnum.MENTORSHIP;
+
 	const handleCreateProject = async () => {
 		if (!user) {
-			openDialog('signUp');
+			openDialog('signIn');
+			return;
+		}
+
+		if (
+			isMentorshipLockedProject(projectTemplate.accessType, userHasMentorship)
+		) {
+			router.push('/pricing');
 			return;
 		}
 
@@ -241,7 +254,10 @@ export function ProjectCard({
 						<Button
 							size="sm"
 							onClick={handleCreateProject}
-							disabled={isCreateProjectPending}
+							disabled={
+								isCreateProjectPending ||
+								Boolean(user && isMentorshipProject && isUserMentorshipLoading)
+							}
 							variant="secondary"
 						>
 							<Play className="mr-2 h-4 w-4" />

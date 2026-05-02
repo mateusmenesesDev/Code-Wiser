@@ -13,15 +13,18 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
+import { useDialog } from '~/common/hooks/useDialog';
 import { useUser } from '~/common/hooks/useUser';
 import {
 	getBadgeAccessTypeColor,
 	getDifficultyBadgeColor
 } from '~/common/utils/colorUtils';
+import { useAuth } from '~/features/auth/hooks/useAuth';
 import { cn } from '~/lib/utils';
 import { useMyProjects } from '../../hooks/useMyProjects';
 import { useProjectMutations } from '../../hooks/useProjectMutations';
 import type { ProjectTemplateInfoByIdApiOutput } from '../../types/Projects.type';
+import { isMentorshipLockedProject } from '../../utils/projectStartAccess';
 
 interface ProjectDetailSidebarProps {
 	project: NonNullable<ProjectTemplateInfoByIdApiOutput>;
@@ -29,23 +32,36 @@ interface ProjectDetailSidebarProps {
 
 export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 	const router = useRouter();
+	const { user } = useAuth();
+	const { openDialog } = useDialog('signIn');
 
 	const { isEnrolledProject, isLoading } = useMyProjects();
 	const isEnrolledId = isEnrolledProject(project.title);
 
 	const { createProject, isCreateProjectPending } = useProjectMutations();
 
-	const { userCredits, userHasMentorship } = useUser();
-	const hasInsufficientCredits =
-		project.credits && project.credits > 0 && userCredits < project.credits;
+	const { userCredits, userHasMentorship, isUserMentorshipLoading } = useUser();
+	const hasInsufficientCredits = Boolean(
+		project.credits && project.credits > 0 && userCredits < project.credits
+	);
 	const isFreeProject = project.accessType === ProjectAccessTypeEnum.FREE;
 	const isCreditProject = project.accessType === ProjectAccessTypeEnum.CREDITS;
 	const isMentorshipProject =
 		project.accessType === ProjectAccessTypeEnum.MENTORSHIP;
+	const isMentorshipLocked = isMentorshipLockedProject(
+		project.accessType,
+		userHasMentorship
+	);
 
 	const handleStartProject = () => {
-		if (isMentorshipProject && !userHasMentorship) {
-			return toast.error('You need a mentorship to start this project');
+		if (!user) {
+			openDialog('signIn');
+			return;
+		}
+
+		if (isMentorshipLocked) {
+			router.push('/pricing');
+			return;
 		}
 
 		if (isCreditProject && hasInsufficientCredits) {
@@ -59,7 +75,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 		isLoading ||
 		isCreateProjectPending ||
 		(isCreditProject && hasInsufficientCredits) ||
-		(isMentorshipProject && !userHasMentorship);
+		Boolean(user && isMentorshipProject && isUserMentorshipLoading);
 
 	const handleConnectWithMentor = () => {
 		if (!userHasMentorship) {
@@ -152,10 +168,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								hasInsufficientCredits &&
 								'Insufficient Credits'}
 							{isCreditProject && !hasInsufficientCredits && 'Start Project'}
-							{isMentorshipProject &&
-								!userHasMentorship &&
-								'Mentorship Required'}
-							{isMentorshipProject && userHasMentorship && 'Start Project'}
+							{isMentorshipProject && 'Start Project'}
 							{isFreeProject && 'Start Project'}
 						</Button>
 					)}

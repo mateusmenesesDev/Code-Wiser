@@ -9,6 +9,7 @@ export function useUser() {
 		userCredits: userCreditsQuery.data?.credits ?? 0,
 		userHasMentorship: userMentorshipQuery.data?.mentorshipStatus === 'ACTIVE',
 		isUserCreditsLoading: userCreditsQuery.isLoading,
-		isUserCreditsError: userCreditsQuery.isError
+		isUserCreditsError: userCreditsQuery.isError,
+		isUserMentorshipLoading: userMentorshipQuery.isLoading
 	};
 }

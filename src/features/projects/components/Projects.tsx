@@ -41,7 +41,7 @@ export default function Projects({
 		setCostFilter
 	} = useProjectFilter();
 
-	const { userCredits, userHasMentorship } = useUser();
+	const { userCredits, userHasMentorship, isUserMentorshipLoading } = useUser();
 	const { filteredProjects, isLoading, userProjects } = useProject({
 		initialProjectsData,
 		initialUserProjectsData
@@ -195,6 +195,7 @@ export default function Projects({
 								>
 									<ProjectCard
 										userHasMentorship={userHasMentorship}
+										isUserMentorshipLoading={isUserMentorshipLoading}
 										projectTemplate={project}
 										userCredits={userCredits}
 										projectId={

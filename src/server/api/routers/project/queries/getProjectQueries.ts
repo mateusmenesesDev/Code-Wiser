@@ -7,15 +7,19 @@ export const getProjectQueries = {
 	getWorkspaceInfo: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
-			userHasAccessToProject(ctx, input.id);
+			await userHasAccessToProject(ctx, input.id);
 			const project = await ctx.db.project.findUnique({
 				where: { id: input.id },
-			select: {
-				title: true,
-				description: true,
-				figmaProjectUrl: true,
-				methodology: true
-			}
+				select: {
+					title: true,
+					description: true,
+					figmaProjectUrl: true,
+					methodology: true,
+					accessType: true,
+					maxParticipants: true,
+					creditCost: true,
+					_count: { select: { members: true } }
+				}
 			});
 
 			return project;
@@ -215,5 +219,188 @@ export const getProjectQueries = {
 			}
 
 			return project.members;
+		}),
+
+	getMemberManagement: protectedProcedure
+		.input(z.object({ projectId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			if (!ctx.isAdmin) {
+				return { canManage: false as const };
+			}
+
+			const project = await ctx.db.project.findUnique({
+				where: { id: input.projectId },
+				select: {
+					id: true,
+					title: true,
+					accessType: true,
+					maxParticipants: true,
+					creditCost: true,
+					members: {
+						select: { id: true, name: true, email: true },
+						orderBy: { name: 'asc' }
+					},
+					invitations: {
+						where: { status: { in: ['PENDING', 'DECLINED'] } },
+						select: {
+							id: true,
+							status: true,
+							creditCostSnapshot: true,
+							createdAt: true,
+							respondedAt: true,
+							user: { select: { id: true, name: true, email: true } },
+							invitedBy: { select: { id: true, name: true, email: true } }
+						},
+						orderBy: { createdAt: 'desc' }
+					}
+				}
+			});
+
+			if (!project) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project not found'
+				});
+			}
+
+			return { canManage: true as const, ...project };
+		}),
+
+	searchProjectMemberCandidates: adminProcedure
+		.input(
+			z.object({
+				projectId: z.string(),
+				search: z.string().optional()
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const search = input.search?.trim();
+			const project = await ctx.db.project.findUnique({
+				where: { id: input.projectId },
+				select: {
+					accessType: true,
+					members: { select: { id: true } },
+					invitations: {
+						where: { status: { in: ['PENDING', 'DECLINED'] } },
+						select: { userId: true, status: true }
+					}
+				}
+			});
+
+			if (!project) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project not found'
+				});
+			}
+
+			const users = await ctx.db.user.findMany({
+				where: search
+					? {
+							OR: [
+								{ email: { contains: search, mode: 'insensitive' } },
+								{ name: { contains: search, mode: 'insensitive' } }
+							]
+						}
+					: undefined,
+				select: {
+					id: true,
+					email: true,
+					name: true,
+					mentorshipStatus: true
+				},
+				orderBy: { createdAt: 'desc' },
+				take: 8
+			});
+
+			const memberIds = new Set(project.members.map((member) => member.id));
+			const pendingInviteUserIds = new Set(
+				project.invitations
+					.filter((invitation) => invitation.status === 'PENDING')
+					.map((invitation) => invitation.userId)
+			);
+			const declinedInviteUserIds = new Set(
+				project.invitations
+					.filter((invitation) => invitation.status === 'DECLINED')
+					.map((invitation) => invitation.userId)
+			);
+
+			return users.map((user) => {
+				let disabledReason: string | null = null;
+				if (memberIds.has(user.id)) {
+					disabledReason = 'Already a member';
+				} else if (pendingInviteUserIds.has(user.id)) {
+					disabledReason = 'Pending invitation';
+				} else if (
+					project.accessType === 'MENTORSHIP' &&
+					user.mentorshipStatus !== 'ACTIVE'
+				) {
+					disabledReason = 'Mentorship inactive';
+				}
+
+				return {
+					...user,
+					disabledReason,
+					note: declinedInviteUserIds.has(user.id)
+						? 'Previously declined'
+						: null
+				};
+			});
+		}),
+
+	getMyPendingInvitations: protectedProcedure.query(async ({ ctx }) => {
+		return ctx.db.projectInvitation.findMany({
+			where: { userId: ctx.session.userId, status: 'PENDING' },
+			select: {
+				id: true,
+				creditCostSnapshot: true,
+				createdAt: true,
+				project: {
+					select: {
+						id: true,
+						title: true,
+						description: true,
+						accessType: true,
+						category: { select: { name: true } }
+					}
+				},
+				invitedBy: { select: { name: true, email: true } }
+			},
+			orderBy: { createdAt: 'desc' }
+		});
+	}),
+
+	getMyProjectInvitation: protectedProcedure
+		.input(z.object({ invitationId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			const invitation = await ctx.db.projectInvitation.findFirst({
+				where: { id: input.invitationId, userId: ctx.session.userId },
+				select: {
+					id: true,
+					status: true,
+					creditCostSnapshot: true,
+					createdAt: true,
+					respondedAt: true,
+					canceledAt: true,
+					project: {
+						select: {
+							id: true,
+							title: true,
+							description: true,
+							category: { select: { name: true } }
+						}
+					},
+					invitedBy: { select: { name: true, email: true } }
+				}
+			});
+
+			if (!invitation) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project invitation not found'
+				});
+			}
+
+			return invitation;
 		})
 };
