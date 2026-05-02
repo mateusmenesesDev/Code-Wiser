@@ -1,8 +1,9 @@
-import { TaskPriorityEnum } from '@prisma/client';
+import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import { MoreVertical, Trash2 } from 'lucide-react';
 import { useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
+import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
 	DropdownMenu,
@@ -13,6 +14,7 @@ import {
 import { TableCell, TableRow } from '~/common/components/ui/table';
 import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
 import { useTask } from '~/features/task/hooks/useTask';
+import { getStatusLabel } from '~/features/task/utils';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
 import { cn } from '~/lib/utils';
 import { EpicCell } from './EpicCell';
@@ -118,6 +120,11 @@ export function DraggableTaskRow({
 					projectId={projectId}
 					isTemplate={true}
 				/>
+			</TableCell>
+			<TableCell>
+				<Badge variant="secondary" className="whitespace-nowrap">
+					{getStatusLabel(task.status ?? TaskStatusEnum.BACKLOG)}
+				</Badge>
 			</TableCell>
 			<TableCell>
 				<EpicCell

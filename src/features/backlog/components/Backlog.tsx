@@ -2,7 +2,6 @@
 
 import { TaskStatusEnum } from '@prisma/client';
 import { Plus } from 'lucide-react';
-import { useParams } from 'next/navigation';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useCallback } from 'react';
 import { DndProvider } from 'react-dnd';
@@ -43,7 +42,6 @@ import { DraggableTaskRow } from './DraggableTaskRow';
  * Tasks can be reordered by dragging them to different positions.
  */
 export default function Backlog({ projectId }: { projectId: string }) {
-	const { id } = useParams();
 	const [taskId, setTaskId] = useQueryState('taskId', parseAsString);
 	const isTemplate = useIsTemplate();
 
@@ -73,14 +71,13 @@ export default function Backlog({ projectId }: { projectId: string }) {
 		(dragIndex: number, hoverIndex: number, groupTaskIds?: string[]) => {
 			if (dragIndex === hoverIndex) return;
 
-			const allBacklog =
-				tasks?.filter((task) => task.status === TaskStatusEnum.BACKLOG) ?? [];
-
-			const groupTasks = (
-				groupTaskIds?.length
-					? allBacklog.filter((t) => groupTaskIds.includes(t.id))
-					: allBacklog.filter((t) => !t.sprintId)
-			).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+			const groupTasks = (tasks ?? [])
+				.filter((task) =>
+					groupTaskIds?.length
+						? groupTaskIds.includes(task.id)
+						: task.status === TaskStatusEnum.BACKLOG && !task.sprintId
+				)
+				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
 			if (groupTasks.length === 0) return;
 
@@ -108,8 +105,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 			const sprintTasks = tasks
 				?.filter(
 					(task) =>
-						task.status === TaskStatusEnum.BACKLOG &&
-						task.sprintId === sprint.id
+						task.status !== TaskStatusEnum.DONE && task.sprintId === sprint.id
 				)
 				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 			return [sprint.id, sprintTasks ?? []] as const;
@@ -148,6 +144,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 												<TableHead className="w-12">Order</TableHead>
 												<TableHead>Title</TableHead>
 												<TableHead>Priority</TableHead>
+												<TableHead>Status</TableHead>
 												<TableHead>Epic</TableHead>
 												<TableHead>Sprint</TableHead>
 												<TableHead>Tags</TableHead>
@@ -160,7 +157,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 													key={task.id}
 													task={task}
 													index={index}
-													projectId={id as string}
+													projectId={projectId}
 													onTaskClick={handleTaskClick}
 													moveTask={(drag, hover) =>
 														moveTask(drag, hover, sprintTaskIds)
@@ -197,6 +194,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 										<TableHead className="w-12">Order</TableHead>
 										<TableHead>Title</TableHead>
 										<TableHead>Priority</TableHead>
+										<TableHead>Status</TableHead>
 										<TableHead>Epic</TableHead>
 										<TableHead>Sprint</TableHead>
 										<TableHead>Tags</TableHead>
@@ -209,7 +207,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 											key={task.id}
 											task={task}
 											index={index}
-											projectId={id as string}
+											projectId={projectId}
 											onTaskClick={handleTaskClick}
 											moveTask={(drag, hover) => moveTask(drag, hover)}
 											sprints={sprints}
@@ -229,7 +227,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 
 				<TaskDialog
 					taskId={taskId ?? undefined}
-					projectId={id as string}
+					projectId={projectId}
 					onClose={() => setTaskId(null)}
 				/>
 			</div>
