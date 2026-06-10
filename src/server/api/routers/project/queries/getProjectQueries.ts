@@ -263,7 +263,90 @@ export const getProjectQueries = {
 				});
 			}
 
-			return { canManage: true as const, ...project };
+			const memberIds = project.members.map((member) => member.id);
+			const [paymentEvidences, acceptedCreditInvitations, assignedTaskCounts] =
+				await Promise.all([
+					ctx.db.projectCreditPaymentEvidence.findMany({
+						where: {
+							projectId: input.projectId,
+							userId: { in: memberIds },
+							credits: { gt: 0 },
+							memberRemovalAudit: null
+						},
+						select: { id: true, userId: true, credits: true, createdAt: true },
+						orderBy: { createdAt: 'desc' }
+					}),
+					ctx.db.projectInvitation.findMany({
+						where: {
+							projectId: input.projectId,
+							status: 'ACCEPTED',
+							creditCostSnapshot: { gt: 0 },
+							userId: { in: memberIds },
+							memberRemovalAudit: null,
+							creditPaymentEvidence: null
+						},
+						select: {
+							id: true,
+							userId: true,
+							creditCostSnapshot: true,
+							respondedAt: true
+						},
+						orderBy: { respondedAt: 'desc' }
+					}),
+					ctx.db.task.groupBy({
+						by: ['assigneeId'],
+						where: {
+							projectId: input.projectId,
+							assigneeId: { in: memberIds }
+						},
+						_count: { _all: true }
+					})
+				]);
+
+			const refundableCreditsByUserId = new Map<string, number>();
+			for (const evidence of paymentEvidences) {
+				if (!refundableCreditsByUserId.has(evidence.userId)) {
+					refundableCreditsByUserId.set(evidence.userId, evidence.credits);
+				}
+			}
+			for (const invitation of acceptedCreditInvitations) {
+				if (refundableCreditsByUserId.has(invitation.userId)) {
+					continue;
+				}
+				refundableCreditsByUserId.set(
+					invitation.userId,
+					invitation.creditCostSnapshot ?? 0
+				);
+			}
+
+			const assignedTaskCountByUserId = new Map<string, number>();
+			for (const taskCount of assignedTaskCounts) {
+				if (taskCount.assigneeId) {
+					assignedTaskCountByUserId.set(
+						taskCount.assigneeId,
+						taskCount._count._all
+					);
+				}
+			}
+
+			return {
+				canManage: true as const,
+				...project,
+				currentUserId: ctx.session.userId,
+				members: project.members.map((member) => {
+					const refundableCredits =
+						refundableCreditsByUserId.get(member.id) ?? 0;
+					return {
+						...member,
+						assignedTaskCount: assignedTaskCountByUserId.get(member.id) ?? 0,
+						refundableCredits,
+						refundUnavailableReason:
+							project.accessType === 'CREDITS' && refundableCredits === 0
+								? 'No credit payment evidence found'
+								: null
+					};
+				})
+			};
 		}),
 
 	searchProjectMemberCandidates: adminProcedure

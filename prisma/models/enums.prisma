@@ -113,6 +113,23 @@ enum NotificationType {
   PROJECT_INVITATION_ACCEPTED
   PROJECT_INVITATION_DECLINED
   PROJECT_INVITATION_CANCELED
+  PROJECT_MEMBER_REMOVED
+
+  @@schema("public")
+}
+
+// Internal state for member removals and optional credit refunds.
+enum ProjectMemberRemovalRefundStatus {
+  NOT_APPLICABLE
+  NOT_REQUESTED
+  REFUNDED
+
+  @@schema("public")
+}
+
+enum ProjectCreditPaymentEvidenceSource {
+  PROJECT_CREATION
+  PROJECT_INVITATION_ACCEPTANCE
 
   @@schema("public")
 }

@@ -1,0 +1,18 @@
+model ProjectCreditPaymentEvidence {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  projectId String
+  userId    String
+  credits   Int
+  source    ProjectCreditPaymentEvidenceSource
+
+  projectInvitationId String?            @unique
+  projectInvitation   ProjectInvitation? @relation(fields: [projectInvitationId], references: [id], onDelete: SetNull)
+
+  memberRemovalAudit ProjectMemberRemovalAudit?
+
+  @@index([projectId, userId])
+  @@index([userId])
+  @@schema("public")
+}

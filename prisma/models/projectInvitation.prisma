@@ -17,6 +17,9 @@ model ProjectInvitation {
   invitedById String
   invitedBy   User   @relation("ProjectInvitationsSent", fields: [invitedById], references: [id], onDelete: Cascade)
 
+  memberRemovalAudit    ProjectMemberRemovalAudit?
+  creditPaymentEvidence ProjectCreditPaymentEvidence?
+
   @@index([userId, status])
   @@index([projectId, status])
   @@index([invitedById])

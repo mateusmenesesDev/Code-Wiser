@@ -139,10 +139,21 @@ export const projectMutations = {
 						user.mentorshipStatus !== 'ACTIVE' &&
 						projectTemplate.accessType === 'CREDITS'
 					) {
+						const credits = projectTemplate.credits ?? 0;
 						await prisma.user.update({
 							where: { id: user.id },
-							data: { credits: { decrement: projectTemplate.credits ?? 0 } }
+							data: { credits: { decrement: credits } }
 						});
+						if (credits > 0) {
+							await prisma.projectCreditPaymentEvidence.create({
+								data: {
+									projectId: newProject.id,
+									userId: user.id,
+									credits,
+									source: 'PROJECT_CREATION'
+								}
+							});
+						}
 					}
 
 					return newProject;
@@ -316,6 +327,151 @@ export const projectMutations = {
 			return result;
 		}),
 
+	removeProjectMember: adminProcedure
+		.input(
+			z.object({
+				projectId: z.string(),
+				userId: z.string(),
+				refundCredits: z.boolean().default(false),
+				reason: z.string().trim().max(500).optional()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const result = await ctx.db.$transaction(async (prisma) => {
+				const project = await prisma.project.findUnique({
+					where: { id: input.projectId },
+					select: {
+						id: true,
+						title: true,
+						members: { select: { id: true, email: true, name: true } }
+					}
+				});
+
+				if (!project) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'Project not found'
+					});
+				}
+
+				const member = project.members.find((user) => user.id === input.userId);
+				if (!member) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'User is not a project member'
+					});
+				}
+
+				const paymentEvidence =
+					await prisma.projectCreditPaymentEvidence.findFirst({
+						where: {
+							projectId: project.id,
+							userId: member.id,
+							credits: { gt: 0 },
+							memberRemovalAudit: null
+						},
+						select: { id: true, credits: true },
+						orderBy: { createdAt: 'desc' }
+					});
+
+				const legacyPaymentEvidence = paymentEvidence
+					? null
+					: await prisma.projectInvitation.findFirst({
+							where: {
+								projectId: project.id,
+								userId: member.id,
+								status: 'ACCEPTED',
+								creditCostSnapshot: { gt: 0 },
+								memberRemovalAudit: null,
+								creditPaymentEvidence: null
+							},
+							select: { id: true, creditCostSnapshot: true },
+							orderBy: { respondedAt: 'desc' }
+						});
+
+				const refundableCredits =
+					paymentEvidence?.credits ??
+					legacyPaymentEvidence?.creditCostSnapshot ??
+					0;
+				const refundEligible = refundableCredits > 0;
+
+				if (input.refundCredits && !refundEligible) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'No refundable credit payment evidence for this member'
+					});
+				}
+
+				const unassignedTasks = await prisma.task.updateMany({
+					where: { projectId: project.id, assigneeId: member.id },
+					data: { assigneeId: null }
+				});
+
+				await prisma.project.update({
+					where: { id: project.id },
+					data: { members: { disconnect: { id: member.id } } }
+				});
+
+				if (input.refundCredits) {
+					await prisma.user.update({
+						where: { id: member.id },
+						data: { credits: { increment: refundableCredits } }
+					});
+				}
+
+				const audit = await prisma.projectMemberRemovalAudit.create({
+					data: {
+						projectId: project.id,
+						projectTitleSnapshot: project.title,
+						userId: member.id,
+						userEmailSnapshot: member.email,
+						removedById: ctx.session.userId,
+						reason: input.reason || null,
+						memberCountBefore: project.members.length,
+						wasLastMember: project.members.length === 1,
+						wasSelfRemoval: member.id === ctx.session.userId,
+						tasksUnassigned: unassignedTasks.count,
+						refundEligible,
+						refundRequested: input.refundCredits,
+						refundStatus: input.refundCredits
+							? 'REFUNDED'
+							: refundEligible
+								? 'NOT_REQUESTED'
+								: 'NOT_APPLICABLE',
+						refundedCredits: input.refundCredits ? refundableCredits : null,
+						paymentEvidenceId: paymentEvidence?.id ?? null,
+						legacyPaymentEvidenceInvitationId: legacyPaymentEvidence?.id ?? null
+					},
+					select: { id: true }
+				});
+
+				return {
+					auditId: audit.id,
+					project,
+					member,
+					reason: input.reason || null,
+					refundedCredits: input.refundCredits ? refundableCredits : 0,
+					tasksUnassigned: unassignedTasks.count,
+					wasLastMember: project.members.length === 1,
+					wasSelfRemoval: member.id === ctx.session.userId
+				};
+			});
+
+			const reasonText = result.reason ? ` Reason: ${result.reason}` : '';
+			await createNotification({
+				db: ctx.db,
+				userId: result.member.id,
+				type: 'PROJECT_MEMBER_REMOVED',
+				title: 'Removed from project',
+				message: result.refundedCredits
+					? `You were removed from ${result.project.title}. ${result.refundedCredits} credits were refunded.${reasonText}`
+					: `You were removed from ${result.project.title}.${reasonText}`,
+				link: '/my-projects'
+			});
+
+			return result;
+		}),
+
 	cancelProjectInvitation: adminProcedure
 		.input(z.object({ invitationId: z.string() }))
 		.mutation(async ({ ctx, input }) => {
@@ -382,6 +538,18 @@ export const projectMutations = {
 						accepted: false as const,
 						projectTitle: invitation.project.title
 					};
+				}
+
+				if (creditCost > 0) {
+					await prisma.projectCreditPaymentEvidence.create({
+						data: {
+							projectId: invitation.projectId,
+							userId: ctx.session.userId,
+							credits: creditCost,
+							source: 'PROJECT_INVITATION_ACCEPTANCE',
+							projectInvitationId: invitation.id
+						}
+					});
 				}
 
 				if (
