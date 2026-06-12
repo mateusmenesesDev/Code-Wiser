@@ -14,6 +14,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
+import { generatePublicCode } from '../src/lib/publicTaskId';
 import type {
 	ProjectAccessTypeEnum,
 	ProjectDifficultyEnum,
@@ -191,6 +192,8 @@ async function main() {
 			const template = await tx.projectTemplate.create({
 				data: {
 					title: wip.metadata.title,
+					publicCode: generatePublicCode(wip.metadata.title),
+					nextTaskNumber: wip.userStories.length + 1,
 					description: wip.metadata.description,
 					categoryId: category.id,
 					difficulty: wip.metadata.difficulty,
@@ -235,7 +238,7 @@ async function main() {
 			}
 
 			// Create Tasks (User Stories)
-			for (const story of wip.userStories) {
+			for (const [storyIndex, story] of wip.userStories.entries()) {
 				const epicId = story.epicTitle ? epicMap.get(story.epicTitle) : undefined;
 				const sprintId = story.sprintTitle
 					? sprintMap.get(story.sprintTitle)
@@ -262,6 +265,7 @@ async function main() {
 						priority: story.priority,
 						tags: story.tags,
 						status: 'BACKLOG',
+						publicNumber: storyIndex + 1,
 						projectTemplateId: template.id,
 						epicId: epicId ?? null,
 						sprintId: sprintId ?? null

@@ -9,6 +9,7 @@ import type {
 	SSEMessage,
 	VoteSSEData
 } from '~/features/planningPoker/types/planningPoker.types';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { api } from '~/trpc/react';
 import { useRealtimeClient } from './useRealtimeClient';
 
@@ -107,6 +108,11 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	const currentTask = currentTaskData
 		? {
 				id: currentTaskData.id,
+				publicTaskId: formatPublicTaskId(
+					currentTaskData.project?.publicCode ??
+						currentTaskData.projectTemplate?.publicCode,
+					currentTaskData.publicNumber
+				),
 				title: currentTaskData.title,
 				description: currentTaskData.description
 			}

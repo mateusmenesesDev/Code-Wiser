@@ -9,6 +9,7 @@ import {
 	ProjectMethodologyEnum,
 	ProjectStatusEnum
 } from '@prisma/client';
+import { generatePublicCode } from '../../../src/lib/publicTaskId';
 import { TECH_STACKS } from '../data/technologies';
 import { seedLogger } from '../utils/logger';
 import { generateEpics } from './epicGenerator';
@@ -127,7 +128,7 @@ async function createRelatedEntities(
 		where: { projectTemplateId: projectTemplate.id }
 	});
 
-	for (const taskData of tasks) {
+	for (const [taskIndex, taskData] of tasks.entries()) {
 		const sprint = faker.helpers.arrayElement(createdSprints);
 		const epic = faker.helpers.maybe(
 			() => faker.helpers.arrayElement(createdEpics),
@@ -138,11 +139,17 @@ async function createRelatedEntities(
 			data: {
 				...taskData,
 				projectTemplateId: projectTemplate.id,
+				publicNumber: taskIndex + 1,
 				sprintId: sprint.id,
 				epicId: epic?.id
 			}
 		});
 	}
+
+	await prisma.projectTemplate.update({
+		where: { id: projectTemplate.id },
+		data: { nextTaskNumber: tasks.length + 1 }
+	});
 
 	return tasks.length;
 }
@@ -204,6 +211,7 @@ export async function createProjectTemplates(
 		const template = await prisma.projectTemplate.create({
 			data: {
 				title,
+				publicCode: generatePublicCode(title),
 				description: generateTemplateDescription(
 					'A comprehensive project',
 					selectedTechNames

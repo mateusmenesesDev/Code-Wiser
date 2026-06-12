@@ -56,6 +56,8 @@ describe('project.createProject', () => {
 			difficulty: 'BEGINNER',
 			credits: 0,
 			figmaProjectUrl: null,
+			publicCode: 'PROJECTALPHA',
+			nextTaskNumber: 3,
 			categoryId: null,
 			sprints: [{ id: 'template-sprint-id', title: 'Sprint 1' }],
 			epics: [{ id: 'template-epic-id', title: 'Epic 1' }],
@@ -65,18 +67,21 @@ describe('project.createProject', () => {
 					title: 'Task 1',
 					epicId: 'template-epic-id',
 					sprintId: 'template-sprint-id',
-					projectTemplateId: 'template-id'
+					projectTemplateId: 'template-id',
+					publicNumber: 1
 				},
 				{
 					id: 'template-task-2',
 					title: 'Task 2',
 					epicId: null,
 					sprintId: null,
-					projectTemplateId: 'template-id'
+					projectTemplateId: 'template-id',
+					publicNumber: 2
 				}
 			]
 		} as never);
 		mockDb.project.findFirst.mockResolvedValue(null);
+		mockDb.project.findUnique.mockResolvedValue(null);
 		mockDb.project.create.mockResolvedValue({ id: 'project-id' } as never);
 		mockDb.sprint.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.epic.createMany.mockResolvedValue({ count: 1 } as never);
@@ -87,6 +92,12 @@ describe('project.createProject', () => {
 		});
 
 		expect(result).toBe('project-id');
+		expect(mockDb.project.create).toHaveBeenCalledWith({
+			data: expect.objectContaining({
+				publicCode: 'PROJECTALPHA',
+				nextTaskNumber: 3
+			})
+		});
 		expect(mockDb.sprint.create).not.toHaveBeenCalled();
 		expect(mockDb.epic.create).not.toHaveBeenCalled();
 		expect(mockDb.task.create).not.toHaveBeenCalled();
@@ -128,6 +139,7 @@ describe('project.createProject', () => {
 			data: [
 				expect.objectContaining({
 					title: 'Task 1',
+					publicNumber: 1,
 					projectId: 'project-id',
 					epicId,
 					sprintId,
@@ -136,6 +148,7 @@ describe('project.createProject', () => {
 				}),
 				expect.objectContaining({
 					title: 'Task 2',
+					publicNumber: 2,
 					projectId: 'project-id',
 					epicId: null,
 					sprintId: null,

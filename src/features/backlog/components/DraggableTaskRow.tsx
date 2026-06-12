@@ -16,6 +16,7 @@ import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
 import { useTask } from '~/features/task/hooks/useTask';
 import { getStatusLabel } from '~/features/task/utils';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { cn } from '~/lib/utils';
 import { EpicCell } from './EpicCell';
 import { PriorityCell } from './PriorityCell';
@@ -94,6 +95,10 @@ export function DraggableTaskRow({
 	});
 
 	drag(drop(ref));
+	const publicTaskId = formatPublicTaskId(
+		task.project?.publicCode ?? task.projectTemplate?.publicCode,
+		task.publicNumber
+	);
 
 	return (
 		<TableRow
@@ -105,7 +110,7 @@ export function DraggableTaskRow({
 			aria-label={`Task: ${task.title}. Drag to reorder.`}
 		>
 			<TableCell className="text-center font-mono text-muted-foreground text-sm">
-				{task.order ?? 0}
+				{publicTaskId ?? task.order ?? 0}
 			</TableCell>
 			<TableCell
 				className="cursor-pointer transition-colors duration-150 hover:bg-muted/80"

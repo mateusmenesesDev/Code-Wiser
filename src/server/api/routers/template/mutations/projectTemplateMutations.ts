@@ -10,6 +10,7 @@ import {
 	updateTemplateBasicInfoInputSchema,
 	updateTemplateStatusSchema
 } from '~/features/templates/schemas/template.schema';
+import { generatePublicCode } from '~/lib/publicTaskId';
 import { adminProcedure } from '~/server/api/trpc';
 import { createProjectTemplateData } from '../actions/projectTemplateActions';
 
@@ -326,42 +327,55 @@ export const projectTemplateMutations = {
 
 					// Validate and prepare tasks
 					const warnings: string[] = [];
-					const tasksToCreate = (data.tasks || []).map((taskData) => {
-						// Validate epic and sprint references
-						if (taskData.epicTitle && !epicTitleToId[taskData.epicTitle]) {
-							warnings.push(
-								`Task "${taskData.title}": Epic "${taskData.epicTitle}" not found. Task will be created without epic.`
-							);
-						}
-						if (
-							taskData.sprintTitle &&
-							!sprintTitleToId[taskData.sprintTitle]
-						) {
-							warnings.push(
-								`Task "${taskData.title}": Sprint "${taskData.sprintTitle}" not found. Task will be created without sprint.`
-							);
-						}
+					const taskCount = data.tasks?.length ?? 0;
+					const publicNumberStart = taskCount
+						? (
+								await prisma.projectTemplate.update({
+									where: { id: projectTemplateId },
+									data: { nextTaskNumber: { increment: taskCount } },
+									select: { nextTaskNumber: true }
+								})
+							).nextTaskNumber - taskCount
+						: 1;
+					const tasksToCreate = (data.tasks || []).map(
+						(taskData, taskIndex) => {
+							// Validate epic and sprint references
+							if (taskData.epicTitle && !epicTitleToId[taskData.epicTitle]) {
+								warnings.push(
+									`Task "${taskData.title}": Epic "${taskData.epicTitle}" not found. Task will be created without epic.`
+								);
+							}
+							if (
+								taskData.sprintTitle &&
+								!sprintTitleToId[taskData.sprintTitle]
+							) {
+								warnings.push(
+									`Task "${taskData.title}": Sprint "${taskData.sprintTitle}" not found. Task will be created without sprint.`
+								);
+							}
 
-						return {
-							title: taskData.title,
-							description: taskData.description,
-							type: taskData.type,
-							priority: taskData.priority,
-							tags: taskData.tags || [],
-							blocked: taskData.blocked ?? false,
-							blockedReason: taskData.blockedReason,
-							status: taskData.status,
-							order: taskData.order,
-							storyPoints: taskData.storyPoints,
-							dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
-							epicId: taskData.epicTitle
-								? epicTitleToId[taskData.epicTitle] || null
-								: null,
-							sprintId: taskData.sprintTitle
-								? sprintTitleToId[taskData.sprintTitle] || null
-								: null
-						};
-					});
+							return {
+								title: taskData.title,
+								description: taskData.description,
+								type: taskData.type,
+								priority: taskData.priority,
+								tags: taskData.tags || [],
+								blocked: taskData.blocked ?? false,
+								blockedReason: taskData.blockedReason,
+								status: taskData.status,
+								order: taskData.order,
+								storyPoints: taskData.storyPoints,
+								dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+								publicNumber: publicNumberStart + taskIndex,
+								epicId: taskData.epicTitle
+									? epicTitleToId[taskData.epicTitle] || null
+									: null,
+								sprintId: taskData.sprintTitle
+									? sprintTitleToId[taskData.sprintTitle] || null
+									: null
+							};
+						}
+					);
 
 					// Create tasks in batches to avoid overwhelming the database
 					const batchSize = 50;
@@ -386,6 +400,7 @@ export const projectTemplateMutations = {
 									order: taskData.order,
 									storyPoints: taskData.storyPoints,
 									dueDate: taskData.dueDate,
+									publicNumber: taskData.publicNumber,
 									projectTemplate: {
 										connect: { id: projectTemplateId }
 									},
@@ -487,6 +502,7 @@ export const projectTemplateMutations = {
 							data: {
 								...templateData,
 								title: input.newTitle,
+								publicCode: generatePublicCode(input.newTitle),
 								status: 'PENDING',
 								category: {
 									connect: { id: category.id }

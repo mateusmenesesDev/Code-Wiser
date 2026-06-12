@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
+import type { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
 	createProjectSchema,
 	updateProjectSchema
 } from '~/features/projects/schemas/projects.schema';
+import { generatePublicCode } from '~/lib/publicTaskId';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { createNotification } from '~/server/services/notification/base';
 import { userHasAccessToProject } from '~/server/utils/auth';
@@ -17,6 +19,28 @@ const canceledProjectError = () =>
 	});
 
 const CREATE_PROJECT_TRANSACTION_TIMEOUT_MS = 20_000;
+
+const makeUniqueProjectPublicCode = async (
+	prisma: Prisma.TransactionClient,
+	preferredCode: string | null | undefined,
+	fallbackTitle: string
+): Promise<string> => {
+	const baseCode = generatePublicCode(preferredCode ?? fallbackTitle);
+	let publicCode = baseCode;
+	let suffix = 2;
+
+	while (
+		await prisma.project.findUnique({
+			where: { publicCode },
+			select: { id: true }
+		})
+	) {
+		publicCode = `${baseCode}_${suffix}`;
+		suffix += 1;
+	}
+
+	return publicCode;
+};
 
 export const projectMutations = {
 	createProject: protectedProcedure
@@ -96,6 +120,12 @@ export const projectMutations = {
 								difficulty: projectTemplate.difficulty,
 								creditCost: projectTemplate.credits,
 								figmaProjectUrl: projectTemplate.figmaProjectUrl,
+								publicCode: await makeUniqueProjectPublicCode(
+									prisma,
+									projectTemplate.publicCode,
+									projectTemplate.title
+								),
+								nextTaskNumber: projectTemplate.nextTaskNumber,
 								categoryId: projectTemplate.categoryId,
 								members: { connect: { id: user.id } }
 							}

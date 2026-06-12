@@ -42,8 +42,13 @@ import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useUser } from '~/common/hooks/useUser';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { api } from '~/trpc/react';
-import { getStatusLabel, normalizeStoryPointsForForm, resetFormData } from '../utils';
+import {
+	getStatusLabel,
+	normalizeStoryPointsForForm,
+	resetFormData
+} from '../utils';
 import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
 import { TaskComments } from './TaskComments';
@@ -87,6 +92,10 @@ export function TaskDialogContent({
 	const { data: task } = api.task.getById.useQuery(
 		{ id: taskId || '' },
 		{ enabled: !!taskId }
+	);
+	const publicTaskId = formatPublicTaskId(
+		task?.project?.publicCode ?? task?.projectTemplate?.publicCode,
+		task?.publicNumber
 	);
 
 	const { data: epics } = api.epic.getAllByProjectId.useQuery({
@@ -511,8 +520,7 @@ export function TaskDialogContent({
 							<Select
 								value={form.watch('assigneeId') ?? 'none'}
 								onValueChange={(value) => {
-									const next =
-										value === 'none' ? undefined : value;
+									const next = value === 'none' ? undefined : value;
 									if (next === form.getValues('assigneeId')) return;
 									form.setValue('assigneeId', next, { shouldDirty: true });
 								}}
@@ -566,14 +574,8 @@ export function TaskDialogContent({
 										form.getValues('storyPoints')
 									);
 									if (value === 'none') {
-										const raw = form.getValues(
-											'storyPoints'
-										) as unknown;
-										if (
-											raw === undefined ||
-											raw === null ||
-											raw === ''
-										) {
+										const raw = form.getValues('storyPoints') as unknown;
+										if (raw === undefined || raw === null || raw === '') {
 											return;
 										}
 										form.setValue('storyPoints', undefined, {
@@ -712,7 +714,8 @@ export function TaskDialogContent({
 									id="blocked"
 									checked={form.watch('blocked') ?? false}
 									onCheckedChange={(checked) => {
-										if (checked === (form.getValues('blocked') ?? false)) return;
+										if (checked === (form.getValues('blocked') ?? false))
+											return;
 										form.setValue('blocked', checked, {
 											shouldDirty: true
 										});
@@ -777,7 +780,7 @@ export function TaskDialogContent({
 										Task ID
 									</h3>
 									<code className="rounded bg-muted px-2 py-1 text-xs">
-										{task.id}
+										{publicTaskId ?? String(task.order ?? 0)}
 									</code>
 								</div>
 
@@ -813,36 +816,36 @@ export function TaskDialogContent({
 							</Button>
 						</ConfirmationDialog>
 					)}
-			<div className="ml-auto flex items-center gap-2">
-					{form.formState.isDirty && (
-						<span className="text-muted-foreground text-xs">
-							Unsaved changes
-						</span>
-					)}
-					<Button
-						type="button"
-						variant="outline"
-						onClick={onRequestClose}
-						disabled={form.formState.isSubmitting}
-					>
-						Cancel
-					</Button>
-					<Button
-						type="submit"
-						disabled={form.formState.isSubmitting || !form.formState.isDirty}
-					>
-						{form.formState.isSubmitting && (
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+					<div className="ml-auto flex items-center gap-2">
+						{form.formState.isDirty && (
+							<span className="text-muted-foreground text-xs">
+								Unsaved changes
+							</span>
 						)}
-						{form.formState.isSubmitting
-							? isEditing
-								? 'Updating...'
-								: 'Creating...'
-							: isEditing
-								? 'Update Task'
-								: 'Create Task'}
-					</Button>
-				</div>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onRequestClose}
+							disabled={form.formState.isSubmitting}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="submit"
+							disabled={form.formState.isSubmitting || !form.formState.isDirty}
+						>
+							{form.formState.isSubmitting && (
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+							)}
+							{form.formState.isSubmitting
+								? isEditing
+									? 'Updating...'
+									: 'Creating...'
+								: isEditing
+									? 'Update Task'
+									: 'Create Task'}
+						</Button>
+					</div>
 				</div>
 			</form>
 		</FormProvider>

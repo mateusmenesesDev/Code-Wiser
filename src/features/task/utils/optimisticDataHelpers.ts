@@ -183,6 +183,8 @@ export const createOptimisticKanbanTask = (
 		priority: newTask.priority || null,
 		order: null,
 		storyPoints: null,
+		publicNumber: null,
+		project: null,
 		sprint: null,
 		epic: null,
 		assignee: null
@@ -205,6 +207,8 @@ export const createOptimisticBacklogTask = (
 		projectId: isTemplate ? null : (projectId ?? null),
 		projectTemplateId: isTemplate ? (projectId ?? null) : null,
 		kanbanColumn: null,
+		project: null,
+		projectTemplate: null,
 		assignee: null,
 		sprint: null,
 		epic: null,
@@ -218,6 +222,7 @@ export const createOptimisticBacklogTask = (
 		blockedReason: newTask.blockedReason || null,
 		dueDate: newTask.dueDate || null,
 		storyPoints: newTask.storyPoints || null,
+		publicNumber: null,
 		epicId: newTask.epicId || null,
 		sprintId: newTask.sprintId || null,
 		assigneeId: newTask.assigneeId || null

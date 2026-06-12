@@ -1,11 +1,13 @@
 import type { Prisma } from '@prisma/client';
 import type { ProjectTemplateFormData } from '~/features/projects/types/Projects.type';
+import { generatePublicCode } from '~/lib/publicTaskId';
 
 export function createProjectTemplateData(
 	input: ProjectTemplateFormData
 ): Prisma.ProjectTemplateCreateInput {
 	return {
 		...input,
+		publicCode: generatePublicCode(input.title),
 		category: {
 			connectOrCreate: {
 				where: { name: input.category },

@@ -11,6 +11,8 @@ export const taskQueries = {
 			const task = await ctx.db.task.findUnique({
 				where: { id: input.id },
 				include: {
+					project: { select: { publicCode: true } },
+					projectTemplate: { select: { publicCode: true } },
 					assignee: {
 						select: {
 							id: true,
@@ -56,6 +58,8 @@ export const taskQueries = {
 					}
 				},
 				include: {
+					project: { select: { publicCode: true } },
+					projectTemplate: { select: { publicCode: true } },
 					assignee: {
 						select: {
 							id: true,

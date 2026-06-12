@@ -11,6 +11,8 @@ model Project {
   difficulty      ProjectDifficultyEnum
   creditCost      Int?
   figmaProjectUrl String?
+  publicCode      String?                @unique
+  nextTaskNumber  Int                    @default(1)
 
   canceledAt                    DateTime?
   canceledById                  String?

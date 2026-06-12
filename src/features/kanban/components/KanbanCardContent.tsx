@@ -7,6 +7,7 @@ import {
 	type KanbanItemProps
 } from '~/common/components/ui/kanban';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { api } from '~/trpc/react';
 
 export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
@@ -19,10 +20,19 @@ export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 			enabled: !!task.assignee?.id
 		}
 	);
+	const publicTaskId = formatPublicTaskId(
+		task.project?.publicCode,
+		task.publicNumber
+	);
 
 	return (
 		<KanbanCard {...task} onTaskClick={() => setTaskId(task.id)}>
 			<div className="flex flex-col gap-3">
+				{publicTaskId && (
+					<span className="font-mono text-muted-foreground text-xs">
+						{publicTaskId}
+					</span>
+				)}
 				{task.sprint && (
 					<Badge
 						variant="default"

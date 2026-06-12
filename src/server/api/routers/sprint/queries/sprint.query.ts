@@ -8,12 +8,19 @@ const sprintInclude = {
 		select: {
 			id: true,
 			title: true,
+			publicNumber: true,
 			status: true,
 			priority: true,
 			storyPoints: true,
 			order: true,
 			sprintId: true,
 			assigneeId: true,
+			project: {
+				select: { publicCode: true }
+			},
+			projectTemplate: {
+				select: { publicCode: true }
+			},
 			assignee: {
 				select: { id: true, name: true }
 			}

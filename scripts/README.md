@@ -4,6 +4,32 @@ This directory contains utility scripts for database maintenance and migrations.
 
 ## Available Scripts
 
+### backfill-public-task-ids.ts
+
+Backfills display-only task IDs after `prisma db push` adds the nullable columns.
+
+**When to use:**
+
+- After deploying the public task ID schema with `db:push`
+- Any time existing projects/templates/tasks have missing `publicCode`, `publicNumber`, or stale `nextTaskNumber`
+
+**How to run:**
+
+```bash
+# Preview changes
+bun db:backfill-public-task-ids:dry
+
+# Apply changes
+bun db:backfill-public-task-ids
+```
+
+**What it does:**
+
+1. Fills missing project/template `publicCode` from the title, suffixing duplicates (`CODE`, `CODE_2`, ...)
+2. Fills missing task `publicNumber` by current visible order: `order`, `createdAt`, `id`
+3. Raises `nextTaskNumber` to at least max existing task number + 1
+4. Preserves existing public codes and task numbers
+
 ### fix-reset-dates.ts
 
 Fixes users with `null` `weeklySessionsResetAt` dates by setting them to the next Monday at midnight UTC.

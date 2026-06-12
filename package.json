@@ -18,6 +18,8 @@
 		"db:reset": "infisical run -- bun prisma/seed/reset-database.ts",
 		"db:reset-advanced": "infisical run -- bun prisma/seed/reset-database-advanced.ts",
 		"db:reset-and-seed": "infisical run -- npm run db:reset && npm run db:seed",
+		"db:backfill-public-task-ids": "infisical run -- bun scripts/backfill-public-task-ids.ts",
+		"db:backfill-public-task-ids:dry": "infisical run -- bun scripts/backfill-public-task-ids.ts --dry-run",
 		"dev": "infisical run -- next dev",
 		"dev:ngr": "ngrok http 3000",
 		"postinstall": "prisma generate",

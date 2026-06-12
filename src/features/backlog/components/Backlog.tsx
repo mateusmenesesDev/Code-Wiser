@@ -141,7 +141,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 									<Table className="border">
 										<TableHeader>
 											<TableRow>
-												<TableHead className="w-12">Order</TableHead>
+												<TableHead className="w-24">Task ID</TableHead>
 												<TableHead>Title</TableHead>
 												<TableHead>Priority</TableHead>
 												<TableHead>Status</TableHead>
@@ -191,7 +191,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 							<Table className="border">
 								<TableHeader>
 									<TableRow>
-										<TableHead className="w-12">Order</TableHead>
+										<TableHead className="w-24">Task ID</TableHead>
 										<TableHead>Title</TableHead>
 										<TableHead>Priority</TableHead>
 										<TableHead>Status</TableHead>

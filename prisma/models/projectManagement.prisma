@@ -12,7 +12,8 @@ model Task {
   status   TaskStatusEnum?   @default(BACKLOG)
   order    Int?              @default(0)
 
-  dueDate DateTime?
+  dueDate      DateTime?
+  publicNumber Int?
 
   blocked       Boolean? @default(false)
   blockedReason String?
@@ -38,6 +39,8 @@ model Task {
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])
+  @@unique([projectTemplateId, publicNumber])
+  @@unique([projectId, publicNumber])
   @@schema("public")
 }
 

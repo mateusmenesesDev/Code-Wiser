@@ -44,6 +44,7 @@ export const prReviewQueries = {
 						select: {
 							id: true,
 							title: true,
+							publicNumber: true,
 							assignee: {
 								select: {
 									id: true,
@@ -54,7 +55,8 @@ export const prReviewQueries = {
 							project: {
 								select: {
 									id: true,
-									title: true
+									title: true,
+									publicCode: true
 								}
 							}
 						}

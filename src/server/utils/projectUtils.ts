@@ -1,5 +1,6 @@
 import type { Category, Prisma } from '@prisma/client';
 import type { ProjectTemplateFormData } from '~/features/projects/types/Projects.type';
+import { generatePublicCode } from '~/lib/publicTaskId';
 
 export function createProjectData(
 	input: ProjectTemplateFormData,
@@ -15,6 +16,7 @@ export function createProjectData(
 		methodology: input.methodology,
 		minParticipants: input.minParticipants,
 		maxParticipants: input.maxParticipants,
-		figmaProjectUrl: input.figmaProjectUrl
+		figmaProjectUrl: input.figmaProjectUrl,
+		publicCode: generatePublicCode(input.title)
 	};
 }

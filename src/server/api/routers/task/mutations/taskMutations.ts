@@ -19,6 +19,8 @@ import {
 
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 
+const MAX_TRANSACTION_RETRIES = 3;
+
 const createRelationshipUpdate = (
 	id: string | null | undefined
 ): RelationshipUpdate | undefined => {
@@ -41,34 +43,65 @@ export const taskMutations = {
 				await assertProjectIsActive(ctx.db, projectId);
 			}
 
-			try {
-				const task = await ctx.db.task.create({
-					data: {
-						...rest,
-						...(isTemplate
-							? { projectTemplate: { connect: { id: projectId } } }
-							: { project: { connect: { id: projectId } } }),
-						assignee: assigneeId ? { connect: { id: assigneeId } } : undefined,
-						epic: epicId ? { connect: { id: epicId } } : undefined,
-						sprint: sprintId ? { connect: { id: sprintId } } : undefined
+			for (let attempt = 1; attempt <= MAX_TRANSACTION_RETRIES; attempt += 1) {
+				try {
+					const task = await ctx.db.$transaction(async (prisma) => {
+						const counter = isTemplate
+							? await prisma.projectTemplate.update({
+									where: { id: projectId },
+									data: { nextTaskNumber: { increment: 1 } },
+									select: { nextTaskNumber: true }
+								})
+							: await prisma.project.update({
+									where: { id: projectId },
+									data: { nextTaskNumber: { increment: 1 } },
+									select: { nextTaskNumber: true }
+								});
+
+						return prisma.task.create({
+							data: {
+								...rest,
+								publicNumber: counter.nextTaskNumber - 1,
+								...(isTemplate
+									? { projectTemplate: { connect: { id: projectId } } }
+									: { project: { connect: { id: projectId } } }),
+								assignee: assigneeId
+									? { connect: { id: assigneeId } }
+									: undefined,
+								epic: epicId ? { connect: { id: epicId } } : undefined,
+								sprint: sprintId ? { connect: { id: sprintId } } : undefined
+							}
+						});
+					});
+					return task;
+				} catch (error) {
+					if (
+						error instanceof Prisma.PrismaClientKnownRequestError &&
+						error.code === 'P2034' &&
+						attempt < MAX_TRANSACTION_RETRIES
+					) {
+						continue;
 					}
-				});
-				return task;
-			} catch (error) {
-				if (
-					error instanceof Prisma.PrismaClientKnownRequestError &&
-					error.code === 'P2002'
-				) {
+					if (
+						error instanceof Prisma.PrismaClientKnownRequestError &&
+						error.code === 'P2002'
+					) {
+						throw new TRPCError({
+							code: 'CONFLICT',
+							message: `A task with the title "${rest.title}" already exists in this project`
+						});
+					}
 					throw new TRPCError({
-						code: 'CONFLICT',
-						message: `A task with the title "${rest.title}" already exists in this project`
+						code: 'INTERNAL_SERVER_ERROR',
+						message: 'Something went wrong while creating the task'
 					});
 				}
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: 'Something went wrong while creating the task'
-				});
 			}
+
+			throw new TRPCError({
+				code: 'INTERNAL_SERVER_ERROR',
+				message: 'Something went wrong while creating the task'
+			});
 		}),
 
 	update: protectedProcedure

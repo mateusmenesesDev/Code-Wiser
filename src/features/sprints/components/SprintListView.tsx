@@ -5,6 +5,7 @@ import { useQueryState } from 'nuqs';
 import { Badge } from '~/common/components/ui/badge';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import { columns } from '~/features/kanban/constants';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import type { RouterOutputs } from '~/trpc/react';
 
 type KanbanTask = RouterOutputs['kanban']['getKanbanData'][number];
@@ -28,6 +29,10 @@ const statusDisplayName: Partial<Record<TaskStatusEnum, string>> = {
 const TaskRow = ({ task }: { task: KanbanTask }) => {
 	const [, setTaskId] = useQueryState('taskId');
 	const storyPoints = (task as { storyPoints?: number | null }).storyPoints;
+	const publicTaskId = formatPublicTaskId(
+		task.project?.publicCode,
+		task.publicNumber
+	);
 
 	return (
 		<button
@@ -35,6 +40,11 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 			onClick={() => setTaskId(task.id)}
 			className="flex w-full items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left transition-colors hover:border-border hover:bg-muted/30"
 		>
+			{publicTaskId && (
+				<span className="font-mono text-muted-foreground text-xs">
+					{publicTaskId}
+				</span>
+			)}
 			<span className="min-w-0 flex-1 truncate font-medium text-sm">
 				{task.title}
 			</span>
@@ -53,7 +63,10 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 					</div>
 				)}
 				{storyPoints != null && storyPoints > 0 && (
-					<Badge variant="secondary" className="px-1.5 py-0 font-mono text-xs tabular-nums">
+					<Badge
+						variant="secondary"
+						className="px-1.5 py-0 font-mono text-xs tabular-nums"
+					>
 						{storyPoints}
 					</Badge>
 				)}
@@ -62,9 +75,7 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 	);
 };
 
-export default function SprintListView({
-	tasks
-}: SprintListViewProps) {
+export default function SprintListView({ tasks }: SprintListViewProps) {
 	const orderedStatuses = columns.map((c) => c.id as TaskStatusEnum);
 
 	return (

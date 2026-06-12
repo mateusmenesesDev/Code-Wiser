@@ -1,6 +1,7 @@
 interface TaskCardProps {
 	task: {
 		id: string;
+		publicTaskId?: string | null;
 		title: string;
 		description: string | null;
 	};
@@ -14,6 +15,11 @@ export function TaskCard({ task }: TaskCardProps) {
 
 	return (
 		<div className="rounded-lg border bg-card p-6 shadow-sm">
+			{task.publicTaskId && (
+				<div className="mb-2 font-mono text-muted-foreground text-sm">
+					{task.publicTaskId}
+				</div>
+			)}
 			<h2 className="mb-2 font-semibold text-xl">{task.title}</h2>
 			{plainDescription && (
 				<div className="whitespace-pre-wrap text-muted-foreground text-sm">

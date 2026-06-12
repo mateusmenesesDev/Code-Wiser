@@ -21,6 +21,7 @@ import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Progress } from '~/common/components/ui/progress';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { cn } from '~/lib/utils';
 import type { EpicApiOutput } from '../../types/Epic.type';
 
@@ -142,6 +143,13 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 										<Clock className="h-4 w-4 text-epic" />
 									)}
 									<div className="space-y-1">
+										<div className="font-mono text-muted-foreground text-xs">
+											{formatPublicTaskId(
+												task.project?.publicCode ??
+													task.projectTemplate?.publicCode,
+												task.publicNumber
+											) ?? String(task.order ?? 0)}
+										</div>
 										<span className="font-medium">{task.title}</span>
 									</div>
 								</div>
