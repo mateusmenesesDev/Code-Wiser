@@ -8,7 +8,10 @@ import {
 	voteSchema
 } from '~/features/planningPoker/schemas/planningPoker.schema';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectIsActive,
+	userHasAccessToProject
+} from '~/server/utils/auth';
 
 export const planningPokerMutations = {
 	createSession: adminProcedure
@@ -20,6 +23,7 @@ export const planningPokerMutations = {
 					message: 'You must be logged in to create a planning poker session'
 				});
 			}
+			await assertProjectIsActive(ctx.db, input.projectId);
 
 			const activeSession = await ctx.db.planningPokerSession.findFirst({
 				where: {
@@ -131,6 +135,7 @@ export const planningPokerMutations = {
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+			await assertProjectIsActive(ctx.db, session.projectId);
 
 			// Get user info for broadcast
 			const user = await ctx.db.user.findUnique({
@@ -191,6 +196,7 @@ export const planningPokerMutations = {
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+			await assertProjectIsActive(ctx.db, session.projectId);
 
 			const currentTaskId = session.taskIds[session.currentTaskIndex];
 			if (!currentTaskId) {
@@ -271,6 +277,7 @@ export const planningPokerMutations = {
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+			await assertProjectIsActive(ctx.db, session.projectId);
 
 			const currentTaskId = session.taskIds[session.currentTaskIndex];
 			if (!currentTaskId) {
@@ -348,6 +355,7 @@ export const planningPokerMutations = {
 					message: 'Only the session creator can finalize tasks'
 				});
 			}
+			await assertProjectIsActive(ctx.db, session.projectId);
 
 			const currentTaskId = session.taskIds[session.currentTaskIndex];
 			if (!currentTaskId) {
@@ -429,6 +437,8 @@ export const planningPokerMutations = {
 					message: 'Only the session creator can end the session'
 				});
 			}
+
+			await assertProjectIsActive(ctx.db, session.projectId);
 
 			const updatedSession = await ctx.db.planningPokerSession.update({
 				where: { id: input.sessionId },

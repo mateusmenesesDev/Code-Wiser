@@ -12,7 +12,10 @@ import {
 	notifyTaskBlocked,
 	notifyTaskStatusChanged
 } from '~/server/services/notification/notificationService';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectIsActive,
+	userHasAccessToProject
+} from '~/server/utils/auth';
 
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 
@@ -33,6 +36,9 @@ export const taskMutations = {
 			const hasAccess = await userHasAccessToProject(ctx, projectId);
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+			if (!isTemplate) {
+				await assertProjectIsActive(ctx.db, projectId);
 			}
 
 			try {
@@ -122,6 +128,9 @@ export const taskMutations = {
 			);
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+			if (existingTask.projectId && !isTemplate) {
+				await assertProjectIsActive(ctx.db, existingTask.projectId);
 			}
 
 			const oldAssigneeId = existingTask.assigneeId;
@@ -258,6 +267,25 @@ export const taskMutations = {
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			const tasks = await ctx.db.task.findMany({
+				where: { id: { in: input.updates.map((update) => update.id) } },
+				select: { projectId: true }
+			});
+			const projectIds = [
+				...new Set(
+					tasks
+						.map((task) => task.projectId)
+						.filter((id): id is string => id !== null)
+				)
+			];
+			for (const projectId of projectIds) {
+				const hasAccess = await userHasAccessToProject(ctx, projectId);
+				if (!hasAccess) {
+					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+				}
+				await assertProjectIsActive(ctx.db, projectId);
+			}
+
 			await ctx.db.$transaction(
 				input.updates.map((update) =>
 					ctx.db.task.update({
@@ -303,6 +331,7 @@ export const taskMutations = {
 				if (!hasAccess) {
 					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 				}
+				await assertProjectIsActive(ctx.db, existingTask.projectId);
 			}
 
 			await ctx.db.task.delete({ where: { id: taskId } });
@@ -369,6 +398,7 @@ export const taskMutations = {
 				if (!hasAccess) {
 					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 				}
+				await assertProjectIsActive(ctx.db, projectId);
 			}
 
 			return ctx.db.task.deleteMany({

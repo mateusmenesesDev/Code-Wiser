@@ -11,7 +11,10 @@ import {
 	notifyPRRequested,
 	notifyPRResponse
 } from '~/server/services/notification/notificationService';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectIsActive,
+	userHasAccessToProject
+} from '~/server/utils/auth';
 
 export const prReviewMutations = {
 	approve: adminProcedure
@@ -52,6 +55,9 @@ export const prReviewMutations = {
 					code: 'NOT_FOUND',
 					message: 'No active PR review found for this task.'
 				});
+			}
+			if (activeReview.task.project?.id) {
+				await assertProjectIsActive(ctx.db, activeReview.task.project.id);
 			}
 
 			await ctx.db.pullRequestReview.update({
@@ -125,6 +131,9 @@ export const prReviewMutations = {
 					message: 'No active PR review found for this task.'
 				});
 			}
+			if (activeReview.task.project?.id) {
+				await assertProjectIsActive(ctx.db, activeReview.task.project.id);
+			}
 
 			await ctx.db.pullRequestReview.update({
 				where: { id: activeReview.id },
@@ -188,6 +197,7 @@ export const prReviewMutations = {
 			}
 
 			await userHasAccessToProject(ctx, task.project.id);
+			await assertProjectIsActive(ctx.db, task.project.id);
 
 			const user = await ctx.db.user.findUnique({
 				where: { id: reviewerId },
@@ -255,6 +265,15 @@ export const prReviewMutations = {
 		.input(updatePRReviewUrlSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { reviewId, prUrl } = input;
+
+			const review = await ctx.db.pullRequestReview.findUnique({
+				where: { id: reviewId },
+				select: { task: { select: { projectId: true } } }
+			});
+			if (review?.task.projectId) {
+				await userHasAccessToProject(ctx, review.task.projectId);
+				await assertProjectIsActive(ctx.db, review.task.projectId);
+			}
 
 			await ctx.db.pullRequestReview.update({
 				where: { id: reviewId },

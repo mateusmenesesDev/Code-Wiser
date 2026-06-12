@@ -7,7 +7,10 @@ import {
 	updateSprintSchema
 } from '~/features/sprints/schemas/sprint.schema';
 import { protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectIsActive,
+	userHasAccessToProject
+} from '~/server/utils/auth';
 
 export const sprintMutations = {
 	create: protectedProcedure
@@ -19,6 +22,9 @@ export const sprintMutations = {
 			const hasAccess = await userHasAccessToProject(ctx, projectId);
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+			if (!isTemplate) {
+				await assertProjectIsActive(ctx.db, projectId);
 			}
 
 			const sprintCount = await ctx.db.sprint.count({
@@ -40,16 +46,16 @@ export const sprintMutations = {
 				};
 			};
 
-		const sprint = await ctx.db.sprint.create({
-			data: {
-				title,
-				description,
-				startDate: startDate ? new Date(startDate) : undefined,
-				endDate: endDate ? new Date(endDate) : undefined,
-				order: sprintCount,
-				...createProjectConnection(isTemplate)
-			}
-		});
+			const sprint = await ctx.db.sprint.create({
+				data: {
+					title,
+					description,
+					startDate: startDate ? new Date(startDate) : undefined,
+					endDate: endDate ? new Date(endDate) : undefined,
+					order: sprintCount,
+					...createProjectConnection(isTemplate)
+				}
+			});
 
 			return sprint;
 		}),
@@ -81,6 +87,9 @@ export const sprintMutations = {
 			);
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+			if (existingSprint.projectId) {
+				await assertProjectIsActive(ctx.db, existingSprint.projectId);
 			}
 
 			if (existingSprint.status === SprintStatusEnum.ACTIVE) {
@@ -132,23 +141,43 @@ export const sprintMutations = {
 				if (!hasAccess) {
 					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 				}
+				await assertProjectIsActive(ctx.db, existingSprint.projectId);
 			}
 
-		const { startDate, endDate, ...rest } = updateData;
-		return ctx.db.sprint.update({
-			where: { id },
-			data: {
-				...rest,
-				startDate: startDate ? new Date(startDate) : undefined,
-				endDate: endDate ? new Date(endDate) : undefined
-			}
-		});
+			const { startDate, endDate, ...rest } = updateData;
+			return ctx.db.sprint.update({
+				where: { id },
+				data: {
+					...rest,
+					startDate: startDate ? new Date(startDate) : undefined,
+					endDate: endDate ? new Date(endDate) : undefined
+				}
+			});
 		}),
 
 	updateOrder: protectedProcedure
 		.input(updateSprintOrderSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { items } = input;
+
+			const sprints = await ctx.db.sprint.findMany({
+				where: { id: { in: items.map((item) => item.id) } },
+				select: { projectId: true }
+			});
+			const projectIds = [
+				...new Set(
+					sprints
+						.map((sprint) => sprint.projectId)
+						.filter((id): id is string => id !== null)
+				)
+			];
+			for (const projectId of projectIds) {
+				const hasAccess = await userHasAccessToProject(ctx, projectId);
+				if (!hasAccess) {
+					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+				}
+				await assertProjectIsActive(ctx.db, projectId);
+			}
 
 			await ctx.db.$transaction(
 				items.map((item) =>
@@ -180,6 +209,9 @@ export const sprintMutations = {
 			);
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+			if (sprint.projectId) {
+				await assertProjectIsActive(ctx.db, sprint.projectId);
 			}
 
 			const activeSprint = await ctx.db.sprint.findFirst({
@@ -222,6 +254,9 @@ export const sprintMutations = {
 			);
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+			if (sprint.projectId) {
+				await assertProjectIsActive(ctx.db, sprint.projectId);
 			}
 
 			await ctx.db.$transaction(async (tx) => {

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
@@ -9,26 +10,26 @@ import { createNotification } from '~/server/services/notification/base';
 import { userHasAccessToProject } from '~/server/utils/auth';
 import { userHasAccess } from '../utils/userHasAccess';
 
+const canceledProjectError = () =>
+	new TRPCError({
+		code: 'BAD_REQUEST',
+		message: 'Project is canceled'
+	});
+
+const CREATE_PROJECT_TRANSACTION_TIMEOUT_MS = 20_000;
+
 export const projectMutations = {
 	createProject: protectedProcedure
 		.input(createProjectSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
 				const { userId } = ctx.session;
-				console.log('userId', userId);
 
-				const project = await ctx.db.$transaction(async (prisma) => {
-					const user = await prisma.user.findUnique({
+				const [user, projectTemplate] = await Promise.all([
+					ctx.db.user.findUnique({
 						where: { id: userId }
-					});
-					if (!user) {
-						throw new TRPCError({
-							code: 'NOT_FOUND',
-							message: 'User not found'
-						});
-					}
-
-					const projectTemplate = await prisma.projectTemplate.findUnique({
+					}),
+					ctx.db.projectTemplate.findUnique({
 						where: {
 							id: input.projectTemplateId
 						},
@@ -37,127 +38,157 @@ export const projectMutations = {
 							epics: true,
 							tasks: true
 						}
+					})
+				]);
+
+				if (!user) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'User not found'
 					});
+				}
 
-					if (!projectTemplate) {
-						throw new TRPCError({
-							code: 'NOT_FOUND',
-							message: 'Project template not found'
-						});
-					}
+				if (!projectTemplate) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'Project template not found'
+					});
+				}
 
-					if (!userHasAccess(user, projectTemplate)) {
-						throw new TRPCError({
-							code: 'FORBIDDEN',
-							message: 'User does not have access to this project template'
-						});
-					}
+				if (!userHasAccess(user, projectTemplate)) {
+					throw new TRPCError({
+						code: 'FORBIDDEN',
+						message: 'User does not have access to this project template'
+					});
+				}
 
-					const userHasProject = await prisma.project.findFirst({
-						where: {
-							title: projectTemplate.title,
-							members: {
-								some: {
-									id: user.id
-								}
+				const userHasProject = await ctx.db.project.findFirst({
+					where: {
+						title: projectTemplate.title,
+						members: {
+							some: {
+								id: user.id
 							}
 						}
+					}
+				});
+				if (userHasProject) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'User already has a project with this template'
 					});
-					if (userHasProject) {
-						throw new TRPCError({
-							code: 'CONFLICT',
-							message: 'User already has a project with this template'
-						});
-					}
+				}
 
-					const templateSprints = projectTemplate.sprints;
-					const templateEpics = projectTemplate.epics;
-					const templateTasks = projectTemplate.tasks;
+				const templateSprints = projectTemplate.sprints;
+				const templateEpics = projectTemplate.epics;
+				const templateTasks = projectTemplate.tasks;
 
-					const newProject = await prisma.project.create({
-						data: {
-							title: projectTemplate.title,
-							description: projectTemplate.description,
-							methodology: projectTemplate.methodology,
-							minParticipants: projectTemplate.minParticipants,
-							maxParticipants: projectTemplate.maxParticipants,
-							accessType: projectTemplate.accessType,
-							difficulty: projectTemplate.difficulty,
-							creditCost: projectTemplate.credits,
-							figmaProjectUrl: projectTemplate.figmaProjectUrl,
-							categoryId: projectTemplate.categoryId,
-							members: { connect: { id: user.id } }
-						}
-					});
-
-					const sprintIdMap: Record<string, string> = {};
-					for (const sprint of templateSprints) {
-						const { id: oldId, projectTemplateId, ...sprintData } = sprint;
-						const newSprint = await prisma.sprint.create({
+				const project = await ctx.db.$transaction(
+					async (prisma) => {
+						const newProject = await prisma.project.create({
 							data: {
-								...sprintData,
-								projectId: newProject.id,
-								projectTemplateId: null
+								title: projectTemplate.title,
+								description: projectTemplate.description,
+								methodology: projectTemplate.methodology,
+								minParticipants: projectTemplate.minParticipants,
+								maxParticipants: projectTemplate.maxParticipants,
+								accessType: projectTemplate.accessType,
+								difficulty: projectTemplate.difficulty,
+								creditCost: projectTemplate.credits,
+								figmaProjectUrl: projectTemplate.figmaProjectUrl,
+								categoryId: projectTemplate.categoryId,
+								members: { connect: { id: user.id } }
 							}
 						});
-						sprintIdMap[oldId] = newSprint.id;
-					}
 
-					const epicIdMap: Record<string, string> = {};
-					for (const epic of templateEpics) {
-						const { id: oldId, projectTemplateId, ...epicData } = epic;
-						const newEpic = await prisma.epic.create({
-							data: {
-								...epicData,
-								projectId: newProject.id
-							}
-						});
-						epicIdMap[oldId] = newEpic.id;
-					}
+						const sprintIdMap: Record<string, string> = {};
+						if (templateSprints.length > 0) {
+							await prisma.sprint.createMany({
+								data: templateSprints.map((sprint) => {
+									const {
+										id: oldId,
+										projectTemplateId,
+										...sprintData
+									} = sprint;
+									const newId = randomUUID();
+									sprintIdMap[oldId] = newId;
 
-					for (const task of templateTasks) {
-						const {
-							id: _taskId,
-							epicId,
-							sprintId,
-							projectTemplateId,
-							...taskData
-						} = task;
-						await prisma.task.create({
-							data: {
-								...taskData,
-								projectId: newProject.id,
-								epicId: epicId ? epicIdMap[epicId] : null,
-								sprintId: sprintId ? sprintIdMap[sprintId] : null,
-								projectTemplateId: null,
-								assigneeId: user.id
-							}
-						});
-					}
-
-					if (
-						user.mentorshipStatus !== 'ACTIVE' &&
-						projectTemplate.accessType === 'CREDITS'
-					) {
-						const credits = projectTemplate.credits ?? 0;
-						await prisma.user.update({
-							where: { id: user.id },
-							data: { credits: { decrement: credits } }
-						});
-						if (credits > 0) {
-							await prisma.projectCreditPaymentEvidence.create({
-								data: {
-									projectId: newProject.id,
-									userId: user.id,
-									credits,
-									source: 'PROJECT_CREATION'
-								}
+									return {
+										...sprintData,
+										id: newId,
+										projectId: newProject.id,
+										projectTemplateId: null
+									};
+								})
 							});
 						}
-					}
 
-					return newProject;
-				});
+						const epicIdMap: Record<string, string> = {};
+						if (templateEpics.length > 0) {
+							await prisma.epic.createMany({
+								data: templateEpics.map((epic) => {
+									const { id: oldId, projectTemplateId, ...epicData } = epic;
+									const newId = randomUUID();
+									epicIdMap[oldId] = newId;
+
+									return {
+										...epicData,
+										id: newId,
+										projectId: newProject.id,
+										projectTemplateId: null
+									};
+								})
+							});
+						}
+
+						if (templateTasks.length > 0) {
+							await prisma.task.createMany({
+								data: templateTasks.map((task) => {
+									const {
+										id: _taskId,
+										epicId,
+										sprintId,
+										projectTemplateId,
+										...taskData
+									} = task;
+
+									return {
+										...taskData,
+										projectId: newProject.id,
+										epicId: epicId ? epicIdMap[epicId] : null,
+										sprintId: sprintId ? sprintIdMap[sprintId] : null,
+										projectTemplateId: null,
+										assigneeId: user.id
+									};
+								})
+							});
+						}
+
+						if (
+							user.mentorshipStatus !== 'ACTIVE' &&
+							projectTemplate.accessType === 'CREDITS'
+						) {
+							const credits = projectTemplate.credits ?? 0;
+							await prisma.user.update({
+								where: { id: user.id },
+								data: { credits: { decrement: credits } }
+							});
+							if (credits > 0) {
+								await prisma.projectCreditPaymentEvidence.create({
+									data: {
+										projectId: newProject.id,
+										userId: user.id,
+										credits,
+										source: 'PROJECT_CREATION'
+									}
+								});
+							}
+						}
+
+						return newProject;
+					},
+					{ timeout: CREATE_PROJECT_TRANSACTION_TIMEOUT_MS }
+				);
 
 				return project.id;
 			} catch (error) {
@@ -173,6 +204,14 @@ export const projectMutations = {
 
 			await userHasAccessToProject(ctx, id);
 
+			const project = await ctx.db.project.findUnique({
+				where: { id },
+				select: { canceledAt: true }
+			});
+			if (project?.canceledAt) {
+				throw canceledProjectError();
+			}
+
 			return ctx.db.project.update({
 				where: { id },
 				data,
@@ -183,6 +222,160 @@ export const projectMutations = {
 					methodology: true
 				}
 			});
+		}),
+
+	cancelProject: adminProcedure
+		.input(
+			z.object({
+				projectId: z.string(),
+				refundCredits: z.boolean().default(true),
+				reason: z.string().trim().min(1).max(500)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const result = await ctx.db.$transaction(async (prisma) => {
+				const project = await prisma.project.findUnique({
+					where: { id: input.projectId },
+					select: {
+						id: true,
+						title: true,
+						canceledAt: true,
+						members: { select: { id: true } },
+						invitations: {
+							where: { status: 'PENDING' },
+							select: { id: true, userId: true }
+						}
+					}
+				});
+
+				if (!project) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'Project not found'
+					});
+				}
+				if (project.canceledAt) {
+					throw canceledProjectError();
+				}
+
+				const memberIds = project.members.map((member) => member.id);
+				const [paymentEvidences, legacyPaymentEvidences] = input.refundCredits
+					? await Promise.all([
+							prisma.projectCreditPaymentEvidence.findMany({
+								where: {
+									projectId: project.id,
+									userId: { in: memberIds },
+									credits: { gt: 0 },
+									memberRemovalAudit: null
+								},
+								select: { id: true, userId: true, credits: true }
+							}),
+							prisma.projectInvitation.findMany({
+								where: {
+									projectId: project.id,
+									userId: { in: memberIds },
+									status: 'ACCEPTED',
+									creditCostSnapshot: { gt: 0 },
+									memberRemovalAudit: null,
+									creditPaymentEvidence: null
+								},
+								select: { id: true, userId: true, creditCostSnapshot: true }
+							})
+						])
+					: [[], []];
+
+				const refundsByUserId = new Map<string, number>();
+				for (const evidence of paymentEvidences) {
+					refundsByUserId.set(
+						evidence.userId,
+						(refundsByUserId.get(evidence.userId) ?? 0) + evidence.credits
+					);
+				}
+				for (const invitation of legacyPaymentEvidences) {
+					refundsByUserId.set(
+						invitation.userId,
+						(refundsByUserId.get(invitation.userId) ?? 0) +
+							(invitation.creditCostSnapshot ?? 0)
+					);
+				}
+
+				let refundedCredits = 0;
+				for (const [userId, credits] of refundsByUserId) {
+					await prisma.user.update({
+						where: { id: userId },
+						data: { credits: { increment: credits } }
+					});
+					refundedCredits += credits;
+				}
+
+				if (project.invitations.length > 0) {
+					await prisma.projectInvitation.updateMany({
+						where: { projectId: project.id, status: 'PENDING' },
+						data: { status: 'CANCELED', canceledAt: new Date() }
+					});
+				}
+
+				await prisma.project.update({
+					where: { id: project.id },
+					data: {
+						canceledAt: new Date(),
+						canceledById: ctx.session.userId,
+						cancellationReason: input.reason,
+						refundCreditsOnCancellation: input.refundCredits,
+						refundedCreditsOnCancellation: refundedCredits
+					}
+				});
+
+				return {
+					project,
+					reason: input.reason,
+					refundedCredits,
+					refundsByUserId: [...refundsByUserId.entries()].map(
+						([userId, credits]) => ({ userId, credits })
+					),
+					memberUserIds: memberIds,
+					pendingInviteeUserIds: project.invitations.map(
+						(invitation) => invitation.userId
+					)
+				};
+			});
+
+			const refundedCreditsByUserId = new Map(
+				result.refundsByUserId.map((refund) => [refund.userId, refund.credits])
+			);
+
+			await Promise.all([
+				...result.memberUserIds.map((userId) => {
+					const refundedCredits = refundedCreditsByUserId.get(userId) ?? 0;
+					return createNotification({
+						db: ctx.db,
+						userId,
+						type: 'PROJECT_CANCELED',
+						title: 'Project canceled',
+						message: refundedCredits
+							? `${result.project.title} was canceled. ${refundedCredits} credits were refunded. Reason: ${result.reason}`
+							: `${result.project.title} was canceled. Reason: ${result.reason}`,
+						link: `/workspace/${result.project.id}`
+					});
+				}),
+				...result.pendingInviteeUserIds.map((userId) =>
+					createNotification({
+						db: ctx.db,
+						userId,
+						type: 'PROJECT_INVITATION_CANCELED',
+						title: 'Project invitation canceled',
+						message: `Your invitation to ${result.project.title} was canceled because the project was canceled. Reason: ${result.reason}`,
+						link: '/my-projects'
+					})
+				)
+			]);
+
+			return {
+				success: true,
+				refundedCredits: result.refundedCredits,
+				membersNotified: result.memberUserIds.length,
+				invitationsCanceled: result.pendingInviteeUserIds.length
+			};
 		}),
 
 	addProjectMember: adminProcedure
@@ -203,6 +396,7 @@ export const projectMutations = {
 							title: true,
 							accessType: true,
 							creditCost: true,
+							canceledAt: true,
 							maxParticipants: true,
 							members: { select: { id: true } }
 						}
@@ -226,6 +420,9 @@ export const projectMutations = {
 				}
 				if (!user) {
 					throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+				}
+				if (project.canceledAt) {
+					throw canceledProjectError();
 				}
 				if (project.members.some((member) => member.id === user.id)) {
 					throw new TRPCError({
@@ -343,6 +540,7 @@ export const projectMutations = {
 					select: {
 						id: true,
 						title: true,
+						canceledAt: true,
 						members: { select: { id: true, email: true, name: true } }
 					}
 				});
@@ -352,6 +550,10 @@ export const projectMutations = {
 						code: 'NOT_FOUND',
 						message: 'Project not found'
 					});
+				}
+
+				if (project.canceledAt) {
+					throw canceledProjectError();
 				}
 
 				const member = project.members.find((user) => user.id === input.userId);
@@ -475,6 +677,14 @@ export const projectMutations = {
 	cancelProjectInvitation: adminProcedure
 		.input(z.object({ invitationId: z.string() }))
 		.mutation(async ({ ctx, input }) => {
+			const existingInvitation = await ctx.db.projectInvitation.findUnique({
+				where: { id: input.invitationId },
+				select: { project: { select: { canceledAt: true } } }
+			});
+			if (existingInvitation?.project.canceledAt) {
+				throw canceledProjectError();
+			}
+
 			const invitation = await ctx.db.projectInvitation.update({
 				where: { id: input.invitationId, status: 'PENDING' },
 				data: { status: 'CANCELED', canceledAt: new Date() },
@@ -514,6 +724,7 @@ export const projectMutations = {
 							select: {
 								id: true,
 								title: true,
+								canceledAt: true,
 								members: { select: { id: true } }
 							}
 						}
@@ -525,6 +736,10 @@ export const projectMutations = {
 						code: 'NOT_FOUND',
 						message: 'Pending invitation not found'
 					});
+				}
+
+				if (invitation.project.canceledAt) {
+					throw canceledProjectError();
 				}
 
 				const creditCost = invitation.creditCostSnapshot ?? 0;

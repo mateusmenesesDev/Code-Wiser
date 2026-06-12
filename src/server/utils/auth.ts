@@ -44,3 +44,24 @@ export const userHasAccessToProject = async (
 
 	return isMember;
 };
+
+export const assertProjectIsActive = async (
+	db: PrismaClient,
+	projectId: string
+): Promise<void> => {
+	const project = await db.project.findUnique({
+		where: { id: projectId },
+		select: { canceledAt: true }
+	});
+
+	if (!project) {
+		throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+	}
+
+	if (project.canceledAt) {
+		throw new TRPCError({
+			code: 'BAD_REQUEST',
+			message: 'Project is canceled'
+		});
+	}
+};

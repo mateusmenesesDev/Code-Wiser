@@ -6,6 +6,7 @@ import {
 } from '~/features/workspace/schemas/comment.schema';
 import { protectedProcedure } from '~/server/api/trpc';
 import { notifyTaskComment } from '~/server/services/notification/notificationService';
+import { assertProjectIsActive } from '~/server/utils/auth';
 import { getBaseUrl } from '~/server/utils/getBaseUrl';
 import { checkUserHasAccessToTask } from '../utils/comment.utils';
 
@@ -35,6 +36,9 @@ export const commentMutations = {
 					code: 'NOT_FOUND',
 					message: 'Task not found'
 				});
+			}
+			if (task.projectId) {
+				await assertProjectIsActive(ctx.db, task.projectId);
 			}
 
 			const comment = await ctx.db.comment.create({
@@ -97,6 +101,9 @@ export const commentMutations = {
 			}
 
 			await checkUserHasAccessToTask(ctx, existingComment.taskId);
+			if (existingComment.task.projectId) {
+				await assertProjectIsActive(ctx.db, existingComment.task.projectId);
+			}
 
 			const comment = await ctx.db.comment.update({
 				where: { id },
@@ -141,6 +148,9 @@ export const commentMutations = {
 			}
 
 			await checkUserHasAccessToTask(ctx, existingComment.taskId);
+			if (existingComment.task.projectId) {
+				await assertProjectIsActive(ctx.db, existingComment.task.projectId);
+			}
 
 			const task = await ctx.db.task.findUnique({
 				where: { id: existingComment.taskId },

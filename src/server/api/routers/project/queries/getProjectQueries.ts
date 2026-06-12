@@ -18,6 +18,10 @@ export const getProjectQueries = {
 					accessType: true,
 					maxParticipants: true,
 					creditCost: true,
+					canceledAt: true,
+					cancellationReason: true,
+					refundCreditsOnCancellation: true,
+					refundedCreditsOnCancellation: true,
 					_count: { select: { members: true } }
 				}
 			});
@@ -87,7 +91,10 @@ export const getProjectQueries = {
 
 	getEnrolled: protectedProcedure.query(({ ctx }) =>
 		ctx.db.project.findMany({
-			where: { members: { some: { id: ctx.session?.userId } } },
+			where: {
+				canceledAt: null,
+				members: { some: { id: ctx.session?.userId } }
+			},
 			include: {
 				category: {
 					select: {
@@ -102,13 +109,20 @@ export const getProjectQueries = {
 		.input(
 			z.object({
 				limit: z.number().min(1).max(100).default(20),
-				cursor: z.string().nullish()
+				cursor: z.string().nullish(),
+				status: z.enum(['active', 'canceled', 'all']).default('active')
 			})
 		)
 		.query(async ({ ctx, input }) => {
 			const { limit, cursor } = input;
 
 			const projects = await ctx.db.project.findMany({
+				where:
+					input.status === 'active'
+						? { canceledAt: null }
+						: input.status === 'canceled'
+							? { canceledAt: { not: null } }
+							: undefined,
 				take: limit + 1,
 				cursor: cursor ? { id: cursor } : undefined,
 				orderBy: {
@@ -233,6 +247,8 @@ export const getProjectQueries = {
 				select: {
 					id: true,
 					title: true,
+					canceledAt: true,
+					cancellationReason: true,
 					accessType: true,
 					maxParticipants: true,
 					creditCost: true,
@@ -362,6 +378,7 @@ export const getProjectQueries = {
 				where: { id: input.projectId },
 				select: {
 					accessType: true,
+					canceledAt: true,
 					members: { select: { id: true } },
 					invitations: {
 						where: { status: { in: ['PENDING', 'DECLINED'] } },
@@ -397,6 +414,7 @@ export const getProjectQueries = {
 			});
 
 			const memberIds = new Set(project.members.map((member) => member.id));
+			const projectCanceled = project.canceledAt !== null;
 			const pendingInviteUserIds = new Set(
 				project.invitations
 					.filter((invitation) => invitation.status === 'PENDING')
@@ -410,7 +428,9 @@ export const getProjectQueries = {
 
 			return users.map((user) => {
 				let disabledReason: string | null = null;
-				if (memberIds.has(user.id)) {
+				if (projectCanceled) {
+					disabledReason = 'Project canceled';
+				} else if (memberIds.has(user.id)) {
 					disabledReason = 'Already a member';
 				} else if (pendingInviteUserIds.has(user.id)) {
 					disabledReason = 'Pending invitation';
@@ -433,7 +453,11 @@ export const getProjectQueries = {
 
 	getMyPendingInvitations: protectedProcedure.query(async ({ ctx }) => {
 		return ctx.db.projectInvitation.findMany({
-			where: { userId: ctx.session.userId, status: 'PENDING' },
+			where: {
+				userId: ctx.session.userId,
+				status: 'PENDING',
+				project: { canceledAt: null }
+			},
 			select: {
 				id: true,
 				creditCostSnapshot: true,
