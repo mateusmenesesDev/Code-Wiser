@@ -192,7 +192,9 @@ export function MentorshipCalendar() {
 
 				dayStates.set(
 					key,
-					lockedWeekStarts.has(weekStart.getTime()) ? 'weeklyLocked' : 'available'
+					lockedWeekStarts.has(weekStart.getTime())
+						? 'weeklyLocked'
+						: 'available'
 				);
 			} else {
 				dayStates.set(key, 'fullyBooked');
@@ -218,7 +220,9 @@ export function MentorshipCalendar() {
 
 	const selectedDateKey = selectedDate ? toLocalDateKey(selectedDate) : null;
 	const slotsForSelectedDay: SlotOption[] =
-		selectedDateKey && slotsGrouped ? (slotsGrouped[selectedDateKey] ?? []) : [];
+		selectedDateKey && slotsGrouped
+			? (slotsGrouped[selectedDateKey] ?? [])
+			: [];
 
 	const handleDayClick = (day: Date) => {
 		const state = dayStates.get(toLocalDateKey(day));
@@ -243,7 +247,10 @@ export function MentorshipCalendar() {
 	if (slotsError) return <CalendarError onRetry={() => void refetchSlots()} />;
 
 	return (
-		<div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+		<div
+			className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm"
+			data-onboarding="mentorship-sessions"
+		>
 			{/* Cal.com–style 3-column embed */}
 			<div className="grid grid-cols-1 divide-y lg:grid-cols-[minmax(0,280px)_1fr_minmax(0,280px)] lg:divide-x lg:divide-y-0">
 				{/* ── Left: event summary (like Cal.com embed sidebar) ───────── */}
@@ -256,7 +263,9 @@ export function MentorshipCalendar() {
 							{hostInitial}
 						</div>
 						<div className="min-w-0 space-y-1">
-							<p className="truncate text-muted-foreground text-sm">{hostName}</p>
+							<p className="truncate text-muted-foreground text-sm">
+								{hostName}
+							</p>
 							<h2 className="font-semibold text-foreground text-xl leading-tight tracking-tight">
 								{EVENT_TITLE}
 							</h2>
@@ -273,7 +282,10 @@ export function MentorshipCalendar() {
 							<span>Video call</span>
 						</li>
 						<li className="flex items-start gap-2.5">
-							<Globe className="mt-0.5 h-4 w-4 shrink-0 opacity-70" aria-hidden />
+							<Globe
+								className="mt-0.5 h-4 w-4 shrink-0 opacity-70"
+								aria-hidden
+							/>
 							<span className="break-all">{timeZone}</span>
 						</li>
 					</ul>
@@ -317,15 +329,13 @@ export function MentorshipCalendar() {
 								'!bg-foreground !text-background hover:!bg-foreground hover:!text-background focus:!bg-foreground focus:!text-background rounded-lg font-semibold shadow-sm'
 						}}
 						components={{
-							DayButton: ({
-								day,
-								modifiers,
-								...btnProps
-							}: DayButtonProps) => {
-								const isFullyBooked =
-									modifiers.fullyBooked as boolean | undefined;
-								const isWeeklyLocked =
-									modifiers.weeklyLocked as boolean | undefined;
+							DayButton: ({ day, modifiers, ...btnProps }: DayButtonProps) => {
+								const isFullyBooked = modifiers.fullyBooked as
+									| boolean
+									| undefined;
+								const isWeeklyLocked = modifiers.weeklyLocked as
+									| boolean
+									| undefined;
 								const isDisabled = modifiers.disabled as boolean | undefined;
 
 								return (

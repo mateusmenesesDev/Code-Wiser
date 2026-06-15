@@ -43,7 +43,8 @@ const Header = () => {
 	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
 	const shouldShowCreditsBadge =
 		isLoggedIn &&
-		(mentorshipStatus?.mentorshipStatus === 'INACTIVE' || mentorshipStatusErrored);
+		(mentorshipStatus?.mentorshipStatus === 'INACTIVE' ||
+			mentorshipStatusErrored);
 	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
 		enabled: shouldShowCreditsBadge
 	});
@@ -105,7 +106,10 @@ const Header = () => {
 										</Badge>
 									</Link>
 								) : shouldShowCreditsBadge && !mentorshipStatusLoading ? (
-									<Badge variant="purple-gradient">
+									<Badge
+										variant="purple-gradient"
+										data-onboarding="user-credits"
+									>
 										<Sparkles className="mr-1 h-3 w-3" />
 										{userCredits?.credits ?? 0} credits
 									</Badge>
@@ -115,7 +119,9 @@ const Header = () => {
 								<NotificationBell />
 
 								{/* User Menu */}
-								<HeaderAvatarMenu />
+								<span data-onboarding="my-projects-access">
+									<HeaderAvatarMenu />
+								</span>
 							</>
 						) : (
 							<div className="flex items-center gap-3">

@@ -12,6 +12,7 @@ import {
 	SelectValue
 } from '~/common/components/ui/select';
 import { useUser } from '~/common/hooks/useUser';
+import { OnboardingTour } from '~/features/onboarding/OnboardingTour';
 import { useProject } from '../hooks/useProject';
 import { useProjectFilter } from '../hooks/useProjectFilter';
 import type {
@@ -61,7 +62,14 @@ export default function Projects({
 		costFilter !== 'all';
 
 	return (
-		<div className="container mx-auto px-4 py-8">
+		<div
+			className="container mx-auto px-4 py-8"
+			data-onboarding="project-catalog"
+		>
+			<div className="mb-4 flex justify-end">
+				<OnboardingTour flow="normal" />
+			</div>
+
 			{/* Hero Section */}
 			<div className="mb-12 animate-fade-in text-center">
 				<h1 className="mb-4 font-bold text-5xl">

@@ -33,6 +33,9 @@ model User {
   remainingWeeklySessions  Int              @default(1)
   weeklySessionsResetAt    DateTime?
 
+  normalOnboardingCompletedAt     DateTime?
+  mentorshipOnboardingCompletedAt DateTime?
+
   tasks                        Task[]
   projects                     Project[]
   comments                     Comment[]

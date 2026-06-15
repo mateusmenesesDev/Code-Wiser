@@ -6,6 +6,7 @@ import { feedbackRouter } from './routers/feedback';
 import { kanbanRouter } from './routers/kanban';
 import { mentorshipRouter } from './routers/mentorship/mentorship';
 import { notificationRouter } from './routers/notification/notificationRouter';
+import { onboardingRouter } from './routers/onboarding/onboarding.router';
 import { planningPokerRouter } from './routers/planningPoker/planningPokerRouter';
 import { prReviewRouter } from './routers/prReview/prReviewRouter';
 import { projectRouter } from './routers/project';
@@ -32,6 +33,7 @@ export const appRouter = createTRPCRouter({
 	prReview: prReviewRouter,
 	planningPoker: planningPokerRouter,
 	notification: notificationRouter,
+	onboarding: onboardingRouter,
 	mentorship: mentorshipRouter,
 	feedback: feedbackRouter
 });

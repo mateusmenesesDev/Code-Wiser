@@ -1,6 +1,13 @@
 'use client';
 
-import { Calendar, Clock, ExternalLink, RefreshCw, Video, X } from 'lucide-react';
+import {
+	Calendar,
+	Clock,
+	ExternalLink,
+	RefreshCw,
+	Video,
+	X
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
@@ -101,7 +108,7 @@ export function MyBookingsList() {
 	return (
 		<div className="space-y-6">
 			{/* Upcoming Bookings */}
-			<Card>
+			<Card data-onboarding="mentorship-bookings">
 				<CardHeader>
 					<CardTitle>Upcoming Sessions</CardTitle>
 					<CardDescription>Your scheduled mentorship sessions</CardDescription>
@@ -113,16 +120,16 @@ export function MyBookingsList() {
 							<p>No upcoming sessions scheduled</p>
 						</div>
 					) : (
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Date</TableHead>
-								<TableHead>Time</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead>Links</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Date</TableHead>
+									<TableHead>Time</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Links</TableHead>
+									<TableHead className="text-right">Actions</TableHead>
+								</TableRow>
+							</TableHeader>
 							<TableBody>
 								{upcomingBookings.map((booking) => (
 									<TableRow key={booking.id}>
@@ -176,37 +183,35 @@ export function MyBookingsList() {
 												)}
 											</div>
 										</TableCell>
-									<TableCell className="text-right">
-										{booking.status === 'SCHEDULED' && (
-											<div className="flex items-center justify-end gap-1">
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() =>
-														setRescheduleBookingId(booking.id)
-													}
-													disabled={cancelBookingMutation.isPending}
-												>
-													<RefreshCw className="mr-1 h-4 w-4" />
-													Reschedule
-												</Button>
-												<ConfirmationDialog
-													title="Cancel Session"
-													description="Are you sure you want to cancel this session? Your weekly session count will be restored."
-													onConfirm={() => handleCancelBooking(booking.id)}
-												>
+										<TableCell className="text-right">
+											{booking.status === 'SCHEDULED' && (
+												<div className="flex items-center justify-end gap-1">
 													<Button
 														variant="ghost"
 														size="sm"
+														onClick={() => setRescheduleBookingId(booking.id)}
 														disabled={cancelBookingMutation.isPending}
 													>
-														<X className="mr-1 h-4 w-4" />
-														Cancel
+														<RefreshCw className="mr-1 h-4 w-4" />
+														Reschedule
 													</Button>
-												</ConfirmationDialog>
-											</div>
-										)}
-									</TableCell>
+													<ConfirmationDialog
+														title="Cancel Session"
+														description="Are you sure you want to cancel this session? Your weekly session count will be restored."
+														onConfirm={() => handleCancelBooking(booking.id)}
+													>
+														<Button
+															variant="ghost"
+															size="sm"
+															disabled={cancelBookingMutation.isPending}
+														>
+															<X className="mr-1 h-4 w-4" />
+															Cancel
+														</Button>
+													</ConfirmationDialog>
+												</div>
+											)}
+										</TableCell>
 									</TableRow>
 								))}
 							</TableBody>

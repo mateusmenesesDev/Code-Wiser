@@ -11,16 +11,18 @@ export function MentorshipDashboard() {
 
 	return (
 		<div className="space-y-6">
-			{isLoading ? (
-				<WeeklyInfoSkeleton />
-			) : (
-				data && (
-					<WeeklyInfo
-						weekInfo={data}
-						hasAvailableSessions={data.hasAvailableSessions}
-					/>
-				)
-			)}
+			<div data-onboarding="mentorship-dashboard">
+				{isLoading ? (
+					<WeeklyInfoSkeleton />
+				) : (
+					data && (
+						<WeeklyInfo
+							weekInfo={data}
+							hasAvailableSessions={data.hasAvailableSessions}
+						/>
+					)
+				)}
+			</div>
 
 			<MyBookingsList />
 

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { MentorshipDashboard } from '~/features/mentorship/components/mentorship-dashboard';
+import { OnboardingTour } from '~/features/onboarding/OnboardingTour';
 import { api } from '~/trpc/server';
 
 export default async function MentorshipPage() {
@@ -11,13 +12,16 @@ export default async function MentorshipPage() {
 
 	return (
 		<div className="container mx-auto px-4 py-8">
-			<div className="mb-8">
-				<h1 className="font-bold text-3xl text-foreground">
-					Mentorship Sessions
-				</h1>
-				<p className="mt-2 text-muted-foreground">
-					Schedule and manage your one-on-one mentorship sessions
-				</p>
+			<div className="mb-8 flex items-start justify-between gap-4">
+				<div>
+					<h1 className="font-bold text-3xl text-foreground">
+						Mentorship Sessions
+					</h1>
+					<p className="mt-2 text-muted-foreground">
+						Schedule and manage your one-on-one mentorship sessions
+					</p>
+				</div>
+				<OnboardingTour flow="mentorship" />
 			</div>
 
 			<MentorshipDashboard />
