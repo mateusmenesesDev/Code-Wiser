@@ -1,10 +1,9 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type {
-	MemberJoinedSSEData,
 	PlanningPokerStoryPoint,
 	SSEMessage,
 	VoteSSEData
@@ -118,19 +117,10 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			}
 		: null;
 
-	const sessionParticipants = api.planningPoker.getSessionParticipants.useQuery(
-		{ sessionId },
-		{ enabled: !!sessionId }
+	const currentTaskVotes = useMemo(
+		() => votes?.filter((v) => v.taskId === currentTaskId) ?? [],
+		[votes, currentTaskId]
 	);
-
-	const currentTaskVotes =
-		votes?.filter((v) => v.taskId === currentTaskId) ?? [];
-	const votedUserIds = new Set(currentTaskVotes.map((v) => v.userId));
-	const membersWithVoteStatus =
-		sessionParticipants.data?.map((member) => ({
-			...member,
-			hasVoted: votedUserIds.has(member.id)
-		})) ?? [];
 
 	useEffect(() => {
 		if (currentTaskId && session) {
@@ -145,36 +135,6 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			return () => clearTimeout(timeoutId);
 		}
 	}, [currentTaskId, session, refetchVotes]);
-
-	useEffect(() => {
-		if (
-			sessionParticipants.data &&
-			currentTaskVotes &&
-			currentTaskId &&
-			sessionParticipants.data.length > 0
-		) {
-			const votedUserIds = new Set(currentTaskVotes.map((v) => v.userId));
-			const allParticipantIds = new Set(
-				sessionParticipants.data.map((p) => p.id)
-			);
-
-			const allVoted =
-				allParticipantIds.size > 0 &&
-				allParticipantIds.size === votedUserIds.size &&
-				Array.from(allParticipantIds).every((id) => votedUserIds.has(id));
-
-			if (allVoted) {
-				setAllVoted(true);
-				setShowResults(true);
-			} else {
-				setAllVoted(false);
-				setShowResults(false);
-			}
-		} else {
-			setAllVoted(false);
-			setShowResults(false);
-		}
-	}, [currentTaskVotes, sessionParticipants.data, currentTaskId]);
 
 	useEffect(() => {
 		if (votes && userId && currentTaskId) {
@@ -197,12 +157,6 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 						setSelectedValue(data.storyPoints);
 					}
 					refetchVotes();
-					break;
-				}
-				case 'member-joined': {
-					const data = event.data as MemberJoinedSSEData;
-					toast.info(`${data.userName || data.userEmail} joined the session`);
-					refetchSession();
 					break;
 				}
 				case 'task-finalized': {
@@ -251,23 +205,36 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		[onConnected, onDisconnected, onError, onEvent]
 	);
 
-	useRealtimeClient({
+	const { status: realtimeStatus, onlineMembers } = useRealtimeClient({
 		sessionId,
 		callbacks: realtimeCallbacks
 	});
 
-	const joinSessionMutation = api.planningPoker.joinSession.useMutation({
-		onError: () => {}
-	});
+	const membersWithVoteStatus = useMemo(() => {
+		const votedUserIds = new Set(currentTaskVotes.map((v) => v.userId));
 
-	const hasJoinedRef = useRef(false);
+		return onlineMembers.map((member) => ({
+			...member,
+			hasVoted: votedUserIds.has(member.id)
+		}));
+	}, [currentTaskVotes, onlineMembers]);
+
 	useEffect(() => {
-		if (sessionId && userId && !hasJoinedRef.current) {
-			hasJoinedRef.current = true;
-			joinSessionMutation.mutate({ sessionId });
+		if (!currentTaskId || onlineMembers.length === 0) {
+			setAllVoted(false);
+			setShowResults(false);
+			return;
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [sessionId, userId, joinSessionMutation]);
+
+		const votedUserIds = new Set(currentTaskVotes.map((v) => v.userId));
+		const onlineMemberIds = new Set(onlineMembers.map((member) => member.id));
+		const hasEveryOnlineMemberVoted = Array.from(onlineMemberIds).every((id) =>
+			votedUserIds.has(id)
+		);
+
+		setAllVoted(hasEveryOnlineMemberVoted);
+		setShowResults(hasEveryOnlineMemberVoted);
+	}, [currentTaskVotes, currentTaskId, onlineMembers]);
 
 	const handleVote = useCallback(
 		(value: PlanningPokerStoryPoint) => {
@@ -314,6 +281,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		currentTask,
 		votes,
 		members: membersWithVoteStatus,
+		realtimeStatus,
 		selectedValue,
 		allVoted,
 		showResults,

@@ -7,6 +7,15 @@ export interface RealtimeEvent {
 	data: unknown;
 }
 
+export interface PresenceChannelAuthData {
+	user_id: string;
+	user_info: {
+		id: string;
+		name: string | null;
+		email: string;
+	};
+}
+
 export interface RealtimeClient {
 	// Client-side methods
 	connect(): void;

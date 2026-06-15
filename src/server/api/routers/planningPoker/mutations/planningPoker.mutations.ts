@@ -56,15 +56,6 @@ export const planningPokerMutations = {
 				});
 			}
 
-			const user = await ctx.db.user.findUnique({
-				where: { id: ctx.session.userId },
-				select: {
-					id: true,
-					name: true,
-					email: true
-				}
-			});
-
 			const session = await ctx.db.planningPokerSession.create({
 				data: {
 					projectId: input.projectId,
@@ -89,19 +80,6 @@ export const planningPokerMutations = {
 					}
 				}
 			});
-
-			if (user) {
-				await ctx.realtime.trigger(
-					`planning-poker-${session.id}`,
-					'member-joined',
-					{
-						sessionId: session.id,
-						userId: user.id,
-						userName: user.name,
-						userEmail: user.email
-					}
-				);
-			}
 
 			return session;
 		}),
@@ -137,31 +115,7 @@ export const planningPokerMutations = {
 			}
 			await assertProjectIsActive(ctx.db, session.projectId);
 
-			// Get user info for broadcast
-			const user = await ctx.db.user.findUnique({
-				where: { id: ctx.session.userId },
-				select: {
-					id: true,
-					name: true,
-					email: true
-				}
-			});
-
-			if (user) {
-				await ctx.realtime.trigger(
-					`planning-poker-${input.sessionId}`,
-					'member-joined',
-					{
-						sessionId: input.sessionId,
-						userId: user.id,
-						userName: user.name,
-						userEmail: user.email
-					}
-				);
-			}
-
-			// Join is implicit - just return success
-			// The actual participation is tracked when user votes
+			// Presence membership is tracked by Pusher subscription state.
 			return { success: true };
 		}),
 
@@ -236,7 +190,7 @@ export const planningPokerMutations = {
 				}
 			});
 
-			await ctx.realtime.trigger(`planning-poker-${input.sessionId}`, 'vote', {
+			await ctx.realtime.trigger(`presence-planning-poker-${input.sessionId}`, 'vote', {
 				sessionId: input.sessionId,
 				taskId: currentTaskId,
 				userId: vote.user.id,
@@ -310,7 +264,7 @@ export const planningPokerMutations = {
 				}
 			});
 
-			await ctx.realtime.trigger(`planning-poker-${input.sessionId}`, 'vote', {
+			await ctx.realtime.trigger(`presence-planning-poker-${input.sessionId}`, 'vote', {
 				sessionId: input.sessionId,
 				taskId: currentTaskId,
 				userId: vote.user.id,
@@ -394,7 +348,7 @@ export const planningPokerMutations = {
 			});
 
 			await ctx.realtime.trigger(
-				`planning-poker-${input.sessionId}`,
+				`presence-planning-poker-${input.sessionId}`,
 				'task-finalized',
 				{
 					sessionId: input.sessionId,
@@ -448,7 +402,7 @@ export const planningPokerMutations = {
 			});
 
 			await ctx.realtime.trigger(
-				`planning-poker-${input.sessionId}`,
+				`presence-planning-poker-${input.sessionId}`,
 				'session-ended',
 				{
 					sessionId: input.sessionId
