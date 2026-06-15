@@ -1,10 +1,10 @@
 'use client';
 
 import { ProjectMethodologyEnum, type TaskStatusEnum } from '@prisma/client';
+import { AlertTriangle } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { parseAsString, useQueryState, useQueryStates } from 'nuqs';
 import { Suspense, useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
 import {
 	KanbanBoard,
 	KanbanCards,
@@ -12,6 +12,7 @@ import {
 	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
+import { toKanbanOrderUpdates } from '~/common/utils/kanbanReorder';
 import Backlog from '~/features/backlog/components/Backlog';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 import { columns } from '~/features/kanban/constants';
@@ -59,11 +60,8 @@ const Workspace = () => {
 			: null;
 
 	const handleDataChange = (data: KanbanItemProps[]) => {
-		const updates = data.map((task, index) => ({
-			id: task.id,
-			order: index,
-			status: task.status as TaskStatusEnum
-		}));
+		const updates = toKanbanOrderUpdates(allTasks ?? data, data);
+		if (updates.length === 0) return;
 		updateTaskOrdersMutation.mutate({ updates });
 	};
 
@@ -144,7 +142,11 @@ const Workspace = () => {
 				)}
 				<div className="flex-1 overflow-hidden">
 					{isScrum && view === 'sprint' && selectedSprint ? (
-						<SprintBoard sprint={selectedSprint} projectId={projectId} />
+						<SprintBoard
+							sprint={selectedSprint}
+							projectId={projectId}
+							allTasks={allTasks ?? []}
+						/>
 					) : isScrum && view === 'backlog' ? (
 						<Suspense
 							fallback={

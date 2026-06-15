@@ -48,9 +48,7 @@ export const getKanbanQueries = {
 						}
 					}
 				},
-				orderBy: {
-					order: 'asc'
-				}
+				orderBy: [{ status: 'asc' }, { order: 'asc' }, { createdAt: 'asc' }]
 			});
 			return kanbanData;
 		})
