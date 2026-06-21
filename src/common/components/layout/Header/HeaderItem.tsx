@@ -9,9 +9,9 @@ export const MenuItem = ({ item }: { item: (typeof MENU_ITEMS)[number] }) => {
 		<Link
 			key={item.href}
 			href={item.href}
-			className="flex items-center gap-2 font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
+			className="flex shrink-0 items-center gap-2 whitespace-nowrap font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
 		>
-			<Icon className="h-4 w-4" />
+			<Icon className="h-4 w-4 shrink-0" />
 			{item.label}
 		</Link>
 	);
