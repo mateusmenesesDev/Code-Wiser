@@ -187,9 +187,11 @@ export const taskMutations = {
 				where: { id },
 				data: {
 					...updateData,
-					...(input.isTemplate
-						? { projectTemplate: { connect: { id: input.projectId } } }
-						: { project: { connect: { id: input.projectId } } })
+					...(projectId
+						? isTemplate
+							? { projectTemplate: { connect: { id: projectId } } }
+							: { project: { connect: { id: projectId } } }
+						: {})
 				},
 				include: {
 					assignee: {

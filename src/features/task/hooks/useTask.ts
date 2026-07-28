@@ -92,7 +92,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 
 			return context;
 		},
-		onError: (_error, _taskUpdate, ctx) => {
+		onError: (error, _taskUpdate, ctx) => {
 			rollbackOptimisticData({
 				utils,
 				context: ctx,
@@ -100,7 +100,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 				isTemplate,
 				taskId: _taskUpdate.id
 			});
-			toast.error('Failed to update task');
+			toast.error(error.message || 'Failed to update task');
 		},
 		onSettled: (taskUpdate) => {
 			invalidateBacklogData();
