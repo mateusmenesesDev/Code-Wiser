@@ -16,6 +16,7 @@ import {
 	assertProjectIsActive,
 	userHasAccessToProject
 } from '~/server/utils/auth';
+import { deleteUploadThingFiles } from '../attachments/taskAttachment.utils';
 
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 
@@ -369,7 +370,16 @@ export const taskMutations = {
 				await assertProjectIsActive(ctx.db, existingTask.projectId);
 			}
 
+			// Collect storage keys before cascade-deleting attachment rows with the task,
+			// then best-effort delete UploadThing blobs after the DB delete succeeds.
+			const attachments = await ctx.db.taskAttachment.findMany({
+				where: { taskId },
+				select: { key: true }
+			});
+			const attachmentKeys = attachments.map((attachment) => attachment.key);
+
 			await ctx.db.task.delete({ where: { id: taskId } });
+			await deleteUploadThingFiles(attachmentKeys);
 
 			if (existingTask.projectId) {
 				const { getBaseUrl } = await import('~/server/utils/getBaseUrl');
@@ -436,12 +446,26 @@ export const taskMutations = {
 				await assertProjectIsActive(ctx.db, projectId);
 			}
 
-			return ctx.db.task.deleteMany({
+			const attachments = await ctx.db.taskAttachment.findMany({
+				where: {
+					taskId: {
+						in: input.taskIds
+					}
+				},
+				select: { key: true }
+			});
+			const attachmentKeys = attachments.map((attachment) => attachment.key);
+
+			const result = await ctx.db.task.deleteMany({
 				where: {
 					id: {
 						in: input.taskIds
 					}
 				}
 			});
+
+			await deleteUploadThingFiles(attachmentKeys);
+
+			return result;
 		})
 };
