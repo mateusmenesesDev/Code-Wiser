@@ -51,15 +51,15 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 
 			return context;
 		},
-	onError: (error, _newTask, ctx) => {
-		rollbackOptimisticData({
-			utils,
-			context: ctx,
-			projectId: projectId as string,
-			isTemplate
-		});
-		toast.error(error.message || 'Failed to create task');
-	},
+		onError: (error, _newTask, ctx) => {
+			rollbackOptimisticData({
+				utils,
+				context: ctx,
+				projectId: projectId as string,
+				isTemplate
+			});
+			toast.error(error.message || 'Failed to create task');
+		},
 		onSettled: () => {
 			invalidateKanbanData();
 			invalidateBacklogData();
@@ -306,6 +306,9 @@ export function useTask({ projectId }: UseTaskProps) {
 	const createTask = (createTaskInput: CreateTaskInput) =>
 		createTaskMutation.mutate(createTaskInput);
 
+	const createTaskAsync = (createTaskInput: CreateTaskInput) =>
+		createTaskMutation.mutateAsync(createTaskInput);
+
 	const getAllTasksByProjectId = (projectId: string) =>
 		api.task.getAllByProjectId.useSuspenseQuery({
 			projectId,
@@ -345,12 +348,14 @@ export function useTask({ projectId }: UseTaskProps) {
 
 	return {
 		createTask,
+		createTaskAsync,
 		updateTask,
 		getAllTasksByProjectId,
 		deleteTask,
 		bulkDeleteTasks,
 		updateTaskOrders,
 		generateTaskDescription,
-		isGeneratingDescription: generateTaskDescriptionMutation.isPending
+		isGeneratingDescription: generateTaskDescriptionMutation.isPending,
+		isCreatingTask: createTaskMutation.isPending
 	};
 }

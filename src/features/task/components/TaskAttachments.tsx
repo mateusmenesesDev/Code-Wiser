@@ -9,7 +9,8 @@ import {
 	Paperclip,
 	Pencil,
 	RefreshCw,
-	Trash2
+	Trash2,
+	X
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ import { Progress } from '~/common/components/ui/progress';
 import { UploadDropzone, uploadFiles } from '~/common/utils/uploadthing';
 import { useTaskAttachments } from '~/features/task/hooks/useTaskAttachments';
 import {
+	MAX_TASK_ATTACHMENTS,
 	MAX_TASK_ATTACHMENT_SIZE_BYTES,
 	getFileExtension,
 	isAllowedAttachmentExtension
@@ -28,6 +30,10 @@ import { cn } from '~/lib/utils';
 interface TaskAttachmentsProps {
 	taskId?: string;
 	isEditing: boolean;
+	stagedFiles?: File[];
+	onStagedFilesChange?: (files: File[]) => void;
+	isUploadingStaged?: boolean;
+	stagedUploadProgress?: number;
 }
 
 function AttachmentTypeIcon({ fileName }: { fileName: string }) {
@@ -41,7 +47,40 @@ function AttachmentTypeIcon({ fileName }: { fileName: string }) {
 	return <File className="h-4 w-4 shrink-0 text-muted-foreground" />;
 }
 
-export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
+function filterValidFiles(files: File[], alreadyCount: number): File[] {
+	const allowed: File[] = [];
+
+	for (const file of files) {
+		if (!isAllowedAttachmentExtension(file.name)) {
+			toast.error(`File type not allowed: ${file.name}`);
+			continue;
+		}
+		if (file.size > MAX_TASK_ATTACHMENT_SIZE_BYTES) {
+			toast.error(`File too large (max 10MB): ${file.name}`);
+			continue;
+		}
+		allowed.push(file);
+	}
+
+	const remaining = MAX_TASK_ATTACHMENTS - alreadyCount;
+	if (allowed.length > remaining) {
+		toast.error(
+			`Only ${remaining} more attachment${remaining === 1 ? '' : 's'} allowed`
+		);
+		return allowed.slice(0, Math.max(0, remaining));
+	}
+
+	return allowed;
+}
+
+export function TaskAttachments({
+	taskId,
+	isEditing,
+	stagedFiles = [],
+	onStagedFilesChange,
+	isUploadingStaged = false,
+	stagedUploadProgress = 0
+}: TaskAttachmentsProps) {
 	const enabled = isEditing && Boolean(taskId);
 	const {
 		attachments,
@@ -62,6 +101,7 @@ export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
 	const [renameValue, setRenameValue] = useState('');
 	const [replacingId, setReplacingId] = useState<string | null>(null);
 	const replaceInputRef = useRef<HTMLInputElement>(null);
+	const stageInputRef = useRef<HTMLInputElement>(null);
 
 	const startRename = (id: string, currentName: string) => {
 		setRenamingId(id);
@@ -144,18 +184,100 @@ export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
 		}
 	};
 
-	if (!isEditing || !taskId) {
+	const handleStageFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const selected = Array.from(event.target.files ?? []);
+		event.target.value = '';
+		if (!selected.length || !onStagedFilesChange) return;
+
+		const next = filterValidFiles(selected, stagedFiles.length);
+		if (next.length === 0) return;
+		onStagedFilesChange([...stagedFiles, ...next]);
+	};
+
+	const removeStagedFile = (index: number) => {
+		if (!onStagedFilesChange) return;
+		onStagedFilesChange(stagedFiles.filter((_, i) => i !== index));
+	};
+
+	if (!isEditing) {
 		return (
-			<div className="opacity-50">
+			<div>
+				<input
+					ref={stageInputRef}
+					type="file"
+					className="hidden"
+					multiple
+					accept=".md,.pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.gif"
+					onChange={handleStageFiles}
+				/>
+
 				<h3 className="mb-3 font-medium text-muted-foreground text-sm">
 					<Paperclip className="mr-1 inline h-4 w-4" />
-					Attachments (0/{maxAttachments})
+					Attachments ({stagedFiles.length}/{maxAttachments})
 				</h3>
-				<p className="rounded-md border border-border border-dashed p-4 text-center text-muted-foreground text-sm">
-					Attachments will be available after creating the task
-				</p>
+
+				<div className="space-y-3">
+					{stagedFiles.length === 0 ? (
+						<p className="rounded-md border border-border border-dashed p-4 text-center text-muted-foreground text-sm">
+							Select files to attach. They upload after the task is created.
+						</p>
+					) : (
+						<ul className="space-y-2">
+							{stagedFiles.map((file, index) => (
+								<li
+									key={`${file.name}-${file.size}-${index}`}
+									className="flex items-center gap-2 rounded-md border border-border px-3 py-2"
+								>
+									<AttachmentTypeIcon fileName={file.name} />
+									<div className="min-w-0 flex-1">
+										<p className="truncate font-medium text-sm">{file.name}</p>
+										<p className="text-muted-foreground text-xs">
+											Pending upload
+										</p>
+									</div>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 shrink-0"
+										disabled={isUploadingStaged}
+										onClick={() => removeStagedFile(index)}
+										aria-label={`Remove ${file.name}`}
+									>
+										<X className="h-4 w-4" />
+									</Button>
+								</li>
+							))}
+						</ul>
+					)}
+
+					{stagedFiles.length < maxAttachments && (
+						<Button
+							type="button"
+							variant="outline"
+							className="w-full"
+							disabled={isUploadingStaged}
+							onClick={() => stageInputRef.current?.click()}
+						>
+							Add files
+						</Button>
+					)}
+
+					{isUploadingStaged && (
+						<div className="space-y-1">
+							<Progress value={stagedUploadProgress} className="h-2" />
+							<p className="text-center text-muted-foreground text-xs">
+								Uploading attachments... {Math.round(stagedUploadProgress)}%
+							</p>
+						</div>
+					)}
+				</div>
 			</div>
 		);
+	}
+
+	if (!taskId) {
+		return null;
 	}
 
 	return (
@@ -345,26 +467,7 @@ export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
 								allowedContent: `.md, PDF, Word, images · max 10MB · ${attachments.length}/${maxAttachments}`
 							}}
 							onBeforeUploadBegin={(files) => {
-								const allowed = files.filter((file) => {
-									if (!isAllowedAttachmentExtension(file.name)) {
-										toast.error(`File type not allowed: ${file.name}`);
-										return false;
-									}
-									if (file.size > MAX_TASK_ATTACHMENT_SIZE_BYTES) {
-										toast.error(`File too large (max 10MB): ${file.name}`);
-										return false;
-									}
-									return true;
-								});
-
-								const remaining = maxAttachments - attachments.length;
-								if (allowed.length > remaining) {
-									toast.error(
-										`Only ${remaining} more attachment${remaining === 1 ? '' : 's'} allowed`
-									);
-									return allowed.slice(0, remaining);
-								}
-								return allowed;
+								return filterValidFiles(files, attachments.length);
 							}}
 							onUploadBegin={() => {
 								setIsUploading(true);

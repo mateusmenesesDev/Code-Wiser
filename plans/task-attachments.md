@@ -87,13 +87,13 @@ In the **create** task dialog, members can select files into temporary client st
 
 ### Acceptance criteria
 
-- [ ] Anexos section is usable while creating a task; selected files appear as staged pending items
-- [ ] No UploadThing upload occurs until the task is successfully created
-- [ ] After create, staged files upload/link respecting the 5-file and type/size rules
-- [ ] If some uploads fail, successful ones remain linked and failures are reported for retry
-- [ ] If task create fails, staged files remain in the dialog
-- [ ] Closing/canceling create without saving discards staged files without creating storage objects
-- [ ] Upload progress is visible during the post-create upload batch
+- [x] Anexos section is usable while creating a task; selected files appear as staged pending items
+- [x] No UploadThing upload occurs until the task is successfully created
+- [x] After create, staged files upload/link respecting the 5-file and type/size rules
+- [x] If some uploads fail, successful ones remain linked and failures are reported for retry
+- [x] If task create fails, staged files remain in the dialog
+- [x] Closing/canceling create without saving discards staged files without creating storage objects
+- [x] Upload progress is visible during the post-create upload batch
 
 ---
 

@@ -41,6 +41,10 @@ import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
 import { api } from '~/trpc/react';
 import { getStatusLabel, resetFormData } from '../utils';
+import {
+	reportStagedUploadResult,
+	uploadAndLinkStagedAttachments
+} from '../utils/uploadStagedAttachments';
 import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
 import { TaskAttachments } from './TaskAttachments';
@@ -95,12 +99,19 @@ export function TaskDialogContent({
 	const {
 		deleteTask,
 		updateTask,
-		createTask,
+		createTaskAsync,
 		generateTaskDescription,
-		isGeneratingDescription
+		isGeneratingDescription,
+		isCreatingTask
 	} = useTask({
 		projectId
 	});
+
+	const createAttachmentMutation = api.task.attachments.create.useMutation();
+
+	const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+	const [isUploadingStaged, setIsUploadingStaged] = useState(false);
+	const [stagedUploadProgress, setStagedUploadProgress] = useState(0);
 
 	const { data: projectMembers, isLoading: isLoadingMembers } =
 		api.project.getMembers.useQuery(
@@ -162,21 +173,45 @@ export function TaskDialogContent({
 	}, [task, epics, sprints, form]);
 
 	const onSubmit = async (data: TaskFormData) => {
-		console.log('data', data);
 		if (isEditing && task) {
 			updateTask({
 				id: task.id,
 				...data,
 				isTemplate
 			});
-		} else {
-			createTask({
+			onClose();
+			return;
+		}
+
+		try {
+			const created = await createTaskAsync({
 				...data,
 				status: TaskStatusEnum.BACKLOG,
 				isTemplate
 			} as CreateTaskInput);
+
+			if (stagedFiles.length > 0) {
+				setIsUploadingStaged(true);
+				setStagedUploadProgress(0);
+				try {
+					const result = await uploadAndLinkStagedAttachments({
+						taskId: created.id,
+						files: stagedFiles,
+						linkAttachment: (input) =>
+							createAttachmentMutation.mutateAsync(input),
+						onProgress: setStagedUploadProgress
+					});
+					reportStagedUploadResult(result);
+				} finally {
+					setIsUploadingStaged(false);
+					setStagedUploadProgress(0);
+				}
+			}
+
+			onClose();
+		} catch {
+			// createTaskAsync already toasts; keep staged files for retry
 		}
-		onClose();
 	};
 
 	const handleDelete = () => {
@@ -399,8 +434,15 @@ export function TaskDialogContent({
 							</div>
 						)}
 
-						{/* Attachments - edit-only in phase 1 (create staging comes later) */}
-						<TaskAttachments taskId={taskId} isEditing={!!task} />
+						{/* Attachments — create stages files; edit uploads immediately */}
+						<TaskAttachments
+							taskId={taskId}
+							isEditing={!!task}
+							stagedFiles={stagedFiles}
+							onStagedFilesChange={setStagedFiles}
+							isUploadingStaged={isUploadingStaged}
+							stagedUploadProgress={stagedUploadProgress}
+						/>
 
 						{/* Comments - use taskId directly to allow parallel fetching */}
 						<TaskComments taskId={taskId || ''} isEditing={!!task} />
@@ -718,7 +760,11 @@ export function TaskDialogContent({
 							<Button
 								type="button"
 								variant="destructive"
-								disabled={form.formState.isSubmitting}
+								disabled={
+									form.formState.isSubmitting ||
+									isCreatingTask ||
+									isUploadingStaged
+								}
 							>
 								<Trash2 className="mr-2 h-4 w-4" />
 								Delete Task
@@ -730,24 +776,37 @@ export function TaskDialogContent({
 							type="button"
 							variant="outline"
 							onClick={onClose}
-							disabled={form.formState.isSubmitting}
+							disabled={
+								form.formState.isSubmitting ||
+								isCreatingTask ||
+								isUploadingStaged
+							}
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
-							disabled={form.formState.isSubmitting || !form.formState.isDirty}
+							disabled={
+								form.formState.isSubmitting ||
+								isCreatingTask ||
+								isUploadingStaged ||
+								!form.formState.isDirty
+							}
 						>
-							{form.formState.isSubmitting && (
+							{(form.formState.isSubmitting ||
+								isCreatingTask ||
+								isUploadingStaged) && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							{form.formState.isSubmitting
-								? isEditing
-									? 'Updating...'
-									: 'Creating...'
-								: isEditing
-									? 'Update Task'
-									: 'Create Task'}
+							{isUploadingStaged
+								? 'Uploading attachments...'
+								: form.formState.isSubmitting || isCreatingTask
+									? isEditing
+										? 'Updating...'
+										: 'Creating...'
+									: isEditing
+										? 'Update Task'
+										: 'Create Task'}
 						</Button>
 					</div>
 				</div>
