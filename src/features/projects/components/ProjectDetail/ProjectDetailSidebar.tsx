@@ -117,7 +117,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								Participants:
 							</span>
 							<span className="font-medium text-sm">
-								{project.minParticipants} min
+								{project.minParticipants}-{project.maxParticipants}
 							</span>
 						</div>
 						{isCreditProject && (
