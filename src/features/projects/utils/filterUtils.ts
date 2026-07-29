@@ -1,19 +1,16 @@
-import type { ProjectTemplateApiOutput } from '../types/Projects.type';
-
-export type FilterConfig = {
-	value: string | null;
-	property:
-		| keyof ProjectTemplateApiOutput
-		| ((project: ProjectTemplateApiOutput) => string | number);
-	customComparison?: (
-		project: NonNullable<ProjectTemplateApiOutput>,
-		value: string
-	) => boolean;
+type WithCategory = {
+	category: { name: string };
 };
 
-export const createFilter = (
-	project: NonNullable<ProjectTemplateApiOutput>,
-	{ value, property, customComparison }: FilterConfig
+export type FilterConfig<T extends WithCategory = WithCategory> = {
+	value: string | null;
+	property: keyof T | ((project: T) => string | number);
+	customComparison?: (project: T, value: string) => boolean;
+};
+
+export const createFilter = <T extends WithCategory>(
+	project: T,
+	{ value, property, customComparison }: FilterConfig<T>
 ) => {
 	if (!value) return true;
 

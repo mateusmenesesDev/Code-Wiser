@@ -41,24 +41,25 @@ export function useProject({
 	});
 
 	const filteredProjects = useMemo(() => {
-		const filters: FilterConfig[] = [
+		type CatalogProject = ApprovedProjectsApiOutput[number];
+		const filters: FilterConfig<CatalogProject>[] = [
 			{
 				value: searchTerm === '' ? null : searchTerm,
-				property: (project) => project?.title,
+				property: (project) => project.title,
 				customComparison: (project, value) =>
-					project?.title.toLowerCase().includes(value.toLowerCase())
-			} as FilterConfig,
+					project.title.toLowerCase().includes(value.toLowerCase())
+			},
 			{
 				value: categoryFilter === 'all' ? null : categoryFilter,
-				property: (project) => project?.category.name
-			} as FilterConfig,
+				property: (project) => project.category.name
+			},
 			{
 				value: difficultyFilter === 'all' ? null : difficultyFilter,
-				property: (project) => project?.difficulty
-			} as FilterConfig,
+				property: (project) => project.difficulty
+			},
 			{
 				value: costFilter === 'all' ? null : costFilter,
-				property: (project) => project?.accessType,
+				property: (project) => project.accessType,
 				customComparison: (project, value) => {
 					if (value === 'Free') {
 						return project.accessType === 'FREE';
@@ -71,7 +72,7 @@ export function useProject({
 					}
 					return true;
 				}
-			} as FilterConfig
+			}
 		];
 		return (
 			projectsQuery.data?.filter((project) =>

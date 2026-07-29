@@ -44,11 +44,11 @@ Ship a catalog-only approved-templates response (metadata, cover, technologies, 
 
 ### Acceptance criteria
 
-- [ ] Catalog payload no longer includes full task/epic/sprint graphs
-- [ ] All in-app catalog consumers compile and behave correctly against the lean contract
-- [ ] Detail/workspace/edit paths still load full graphs when needed
-- [ ] Filters (title, category, difficulty, access) and “already started” indicators still work
-- [ ] After-benchmark shows material reduction in catalog payload size and/or latency vs baseline
+- [x] Catalog payload no longer includes full task/epic/sprint graphs
+- [x] All in-app catalog consumers compile and behave correctly against the lean contract
+- [x] Detail/workspace/edit paths still load full graphs when needed
+- [x] Filters (title, category, difficulty, access) and “already started” indicators still work
+- [x] After-benchmark shows material reduction in catalog payload size and/or latency vs baseline
 
 ---
 

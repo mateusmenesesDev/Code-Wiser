@@ -34,13 +34,13 @@ import { useAuth } from '~/features/auth/hooks/useAuth';
 import { cn } from '~/lib/utils';
 import type { AppRouter } from '~/server/api/root';
 import { useProjectMutations } from '../hooks/useProjectMutations';
-import type { ProjectTemplateApiOutput } from '../types/Projects.type';
+import type { ApprovedProjectsApiOutput } from '../types/Projects.type';
 import { isMentorshipLockedProject } from '../utils/projectStartAccess';
 import { formatParticipantsRange } from '../utils/projectUtils';
 import InsufficientCreditsError from './InsufficientCreditsError';
 
 type ProjectCardProps = {
-	projectTemplate: NonNullable<ProjectTemplateApiOutput>;
+	projectTemplate: ApprovedProjectsApiOutput[number];
 	userCredits: number;
 	projectId?: string;
 	userHasMentorship: boolean;

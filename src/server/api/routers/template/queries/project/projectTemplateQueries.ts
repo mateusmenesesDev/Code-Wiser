@@ -1,52 +1,17 @@
 import { ProjectStatusEnum } from '@prisma/client';
 import { z } from 'zod';
 import { adminProcedure, publicProcedure } from '~/server/api/trpc';
+import {
+	approvedCatalogInclude,
+	approvedCatalogOrderBy
+} from './approvedCatalogQuery';
 
 export const projectTemplateQueries = {
 	getApproved: publicProcedure.query(({ ctx }) =>
 		ctx.db.projectTemplate.findMany({
 			where: { status: 'APPROVED' },
-			orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-			include: {
-				category: true,
-				technologies: true,
-				learningOutcomes: true,
-				milestones: true,
-				tasks: {
-					include: {
-						assignee: {
-							select: {
-								id: true,
-								name: true
-							}
-						},
-						sprint: {
-							select: {
-								id: true,
-								title: true
-							}
-						},
-						epic: {
-							select: {
-								id: true,
-								title: true
-							}
-						}
-					},
-					orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
-				},
-				images: {
-					orderBy: {
-						order: 'asc'
-					},
-					select: {
-						url: true,
-						alt: true
-					}
-				},
-				epics: true,
-				sprints: true
-			}
+			orderBy: approvedCatalogOrderBy,
+			include: approvedCatalogInclude
 		})
 	),
 

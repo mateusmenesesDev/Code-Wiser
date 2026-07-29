@@ -8,51 +8,13 @@ import {
 } from './measure';
 import type { ServerBenchReport } from './report';
 import {
+	approvedCatalogInclude,
+	approvedCatalogOrderBy
+} from '~/server/api/routers/template/queries/project/approvedCatalogQuery';
+import {
 	STRESS_TITLE_PREFIX,
 	countMyProjectsRoundTrips
 } from './stressFixture';
-
-/** Mirrors the current approved-template catalog include (heavy path). */
-export const approvedCatalogInclude = {
-	category: true,
-	technologies: true,
-	learningOutcomes: true,
-	milestones: true,
-	tasks: {
-		include: {
-			assignee: {
-				select: {
-					id: true,
-					name: true
-				}
-			},
-			sprint: {
-				select: {
-					id: true,
-					title: true
-				}
-			},
-			epic: {
-				select: {
-					id: true,
-					title: true
-				}
-			}
-		},
-		orderBy: [{ status: 'asc' as const }, { createdAt: 'asc' as const }]
-	},
-	images: {
-		orderBy: {
-			order: 'asc' as const
-		},
-		select: {
-			url: true,
-			alt: true
-		}
-	},
-	epics: true,
-	sprints: true
-};
 
 export async function runServerBenches(
 	db: PrismaClient,
@@ -72,7 +34,7 @@ export async function runServerBenches(
 					status: 'APPROVED',
 					title: { startsWith: STRESS_TITLE_PREFIX }
 				},
-				orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+				orderBy: approvedCatalogOrderBy,
 				include: approvedCatalogInclude
 			})
 		);
@@ -80,7 +42,10 @@ export async function runServerBenches(
 		if (i === 0) {
 			catalogPayload = payloadBytes(result);
 			templateCount = result.length;
-			taskCount = result.reduce((sum, template) => sum + template.tasks.length, 0);
+			taskCount = result.reduce(
+				(sum, template) => sum + template._count.tasks,
+				0
+			);
 		}
 	}
 

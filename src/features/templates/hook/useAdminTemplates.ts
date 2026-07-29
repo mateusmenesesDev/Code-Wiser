@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import type { ProjectTemplateApiOutput } from '~/features/projects/types/Projects.type';
 import {
 	type FilterConfig,
 	createFilter
@@ -82,49 +81,38 @@ export function useAdminTemplates() {
 
 	// Filter logic
 	const filteredTemplates = orderedTemplates.filter((template) => {
-		const filters: FilterConfig[] = [
+		const filters: FilterConfig<AdminTemplate>[] = [
 			{
 				value: searchTerm,
-				property: (project) => project?.title || '',
-				customComparison: (
-					project: NonNullable<ProjectTemplateApiOutput>,
-					value: string
-				) =>
-					project?.title?.toLowerCase().includes(value.toLowerCase()) ||
-					project?.description?.toLowerCase().includes(value.toLowerCase())
+				property: (project) => project.title || '',
+				customComparison: (project, value) =>
+					project.title.toLowerCase().includes(value.toLowerCase()) ||
+					project.description.toLowerCase().includes(value.toLowerCase())
 			},
 			{
 				value: categoryFilter === 'all' ? null : categoryFilter,
-				property: (project) => project?.category.name || ''
+				property: (project) => project.category.name || ''
 			},
 			{
 				value: difficultyFilter === 'all' ? null : difficultyFilter,
-				property: (project) => project?.difficulty || ''
+				property: (project) => project.difficulty || ''
 			},
 			{
 				value: accessFilter === 'all' ? null : accessFilter,
-				property: (project) => project?.credits || 0,
-				customComparison: (
-					project: NonNullable<ProjectTemplateApiOutput>,
-					value: string
-				) => {
+				property: (project) => project.credits || 0,
+				customComparison: (project, value) => {
 					const accessType =
-						project?.credits && project?.credits > 0 ? 'Credits' : 'Free';
+						project.credits && project.credits > 0 ? 'Credits' : 'Free';
 					return accessType === value;
 				}
 			},
 			{
 				value: statusFilter === 'all' ? null : statusFilter,
-				property: (project) => project?.status
-			} as FilterConfig
+				property: (project) => project.status
+			}
 		];
 
-		return filters.every((filterConfig) =>
-			createFilter(
-				template as NonNullable<ProjectTemplateApiOutput>,
-				filterConfig
-			)
-		);
+		return filters.every((filterConfig) => createFilter(template, filterConfig));
 	});
 
 	const canReorder = !hasActiveFilters;
