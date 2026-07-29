@@ -25,6 +25,7 @@ import { useMyProjects } from '../../hooks/useMyProjects';
 import { useProjectMutations } from '../../hooks/useProjectMutations';
 import type { ProjectTemplateInfoByIdApiOutput } from '../../types/Projects.type';
 import { isMentorshipLockedProject } from '../../utils/projectStartAccess';
+import { formatParticipantsCount } from '../../utils/projectUtils';
 
 interface ProjectDetailSidebarProps {
 	project: NonNullable<ProjectTemplateInfoByIdApiOutput>;
@@ -117,7 +118,10 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 								Participants:
 							</span>
 							<span className="font-medium text-sm">
-								{project.minParticipants}-{project.maxParticipants}
+								{formatParticipantsCount(
+									project.minParticipants,
+									project.maxParticipants
+								)}
 							</span>
 						</div>
 						{isCreditProject && (

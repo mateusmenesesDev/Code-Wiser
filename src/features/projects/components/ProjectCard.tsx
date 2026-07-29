@@ -36,6 +36,7 @@ import type { AppRouter } from '~/server/api/root';
 import { useProjectMutations } from '../hooks/useProjectMutations';
 import type { ProjectTemplateApiOutput } from '../types/Projects.type';
 import { isMentorshipLockedProject } from '../utils/projectStartAccess';
+import { formatParticipantsRange } from '../utils/projectUtils';
 import InsufficientCreditsError from './InsufficientCreditsError';
 
 type ProjectCardProps = {
@@ -221,8 +222,10 @@ export function ProjectCard({
 						<div className="flex items-center gap-2">
 							<Users className="h-4 w-4" />
 							<span>
-								{projectTemplate.minParticipants}-
-								{projectTemplate.maxParticipants} participants
+								{formatParticipantsRange(
+									projectTemplate.minParticipants,
+									projectTemplate.maxParticipants
+								)}
 							</span>
 						</div>
 					</div>
