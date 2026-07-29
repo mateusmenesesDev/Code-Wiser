@@ -15,6 +15,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { cn } from '~/lib/utils';
+import { handleUploadError } from '../utils/uploadError';
 import { uploadFiles } from '../utils/uploadthing';
 import { Button } from './ui/button';
 import {
@@ -46,7 +47,10 @@ export default function RichText() {
 
 				editorInstance.chain().focus().setImage({ src: res.url }).run();
 			} catch (error) {
-				console.error('Image upload failed:', error);
+				handleUploadError(
+					error instanceof Error ? error : { message: 'Image upload failed' },
+					'Image upload failed'
+				);
 			}
 		},
 		[]

@@ -1,8 +1,24 @@
 import { auth } from '@clerk/nextjs/server';
 import { type FileRouter, createUploadthing } from 'uploadthing/next';
 import { UploadThingError } from 'uploadthing/server';
+import { IMAGE_UPLOADER_MAX_FILE_COUNT } from '~/common/constants/uploadthing';
 
-const f = createUploadthing();
+const f = createUploadthing({
+	/**
+	 * UploadThing defaults to `Invalid config: FileCountMismatch` (tag only).
+	 * Prefer the detailed `cause` reason when present so the client toast is actionable.
+	 */
+	errorFormatter: (err) => {
+		const causeMessage =
+			err.cause instanceof Error ? err.cause.message : null;
+		const useCause =
+			Boolean(causeMessage) && err.message.startsWith('Invalid config:');
+
+		return {
+			message: useCause && causeMessage ? causeMessage : err.message
+		};
+	}
+});
 
 // FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
@@ -14,7 +30,7 @@ export const ourFileRouter = {
 			 * @see https://docs.uploadthing.com/file-routes#route-config
 			 */
 			maxFileSize: '4MB',
-			maxFileCount: 10
+			maxFileCount: IMAGE_UPLOADER_MAX_FILE_COUNT
 		}
 	})
 		// Set permissions and file types for this FileRoute

@@ -82,6 +82,50 @@ export const projectTemplateMutations = {
 			return result;
 		}),
 
+	reorderImages: adminProcedure
+		.input(
+			z.object({
+				projectTemplateId: z.string(),
+				items: z
+					.array(
+						z.object({
+							id: z.string(),
+							order: z.number().int().min(0)
+						})
+					)
+					.min(1)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const { projectTemplateId, items } = input;
+
+			const images = await ctx.db.projectImage.findMany({
+				where: {
+					id: { in: items.map((item) => item.id) },
+					projectTemplateId
+				},
+				select: { id: true }
+			});
+
+			if (images.length !== items.length) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'One or more images do not belong to this template'
+				});
+			}
+
+			await ctx.db.$transaction(
+				items.map((item) =>
+					ctx.db.projectImage.update({
+						where: { id: item.id },
+						data: { order: item.order }
+					})
+				)
+			);
+
+			return { success: true as const };
+		}),
+
 	delete: adminProcedure
 		.input(deleteTemplateSchema)
 		.mutation(async ({ ctx, input }) => {

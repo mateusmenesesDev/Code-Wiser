@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Progress } from '~/common/components/ui/progress';
+import { handleUploadError } from '~/common/utils/uploadError';
 import { UploadDropzone, uploadFiles } from '~/common/utils/uploadthing';
 import { useTaskAttachments } from '~/features/task/hooks/useTaskAttachments';
 import {
@@ -190,8 +191,11 @@ export function TaskAttachments({
 				sizeBytes: uploaded.size
 			});
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : 'Failed to replace attachment'
+			handleUploadError(
+				error instanceof Error
+					? error
+					: { message: 'Failed to replace attachment' },
+				'Failed to replace attachment'
 			);
 		} finally {
 			setIsUploading(false);
@@ -576,7 +580,7 @@ export function TaskAttachments({
 							}}
 							onUploadError={(error) => {
 								setIsUploading(false);
-								toast.error(error.message || 'Failed to upload attachment');
+								handleUploadError(error, 'Failed to upload attachment');
 							}}
 						/>
 						{isUploading && (

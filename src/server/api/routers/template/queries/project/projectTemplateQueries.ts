@@ -168,7 +168,8 @@ export const projectTemplateQueries = {
 						select: {
 							url: true,
 							alt: true,
-							id: true
+							id: true,
+							order: true
 						},
 						orderBy: {
 							order: 'asc'

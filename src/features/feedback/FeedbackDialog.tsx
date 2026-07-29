@@ -32,6 +32,7 @@ import {
 	SelectValue
 } from '~/common/components/ui/select';
 import { Textarea } from '~/common/components/ui/textarea';
+import { handleUploadError } from '~/common/utils/uploadError';
 import { UploadDropzone } from '~/common/utils/uploadthing';
 import { api } from '~/trpc/react';
 import { createFeedbackInputSchema } from './feedback.schema';
@@ -210,7 +211,7 @@ export function FeedbackDialog({
 										setScreenshot({ url: file.ufsUrl, key: file.key });
 									}}
 									onUploadError={(error) => {
-										toast.error(error.message || 'Screenshot upload failed.');
+										handleUploadError(error, 'Screenshot upload failed.');
 									}}
 								/>
 							)}
