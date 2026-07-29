@@ -71,9 +71,9 @@ When a task is deleted, all related attachment DB rows are removed (cascade) and
 
 ### Acceptance criteria
 
-- [ ] Deleting a task removes all of its `TaskAttachment` rows
-- [ ] Deleting a task deletes all associated UploadThing files via `UTApi`
-- [ ] Task delete still succeeds if a given storage delete fails only after a best-effort cleanup attempt is logged/handled without leaving the task half-deleted in the DB (prefer: collect keys, delete task+rows in a transaction, then best-effort UT cleanup — document chosen order in implementation)
+- [x] Deleting a task removes all of its `TaskAttachment` rows
+- [x] Deleting a task deletes all associated UploadThing files via `UTApi`
+- [x] Task delete still succeeds if a given storage delete fails only after a best-effort cleanup attempt is logged/handled without leaving the task half-deleted in the DB (prefer: collect keys, delete task+rows in a transaction, then best-effort UT cleanup — document chosen order in implementation)
 
 ---
 

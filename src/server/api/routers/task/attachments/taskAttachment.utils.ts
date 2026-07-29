@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
+import { UTApi } from 'uploadthing/server';
 import {
 	MAX_TASK_ATTACHMENT_SIZE_BYTES,
 	getFileExtension,
@@ -72,5 +73,18 @@ export function assertAllowedAttachmentFile(input: {
 			code: 'BAD_REQUEST',
 			message: `File type "${extension || 'unknown'}" is not allowed`
 		});
+	}
+}
+
+/** Best-effort UploadThing cleanup. Call after DB rows are already removed. */
+export async function deleteUploadThingFiles(keys: string[]) {
+	const uniqueKeys = [...new Set(keys.filter(Boolean))];
+	if (uniqueKeys.length === 0) return;
+
+	try {
+		const utApi = new UTApi();
+		await utApi.deleteFiles(uniqueKeys);
+	} catch (error) {
+		console.error('Failed to delete attachment files from UploadThing:', error);
 	}
 }

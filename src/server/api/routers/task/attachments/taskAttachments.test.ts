@@ -103,7 +103,7 @@ describe('task.attachments', () => {
 			message: expect.stringMatching(/5/i)
 		});
 
-		expect(deleteFilesMock).toHaveBeenCalledWith('abc');
+		expect(deleteFilesMock).toHaveBeenCalledWith(['abc']);
 		expect(mockDb.taskAttachment.create).not.toHaveBeenCalled();
 	});
 
@@ -125,7 +125,7 @@ describe('task.attachments', () => {
 			code: 'BAD_REQUEST'
 		});
 
-		expect(deleteFilesMock).toHaveBeenCalledWith('abc');
+		expect(deleteFilesMock).toHaveBeenCalledWith(['abc']);
 	});
 
 	it('rejects create for non-members', async () => {
@@ -191,7 +191,7 @@ describe('task.attachments', () => {
 		const result = await caller.task.attachments.delete({ id: 'att-1' });
 
 		expect(result).toEqual({ success: true });
-		expect(deleteFilesMock).toHaveBeenCalledWith('abc');
+		expect(deleteFilesMock).toHaveBeenCalledWith(['abc']);
 		expect(mockDb.taskAttachment.delete).toHaveBeenCalledWith({
 			where: { id: 'att-1' }
 		});
@@ -299,7 +299,7 @@ describe('task.attachments', () => {
 				})
 			})
 		);
-		expect(deleteFilesMock).toHaveBeenCalledWith('old-key');
+		expect(deleteFilesMock).toHaveBeenCalledWith(['old-key']);
 	});
 
 	it('rejects invalid replace files and deletes the newly uploaded blob', async () => {
@@ -325,7 +325,7 @@ describe('task.attachments', () => {
 			code: 'BAD_REQUEST'
 		});
 
-		expect(deleteFilesMock).toHaveBeenCalledWith('new-key');
+		expect(deleteFilesMock).toHaveBeenCalledWith(['new-key']);
 		expect(mockDb.taskAttachment.update).not.toHaveBeenCalled();
 	});
 });

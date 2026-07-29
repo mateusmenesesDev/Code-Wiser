@@ -1,5 +1,4 @@
 import { TRPCError } from '@trpc/server';
-import { UTApi } from 'uploadthing/server';
 import {
 	MAX_TASK_ATTACHMENTS,
 	createTaskAttachmentSchema,
@@ -11,17 +10,9 @@ import {
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
 import {
 	assertAllowedAttachmentFile,
-	assertCanAccessTaskAttachments
+	assertCanAccessTaskAttachments,
+	deleteUploadThingFiles
 } from './taskAttachment.utils';
-
-async function deleteUploadThingFile(key: string) {
-	try {
-		const utApi = new UTApi();
-		await utApi.deleteFiles(key);
-	} catch (error) {
-		console.error('Failed to delete attachment from UploadThing:', error);
-	}
-}
 
 const uploaderInclude = {
 	uploader: {
@@ -45,7 +36,7 @@ export const taskAttachmentRouter = createTRPCRouter({
 					sizeBytes: input.sizeBytes
 				});
 			} catch (error) {
-				await deleteUploadThingFile(input.key);
+				await deleteUploadThingFiles([input.key]);
 				throw error;
 			}
 
@@ -54,7 +45,7 @@ export const taskAttachmentRouter = createTRPCRouter({
 			});
 
 			if (count >= MAX_TASK_ATTACHMENTS) {
-				await deleteUploadThingFile(input.key);
+				await deleteUploadThingFiles([input.key]);
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
 					message: `A task can have at most ${MAX_TASK_ATTACHMENTS} attachments`
@@ -121,7 +112,7 @@ export const taskAttachmentRouter = createTRPCRouter({
 			});
 
 			if (!attachment) {
-				await deleteUploadThingFile(input.key);
+				await deleteUploadThingFiles([input.key]);
 				throw new TRPCError({
 					code: 'NOT_FOUND',
 					message: 'Attachment not found'
@@ -136,7 +127,7 @@ export const taskAttachmentRouter = createTRPCRouter({
 					sizeBytes: input.sizeBytes
 				});
 			} catch (error) {
-				await deleteUploadThingFile(input.key);
+				await deleteUploadThingFiles([input.key]);
 				throw error;
 			}
 
@@ -156,7 +147,7 @@ export const taskAttachmentRouter = createTRPCRouter({
 			});
 
 			if (previousKey !== input.key) {
-				await deleteUploadThingFile(previousKey);
+				await deleteUploadThingFiles([previousKey]);
 			}
 
 			return updated;
@@ -190,7 +181,7 @@ export const taskAttachmentRouter = createTRPCRouter({
 			}
 
 			await assertCanAccessTaskAttachments(ctx, attachment.taskId);
-			await deleteUploadThingFile(attachment.key);
+			await deleteUploadThingFiles([attachment.key]);
 			await ctx.db.taskAttachment.delete({ where: { id: input.id } });
 
 			return { success: true };
