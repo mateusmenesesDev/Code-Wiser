@@ -2,6 +2,10 @@
 
 This directory contains utility scripts for database maintenance and migrations.
 
+## Performance benchmarks
+
+See [benchmarks/README.md](./benchmarks/README.md) for the Phase 1+ harness (`bun run bench`, `bun run bench:seed`, `bun run bench:full`).
+
 ## Available Scripts
 
 ### backfill-public-task-ids.ts

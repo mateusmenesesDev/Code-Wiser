@@ -31,6 +31,11 @@
 		"format": "biome format",
 		"format:fix": "biome format --fix",
 		"test": "vitest",
+		"typecheck": "tsc --noEmit",
+		"bench": "bun scripts/benchmarks/run.ts --client-only",
+		"bench:full": "infisical run -- bun scripts/benchmarks/run.ts",
+		"bench:seed": "infisical run -- bun scripts/benchmarks/seed-stress-fixture.ts",
+		"bench:seed:clean": "infisical run -- bun scripts/benchmarks/seed-stress-fixture.ts --clean",
 		"scan": "next dev & npx react-scan@latest localhost:3000"
 	},
 	"dependencies": {
