@@ -43,6 +43,7 @@ import { api } from '~/trpc/react';
 import { getStatusLabel, resetFormData } from '../utils';
 import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
+import { TaskAttachments } from './TaskAttachments';
 import { TaskComments } from './TaskComments';
 
 interface TaskDialogProps {
@@ -397,6 +398,9 @@ export function TaskDialogContent({
 								</div>
 							</div>
 						)}
+
+						{/* Attachments - edit-only in phase 1 (create staging comes later) */}
+						<TaskAttachments taskId={taskId} isEditing={!!task} />
 
 						{/* Comments - use taskId directly to allow parallel fetching */}
 						<TaskComments taskId={taskId || ''} isEditing={!!task} />
