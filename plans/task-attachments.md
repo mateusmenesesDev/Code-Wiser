@@ -53,11 +53,11 @@ From an attachment row, members can rename the **display name** (blob unchanged)
 
 ### Acceptance criteria
 
-- [ ] Rename updates only `displayName` with non-empty validation; storage key/url unchanged
-- [ ] Replace accepts a new allowed file ≤ 10MB into the same attachment slot
-- [ ] After replace, list shows the new file metadata and the old UploadThing object is deleted
-- [ ] Replace failures leave the previous attachment intact and report an error
-- [ ] Any authorized member can rename/replace any attachment on the task
+- [x] Rename updates only `displayName` with non-empty validation; storage key/url unchanged
+- [x] Replace accepts a new allowed file ≤ 10MB into the same attachment slot
+- [x] After replace, list shows the new file metadata and the old UploadThing object is deleted
+- [x] Replace failures leave the previous attachment intact and report an error
+- [x] Any authorized member can rename/replace any attachment on the task
 
 ---
 

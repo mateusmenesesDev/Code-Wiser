@@ -225,4 +225,107 @@ describe('task.attachments', () => {
 
 		expect(result.id).toBe('att-tpl');
 	});
+
+	it('renames only the display name without changing storage fields', async () => {
+		mockDb.taskAttachment.findUnique.mockResolvedValue({
+			id: 'att-1',
+			taskId: 'task-1',
+			key: 'abc',
+			url: 'https://utfs.io/f/abc',
+			displayName: 'palette.md'
+		} as never);
+		mockDb.task.findUnique.mockResolvedValue(memberTask as never);
+		mockDb.taskAttachment.update.mockResolvedValue({
+			id: 'att-1',
+			key: 'abc',
+			url: 'https://utfs.io/f/abc',
+			displayName: 'CSS palette',
+			uploader: { id: 'user-1', name: 'Mateus', email: 'm@example.com' }
+		} as never);
+
+		const result = await caller.task.attachments.rename({
+			id: 'att-1',
+			displayName: 'CSS palette'
+		});
+
+		expect(result.displayName).toBe('CSS palette');
+		expect(mockDb.taskAttachment.update).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { id: 'att-1' },
+				data: { displayName: 'CSS palette' }
+			})
+		);
+		expect(deleteFilesMock).not.toHaveBeenCalled();
+	});
+
+	it('replaces file metadata and deletes the previous UploadThing object', async () => {
+		mockDb.taskAttachment.findUnique.mockResolvedValue({
+			id: 'att-1',
+			taskId: 'task-1',
+			key: 'old-key',
+			url: 'https://utfs.io/f/old-key',
+			displayName: 'palette.md'
+		} as never);
+		mockDb.task.findUnique.mockResolvedValue(memberTask as never);
+		mockDb.taskAttachment.update.mockResolvedValue({
+			id: 'att-1',
+			key: 'new-key',
+			url: 'https://utfs.io/f/new-key',
+			originalFileName: 'palette-v2.md',
+			displayName: 'palette-v2.md',
+			contentType: 'text/markdown',
+			sizeBytes: 2000,
+			uploader: { id: 'user-1', name: 'Mateus', email: 'm@example.com' }
+		} as never);
+
+		const result = await caller.task.attachments.replace({
+			id: 'att-1',
+			url: 'https://utfs.io/f/new-key',
+			key: 'new-key',
+			originalFileName: 'palette-v2.md',
+			displayName: 'palette-v2.md',
+			contentType: 'text/markdown',
+			sizeBytes: 2000
+		});
+
+		expect(result.key).toBe('new-key');
+		expect(mockDb.taskAttachment.update).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { id: 'att-1' },
+				data: expect.objectContaining({
+					key: 'new-key',
+					url: 'https://utfs.io/f/new-key',
+					originalFileName: 'palette-v2.md'
+				})
+			})
+		);
+		expect(deleteFilesMock).toHaveBeenCalledWith('old-key');
+	});
+
+	it('rejects invalid replace files and deletes the newly uploaded blob', async () => {
+		mockDb.taskAttachment.findUnique.mockResolvedValue({
+			id: 'att-1',
+			taskId: 'task-1',
+			key: 'old-key',
+			url: 'https://utfs.io/f/old-key'
+		} as never);
+		mockDb.task.findUnique.mockResolvedValue(memberTask as never);
+
+		await expect(
+			caller.task.attachments.replace({
+				id: 'att-1',
+				url: 'https://utfs.io/f/new-key',
+				key: 'new-key',
+				originalFileName: 'malware.exe',
+				displayName: 'malware.exe',
+				contentType: 'application/octet-stream',
+				sizeBytes: 1000
+			})
+		).rejects.toMatchObject({
+			code: 'BAD_REQUEST'
+		});
+
+		expect(deleteFilesMock).toHaveBeenCalledWith('new-key');
+		expect(mockDb.taskAttachment.update).not.toHaveBeenCalled();
+	});
 });

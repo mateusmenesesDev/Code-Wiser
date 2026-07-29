@@ -31,6 +31,23 @@ export const deleteTaskAttachmentSchema = z.object({
 	id: z.string().min(1)
 });
 
+export const renameTaskAttachmentSchema = z.object({
+	id: z.string().min(1),
+	displayName: z.string().trim().min(1, { message: 'Display name is required' })
+});
+
+export const replaceTaskAttachmentSchema = z.object({
+	id: z.string().min(1),
+	url: z.string().url(),
+	key: z.string().min(1),
+	originalFileName: z.string().min(1),
+	displayName: z.string().trim().min(1),
+	contentType: z.string().min(1),
+	sizeBytes: z.number().int().positive().max(MAX_TASK_ATTACHMENT_SIZE_BYTES, {
+		message: 'File must be 10MB or smaller'
+	})
+});
+
 export const getTaskAttachmentsSchema = z.object({
 	taskId: z.string().min(1)
 });

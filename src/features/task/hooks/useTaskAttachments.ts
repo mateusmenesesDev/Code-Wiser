@@ -13,6 +13,10 @@ export function useTaskAttachments({
 }: UseTaskAttachmentsProps) {
 	const utils = api.useUtils();
 
+	const invalidate = () => {
+		void utils.task.attachments.getByTaskId.invalidate({ taskId });
+	};
+
 	const { data: attachments = [], isLoading } =
 		api.task.attachments.getByTaskId.useQuery(
 			{ taskId },
@@ -22,10 +26,48 @@ export function useTaskAttachments({
 	const createMutation = api.task.attachments.create.useMutation({
 		onSuccess: () => {
 			toast.success('Attachment uploaded');
-			void utils.task.attachments.getByTaskId.invalidate({ taskId });
+			invalidate();
 		},
 		onError: (error) => {
 			toast.error(error.message || 'Failed to save attachment');
+		}
+	});
+
+	const renameMutation = api.task.attachments.rename.useMutation({
+		onMutate: async (variables) => {
+			await utils.task.attachments.getByTaskId.cancel({ taskId });
+			const previous = utils.task.attachments.getByTaskId.getData({ taskId });
+			utils.task.attachments.getByTaskId.setData({ taskId }, (old) =>
+				old?.map((attachment) =>
+					attachment.id === variables.id
+						? { ...attachment, displayName: variables.displayName }
+						: attachment
+				)
+			);
+			return { previous };
+		},
+		onError: (error, _variables, context) => {
+			if (context?.previous) {
+				utils.task.attachments.getByTaskId.setData(
+					{ taskId },
+					context.previous
+				);
+			}
+			toast.error(error.message || 'Failed to rename attachment');
+		},
+		onSettled: invalidate,
+		onSuccess: () => {
+			toast.success('Attachment renamed');
+		}
+	});
+
+	const replaceMutation = api.task.attachments.replace.useMutation({
+		onSuccess: () => {
+			toast.success('Attachment replaced');
+			invalidate();
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to replace attachment');
 		}
 	});
 
@@ -47,9 +89,7 @@ export function useTaskAttachments({
 			}
 			toast.error(error.message || 'Failed to delete attachment');
 		},
-		onSettled: () => {
-			void utils.task.attachments.getByTaskId.invalidate({ taskId });
-		},
+		onSettled: invalidate,
 		onSuccess: () => {
 			toast.success('Attachment deleted');
 		}
@@ -62,6 +102,8 @@ export function useTaskAttachments({
 		attachments,
 		isLoading,
 		createMutation,
+		renameMutation,
+		replaceMutation,
 		deleteMutation,
 		remainingSlots,
 		canUpload,

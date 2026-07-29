@@ -7,13 +7,16 @@ import {
 	FileText,
 	Loader2,
 	Paperclip,
+	Pencil,
+	RefreshCw,
 	Trash2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '~/common/components/ui/button';
+import { Input } from '~/common/components/ui/input';
 import { Progress } from '~/common/components/ui/progress';
-import { UploadDropzone } from '~/common/utils/uploadthing';
+import { UploadDropzone, uploadFiles } from '~/common/utils/uploadthing';
 import { useTaskAttachments } from '~/features/task/hooks/useTaskAttachments';
 import {
 	MAX_TASK_ATTACHMENT_SIZE_BYTES,
@@ -44,6 +47,8 @@ export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
 		attachments,
 		isLoading,
 		createMutation,
+		renameMutation,
+		replaceMutation,
 		deleteMutation,
 		canUpload,
 		maxAttachments
@@ -53,6 +58,91 @@ export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
 	});
 	const [uploadProgress, setUploadProgress] = useState(0);
 	const [isUploading, setIsUploading] = useState(false);
+	const [renamingId, setRenamingId] = useState<string | null>(null);
+	const [renameValue, setRenameValue] = useState('');
+	const [replacingId, setReplacingId] = useState<string | null>(null);
+	const replaceInputRef = useRef<HTMLInputElement>(null);
+
+	const startRename = (id: string, currentName: string) => {
+		setRenamingId(id);
+		setRenameValue(currentName);
+	};
+
+	const cancelRename = () => {
+		setRenamingId(null);
+		setRenameValue('');
+	};
+
+	const submitRename = () => {
+		if (!renamingId) return;
+		const trimmed = renameValue.trim();
+		if (!trimmed) {
+			toast.error('Display name is required');
+			return;
+		}
+		renameMutation.mutate(
+			{ id: renamingId, displayName: trimmed },
+			{ onSuccess: cancelRename }
+		);
+	};
+
+	const openReplacePicker = (attachmentId: string) => {
+		setReplacingId(attachmentId);
+		replaceInputRef.current?.click();
+	};
+
+	const handleReplaceFile = async (
+		event: React.ChangeEvent<HTMLInputElement>
+	) => {
+		const file = event.target.files?.[0];
+		const attachmentId = replacingId;
+		event.target.value = '';
+		setReplacingId(null);
+
+		if (!file || !attachmentId) return;
+
+		if (!isAllowedAttachmentExtension(file.name)) {
+			toast.error(`File type not allowed: ${file.name}`);
+			return;
+		}
+		if (file.size > MAX_TASK_ATTACHMENT_SIZE_BYTES) {
+			toast.error(`File too large (max 10MB): ${file.name}`);
+			return;
+		}
+
+		try {
+			setIsUploading(true);
+			setUploadProgress(0);
+			const [uploaded] = await uploadFiles('taskAttachment', {
+				files: [file],
+				onUploadProgress: ({ progress }) => {
+					setUploadProgress(progress);
+				}
+			});
+
+			if (!uploaded) {
+				toast.error('Failed to upload replacement file');
+				return;
+			}
+
+			await replaceMutation.mutateAsync({
+				id: attachmentId,
+				url: uploaded.ufsUrl,
+				key: uploaded.key,
+				originalFileName: uploaded.name,
+				displayName: uploaded.name,
+				contentType: uploaded.type || 'application/octet-stream',
+				sizeBytes: uploaded.size
+			});
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : 'Failed to replace attachment'
+			);
+		} finally {
+			setIsUploading(false);
+			setUploadProgress(0);
+		}
+	};
 
 	if (!isEditing || !taskId) {
 		return (
@@ -70,6 +160,14 @@ export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
 
 	return (
 		<div>
+			<input
+				ref={replaceInputRef}
+				type="file"
+				className="hidden"
+				accept=".md,.pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.gif"
+				onChange={handleReplaceFile}
+			/>
+
 			<h3 className="mb-3 font-medium text-muted-foreground text-sm">
 				<Paperclip className="mr-1 inline h-4 w-4" />
 				Attachments ({attachments.length}/{maxAttachments})
@@ -92,6 +190,11 @@ export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
 							const isDeleting =
 								deleteMutation.isPending &&
 								deleteMutation.variables?.id === attachment.id;
+							const isRenaming = renamingId === attachment.id;
+							const isReplacing =
+								(replacingId === attachment.id && isUploading) ||
+								(replaceMutation.isPending &&
+									replaceMutation.variables?.id === attachment.id);
 
 							return (
 								<li
@@ -100,46 +203,124 @@ export function TaskAttachments({ taskId, isEditing }: TaskAttachmentsProps) {
 								>
 									<AttachmentTypeIcon fileName={attachment.originalFileName} />
 									<div className="min-w-0 flex-1">
-										<p className="truncate font-medium text-sm">
-											{attachment.displayName}
-										</p>
-										<p className="truncate text-muted-foreground text-xs">
-											Uploaded by{' '}
-											{attachment.uploader.name || attachment.uploader.email}
-										</p>
-									</div>
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon"
-										className="h-8 w-8 shrink-0"
-										asChild
-									>
-										<a
-											href={attachment.url}
-											download={attachment.displayName}
-											target="_blank"
-											rel="noopener noreferrer"
-											aria-label={`Download ${attachment.displayName}`}
-										>
-											<Download className="h-4 w-4" />
-										</a>
-									</Button>
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon"
-										className="h-8 w-8 shrink-0 text-destructive"
-										disabled={isDeleting}
-										onClick={() => deleteMutation.mutate({ id: attachment.id })}
-										aria-label={`Delete ${attachment.displayName}`}
-									>
-										{isDeleting ? (
-											<Loader2 className="h-4 w-4 animate-spin" />
+										{isRenaming ? (
+											<div className="flex items-center gap-2">
+												<Input
+													value={renameValue}
+													onChange={(e) => setRenameValue(e.target.value)}
+													onKeyDown={(e) => {
+														if (e.key === 'Enter') {
+															e.preventDefault();
+															submitRename();
+														}
+														if (e.key === 'Escape') {
+															cancelRename();
+														}
+													}}
+													className="h-8"
+													autoFocus
+													disabled={renameMutation.isPending}
+												/>
+												<Button
+													type="button"
+													size="sm"
+													onClick={submitRename}
+													disabled={renameMutation.isPending}
+												>
+													{renameMutation.isPending ? (
+														<Loader2 className="h-4 w-4 animate-spin" />
+													) : (
+														'Save'
+													)}
+												</Button>
+												<Button
+													type="button"
+													size="sm"
+													variant="ghost"
+													onClick={cancelRename}
+													disabled={renameMutation.isPending}
+												>
+													Cancel
+												</Button>
+											</div>
 										) : (
-											<Trash2 className="h-4 w-4" />
+											<>
+												<p className="truncate font-medium text-sm">
+													{attachment.displayName}
+												</p>
+												<p className="truncate text-muted-foreground text-xs">
+													Uploaded by{' '}
+													{attachment.uploader.name ||
+														attachment.uploader.email}
+												</p>
+											</>
 										)}
-									</Button>
+									</div>
+									{!isRenaming && (
+										<>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8 shrink-0"
+												onClick={() =>
+													startRename(attachment.id, attachment.displayName)
+												}
+												aria-label={`Rename ${attachment.displayName}`}
+											>
+												<Pencil className="h-4 w-4" />
+											</Button>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8 shrink-0"
+												disabled={isReplacing || isUploading}
+												onClick={() => openReplacePicker(attachment.id)}
+												aria-label={`Replace ${attachment.displayName}`}
+											>
+												{isReplacing ? (
+													<Loader2 className="h-4 w-4 animate-spin" />
+												) : (
+													<RefreshCw className="h-4 w-4" />
+												)}
+											</Button>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8 shrink-0"
+												asChild
+											>
+												<a
+													href={attachment.url}
+													download={attachment.displayName}
+													target="_blank"
+													rel="noopener noreferrer"
+													aria-label={`Download ${attachment.displayName}`}
+												>
+													<Download className="h-4 w-4" />
+												</a>
+											</Button>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8 shrink-0 text-destructive"
+												disabled={isDeleting}
+												onClick={() =>
+													deleteMutation.mutate({ id: attachment.id })
+												}
+												aria-label={`Delete ${attachment.displayName}`}
+											>
+												{isDeleting ? (
+													<Loader2 className="h-4 w-4 animate-spin" />
+												) : (
+													<Trash2 className="h-4 w-4" />
+												)}
+											</Button>
+										</>
+									)}
 								</li>
 							);
 						})}
