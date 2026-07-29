@@ -12,7 +12,10 @@ import {
 } from '~/features/templates/schemas/template.schema';
 import { generatePublicCode } from '~/lib/publicTaskId';
 import { adminProcedure } from '~/server/api/trpc';
-import { createProjectTemplateData } from '../actions/projectTemplateActions';
+import {
+	createProjectTemplateData,
+	getNextTemplateSortOrder
+} from '../actions/projectTemplateActions';
 
 export const projectTemplateMutations = {
 	create: adminProcedure
@@ -20,8 +23,9 @@ export const projectTemplateMutations = {
 		.mutation(async ({ ctx, input }) => {
 			try {
 				return await ctx.db.$transaction(async (prisma) => {
+					const sortOrder = await getNextTemplateSortOrder(prisma);
 					const projectTemplate = await prisma.projectTemplate.create({
-						data: createProjectTemplateData(input)
+						data: createProjectTemplateData(input, sortOrder)
 					});
 
 					return projectTemplate.id;
@@ -119,6 +123,48 @@ export const projectTemplateMutations = {
 					ctx.db.projectImage.update({
 						where: { id: item.id },
 						data: { order: item.order }
+					})
+				)
+			);
+
+			return { success: true as const };
+		}),
+
+	reorder: adminProcedure
+		.input(
+			z.object({
+				items: z
+					.array(
+						z.object({
+							id: z.string(),
+							sortOrder: z.number().int().min(0)
+						})
+					)
+					.min(1)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const { items } = input;
+
+			const templates = await ctx.db.projectTemplate.findMany({
+				where: {
+					id: { in: items.map((item) => item.id) }
+				},
+				select: { id: true }
+			});
+
+			if (templates.length !== items.length) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'One or more templates were not found'
+				});
+			}
+
+			await ctx.db.$transaction(
+				items.map((item) =>
+					ctx.db.projectTemplate.update({
+						where: { id: item.id },
+						data: { sortOrder: item.sortOrder }
 					})
 				)
 			);
@@ -531,6 +577,7 @@ export const projectTemplateMutations = {
 							updatedAt: _updatedAt,
 							title: _originalTitle,
 							categoryId: _categoryId,
+							sortOrder: _sortOrder,
 							sprints,
 							epics,
 							tasks,
@@ -542,12 +589,15 @@ export const projectTemplateMutations = {
 							...templateData
 						} = originalTemplate;
 
+						const sortOrder = await getNextTemplateSortOrder(prisma);
+
 						const newTemplate = await prisma.projectTemplate.create({
 							data: {
 								...templateData,
 								title: input.newTitle,
 								publicCode: generatePublicCode(input.newTitle),
 								status: 'PENDING',
+								sortOrder,
 								category: {
 									connect: { id: category.id }
 								},

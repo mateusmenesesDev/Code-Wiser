@@ -1,13 +1,28 @@
 import type { Prisma } from '@prisma/client';
 import type { ProjectTemplateFormData } from '~/features/projects/types/Projects.type';
 import { generatePublicCode } from '~/lib/publicTaskId';
+import type { db } from '~/server/db';
+
+type DbClient = Pick<typeof db, 'projectTemplate'>;
+
+export async function getNextTemplateSortOrder(
+	prisma: DbClient
+): Promise<number> {
+	const result = await prisma.projectTemplate.aggregate({
+		_max: { sortOrder: true }
+	});
+
+	return (result._max.sortOrder ?? -1) + 1;
+}
 
 export function createProjectTemplateData(
-	input: ProjectTemplateFormData
+	input: ProjectTemplateFormData,
+	sortOrder = 0
 ): Prisma.ProjectTemplateCreateInput {
 	return {
 		...input,
 		publicCode: generatePublicCode(input.title),
+		sortOrder,
 		category: {
 			connectOrCreate: {
 				where: { name: input.category },

@@ -223,6 +223,7 @@ export async function createProjectTemplates(
 				accessType,
 				status,
 				difficulty,
+				sortOrder: i,
 				figmaProjectUrl: faker.helpers.maybe(() => faker.internet.url(), {
 					probability: 0.3
 				}),

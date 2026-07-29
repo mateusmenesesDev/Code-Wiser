@@ -1,13 +1,16 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { ProjectTemplateApiOutput } from '~/features/projects/types/Projects.type';
 import {
 	type FilterConfig,
 	createFilter
 } from '~/features/projects/utils/filterUtils';
-import { api } from '~/trpc/react';
+import { api, type RouterOutputs } from '~/trpc/react';
 import { useAdminProjectFilter } from './useAdminProjectFilter';
+
+type AdminTemplate = RouterOutputs['projectTemplate']['getAll'][number];
 
 export function useAdminTemplates() {
 	const {
@@ -26,9 +29,18 @@ export function useAdminTemplates() {
 	} = useAdminProjectFilter();
 
 	const utils = api.useUtils();
+	const [orderedTemplates, setOrderedTemplates] = useState<AdminTemplate[]>(
+		[]
+	);
 
 	// Queries
 	const templatesQuery = api.projectTemplate.getAll.useQuery();
+
+	useEffect(() => {
+		if (templatesQuery.data) {
+			setOrderedTemplates(templatesQuery.data);
+		}
+	}, [templatesQuery.data]);
 
 	// Mutations
 	const deleteTemplateMutation = api.projectTemplate.delete.useMutation({
@@ -55,8 +67,21 @@ export function useAdminTemplates() {
 		}
 	});
 
+	const reorderMutation = api.projectTemplate.reorder.useMutation({
+		onSuccess: () => {
+			utils.projectTemplate.getAll.invalidate();
+			utils.projectTemplate.getApproved.invalidate();
+		},
+		onError: (error) => {
+			if (templatesQuery.data) {
+				setOrderedTemplates(templatesQuery.data);
+			}
+			toast.error(error.message || 'Failed to reorder templates');
+		}
+	});
+
 	// Filter logic
-	const filteredTemplates = templatesQuery.data?.filter((template) => {
+	const filteredTemplates = orderedTemplates.filter((template) => {
 		const filters: FilterConfig[] = [
 			{
 				value: searchTerm,
@@ -102,6 +127,8 @@ export function useAdminTemplates() {
 		);
 	});
 
+	const canReorder = !hasActiveFilters;
+
 	// Actions
 	const deleteTemplate = (id: string) => {
 		deleteTemplateMutation.mutate({ id });
@@ -110,6 +137,20 @@ export function useAdminTemplates() {
 	const togglePublishStatus = (id: string, currentStatus: string) => {
 		const newStatus = currentStatus === 'APPROVED' ? 'PENDING' : 'APPROVED';
 		togglePublishMutation.mutate({ id, status: newStatus });
+	};
+
+	const reorderTemplates = (nextTemplates: AdminTemplate[]) => {
+		const withSortOrder = nextTemplates.map((template, sortOrder) => ({
+			...template,
+			sortOrder
+		}));
+		setOrderedTemplates(withSortOrder);
+		reorderMutation.mutate({
+			items: withSortOrder.map((template) => ({
+				id: template.id,
+				sortOrder: template.sortOrder
+			}))
+		});
 	};
 
 	return {
@@ -130,14 +171,17 @@ export function useAdminTemplates() {
 		setStatusFilter,
 		clearFilters,
 		hasActiveFilters,
+		canReorder,
 
 		// Actions
 		deleteTemplate,
 		togglePublishStatus,
+		reorderTemplates,
 		refetch: templatesQuery.refetch,
 
 		// Loading states
 		isDeleting: deleteTemplateMutation.isPending,
-		isToggling: togglePublishMutation.isPending
+		isToggling: togglePublishMutation.isPending,
+		isReordering: reorderMutation.isPending
 	};
 }

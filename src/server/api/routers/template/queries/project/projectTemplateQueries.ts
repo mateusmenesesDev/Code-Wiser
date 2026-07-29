@@ -6,6 +6,7 @@ export const projectTemplateQueries = {
 	getApproved: publicProcedure.query(({ ctx }) =>
 		ctx.db.projectTemplate.findMany({
 			where: { status: 'APPROVED' },
+			orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
 			include: {
 				category: true,
 				technologies: true,
@@ -92,6 +93,7 @@ export const projectTemplateQueries = {
 				where: {
 					status: input?.status
 				},
+				orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
 				include: {
 					category: {
 						select: {
