@@ -23,9 +23,16 @@ import {
 	MAX_TASK_ATTACHMENTS,
 	MAX_TASK_ATTACHMENT_SIZE_BYTES,
 	getFileExtension,
-	isAllowedAttachmentExtension
+	isAllowedAttachmentExtension,
+	isImageAttachment,
+	isMarkdownAttachment
 } from '~/features/task/schemas/taskAttachment.schema';
 import { cn } from '~/lib/utils';
+import {
+	AttachmentImagePreview,
+	AttachmentMarkdownPreview,
+	AttachmentPreviewButton
+} from './AttachmentPreviewDialogs';
 
 interface TaskAttachmentsProps {
 	taskId?: string;
@@ -100,6 +107,14 @@ export function TaskAttachments({
 	const [renamingId, setRenamingId] = useState<string | null>(null);
 	const [renameValue, setRenameValue] = useState('');
 	const [replacingId, setReplacingId] = useState<string | null>(null);
+	const [markdownPreview, setMarkdownPreview] = useState<{
+		title: string;
+		url: string;
+	} | null>(null);
+	const [imagePreview, setImagePreview] = useState<{
+		title: string;
+		url: string;
+	} | null>(null);
 	const replaceInputRef = useRef<HTMLInputElement>(null);
 	const stageInputRef = useRef<HTMLInputElement>(null);
 
@@ -290,6 +305,23 @@ export function TaskAttachments({
 				onChange={handleReplaceFile}
 			/>
 
+			<AttachmentMarkdownPreview
+				open={Boolean(markdownPreview)}
+				onOpenChange={(open) => {
+					if (!open) setMarkdownPreview(null);
+				}}
+				title={markdownPreview?.title ?? ''}
+				url={markdownPreview?.url ?? ''}
+			/>
+			<AttachmentImagePreview
+				open={Boolean(imagePreview)}
+				onOpenChange={(open) => {
+					if (!open) setImagePreview(null);
+				}}
+				title={imagePreview?.title ?? ''}
+				url={imagePreview?.url ?? ''}
+			/>
+
 			<h3 className="mb-3 font-medium text-muted-foreground text-sm">
 				<Paperclip className="mr-1 inline h-4 w-4" />
 				Attachments ({attachments.length}/{maxAttachments})
@@ -317,13 +349,41 @@ export function TaskAttachments({
 								(replacingId === attachment.id && isUploading) ||
 								(replaceMutation.isPending &&
 									replaceMutation.variables?.id === attachment.id);
+							const canPreviewMarkdown = isMarkdownAttachment(
+								attachment.originalFileName
+							);
+							const canPreviewImage = isImageAttachment(
+								attachment.originalFileName
+							);
 
 							return (
 								<li
 									key={attachment.id}
 									className="flex items-center gap-2 rounded-md border border-border px-3 py-2"
 								>
-									<AttachmentTypeIcon fileName={attachment.originalFileName} />
+									{canPreviewImage ? (
+										<button
+											type="button"
+											className="h-8 w-8 shrink-0 overflow-hidden rounded border border-border"
+											onClick={() =>
+												setImagePreview({
+													title: attachment.displayName,
+													url: attachment.url
+												})
+											}
+											aria-label={`Preview ${attachment.displayName}`}
+										>
+											<img
+												src={attachment.url}
+												alt=""
+												className="h-full w-full object-cover"
+											/>
+										</button>
+									) : (
+										<AttachmentTypeIcon
+											fileName={attachment.originalFileName}
+										/>
+									)}
 									<div className="min-w-0 flex-1">
 										{isRenaming ? (
 											<div className="flex items-center gap-2">
@@ -380,6 +440,28 @@ export function TaskAttachments({
 									</div>
 									{!isRenaming && (
 										<>
+											{canPreviewMarkdown && (
+												<AttachmentPreviewButton
+													label={`Preview ${attachment.displayName}`}
+													onClick={() =>
+														setMarkdownPreview({
+															title: attachment.displayName,
+															url: attachment.url
+														})
+													}
+												/>
+											)}
+											{canPreviewImage && (
+												<AttachmentPreviewButton
+													label={`Preview ${attachment.displayName}`}
+													onClick={() =>
+														setImagePreview({
+															title: attachment.displayName,
+															url: attachment.url
+														})
+													}
+												/>
+											)}
 											<Button
 												type="button"
 												variant="ghost"

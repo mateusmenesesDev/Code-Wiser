@@ -68,3 +68,13 @@ export function isAllowedAttachmentExtension(fileName: string): boolean {
 		extension as (typeof ALLOWED_TASK_ATTACHMENT_EXTENSIONS)[number]
 	);
 }
+
+export function isMarkdownAttachment(fileName: string): boolean {
+	return getFileExtension(fileName) === '.md';
+}
+
+export function isImageAttachment(fileName: string): boolean {
+	return ['.png', '.jpg', '.jpeg', '.webp', '.gif'].includes(
+		getFileExtension(fileName)
+	);
+}

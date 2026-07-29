@@ -107,8 +107,8 @@ Read-only previews from the attachment list: `.md` opens a modal/drawer with san
 
 ### Acceptance criteria
 
-- [ ] `.md` attachments expose a preview action that opens a modal/drawer
-- [ ] Markdown preview renders common formatting (headings, lists, links, code blocks) with sanitization for user-supplied content
-- [ ] Image attachments show thumbnail and/or lightbox preview and remain downloadable
-- [ ] PDF, `.doc`, and `.docx` show download only (no preview action)
-- [ ] Preview works for both project and template tasks
+- [x] `.md` attachments expose a preview action that opens a modal/drawer
+- [x] Markdown preview renders common formatting (headings, lists, links, code blocks) with sanitization for user-supplied content
+- [x] Image attachments show thumbnail and/or lightbox preview and remain downloadable
+- [x] PDF, `.doc`, and `.docx` show download only (no preview action)
+- [x] Preview works for both project and template tasks
