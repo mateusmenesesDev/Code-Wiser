@@ -83,7 +83,7 @@ export const projectTemplateQueries = {
 						milestones: true,
 						tasks: {
 							include: {
-								assignee: {
+								assignees: {
 									select: {
 										id: true,
 										name: true

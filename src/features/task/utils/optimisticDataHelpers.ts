@@ -187,7 +187,7 @@ export const createOptimisticKanbanTask = (
 		project: null,
 		sprint: null,
 		epic: null,
-		assignee: null
+		assignees: []
 	};
 };
 
@@ -209,7 +209,7 @@ export const createOptimisticBacklogTask = (
 		kanbanColumn: null,
 		project: null,
 		projectTemplate: null,
-		assignee: null,
+		assignees: [],
 		sprint: null,
 		epic: null,
 		type: newTask.type || null,
@@ -224,7 +224,6 @@ export const createOptimisticBacklogTask = (
 		storyPoints: newTask.storyPoints || null,
 		publicNumber: null,
 		epicId: newTask.epicId || null,
-		sprintId: newTask.sprintId || null,
-		assigneeId: newTask.assigneeId || null
+		sprintId: newTask.sprintId || null
 	} as BacklogTask;
 };

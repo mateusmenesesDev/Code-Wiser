@@ -107,7 +107,6 @@ describe('projectTemplate.clone bulk inserts', () => {
 						blocked: false,
 						blockedReason: null,
 						storyPoints: null,
-						assigneeId: null,
 						projectId: null,
 						projectTemplateId: 'template-id',
 						epicId: 'epic-old',

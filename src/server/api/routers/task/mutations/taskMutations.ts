@@ -36,7 +36,7 @@ export const taskMutations = {
 	create: protectedProcedure
 		.input(createTaskSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { isTemplate, projectId, epicId, sprintId, assigneeId, ...rest } =
+			const { isTemplate, projectId, epicId, sprintId, assigneeIds, ...rest } =
 				input;
 
 			const hasAccess = await userHasAccessToProject(ctx, projectId);
@@ -69,8 +69,8 @@ export const taskMutations = {
 								...(isTemplate
 									? { projectTemplate: { connect: { id: projectId } } }
 									: { project: { connect: { id: projectId } } }),
-								assignee: assigneeId
-									? { connect: { id: assigneeId } }
+								assignees: assigneeIds?.length
+									? { connect: assigneeIds.map((id) => ({ id })) }
 									: undefined,
 								epic: epicId ? { connect: { id: epicId } } : undefined,
 								sprint: sprintId ? { connect: { id: sprintId } } : undefined
@@ -115,7 +115,7 @@ export const taskMutations = {
 				id,
 				epicId,
 				sprintId,
-				assigneeId,
+				assigneeIds,
 				projectId,
 				isTemplate,
 				...rest
@@ -127,7 +127,6 @@ export const taskMutations = {
 				select: {
 					id: true,
 					projectId: true,
-					assigneeId: true,
 					status: true,
 					blocked: true,
 					title: true,
@@ -142,7 +141,7 @@ export const taskMutations = {
 							}
 						}
 					},
-					assignee: {
+					assignees: {
 						select: {
 							id: true,
 							name: true
@@ -170,14 +169,16 @@ export const taskMutations = {
 				await assertProjectIsActive(ctx.db, existingTask.projectId);
 			}
 
-			const oldAssigneeId = existingTask.assigneeId;
+			const oldAssigneeIds = existingTask.assignees.map((a) => a.id);
 			const oldStatus = existingTask.status;
 			const oldBlocked = existingTask.blocked;
 
 			const updateData = {
 				...rest,
-				...(createRelationshipUpdate(assigneeId) && {
-					assignee: createRelationshipUpdate(assigneeId)
+				...(assigneeIds !== undefined && {
+					assignees: {
+						set: assigneeIds.map((assigneeId) => ({ id: assigneeId }))
+					}
 				}),
 				...(createRelationshipUpdate(epicId) && {
 					epic: createRelationshipUpdate(epicId)
@@ -198,7 +199,7 @@ export const taskMutations = {
 						: {})
 				},
 				include: {
-					assignee: {
+					assignees: {
 						select: {
 							id: true,
 							name: true
@@ -220,29 +221,29 @@ export const taskMutations = {
 				});
 
 				const notificationPromises: Promise<void>[] = [];
+				const currentAssigneeIds = task.assignees.map((a) => a.id);
 
-				// Notify if assignee changed
-				if (
-					assigneeId !== undefined &&
-					assigneeId !== oldAssigneeId &&
-					task.assignee &&
-					assigneeId
-				) {
-					notificationPromises.push(
-						notifyTaskAssigned({
-							db: ctx.db,
-							taskId: task.id,
-							taskTitle: task.title,
-							assigneeId,
-							projectId: existingTask.projectId,
-							projectName: existingTask.project.title
-						}).catch((error) => {
-							console.error(
-								'Failed to send task assigned notification:',
-								error
-							);
-						})
+				if (assigneeIds !== undefined) {
+					const newlyAssignedIds = assigneeIds.filter(
+						(assigneeId) => !oldAssigneeIds.includes(assigneeId)
 					);
+					for (const newlyAssignedId of newlyAssignedIds) {
+						notificationPromises.push(
+							notifyTaskAssigned({
+								db: ctx.db,
+								taskId: task.id,
+								taskTitle: task.title,
+								assigneeId: newlyAssignedId,
+								projectId: existingTask.projectId,
+								projectName: existingTask.project.title
+							}).catch((error) => {
+								console.error(
+									'Failed to send task assigned notification:',
+									error
+								);
+							})
+						);
+					}
 				}
 
 				// Notify if status changed
@@ -254,7 +255,7 @@ export const taskMutations = {
 							taskTitle: task.title,
 							oldStatus: oldStatus ?? '',
 							newStatus: rest.status,
-							assigneeId: task.assigneeId,
+							assigneeIds: currentAssigneeIds,
 							projectId: existingTask.projectId,
 							projectName: existingTask.project.title,
 							changedByUserId: ctx.session.userId as string,
@@ -276,7 +277,7 @@ export const taskMutations = {
 							taskId: task.id,
 							taskTitle: task.title,
 							isBlocked: rest.blocked,
-							assigneeId: task.assigneeId,
+							assigneeIds: currentAssigneeIds,
 							projectId: existingTask.projectId,
 							projectName: existingTask.project.title,
 							changedByUserId: ctx.session.userId as string,

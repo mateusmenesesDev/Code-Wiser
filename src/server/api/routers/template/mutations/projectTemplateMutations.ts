@@ -618,7 +618,6 @@ export const projectTemplateMutations = {
 										sprintId,
 										projectTemplateId: _projectTemplateId,
 										projectId: _projectId,
-										assigneeId: _assigneeId,
 										createdAt: _taskCreatedAt,
 										updatedAt: _taskUpdatedAt,
 										...taskData
@@ -629,8 +628,7 @@ export const projectTemplateMutations = {
 										projectTemplateId: newTemplate.id,
 										epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
 										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
-										projectId: null,
-										assigneeId: null
+										projectId: null
 									};
 								})
 							});

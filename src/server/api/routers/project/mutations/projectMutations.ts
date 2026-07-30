@@ -172,6 +172,7 @@ export const projectMutations = {
 						}
 
 						if (templateTasks.length > 0) {
+							const createdTaskIds: string[] = [];
 							await prisma.task.createMany({
 								data: templateTasks.map((task) => {
 									const {
@@ -181,16 +182,27 @@ export const projectMutations = {
 										projectTemplateId,
 										...taskData
 									} = task;
+									const newId = randomUUID();
+									createdTaskIds.push(newId);
 
 									return {
 										...taskData,
+										id: newId,
 										projectId: newProject.id,
 										epicId: epicId ? epicIdMap[epicId] : null,
 										sprintId: sprintId ? sprintIdMap[sprintId] : null,
-										projectTemplateId: null,
-										assigneeId: user.id
+										projectTemplateId: null
 									};
 								})
+							});
+
+							await prisma.user.update({
+								where: { id: user.id },
+								data: {
+									tasks: {
+										connect: createdTaskIds.map((id) => ({ id }))
+									}
+								}
 							});
 						}
 
@@ -634,10 +646,26 @@ export const projectMutations = {
 					});
 				}
 
-				const unassignedTasks = await prisma.task.updateMany({
-					where: { projectId: project.id, assigneeId: member.id },
-					data: { assigneeId: null }
+				const assignedTasks = await prisma.task.findMany({
+					where: {
+						projectId: project.id,
+						assignees: { some: { id: member.id } }
+					},
+					select: { id: true }
 				});
+
+				if (assignedTasks.length > 0) {
+					await prisma.user.update({
+						where: { id: member.id },
+						data: {
+							tasks: {
+								disconnect: assignedTasks.map((task) => ({ id: task.id }))
+							}
+						}
+					});
+				}
+
+				const unassignedTasks = { count: assignedTasks.length };
 
 				await prisma.project.update({
 					where: { id: project.id },

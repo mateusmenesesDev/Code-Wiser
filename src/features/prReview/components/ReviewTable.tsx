@@ -151,7 +151,7 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 					<TableBody>
 						{reviews.map((review) => {
 							const statusBadge = getStatusBadge(review.status);
-							const student = review.task.assignee;
+							const students = review.task.assignees ?? [];
 							const project = review.task.project;
 
 							return (
@@ -175,9 +175,11 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 										)}
 									</TableCell>
 									<TableCell>
-										{student ? (
+										{students.length > 0 ? (
 											<span className="text-muted-foreground text-sm">
-												{student.name || student.email}
+												{students
+													.map((student) => student.name || student.email)
+													.join(', ')}
 											</span>
 										) : (
 											<span className="text-muted-foreground text-sm">N/A</span>

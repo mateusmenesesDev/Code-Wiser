@@ -13,7 +13,7 @@ export const taskQueries = {
 				include: {
 					project: { select: { publicCode: true } },
 					projectTemplate: { select: { publicCode: true } },
-					assignee: {
+					assignees: {
 						select: {
 							id: true,
 							name: true
@@ -60,7 +60,7 @@ export const taskQueries = {
 				include: {
 					project: { select: { publicCode: true } },
 					projectTemplate: { select: { publicCode: true } },
-					assignee: {
+					assignees: {
 						select: {
 							id: true,
 							name: true
@@ -89,7 +89,11 @@ export const taskQueries = {
 	getAssigneeImage: protectedProcedure
 		.input(z.object({ assigneeId: z.string() }))
 		.query(async ({ input }) => {
-			const assignee = await clerkClient.users.getUser(input.assigneeId);
-			return assignee?.imageUrl;
+			try {
+				const assignee = await clerkClient.users.getUser(input.assigneeId);
+				return assignee?.imageUrl ?? null;
+			} catch {
+				return null;
+			}
 		})
 };

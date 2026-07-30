@@ -367,7 +367,7 @@ export const getProjectQueries = {
 			}
 
 			const memberIds = project.members.map((member) => member.id);
-			const [paymentEvidences, acceptedCreditInvitations, assignedTaskCounts] =
+			const [paymentEvidences, acceptedCreditInvitations, assignedTasks] =
 				await Promise.all([
 					ctx.db.projectCreditPaymentEvidence.findMany({
 						where: {
@@ -396,13 +396,17 @@ export const getProjectQueries = {
 						},
 						orderBy: { respondedAt: 'desc' }
 					}),
-					ctx.db.task.groupBy({
-						by: ['assigneeId'],
+					ctx.db.task.findMany({
 						where: {
 							projectId: input.projectId,
-							assigneeId: { in: memberIds }
+							assignees: { some: { id: { in: memberIds } } }
 						},
-						_count: { _all: true }
+						select: {
+							assignees: {
+								where: { id: { in: memberIds } },
+								select: { id: true }
+							}
+						}
 					})
 				]);
 
@@ -423,11 +427,11 @@ export const getProjectQueries = {
 			}
 
 			const assignedTaskCountByUserId = new Map<string, number>();
-			for (const taskCount of assignedTaskCounts) {
-				if (taskCount.assigneeId) {
+			for (const task of assignedTasks) {
+				for (const assignee of task.assignees) {
 					assignedTaskCountByUserId.set(
-						taskCount.assigneeId,
-						taskCount._count._all
+						assignee.id,
+						(assignedTaskCountByUserId.get(assignee.id) ?? 0) + 1
 					);
 				}
 			}

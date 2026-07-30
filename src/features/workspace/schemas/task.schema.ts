@@ -13,12 +13,12 @@ const preprocessEmptyToUndefined = <S extends z.ZodTypeAny>(schema: S) =>
 
 const storyPointsSchema = z.preprocess((val: unknown) => {
 	if (val === '' || val === null || val === undefined) return undefined;
+	if (typeof val === 'number') {
+		return Number.isNaN(val) ? undefined : val;
+	}
 	if (typeof val === 'string') {
 		const n = Number.parseInt(val.trim(), 10);
 		return Number.isNaN(n) ? undefined : n;
-	}
-	if (typeof val === 'number') {
-		return Number.isNaN(val) ? undefined : val;
 	}
 	return undefined;
 }, z.number().optional().refine(
@@ -45,7 +45,7 @@ export const baseTaskSchema = z.object({
 	sprintId: z.string().nullable().optional(),
 	blocked: z.boolean().optional(),
 	blockedReason: z.string().optional(),
-	assigneeId: z.string().nullable().optional(),
+	assigneeIds: z.array(z.string()).optional(),
 	status: preprocessEmptyToUndefined(z.nativeEnum(TaskStatusEnum).optional()),
 	order: z.number().optional(),
 	storyPoints: storyPointsSchema,

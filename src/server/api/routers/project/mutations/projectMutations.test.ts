@@ -86,6 +86,7 @@ describe('project.createProject', () => {
 		mockDb.sprint.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.epic.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.task.createMany.mockResolvedValue({ count: 2 } as never);
+		mockDb.user.update.mockResolvedValue({} as never);
 
 		const result = await caller.createProject({
 			projectTemplateId: 'template-id'
@@ -143,8 +144,7 @@ describe('project.createProject', () => {
 					projectId: 'project-id',
 					epicId,
 					sprintId,
-					projectTemplateId: null,
-					assigneeId: 'admin-user-id'
+					projectTemplateId: null
 				}),
 				expect.objectContaining({
 					title: 'Task 2',
@@ -152,10 +152,20 @@ describe('project.createProject', () => {
 					projectId: 'project-id',
 					epicId: null,
 					sprintId: null,
-					projectTemplateId: null,
-					assigneeId: 'admin-user-id'
+					projectTemplateId: null
 				})
 			]
+		});
+		expect(mockDb.user.update).toHaveBeenCalledWith({
+			where: { id: 'admin-user-id' },
+			data: {
+				tasks: {
+					connect: expect.arrayContaining([
+						expect.objectContaining({ id: expect.any(String) }),
+						expect.objectContaining({ id: expect.any(String) })
+					])
+				}
+			}
 		});
 		expect(mockDb.$transaction).toHaveBeenCalledWith(expect.any(Function), {
 			timeout: 20_000
@@ -284,7 +294,10 @@ describe('project.removeProjectMember', () => {
 			id: 'payment-evidence-id',
 			credits: 10
 		} as never);
-		mockDb.task.updateMany.mockResolvedValue({ count: 2 } as never);
+		mockDb.task.findMany.mockResolvedValue([
+			{ id: 'task-1' },
+			{ id: 'task-2' }
+		] as never);
 		mockDb.project.update.mockResolvedValue({} as never);
 		mockDb.user.update.mockResolvedValue({} as never);
 		mockDb.projectMemberRemovalAudit.create.mockResolvedValue({
@@ -301,13 +314,24 @@ describe('project.removeProjectMember', () => {
 
 		expect(result.refundedCredits).toBe(10);
 		expect(result.tasksUnassigned).toBe(2);
-		expect(mockDb.task.updateMany).toHaveBeenCalledWith({
-			where: { projectId: 'project-id', assigneeId: 'removed-user-id' },
-			data: { assigneeId: null }
+		expect(mockDb.task.findMany).toHaveBeenCalledWith({
+			where: {
+				projectId: 'project-id',
+				assignees: { some: { id: 'removed-user-id' } }
+			},
+			select: { id: true }
 		});
 		expect(mockDb.project.update).toHaveBeenCalledWith({
 			where: { id: 'project-id' },
 			data: { members: { disconnect: { id: 'removed-user-id' } } }
+		});
+		expect(mockDb.user.update).toHaveBeenCalledWith({
+			where: { id: 'removed-user-id' },
+			data: {
+				tasks: {
+					disconnect: [{ id: 'task-1' }, { id: 'task-2' }]
+				}
+			}
 		});
 		expect(mockDb.user.update).toHaveBeenCalledWith({
 			where: { id: 'removed-user-id' },

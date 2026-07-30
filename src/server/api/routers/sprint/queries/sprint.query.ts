@@ -14,14 +14,13 @@ const sprintInclude = {
 			storyPoints: true,
 			order: true,
 			sprintId: true,
-			assigneeId: true,
 			project: {
 				select: { publicCode: true }
 			},
 			projectTemplate: {
 				select: { publicCode: true }
 			},
-			assignee: {
+			assignees: {
 				select: { id: true, name: true }
 			}
 		}

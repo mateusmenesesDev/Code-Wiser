@@ -53,6 +53,7 @@ import {
 	reportStagedUploadResult,
 	uploadAndLinkStagedAttachments
 } from '../utils/uploadStagedAttachments';
+import { AssigneesInput } from './AssigneesInput';
 import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
 import { TaskAttachments } from './TaskAttachments';
@@ -143,7 +144,8 @@ export function TaskDialogContent({
 			status: TaskStatusEnum.BACKLOG,
 			priority: TaskPriorityEnum.MEDIUM,
 			blocked: false,
-			tags: []
+			tags: [],
+			assigneeIds: []
 		}
 	});
 
@@ -552,38 +554,19 @@ export function TaskDialogContent({
 							</Select>
 						</div>
 
-						{/* Assignee */}
-						<div>
-							<Label htmlFor="assigneeId" className="mb-2 block">
-								Assignee
-							</Label>
-							<Select
-								value={form.watch('assigneeId') ?? 'none'}
-								onValueChange={(value) => {
-									const next = value === 'none' ? undefined : value;
-									if (next === form.getValues('assigneeId')) return;
-									form.setValue('assigneeId', next, { shouldDirty: true });
-								}}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Select assignee" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">No assignee</SelectItem>
-									{isLoadingMembers ? (
-										<SelectItem value="loading" disabled>
-											Loading members...
-										</SelectItem>
-									) : (
-										projectMembers?.map((member) => (
-											<SelectItem key={member.id} value={member.id}>
-												{member.name || member.email}
-											</SelectItem>
-										))
-									)}
-								</SelectContent>
-							</Select>
-						</div>
+						{/* Assignees */}
+						{!isTemplate && (
+							<AssigneesInput
+								value={form.watch('assigneeIds') ?? []}
+								onChange={(assigneeIds) =>
+									form.setValue('assigneeIds', assigneeIds, {
+										shouldDirty: true
+									})
+								}
+								members={projectMembers}
+								isLoading={isLoadingMembers}
+							/>
+						)}
 
 						{/* Due Date */}
 						<div>
@@ -593,10 +576,21 @@ export function TaskDialogContent({
 							<Input
 								id="dueDate"
 								type="date"
-								{...form.register('dueDate', {
-									setValueAs: (value: string) =>
-										value && value.trim() !== '' ? new Date(value) : undefined
-								})}
+								value={(() => {
+									const dueDate = form.watch('dueDate');
+									if (dueDate instanceof Date && !Number.isNaN(dueDate.getTime())) {
+										return dueDate.toISOString().slice(0, 10);
+									}
+									return typeof dueDate === 'string' ? dueDate : '';
+								})()}
+								onChange={(event) => {
+									const next = event.target.value;
+									form.setValue(
+										'dueDate',
+										next.trim() !== '' ? new Date(next) : undefined,
+										{ shouldDirty: true }
+									);
+								}}
 							/>
 						</div>
 
