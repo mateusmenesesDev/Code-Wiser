@@ -33,6 +33,8 @@ export const getKanbanQueries = {
 					order: true,
 					priority: true,
 					storyPoints: true,
+					publicNumber: true,
+					project: { select: { publicCode: true } },
 					assignees: {
 						select: {
 							id: true,
@@ -52,9 +54,7 @@ export const getKanbanQueries = {
 						}
 					}
 				},
-				orderBy: {
-					order: 'asc'
-				}
+				orderBy: [{ status: 'asc' }, { order: 'asc' }, { createdAt: 'asc' }]
 			});
 			return kanbanData;
 		})

@@ -2,6 +2,7 @@ import '~/styles/globals.css';
 
 import { ClerkProvider } from '@clerk/nextjs';
 import { auth } from '@clerk/nextjs/server';
+import * as Sentry from '@sentry/nextjs';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -28,7 +29,8 @@ export const metadata: Metadata = {
 	},
 	description:
 		'Accelerate your software development career with CodeWise. Get personalized mentorship from senior developers, work on real-world projects, and master coding through hands-on experience.',
-	icons: [{ rel: 'icon', url: '/favicon.svg' }]
+	icons: [{ rel: 'icon', url: '/favicon.svg' }],
+	...Sentry.getTraceData()
 };
 
 async function getSessionClaims() {

@@ -21,6 +21,7 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import type { PRReviewApiOutput } from '~/features/prReview/types/prReview.type';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { cn } from '~/lib/utils';
 import { ReviewActions } from './ReviewActions';
 
@@ -156,7 +157,13 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 							return (
 								<TableRow key={review.id}>
 									<TableCell className="font-medium">
-										{review.task.title}
+										<div className="font-mono text-muted-foreground text-xs">
+											{formatPublicTaskId(
+												review.task.project?.publicCode,
+												review.task.publicNumber
+											) ?? '—'}
+										</div>
+										<div>{review.task.title}</div>
 									</TableCell>
 									<TableCell>
 										{project ? (

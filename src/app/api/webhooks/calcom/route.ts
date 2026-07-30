@@ -123,30 +123,42 @@ async function handleBookingCreated(eventData: CalcomBookingPayload) {
 			return;
 		}
 
-		// Construct booking URL
-		// Cal.com booking URLs are typically: https://cal.com/booking/{uid}
-		const bookingUrl = `https://cal.com/booking/${uid}`;
+	const bookingUrl = `https://cal.com/booking/${uid}`;
 
-		// Extract meeting URL from multiple possible locations
-		const meetingUrl =
-			(metadata as { videoCallUrl?: string })?.videoCallUrl || // Google Meet, Zoom, etc.
-			videoCallData?.url || // Alternative location
-			null;
+	const meetingUrl =
+		(metadata as { videoCallUrl?: string })?.videoCallUrl ||
+		videoCallData?.url ||
+		null;
 
-		console.log('Extracted meeting URL:', meetingUrl);
+	console.log('Extracted meeting URL:', meetingUrl);
 
-		// Create booking record
-		await db.mentorshipBooking.create({
-			data: {
-				userId: user.id,
-				calEventId: env.CALCOM_EVENT_TYPE_ID,
-				calBookingId: uid,
-				scheduledAt: scheduledDate,
-				status: 'SCHEDULED',
-				bookingUrl,
-				meetingUrl
-			}
+	// Upsert so a concurrent bookSession mutation doesn't create a duplicate row
+	const existing = await db.mentorshipBooking.findUnique({
+		where: { calBookingId: uid }
+	});
+
+	if (existing) {
+		console.log(
+			`Booking ${uid} already created by mutation, updating with meeting URL`
+		);
+		await db.mentorshipBooking.update({
+			where: { calBookingId: uid },
+			data: { meetingUrl: meetingUrl ?? existing.meetingUrl, bookingUrl }
 		});
+		return;
+	}
+
+	await db.mentorshipBooking.create({
+		data: {
+			userId: user.id,
+			calEventId: env.CALCOM_EVENT_TYPE_ID,
+			calBookingId: uid,
+			scheduledAt: scheduledDate,
+			status: 'SCHEDULED',
+			bookingUrl,
+			meetingUrl
+		}
+	});
 
 		// Only decrement remainingWeeklySessions if booking is for current week
 		// This keeps the UI counter in sync for the current week
@@ -176,15 +188,21 @@ async function handleBookingCreated(eventData: CalcomBookingPayload) {
 
 async function handleBookingRescheduled(eventData: CalcomBookingPayload) {
 	try {
-		const { uid, startTime } = eventData;
+		const { uid, startTime, videoCallData, metadata } = eventData;
+		const rescheduledFromUid = eventData.rescheduledFromUid;
 
-		// Find the existing booking
 		const existingBooking = await db.mentorshipBooking.findFirst({
-			where: { calBookingId: uid }
+			where: rescheduledFromUid
+				? { OR: [{ calBookingId: uid }, { calBookingId: rescheduledFromUid }] }
+				: { calBookingId: uid }
 		});
 
 		if (!existingBooking) {
-			console.error('Booking not found for rescheduling:', uid);
+			console.error(
+				'Booking not found for rescheduling:',
+				uid,
+				rescheduledFromUid ?? '(no rescheduledFromUid)'
+			);
 			return;
 		}
 
@@ -223,17 +241,33 @@ async function handleBookingRescheduled(eventData: CalcomBookingPayload) {
 		const wasInCurrentWeek = isDateInCurrentWeek(oldDate);
 		const isInCurrentWeek = isDateInCurrentWeek(newDate);
 
-		// Update booking record
-		await db.mentorshipBooking.update({
-			where: { id: existingBooking.id },
-			data: {
-				scheduledAt: newDate
-			}
-		});
+	const bookingUrl = `https://cal.com/booking/${uid}`;
+	const meetingUrl =
+		(metadata as { videoCallUrl?: string })?.videoCallUrl ||
+		videoCallData?.url ||
+		existingBooking.meetingUrl;
 
-		// Handle session count changes based on week transitions
-		// Note: remainingWeeklySessions only tracks the CURRENT week
-		if (wasInCurrentWeek && !isInCurrentWeek) {
+	if (
+		existingBooking.scheduledAt.getTime() === newDate.getTime() &&
+		existingBooking.calBookingId === uid
+	) {
+		console.log(
+			`Booking ${uid} already rescheduled by mutation, skipping webhook update`
+		);
+		return;
+	}
+
+	await db.mentorshipBooking.update({
+		where: { id: existingBooking.id },
+		data: {
+			scheduledAt: newDate,
+			calBookingId: uid,
+			bookingUrl,
+			meetingUrl
+		}
+	});
+
+	if (wasInCurrentWeek && !isInCurrentWeek) {
 			// Moved from current week to future week - restore current week counter
 			await db.user.update({
 				where: { id: existingBooking.userId },

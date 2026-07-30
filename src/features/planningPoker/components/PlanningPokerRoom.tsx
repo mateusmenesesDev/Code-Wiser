@@ -31,6 +31,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		currentTask,
 		votes,
 		members,
+		realtimeStatus,
 		selectedValue,
 		allVoted,
 		showResults,
@@ -229,6 +230,11 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 
 				{/* Sidebar */}
 				<div className="w-80 border-l bg-muted/30 p-4">
+					{realtimeStatus !== 'connected' && (
+						<div className="mb-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-muted-foreground text-xs">
+							Realtime {realtimeStatus}. Votes still save, online members may be stale.
+						</div>
+					)}
 					{userId && <MemberList members={members} currentUserId={userId} />}
 				</div>
 			</div>

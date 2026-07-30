@@ -4,7 +4,7 @@
 
 import Pusher from 'pusher';
 import type { IRealtimeService } from './interface';
-import type { RealtimeEvent } from './types';
+import type { PresenceChannelAuthData, RealtimeEvent } from './types';
 
 export class PusherRealtimeService implements IRealtimeService {
 	private pusher: Pusher;
@@ -44,6 +44,14 @@ export class PusherRealtimeService implements IRealtimeService {
 			console.error(`Pusher trigger error for channel ${channel}:`, error);
 			throw error;
 		}
+	}
+
+	authenticatePresenceChannel(
+		socketId: string,
+		channelName: string,
+		data: PresenceChannelAuthData
+	) {
+		return this.pusher.authorizeChannel(socketId, channelName, data);
 	}
 
 	getClientConfig(): {

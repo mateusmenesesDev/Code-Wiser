@@ -1,10 +1,33 @@
+import { bearerAuthorizationHeader } from '~/common/utils/bearerAuthorizationHeader';
 import { env } from '~/env';
+import {
+	buildCalcomCreateBookingBody,
+	CALCOM_API_VERSION,
+	CALCOM_API_VERSION_SLOTS
+} from './calcomCreateBookingPayload';
+import { extractSlotsByDate, slotEntryToIsoStart } from './calcomSlotsResponse';
 
 const CALCOM_API_BASE_URL = 'https://api.cal.com/v2';
 
-interface CalcomAvailabilitySlot {
+function calcomV2Headers(calApiVersion: string): Record<string, string> {
+	const headers: Record<string, string> = {
+		Authorization: bearerAuthorizationHeader(env.CALCOM_API_KEY),
+		'Content-Type': 'application/json',
+		Accept: 'application/json',
+		'cal-api-version': calApiVersion
+	};
+	const clientId = env.NEXT_PUBLIC_CALCOM_CLIENT_ID;
+	const oauthSecret = env.CALCOM_OAUTH_CLIENT_SECRET;
+	if (clientId && oauthSecret) {
+		headers['x-cal-client-id'] = clientId;
+		headers['x-cal-secret-key'] = oauthSecret.trim();
+	}
+	return headers;
+}
+
+/** Normalised slot shape used throughout the app */
+export interface CalcomAvailabilitySlot {
 	start: string;
-	end: string;
 }
 
 interface CalcomBookingResponse {
@@ -16,63 +39,63 @@ interface CalcomBookingResponse {
 	startTime: string;
 	endTime: string;
 	status: string;
+	meetingUrl?: string | null;
 }
 
 interface CalcomCreateBookingParams {
 	eventTypeId: string;
 	start: string;
-	end: string;
+	end?: string;
 	attendee: {
 		name: string;
 		email: string;
 		timeZone: string;
+		language?: string;
 	};
 	meetingUrl?: string;
 	metadata?: Record<string, unknown>;
 }
 
 /**
- * Get available time slots from Cal.com for a specific date range
+ * Get available time slots from Cal.com for a specific date range.
+ * Returns slots grouped by date key (YYYY-MM-DD) in UTC.
  */
 export async function getAvailableSlots(
 	startDate: Date,
 	endDate: Date
-): Promise<CalcomAvailabilitySlot[]> {
+): Promise<Record<string, CalcomAvailabilitySlot[]>> {
 	try {
 		const startISO = startDate.toISOString();
 		const endISO = endDate.toISOString();
 
+		const params = new URLSearchParams({
+			eventTypeId: env.CALCOM_EVENT_TYPE_ID,
+			start: startISO,
+			end: endISO
+		});
+
 		const response = await fetch(
-			`${CALCOM_API_BASE_URL}/slots/available?eventTypeId=${env.CALCOM_EVENT_TYPE_ID}&startTime=${startISO}&endTime=${endISO}`,
+			`${CALCOM_API_BASE_URL}/slots?${params.toString()}`,
 			{
 				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
-					'Content-Type': 'application/json'
-				}
+				headers: calcomV2Headers(CALCOM_API_VERSION_SLOTS)
 			}
 		);
-
-		console.log('response', response);
 
 		if (!response.ok) {
 			const errorText = await response.text();
 			throw new Error(`Cal.com API error: ${response.status} - ${errorText}`);
 		}
 
-		const data = (await response.json()) as {
-			data?: { slots?: Record<string, CalcomAvailabilitySlot[]> };
-		};
-
-		// Cal.com returns slots grouped by date
-		const allSlots: CalcomAvailabilitySlot[] = [];
-		if (data.data?.slots) {
-			for (const dateSlots of Object.values(data.data.slots)) {
-				allSlots.push(...dateSlots);
-			}
+		const rawSlots = extractSlotsByDate(await response.json());
+		const normalised: Record<string, CalcomAvailabilitySlot[]> = {};
+		for (const [date, slots] of Object.entries(rawSlots)) {
+			normalised[date] = (Array.isArray(slots) ? slots : [])
+				.map(slotEntryToIsoStart)
+				.filter((s): s is string => s !== null)
+				.map((start) => ({ start }));
 		}
-
-		return allSlots;
+		return normalised;
 	} catch (error) {
 		console.error('Error fetching Cal.com availability:', error);
 		throw new Error(
@@ -90,17 +113,8 @@ export async function createBooking(
 	try {
 		const response = await fetch(`${CALCOM_API_BASE_URL}/bookings`, {
 			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${env.CALCOM_API_KEY}`,
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				eventTypeId: Number.parseInt(params.eventTypeId, 10),
-				start: params.start,
-				end: params.end,
-				attendee: params.attendee,
-				metadata: params.metadata || {}
-			})
+			headers: calcomV2Headers(CALCOM_API_VERSION),
+			body: JSON.stringify(buildCalcomCreateBookingBody(params))
 		});
 
 		if (!response.ok) {
@@ -159,7 +173,7 @@ export async function cancelBooking(
 
 		// Cal.com API v2 requires:
 		// 1. Field name: "cancellationReason" (not "reason")
-		// 2. Header: "cal-api-version: 2024-08-13"
+		// 2. Header: cal-api-version (see CALCOM_API_VERSION)
 		// See: https://cal.com/docs/api-reference/v2/bookings/cancel-a-booking
 		const requestBody = {
 			cancellationReason: cancellationReason
@@ -176,12 +190,7 @@ export async function cancelBooking(
 
 		const response = await fetch(requestUrl, {
 			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${env.CALCOM_API_KEY}`,
-				'Content-Type': 'application/json',
-				Accept: 'application/json',
-				'cal-api-version': '2024-08-13' // Required for API v2
-			},
+			headers: calcomV2Headers(CALCOM_API_VERSION),
 			body: requestPayload
 		});
 
@@ -206,6 +215,42 @@ export async function cancelBooking(
 }
 
 /**
+ * Reschedule an existing booking in Cal.com
+ */
+export async function rescheduleBooking(
+	bookingUid: string,
+	newStart: string,
+	reason?: string
+): Promise<CalcomBookingResponse> {
+	try {
+		const response = await fetch(
+			`${CALCOM_API_BASE_URL}/bookings/${bookingUid}/reschedule`,
+			{
+				method: 'POST',
+				headers: calcomV2Headers(CALCOM_API_VERSION),
+				body: JSON.stringify({
+					start: newStart,
+					reschedulingReason: reason ?? 'Rescheduled by attendee'
+				})
+			}
+		);
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			throw new Error(`Cal.com API error: ${response.status} - ${errorText}`);
+		}
+
+		const data = (await response.json()) as { data: CalcomBookingResponse };
+		return data.data;
+	} catch (error) {
+		console.error('Error rescheduling Cal.com booking:', error);
+		throw new Error(
+			`Failed to reschedule booking: ${error instanceof Error ? error.message : 'Unknown error'}`
+		);
+	}
+}
+
+/**
  * Get booking details from Cal.com
  */
 export async function getBooking(
@@ -216,10 +261,7 @@ export async function getBooking(
 			`${CALCOM_API_BASE_URL}/bookings/${bookingUid}`,
 			{
 				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${env.CALCOM_API_KEY}`,
-					'Content-Type': 'application/json'
-				}
+				headers: calcomV2Headers(CALCOM_API_VERSION)
 			}
 		);
 

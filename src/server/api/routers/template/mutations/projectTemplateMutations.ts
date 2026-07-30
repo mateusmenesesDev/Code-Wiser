@@ -10,8 +10,12 @@ import {
 	updateTemplateBasicInfoInputSchema,
 	updateTemplateStatusSchema
 } from '~/features/templates/schemas/template.schema';
+import { generatePublicCode } from '~/lib/publicTaskId';
 import { adminProcedure } from '~/server/api/trpc';
-import { createProjectTemplateData } from '../actions/projectTemplateActions';
+import {
+	createProjectTemplateData,
+	getNextTemplateSortOrder
+} from '../actions/projectTemplateActions';
 
 export const projectTemplateMutations = {
 	create: adminProcedure
@@ -19,8 +23,9 @@ export const projectTemplateMutations = {
 		.mutation(async ({ ctx, input }) => {
 			try {
 				return await ctx.db.$transaction(async (prisma) => {
+					const sortOrder = await getNextTemplateSortOrder(prisma);
 					const projectTemplate = await prisma.projectTemplate.create({
-						data: createProjectTemplateData(input)
+						data: createProjectTemplateData(input, sortOrder)
 					});
 
 					return projectTemplate.id;
@@ -79,6 +84,92 @@ export const projectTemplateMutations = {
 			});
 
 			return result;
+		}),
+
+	reorderImages: adminProcedure
+		.input(
+			z.object({
+				projectTemplateId: z.string(),
+				items: z
+					.array(
+						z.object({
+							id: z.string(),
+							order: z.number().int().min(0)
+						})
+					)
+					.min(1)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const { projectTemplateId, items } = input;
+
+			const images = await ctx.db.projectImage.findMany({
+				where: {
+					id: { in: items.map((item) => item.id) },
+					projectTemplateId
+				},
+				select: { id: true }
+			});
+
+			if (images.length !== items.length) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'One or more images do not belong to this template'
+				});
+			}
+
+			await ctx.db.$transaction(
+				items.map((item) =>
+					ctx.db.projectImage.update({
+						where: { id: item.id },
+						data: { order: item.order }
+					})
+				)
+			);
+
+			return { success: true as const };
+		}),
+
+	reorder: adminProcedure
+		.input(
+			z.object({
+				items: z
+					.array(
+						z.object({
+							id: z.string(),
+							sortOrder: z.number().int().min(0)
+						})
+					)
+					.min(1)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const { items } = input;
+
+			const templates = await ctx.db.projectTemplate.findMany({
+				where: {
+					id: { in: items.map((item) => item.id) }
+				},
+				select: { id: true }
+			});
+
+			if (templates.length !== items.length) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'One or more templates were not found'
+				});
+			}
+
+			await ctx.db.$transaction(
+				items.map((item) =>
+					ctx.db.projectTemplate.update({
+						where: { id: item.id },
+						data: { sortOrder: item.sortOrder }
+					})
+				)
+			);
+
+			return { success: true as const };
 		}),
 
 	delete: adminProcedure
@@ -326,42 +417,55 @@ export const projectTemplateMutations = {
 
 					// Validate and prepare tasks
 					const warnings: string[] = [];
-					const tasksToCreate = (data.tasks || []).map((taskData) => {
-						// Validate epic and sprint references
-						if (taskData.epicTitle && !epicTitleToId[taskData.epicTitle]) {
-							warnings.push(
-								`Task "${taskData.title}": Epic "${taskData.epicTitle}" not found. Task will be created without epic.`
-							);
-						}
-						if (
-							taskData.sprintTitle &&
-							!sprintTitleToId[taskData.sprintTitle]
-						) {
-							warnings.push(
-								`Task "${taskData.title}": Sprint "${taskData.sprintTitle}" not found. Task will be created without sprint.`
-							);
-						}
+					const taskCount = data.tasks?.length ?? 0;
+					const publicNumberStart = taskCount
+						? (
+								await prisma.projectTemplate.update({
+									where: { id: projectTemplateId },
+									data: { nextTaskNumber: { increment: taskCount } },
+									select: { nextTaskNumber: true }
+								})
+							).nextTaskNumber - taskCount
+						: 1;
+					const tasksToCreate = (data.tasks || []).map(
+						(taskData, taskIndex) => {
+							// Validate epic and sprint references
+							if (taskData.epicTitle && !epicTitleToId[taskData.epicTitle]) {
+								warnings.push(
+									`Task "${taskData.title}": Epic "${taskData.epicTitle}" not found. Task will be created without epic.`
+								);
+							}
+							if (
+								taskData.sprintTitle &&
+								!sprintTitleToId[taskData.sprintTitle]
+							) {
+								warnings.push(
+									`Task "${taskData.title}": Sprint "${taskData.sprintTitle}" not found. Task will be created without sprint.`
+								);
+							}
 
-						return {
-							title: taskData.title,
-							description: taskData.description,
-							type: taskData.type,
-							priority: taskData.priority,
-							tags: taskData.tags || [],
-							blocked: taskData.blocked ?? false,
-							blockedReason: taskData.blockedReason,
-							status: taskData.status,
-							order: taskData.order,
-							storyPoints: taskData.storyPoints,
-							dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
-							epicId: taskData.epicTitle
-								? epicTitleToId[taskData.epicTitle] || null
-								: null,
-							sprintId: taskData.sprintTitle
-								? sprintTitleToId[taskData.sprintTitle] || null
-								: null
-						};
-					});
+							return {
+								title: taskData.title,
+								description: taskData.description,
+								type: taskData.type,
+								priority: taskData.priority,
+								tags: taskData.tags || [],
+								blocked: taskData.blocked ?? false,
+								blockedReason: taskData.blockedReason,
+								status: taskData.status,
+								order: taskData.order,
+								storyPoints: taskData.storyPoints,
+								dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+								publicNumber: publicNumberStart + taskIndex,
+								epicId: taskData.epicTitle
+									? epicTitleToId[taskData.epicTitle] || null
+									: null,
+								sprintId: taskData.sprintTitle
+									? sprintTitleToId[taskData.sprintTitle] || null
+									: null
+							};
+						}
+					);
 
 					// Create tasks in batches to avoid overwhelming the database
 					const batchSize = 50;
@@ -386,6 +490,7 @@ export const projectTemplateMutations = {
 									order: taskData.order,
 									storyPoints: taskData.storyPoints,
 									dueDate: taskData.dueDate,
+									publicNumber: taskData.publicNumber,
 									projectTemplate: {
 										connect: { id: projectTemplateId }
 									},
@@ -472,6 +577,7 @@ export const projectTemplateMutations = {
 							updatedAt: _updatedAt,
 							title: _originalTitle,
 							categoryId: _categoryId,
+							sortOrder: _sortOrder,
 							sprints,
 							epics,
 							tasks,
@@ -483,11 +589,15 @@ export const projectTemplateMutations = {
 							...templateData
 						} = originalTemplate;
 
+						const sortOrder = await getNextTemplateSortOrder(prisma);
+
 						const newTemplate = await prisma.projectTemplate.create({
 							data: {
 								...templateData,
 								title: input.newTitle,
+								publicCode: generatePublicCode(input.newTitle),
 								status: 'PENDING',
+								sortOrder,
 								category: {
 									connect: { id: category.id }
 								},

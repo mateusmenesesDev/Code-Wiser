@@ -1,7 +1,24 @@
 'use client';
 
 import { Protect } from '@clerk/nextjs';
-import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import {
+	DndContext,
+	type DragEndEvent,
+	KeyboardSensor,
+	PointerSensor,
+	closestCenter,
+	useSensor,
+	useSensors
+} from '@dnd-kit/core';
+import {
+	SortableContext,
+	arrayMove,
+	sortableKeyboardCoordinates,
+	useSortable,
+	verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Edit, Eye, GripVertical, Plus, Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
@@ -36,9 +53,139 @@ import {
 	getDifficultyBadgeColor
 } from '~/common/utils/colorUtils';
 import { formatTemplateStatus } from '~/common/utils/projectUtils';
+import { cn } from '~/lib/utils';
+import type { RouterOutputs } from '~/trpc/react';
 import { useAdminTemplates } from '../hook/useAdminTemplates';
 import { CreateProjectFromJsonDialog } from './CreateProjectFromJsonDialog';
 import { CreateProjectTemplateDialog } from './CreateProjectTemplateDialog';
+
+type AdminTemplate = RouterOutputs['projectTemplate']['getAll'][number];
+
+function SortableTemplateRow({
+	template,
+	canReorder,
+	isToggling,
+	isDeleting,
+	onTogglePublish,
+	onDelete
+}: {
+	template: AdminTemplate;
+	canReorder: boolean;
+	isToggling: boolean;
+	isDeleting: boolean;
+	onTogglePublish: (id: string, status: string) => void;
+	onDelete: (id: string) => void;
+}) {
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
+		transition,
+		isDragging
+	} = useSortable({ id: template.id, disabled: !canReorder });
+
+	const accessType = template.accessType;
+	const isPublished = template.status === 'APPROVED';
+
+	return (
+		<TableRow
+			ref={setNodeRef}
+			style={{
+				transform: CSS.Transform.toString(transform),
+				transition
+			}}
+			className={cn(isDragging && 'relative z-10 bg-muted/50 opacity-80')}
+		>
+			<TableCell className="w-10">
+				{canReorder ? (
+					<button
+						type="button"
+						className="flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-muted active:cursor-grabbing"
+						aria-label={`Drag to reorder ${template.title}`}
+						{...attributes}
+						{...listeners}
+					>
+						<GripVertical className="h-4 w-4" />
+					</button>
+				) : (
+					<span className="block w-8" />
+				)}
+			</TableCell>
+			<TableCell>
+				<div>
+					<div className="font-medium">{template.title}</div>
+					<div className="line-clamp-1 text-muted-foreground text-sm">
+						{template.description}
+					</div>
+				</div>
+			</TableCell>
+			<TableCell>
+				<Badge variant="secondary">{template.category.name}</Badge>
+			</TableCell>
+			<TableCell>
+				<Badge variant={getBadgeAccessTypeColor(accessType)}>
+					{accessType}
+				</Badge>
+			</TableCell>
+			<TableCell>
+				<Badge variant={getDifficultyBadgeColor(template.difficulty)}>
+					{template.difficulty}
+				</Badge>
+			</TableCell>
+			<TableCell>
+				<Badge variant={getBadgeTemplateStatusColor(template.status)}>
+					{formatTemplateStatus(template.status)}
+				</Badge>
+			</TableCell>
+			<TableCell>
+				<div className="flex items-center gap-2">
+					<Switch
+						checked={isPublished}
+						onCheckedChange={() =>
+							onTogglePublish(template.id, template.status)
+						}
+						disabled={isToggling}
+					/>
+					<span className="text-sm">
+						{isPublished ? 'Published' : 'Draft'}
+					</span>
+				</div>
+			</TableCell>
+			<TableCell className="text-muted-foreground text-sm">
+				{new Date(template.createdAt).toLocaleDateString()}
+			</TableCell>
+			<TableCell className="text-right">
+				<div className="flex items-center justify-end gap-2">
+					<Button variant="ghost" size="sm" asChild>
+						<Link href={`/admin/templates/${template.id}`}>
+							<Eye className="h-4 w-4" />
+						</Link>
+					</Button>
+					<Button variant="ghost" size="sm" asChild>
+						<Link href={`/admin/templates/${template.id}/edit`}>
+							<Edit className="h-4 w-4" />
+						</Link>
+					</Button>
+					<ConfirmationDialog
+						title="Delete Template"
+						description={`Are you sure you want to delete "${template.title}"? This action cannot be undone.`}
+						onConfirm={() => onDelete(template.id)}
+					>
+						<Button
+							variant="ghost"
+							size="sm"
+							disabled={isDeleting}
+							className="text-destructive hover:text-destructive"
+						>
+							<Trash2 className="h-4 w-4" />
+						</Button>
+					</ConfirmationDialog>
+				</div>
+			</TableCell>
+		</TableRow>
+	);
+}
 
 export default function AdminTemplatesPage() {
 	const {
@@ -56,8 +203,10 @@ export default function AdminTemplatesPage() {
 		setStatusFilter,
 		clearFilters,
 		hasActiveFilters,
+		canReorder,
 		deleteTemplate,
 		togglePublishStatus,
+		reorderTemplates,
 		isDeleting,
 		isToggling,
 		refetch
@@ -67,8 +216,32 @@ export default function AdminTemplatesPage() {
 	const [showCreateFromJsonDialog, setShowCreateFromJsonDialog] =
 		useState(false);
 
+	const sensors = useSensors(
+		useSensor(PointerSensor, {
+			activationConstraint: { distance: 6 }
+		}),
+		useSensor(KeyboardSensor, {
+			coordinateGetter: sortableKeyboardCoordinates
+		})
+	);
+
 	const handleTemplateCreated = () => {
 		refetch();
+	};
+
+	const handleDragEnd = (event: DragEndEvent) => {
+		if (!canReorder || !templates) return;
+
+		const { active, over } = event;
+		if (!over || active.id === over.id) return;
+
+		const oldIndex = templates.findIndex(
+			(template) => template.id === active.id
+		);
+		const newIndex = templates.findIndex((template) => template.id === over.id);
+		if (oldIndex < 0 || newIndex < 0) return;
+
+		reorderTemplates(arrayMove(templates, oldIndex, newIndex));
 	};
 
 	return (
@@ -197,6 +370,15 @@ export default function AdminTemplatesPage() {
 						<span className="font-semibold">{templates?.length ?? 0}</span>{' '}
 						templates
 					</p>
+					{hasActiveFilters ? (
+						<p className="text-muted-foreground text-sm">
+							Clear filters to reorder templates for the home page
+						</p>
+					) : (
+						<p className="text-muted-foreground text-sm">
+							Drag rows to set the order shown on the home page
+						</p>
+					)}
 				</div>
 
 				{/* Templates Table */}
@@ -210,117 +392,45 @@ export default function AdminTemplatesPage() {
 								</p>
 							</div>
 						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Title</TableHead>
-										<TableHead>Category</TableHead>
-										<TableHead>Access Type</TableHead>
-										<TableHead>Difficulty</TableHead>
-										<TableHead>Status</TableHead>
-										<TableHead>Published</TableHead>
-										<TableHead>Created</TableHead>
-										<TableHead className="text-right">Actions</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{templates?.map((template) => {
-										const accessType = template.accessType;
-										const isPublished = template.status === 'APPROVED';
-
-										return (
-											<TableRow key={template.id}>
-												<TableCell>
-													<div>
-														<div className="font-medium">{template.title}</div>
-														<div className="line-clamp-1 text-muted-foreground text-sm">
-															{template.description}
-														</div>
-													</div>
-												</TableCell>
-												<TableCell>
-													<Badge variant="secondary">
-														{template.category.name}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<Badge variant={getBadgeAccessTypeColor(accessType)}>
-														{accessType}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<Badge
-														variant={getDifficultyBadgeColor(
-															template.difficulty
-														)}
-													>
-														{template.difficulty}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<Badge
-														variant={getBadgeTemplateStatusColor(
-															template.status
-														)}
-													>
-														{formatTemplateStatus(template.status)}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<div className="flex items-center gap-2">
-														<Switch
-															checked={isPublished}
-															onCheckedChange={() =>
-																togglePublishStatus(
-																	template.id,
-																	template.status
-																)
-															}
-															disabled={isToggling}
-														/>
-														<span className="text-sm">
-															{isPublished ? 'Published' : 'Draft'}
-														</span>
-													</div>
-												</TableCell>
-												<TableCell className="text-muted-foreground text-sm">
-													{new Date(template.createdAt).toLocaleDateString()}
-												</TableCell>
-												<TableCell className="text-right">
-													<div className="flex items-center justify-end gap-2">
-														<Button variant="ghost" size="sm" asChild>
-															<Link href={`/admin/templates/${template.id}`}>
-																<Eye className="h-4 w-4" />
-															</Link>
-														</Button>
-														<Button variant="ghost" size="sm" asChild>
-															<Link
-																href={`/admin/templates/${template.id}/edit`}
-															>
-																<Edit className="h-4 w-4" />
-															</Link>
-														</Button>
-														<ConfirmationDialog
-															title="Delete Template"
-															description={`Are you sure you want to delete "${template.title}"? This action cannot be undone.`}
-															onConfirm={() => deleteTemplate(template.id)}
-														>
-															<Button
-																variant="ghost"
-																size="sm"
-																disabled={isDeleting}
-																className="text-destructive hover:text-destructive"
-															>
-																<Trash2 className="h-4 w-4" />
-															</Button>
-														</ConfirmationDialog>
-													</div>
-												</TableCell>
-											</TableRow>
-										);
-									})}
-								</TableBody>
-							</Table>
+							<DndContext
+								sensors={sensors}
+								collisionDetection={closestCenter}
+								onDragEnd={handleDragEnd}
+							>
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead className="w-10" />
+											<TableHead>Title</TableHead>
+											<TableHead>Category</TableHead>
+											<TableHead>Access Type</TableHead>
+											<TableHead>Difficulty</TableHead>
+											<TableHead>Status</TableHead>
+											<TableHead>Published</TableHead>
+											<TableHead>Created</TableHead>
+											<TableHead className="text-right">Actions</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										<SortableContext
+											items={templates?.map((template) => template.id) ?? []}
+											strategy={verticalListSortingStrategy}
+										>
+											{templates?.map((template) => (
+												<SortableTemplateRow
+													key={template.id}
+													template={template}
+													canReorder={canReorder}
+													isToggling={isToggling}
+													isDeleting={isDeleting}
+													onTogglePublish={togglePublishStatus}
+													onDelete={deleteTemplate}
+												/>
+											))}
+										</SortableContext>
+									</TableBody>
+								</Table>
+							</DndContext>
 						)}
 					</CardContent>
 				</Card>

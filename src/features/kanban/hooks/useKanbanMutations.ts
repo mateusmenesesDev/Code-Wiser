@@ -13,23 +13,27 @@ export const useKanbanMutations = (projectId: string) => {
 
 			// Optimistically update to the new value
 			if (previousTasks) {
-				const tasksById = new Map(previousTasks.map((t) => [t.id, t]));
+				const updatesById = new Map(
+					updates.map((update) => [update.id, update])
+				);
+				const optimisticTasks = previousTasks
+					.map((task) => {
+						const update = updatesById.get(task.id);
+						if (!update) return task;
 
-				// Create optimistic tasks in the order specified by updates
-				const optimisticTasks = updates
-					.map((update) => {
-						const task = tasksById.get(update.id);
-						if (!task) return null;
 						return {
 							...task,
 							order: update.order,
 							status: update.status as TaskStatusEnum
 						};
 					})
-					.filter((t): t is NonNullable<typeof t> => t !== null);
-
-				// Sort by order to maintain correct order
-				optimisticTasks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+					.sort((a, b) => {
+						const statusOrder = String(a.status).localeCompare(
+							String(b.status)
+						);
+						if (statusOrder !== 0) return statusOrder;
+						return (a.order ?? 0) - (b.order ?? 0);
+					});
 
 				utils.kanban.getKanbanData.setData({ projectId }, optimisticTasks);
 			}

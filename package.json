@@ -12,11 +12,14 @@
 		"db:generate": "infisical run -- prisma migrate dev",
 		"db:migrate": "infisical run -- prisma migrate deploy",
 		"db:push": "infisical run -- prisma db push",
+		"db:push:prod": "infisical run --env=prod prisma db push",
 		"db:studio": "infisical run -- prisma studio",
 		"db:seed": "infisical run -- bun prisma/seed/main.ts",
 		"db:reset": "infisical run -- bun prisma/seed/reset-database.ts",
 		"db:reset-advanced": "infisical run -- bun prisma/seed/reset-database-advanced.ts",
 		"db:reset-and-seed": "infisical run -- npm run db:reset && npm run db:seed",
+		"db:backfill-public-task-ids": "infisical run -- bun scripts/backfill-public-task-ids.ts",
+		"db:backfill-public-task-ids:dry": "infisical run -- bun scripts/backfill-public-task-ids.ts --dry-run",
 		"dev": "infisical run -- next dev",
 		"dev:ngr": "ngrok http 3000",
 		"postinstall": "prisma generate",
@@ -57,6 +60,7 @@
 		"@radix-ui/react-switch": "^1.1.1",
 		"@radix-ui/react-tabs": "^1.1.0",
 		"@radix-ui/react-tooltip": "^1.1.3",
+		"@sentry/nextjs": "^10",
 		"@stripe/stripe-js": "^7.5.0",
 		"@t3-oss/env-nextjs": "^0.13.8",
 		"@tailwindcss/postcss": "^4.1.18",
@@ -76,6 +80,7 @@
 		"cmdk": "^1.0.0",
 		"dayjs": "^1.11.19",
 		"dotenv": "^16.5.0",
+		"driver.js": "^1.4.0",
 		"geist": "^1.3.0",
 		"groq-sdk": "^0.36.0",
 		"input-otp": "^1.2.4",
@@ -92,7 +97,10 @@
 		"react-dnd-html5-backend": "^16.0.1",
 		"react-dom": "^18.3.1",
 		"react-hook-form": "^7.53.2",
+		"react-markdown": "^10.1.0",
 		"react-scan": "^0.4.3",
+		"rehype-sanitize": "^6.0.0",
+		"remark-gfm": "^4.0.1",
 		"resend": "^6.6.0",
 		"server-only": "^0.0.1",
 		"shadcn": "^3.6.1",
@@ -128,6 +136,9 @@
 	},
 	"ct3aMetadata": {
 		"initVersion": "7.37.0"
+	},
+	"engines": {
+		"node": "24.x"
 	},
 	"packageManager": "npm@10.8.2"
 }

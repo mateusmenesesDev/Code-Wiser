@@ -20,9 +20,8 @@ import {
 	useSensor,
 	useSensors
 } from '@dnd-kit/core';
-import { SortableContext, arrayMove, useSortable } from '@dnd-kit/sortable';
+import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { TaskStatusEnum } from '@prisma/client';
 import {
 	Fragment,
 	type HTMLAttributes,
@@ -34,6 +33,7 @@ import {
 import { createPortal } from 'react-dom';
 import { Card } from '~/common/components/ui/card';
 import { ScrollArea, ScrollBar } from '~/common/components/ui/scroll-area';
+import { reorderKanbanItems } from '~/common/utils/kanbanReorder';
 import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 
@@ -261,25 +261,31 @@ export const KanbanProvider = <
 		useSensor(KeyboardSensor)
 	);
 
-	// Optimized collision detection for better performance
+	// Prefer cards inside the column under the pointer. This keeps drops in the
+	// gap between two cards anchored to the nearest card instead of the column.
 	const collisionDetection: CollisionDetection = (args) => {
-		// Use pointerWithin for columns (droppables) - faster and more accurate
-		const pointerCollisions = pointerWithin(args);
 		const columnIds = new Set(columns.map((col) => col.id));
-		const droppableCollisions = pointerCollisions.filter((collision) =>
+		const pointerCollisions = pointerWithin(args);
+		const overColumn = pointerCollisions.find((collision) =>
 			columnIds.has(collision.id as string)
 		);
 
-		// If we're over a column, check for nearby cards for precise positioning
-		if (droppableCollisions.length > 0) {
-			const cardCollisions = closestCenter(args);
-			// Prioritize cards for better positioning, but keep column for empty areas
+		if (overColumn) {
+			const overColumnId = String(overColumn.id);
+			const itemIdsInColumn = new Set(
+				data
+					.filter((item) => item.status === overColumnId)
+					.map((item) => item.id)
+			);
+			const cardCollisions = closestCenter(args).filter((collision) =>
+				itemIdsInColumn.has(collision.id as string)
+			);
+
 			return cardCollisions.length > 0
-				? [...cardCollisions, ...droppableCollisions]
-				: droppableCollisions;
+				? [...cardCollisions, overColumn]
+				: [overColumn];
 		}
 
-		// Otherwise, use closestCenter for cards
 		return closestCenter(args);
 	};
 
@@ -310,66 +316,25 @@ export const KanbanProvider = <
 			return;
 		}
 
-		let newData = [...data];
+		const activeRect = active.rect.current.translated;
+		const insertPosition =
+			activeRect &&
+			activeRect.top + activeRect.height / 2 <
+				over.rect.top + over.rect.height / 2
+				? 'before'
+				: 'after';
 
-		const activeItem = newData.find((item) => item.id === active.id);
-		const overItem = newData.find((item) => item.id === over.id);
+		const newData = reorderKanbanItems(
+			data,
+			active.id as string,
+			over.id as string,
+			columns.map((column) => column.id),
+			insertPosition
+		);
 
-		if (!activeItem) {
-			return;
+		if (newData !== data) {
+			onDataChange?.(newData);
 		}
-
-		const activeColumn = activeItem.status;
-
-		if (!activeColumn) {
-			return; // Can't proceed without a valid status
-		}
-
-		// First check if over.id is a column ID (prioritize column detection)
-		const overColumnId = columns.find((col) => col.id === over.id)?.id;
-
-		let overColumn: TaskStatusEnum;
-		if (overColumnId) {
-			// Dropping directly on a column
-			overColumn = overColumnId as TaskStatusEnum;
-		} else if (overItem?.status) {
-			// Dropping on another card - use that card's column
-			overColumn = overItem.status as TaskStatusEnum;
-		} else {
-			// Fallback to active column (shouldn't happen)
-			overColumn = activeColumn;
-		}
-
-		// Update status if moving to a different column
-		if (activeColumn !== overColumn) {
-			activeItem.status = overColumn;
-		}
-
-		// If dropping on another card (not directly on column), reorder within the column
-		if (overItem && !overColumnId) {
-			const oldIndex = newData.findIndex((item) => item.id === active.id);
-			const newIndex = newData.findIndex((item) => item.id === over.id);
-			if (oldIndex !== -1 && newIndex !== -1) {
-				newData = arrayMove(newData, oldIndex, newIndex);
-			}
-		} else {
-			// If dropping on a column directly, move the item to the end of that column
-			const oldIndex = newData.findIndex((item) => item.id === active.id);
-			if (oldIndex !== -1) {
-				newData.splice(oldIndex, 1);
-				// Find the last index of items in the target column
-				let insertIndex = newData.length;
-				for (let i = newData.length - 1; i >= 0; i--) {
-					if (newData[i]?.status === overColumn) {
-						insertIndex = i + 1;
-						break;
-					}
-				}
-				newData.splice(insertIndex, 0, activeItem);
-			}
-		}
-
-		onDataChange?.(newData);
 	};
 
 	const announcements: Announcements = {

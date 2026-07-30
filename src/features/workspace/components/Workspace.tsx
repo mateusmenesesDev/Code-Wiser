@@ -1,9 +1,10 @@
 'use client';
 
 import { ProjectMethodologyEnum, type TaskStatusEnum } from '@prisma/client';
+import { AlertTriangle } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { parseAsString, useQueryState, useQueryStates } from 'nuqs';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import {
 	KanbanBoard,
 	KanbanCards,
@@ -11,6 +12,7 @@ import {
 	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
+import { toKanbanOrderUpdates } from '~/common/utils/kanbanReorder';
 import Backlog from '~/features/backlog/components/Backlog';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 import { columns } from '~/features/kanban/constants';
@@ -21,6 +23,7 @@ import SprintBoard from '~/features/sprints/components/SprintBoard';
 import SprintSidebar from '~/features/sprints/components/SprintSidebar';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import ProjectHeader from '~/features/workspace/components/ProjectHeader';
+import { ProjectSettingsModal } from '~/features/workspace/components/ProjectSettingsModal';
 import { api } from '~/trpc/react';
 
 const Workspace = () => {
@@ -38,23 +41,58 @@ const Workspace = () => {
 	});
 	const { filterTasks } = useKanbanFilters();
 	const { updateTaskOrdersMutation } = useKanbanMutations(projectId);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	const tasks = filterTasks(allTasks ?? []);
 	const isScrum = projectInfo?.methodology === ProjectMethodologyEnum.SCRUM;
+	const isCanceled =
+		projectInfo?.canceledAt !== null && projectInfo?.canceledAt !== undefined;
+
+	useEffect(() => {
+		if (!isScrum) {
+			setViewParams({ view: null, sprintId: null });
+		}
+	}, [isScrum, setViewParams]);
 
 	const selectedSprint =
 		view === 'sprint' && sprintId
-			? (sprints ?? []).find((s) => s.id === sprintId) ?? null
+			? ((sprints ?? []).find((s) => s.id === sprintId) ?? null)
 			: null;
 
 	const handleDataChange = (data: KanbanItemProps[]) => {
-		const updates = data.map((task, index) => ({
-			id: task.id,
-			order: index,
-			status: task.status as TaskStatusEnum
-		}));
+		const updates = toKanbanOrderUpdates(allTasks ?? data, data);
+		if (updates.length === 0) return;
 		updateTaskOrdersMutation.mutate({ updates });
 	};
+
+	if (isCanceled) {
+		return (
+			<div className="mx-auto flex h-[calc(100vh-8rem)] max-w-3xl items-center justify-center px-4">
+				<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
+					<AlertTriangle className="mx-auto mb-3 h-8 w-8 text-destructive" />
+					<h1 className="font-semibold text-xl">Project canceled</h1>
+					<p className="mt-2 text-muted-foreground text-sm">
+						This workspace is read-only because the project was canceled
+						{projectInfo.canceledAt
+							? ` on ${new Date(projectInfo.canceledAt).toLocaleDateString()}`
+							: ''}
+						.
+					</p>
+					{projectInfo.cancellationReason && (
+						<p className="mt-3 rounded-md bg-background p-3 text-sm">
+							Reason: {projectInfo.cancellationReason}
+						</p>
+					)}
+					{projectInfo.refundedCreditsOnCancellation > 0 && (
+						<p className="mt-3 text-emerald-600 text-sm">
+							{projectInfo.refundedCreditsOnCancellation} credits were refunded
+							to eligible members.
+						</p>
+					)}
+				</div>
+			</div>
+		);
+	}
 
 	if (!tasks) {
 		return (
@@ -81,7 +119,9 @@ const Workspace = () => {
 					}
 					projectTitle={projectInfo?.title ?? ''}
 					projectFigmaUrl={projectInfo?.figmaProjectUrl ?? ''}
+					methodology={projectInfo?.methodology ?? ProjectMethodologyEnum.SCRUM}
 					onCreateTask={() => setTaskId('new')}
+					onOpenSettings={() => setIsSettingsOpen(true)}
 				/>
 			)}
 			<div className="flex flex-1 overflow-hidden">
@@ -91,6 +131,7 @@ const Workspace = () => {
 						sprints={sprints ?? []}
 						selectedSprintId={sprintId}
 						currentView={view}
+						onSelectBoard={() => setViewParams({ view: null, sprintId: null })}
 						onSelectSprint={(id) =>
 							setViewParams({ view: 'sprint', sprintId: id })
 						}
@@ -100,13 +141,20 @@ const Workspace = () => {
 					/>
 				)}
 				<div className="flex-1 overflow-hidden">
-					{view === 'sprint' && selectedSprint ? (
+					{isScrum && view === 'sprint' && selectedSprint ? (
 						<SprintBoard
 							sprint={selectedSprint}
 							projectId={projectId}
+							allTasks={allTasks ?? []}
 						/>
-					) : view === 'backlog' ? (
-						<Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading backlog...</div>}>
+					) : isScrum && view === 'backlog' ? (
+						<Suspense
+							fallback={
+								<div className="p-8 text-center text-muted-foreground">
+									Loading backlog...
+								</div>
+							}
+						>
 							<div className="h-full overflow-y-auto p-6">
 								<Backlog projectId={projectId} />
 							</div>
@@ -118,9 +166,7 @@ const Workspace = () => {
 							onDataChange={handleDataChange}
 						>
 							{(column) => {
-								const columnTasks = tasks.filter(
-									(t) => t.status === column.id
-								);
+								const columnTasks = tasks.filter((t) => t.status === column.id);
 								return (
 									<KanbanBoard
 										id={column.id}
@@ -168,6 +214,11 @@ const Workspace = () => {
 					onClose={() => setTaskId(null)}
 				/>
 			)}
+			<ProjectSettingsModal
+				projectId={projectId}
+				open={isSettingsOpen}
+				onOpenChange={setIsSettingsOpen}
+			/>
 		</div>
 	);
 };

@@ -51,15 +51,15 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 
 			return context;
 		},
-	onError: (error, _newTask, ctx) => {
-		rollbackOptimisticData({
-			utils,
-			context: ctx,
-			projectId: projectId as string,
-			isTemplate
-		});
-		toast.error(error.message || 'Failed to create task');
-	},
+		onError: (error, _newTask, ctx) => {
+			rollbackOptimisticData({
+				utils,
+				context: ctx,
+				projectId: projectId as string,
+				isTemplate
+			});
+			toast.error(error.message || 'Failed to create task');
+		},
 		onSettled: () => {
 			invalidateKanbanData();
 			invalidateBacklogData();
@@ -92,7 +92,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 
 			return context;
 		},
-		onError: (_error, _taskUpdate, ctx) => {
+		onError: (error, _taskUpdate, ctx) => {
 			rollbackOptimisticData({
 				utils,
 				context: ctx,
@@ -100,7 +100,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 				isTemplate,
 				taskId: _taskUpdate.id
 			});
-			toast.error('Failed to update task');
+			toast.error(error.message || 'Failed to update task');
 		},
 		onSettled: (taskUpdate) => {
 			invalidateBacklogData();
@@ -306,6 +306,9 @@ export function useTask({ projectId }: UseTaskProps) {
 	const createTask = (createTaskInput: CreateTaskInput) =>
 		createTaskMutation.mutate(createTaskInput);
 
+	const createTaskAsync = (createTaskInput: CreateTaskInput) =>
+		createTaskMutation.mutateAsync(createTaskInput);
+
 	const getAllTasksByProjectId = (projectId: string) =>
 		api.task.getAllByProjectId.useSuspenseQuery({
 			projectId,
@@ -315,7 +318,13 @@ export function useTask({ projectId }: UseTaskProps) {
 	const updateTask = (updateTaskInput: UpdateTaskInput) =>
 		updateTaskMutation.mutate(updateTaskInput);
 
+	const updateTaskAsync = (updateTaskInput: UpdateTaskInput) =>
+		updateTaskMutation.mutateAsync(updateTaskInput);
+
 	const deleteTask = (taskId: string) => deleteTaskMutation.mutate({ taskId });
+
+	const deleteTaskAsync = (taskId: string) =>
+		deleteTaskMutation.mutateAsync({ taskId });
 	const bulkDeleteTasks = (taskIds: string[]) =>
 		bulkDeleteTasksMutation.mutate({ taskIds });
 
@@ -345,12 +354,16 @@ export function useTask({ projectId }: UseTaskProps) {
 
 	return {
 		createTask,
+		createTaskAsync,
 		updateTask,
+		updateTaskAsync,
 		getAllTasksByProjectId,
 		deleteTask,
+		deleteTaskAsync,
 		bulkDeleteTasks,
 		updateTaskOrders,
 		generateTaskDescription,
-		isGeneratingDescription: generateTaskDescriptionMutation.isPending
+		isGeneratingDescription: generateTaskDescriptionMutation.isPending,
+		isCreatingTask: createTaskMutation.isPending
 	};
 }

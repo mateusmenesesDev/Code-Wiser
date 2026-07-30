@@ -1,7 +1,7 @@
 'use client';
 
 import { Protect } from '@clerk/nextjs';
-import { Calendar, Clock, Play, Users } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock, Play, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import {
@@ -12,8 +12,25 @@ import {
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
+import { Checkbox } from '~/common/components/ui/checkbox';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from '~/common/components/ui/dialog';
 import { Input } from '~/common/components/ui/input';
+import { Label } from '~/common/components/ui/label';
 import { Progress } from '~/common/components/ui/progress';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from '~/common/components/ui/select';
 import {
 	Table,
 	TableBody,
@@ -22,6 +39,8 @@ import {
 	TableHeader,
 	TableRow
 } from '~/common/components/ui/table';
+import { Textarea } from '~/common/components/ui/textarea';
+import { toast } from 'sonner';
 import { api } from '~/trpc/react';
 
 function StudentAvatar({
@@ -44,6 +63,16 @@ function StudentAvatar({
 
 function MentorDashboardContent() {
 	const [searchTerm, setSearchTerm] = useState('');
+	const [statusFilter, setStatusFilter] = useState<
+		'active' | 'canceled' | 'all'
+	>('active');
+	const [projectPendingCancellationId, setProjectPendingCancellationId] =
+		useState<string | null>(null);
+	const [refundCanceledProjectCredits, setRefundCanceledProjectCredits] =
+		useState(true);
+	const [cancellationReason, setCancellationReason] = useState('');
+	const [cancellationConfirmed, setCancellationConfirmed] = useState(false);
+	const utils = api.useUtils();
 
 	const {
 		data: projectsData,
@@ -53,7 +82,8 @@ function MentorDashboardContent() {
 		isFetchingNextPage
 	} = api.project.getActiveProjects.useInfiniteQuery(
 		{
-			limit: 12
+			limit: 12,
+			status: statusFilter
 		},
 		{
 			getNextPageParam: (lastPage) => lastPage.nextCursor
@@ -61,6 +91,56 @@ function MentorDashboardContent() {
 	);
 
 	const projects = projectsData?.pages.flatMap((page) => page.projects) ?? [];
+	const projectPendingCancellation =
+		projects.find((project) => project.id === projectPendingCancellationId) ??
+		null;
+
+	const cancelProject = api.project.cancelProject.useMutation({
+		onSuccess: async (result) => {
+			setProjectPendingCancellationId(null);
+			setRefundCanceledProjectCredits(true);
+			setCancellationReason('');
+			setCancellationConfirmed(false);
+			await utils.project.getActiveProjects.invalidate();
+			toast.success(
+				result.refundedCredits
+					? `Project canceled. ${result.refundedCredits} credits refunded.`
+					: 'Project canceled'
+			);
+		},
+		onError: (error) => {
+			toast.error(error.message ?? 'Failed to cancel project');
+		}
+	});
+
+	const openCancellationDialog = (projectId: string) => {
+		setProjectPendingCancellationId(projectId);
+		setRefundCanceledProjectCredits(true);
+		setCancellationReason('');
+		setCancellationConfirmed(false);
+	};
+
+	const closeCancellationDialog = () => {
+		if (cancelProject.isPending) {
+			return;
+		}
+		setProjectPendingCancellationId(null);
+		setRefundCanceledProjectCredits(true);
+		setCancellationReason('');
+		setCancellationConfirmed(false);
+	};
+
+	const confirmCancelProject = () => {
+		if (!projectPendingCancellation || !cancellationReason.trim()) {
+			return;
+		}
+
+		cancelProject.mutate({
+			projectId: projectPendingCancellation.id,
+			refundCredits: refundCanceledProjectCredits,
+			reason: cancellationReason.trim()
+		});
+	};
 
 	const filteredProjects = projects.filter(
 		(project) =>
@@ -91,6 +171,13 @@ function MentorDashboardContent() {
 		return { variant: 'default' as const, text: 'Near Completion' };
 	};
 
+	const projectCountLabel =
+		statusFilter === 'active'
+			? 'Active Projects'
+			: statusFilter === 'canceled'
+				? 'Canceled Projects'
+				: 'Projects';
+
 	return (
 		<div className="container mx-auto px-4 py-8">
 			<div className="mb-8">
@@ -104,7 +191,7 @@ function MentorDashboardContent() {
 					<div className="flex items-center gap-2">
 						<Users className="h-5 w-5 text-info" />
 						<span className="text-muted-foreground text-sm">
-							{projects.length} Active Projects
+							{projects.length} {projectCountLabel}
 						</span>
 					</div>
 				</div>
@@ -116,6 +203,21 @@ function MentorDashboardContent() {
 						onChange={(e) => setSearchTerm(e.target.value)}
 						className="max-w-md"
 					/>
+					<Select
+						value={statusFilter}
+						onValueChange={(value) =>
+							setStatusFilter(value as typeof statusFilter)
+						}
+					>
+						<SelectTrigger className="w-40">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="active">Active</SelectItem>
+							<SelectItem value="canceled">Canceled</SelectItem>
+							<SelectItem value="all">All</SelectItem>
+						</SelectContent>
+					</Select>
 				</div>
 			</div>
 
@@ -183,7 +285,9 @@ function MentorDashboardContent() {
 						<p className="mb-4 text-muted-foreground text-sm">
 							{searchTerm
 								? 'Try adjusting your search criteria.'
-								: 'No active projects yet.'}
+								: statusFilter === 'canceled'
+									? 'No canceled projects.'
+									: 'No active projects yet.'}
 						</p>
 					</CardContent>
 				</Card>
@@ -248,7 +352,15 @@ function MentorDashboardContent() {
 													</div>
 												</TableCell>
 												<TableCell>
-													<Badge variant={status.variant}>{status.text}</Badge>
+													<Badge
+														variant={
+															project.canceledAt
+																? 'destructive'
+																: status.variant
+														}
+													>
+														{project.canceledAt ? 'Canceled' : status.text}
+													</Badge>
 												</TableCell>
 												<TableCell>
 													<Badge variant="outline">
@@ -271,12 +383,26 @@ function MentorDashboardContent() {
 													</div>
 												</TableCell>
 												<TableCell className="text-right">
-													<Button asChild size="sm">
-														<Link href={`/workspace/${project.id}`}>
-															<Play className="mr-2 h-4 w-4" />
-															View Workspace
-														</Link>
-													</Button>
+													<div className="flex justify-end gap-2">
+														<Button asChild size="sm">
+															<Link href={`/workspace/${project.id}`}>
+																<Play className="mr-2 h-4 w-4" />
+																View Workspace
+															</Link>
+														</Button>
+														{!project.canceledAt && (
+															<Button
+																type="button"
+																size="sm"
+																variant="destructive"
+																onClick={() =>
+																	openCancellationDialog(project.id)
+																}
+															>
+																Cancel
+															</Button>
+														)}
+													</div>
 												</TableCell>
 											</TableRow>
 										);
@@ -299,6 +425,120 @@ function MentorDashboardContent() {
 					)}
 				</>
 			)}
+
+			<Dialog
+				open={projectPendingCancellation !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						closeCancellationDialog();
+					}
+				}}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2">
+							<AlertTriangle className="h-5 w-5 text-destructive" />
+							Cancel project?
+						</DialogTitle>
+						<DialogDescription>
+							This is one-way. Current members keep history access, pending
+							invitations are canceled, and normal workspace actions are
+							blocked.
+						</DialogDescription>
+					</DialogHeader>
+
+					{projectPendingCancellation && (
+						<div className="space-y-4 py-2 text-sm">
+							<div className="rounded-md bg-muted/50 p-3">
+								<p className="font-medium">
+									{projectPendingCancellation.title}
+								</p>
+								<p className="text-muted-foreground text-xs">
+									{projectPendingCancellation.members.length} current member
+									{projectPendingCancellation.members.length === 1 ? '' : 's'}{' '}
+									will be notified.
+								</p>
+							</div>
+
+							<div className="flex items-start gap-2 rounded-md border p-3">
+								<Checkbox
+									id="cancel-project-refund"
+									checked={refundCanceledProjectCredits}
+									onCheckedChange={(checked) =>
+										setRefundCanceledProjectCredits(checked === true)
+									}
+									disabled={cancelProject.isPending}
+								/>
+								<div className="space-y-1">
+									<Label htmlFor="cancel-project-refund">
+										Refund eligible in-app credits
+									</Label>
+									<p className="text-muted-foreground text-xs">
+										On by default. Refunds unrefunded positive credit evidence
+										for current members only.
+									</p>
+								</div>
+							</div>
+
+							<div className="space-y-1.5">
+								<Label htmlFor="cancel-project-reason">Reason</Label>
+								<Textarea
+									id="cancel-project-reason"
+									value={cancellationReason}
+									onChange={(event) =>
+										setCancellationReason(event.target.value)
+									}
+									placeholder="Visible to current members and pending invitees"
+									rows={3}
+									maxLength={500}
+									className="resize-none"
+									disabled={cancelProject.isPending}
+								/>
+							</div>
+
+							<div className="flex items-start gap-2 rounded-md border border-destructive/30 p-3">
+								<Checkbox
+									id="cancel-project-confirm"
+									checked={cancellationConfirmed}
+									onCheckedChange={(checked) =>
+										setCancellationConfirmed(checked === true)
+									}
+									disabled={cancelProject.isPending}
+								/>
+								<Label
+									htmlFor="cancel-project-confirm"
+									className="leading-relaxed"
+								>
+									I understand this cancellation cannot be undone.
+								</Label>
+							</div>
+						</div>
+					)}
+
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={closeCancellationDialog}
+							disabled={cancelProject.isPending}
+						>
+							Keep project
+						</Button>
+						<Button
+							type="button"
+							variant="destructive"
+							onClick={confirmCancelProject}
+							disabled={
+								cancelProject.isPending ||
+								!cancellationReason.trim() ||
+								!cancellationConfirmed
+							}
+						>
+							{cancelProject.isPending ? 'Canceling…' : 'Cancel project'}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

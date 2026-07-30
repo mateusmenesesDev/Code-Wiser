@@ -8,7 +8,10 @@ import {
 	voteSchema
 } from '~/features/planningPoker/schemas/planningPoker.schema';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectIsActive,
+	userHasAccessToProject
+} from '~/server/utils/auth';
 
 export const planningPokerMutations = {
 	createSession: adminProcedure
@@ -20,6 +23,7 @@ export const planningPokerMutations = {
 					message: 'You must be logged in to create a planning poker session'
 				});
 			}
+			await assertProjectIsActive(ctx.db, input.projectId);
 
 			const activeSession = await ctx.db.planningPokerSession.findFirst({
 				where: {
@@ -52,15 +56,6 @@ export const planningPokerMutations = {
 				});
 			}
 
-			const user = await ctx.db.user.findUnique({
-				where: { id: ctx.session.userId },
-				select: {
-					id: true,
-					name: true,
-					email: true
-				}
-			});
-
 			const session = await ctx.db.planningPokerSession.create({
 				data: {
 					projectId: input.projectId,
@@ -85,19 +80,6 @@ export const planningPokerMutations = {
 					}
 				}
 			});
-
-			if (user) {
-				await ctx.realtime.trigger(
-					`planning-poker-${session.id}`,
-					'member-joined',
-					{
-						sessionId: session.id,
-						userId: user.id,
-						userName: user.name,
-						userEmail: user.email
-					}
-				);
-			}
 
 			return session;
 		}),
@@ -131,32 +113,9 @@ export const planningPokerMutations = {
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+			await assertProjectIsActive(ctx.db, session.projectId);
 
-			// Get user info for broadcast
-			const user = await ctx.db.user.findUnique({
-				where: { id: ctx.session.userId },
-				select: {
-					id: true,
-					name: true,
-					email: true
-				}
-			});
-
-			if (user) {
-				await ctx.realtime.trigger(
-					`planning-poker-${input.sessionId}`,
-					'member-joined',
-					{
-						sessionId: input.sessionId,
-						userId: user.id,
-						userName: user.name,
-						userEmail: user.email
-					}
-				);
-			}
-
-			// Join is implicit - just return success
-			// The actual participation is tracked when user votes
+			// Presence membership is tracked by Pusher subscription state.
 			return { success: true };
 		}),
 
@@ -191,6 +150,7 @@ export const planningPokerMutations = {
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+			await assertProjectIsActive(ctx.db, session.projectId);
 
 			const currentTaskId = session.taskIds[session.currentTaskIndex];
 			if (!currentTaskId) {
@@ -230,7 +190,7 @@ export const planningPokerMutations = {
 				}
 			});
 
-			await ctx.realtime.trigger(`planning-poker-${input.sessionId}`, 'vote', {
+			await ctx.realtime.trigger(`presence-planning-poker-${input.sessionId}`, 'vote', {
 				sessionId: input.sessionId,
 				taskId: currentTaskId,
 				userId: vote.user.id,
@@ -271,6 +231,7 @@ export const planningPokerMutations = {
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+			await assertProjectIsActive(ctx.db, session.projectId);
 
 			const currentTaskId = session.taskIds[session.currentTaskIndex];
 			if (!currentTaskId) {
@@ -303,7 +264,7 @@ export const planningPokerMutations = {
 				}
 			});
 
-			await ctx.realtime.trigger(`planning-poker-${input.sessionId}`, 'vote', {
+			await ctx.realtime.trigger(`presence-planning-poker-${input.sessionId}`, 'vote', {
 				sessionId: input.sessionId,
 				taskId: currentTaskId,
 				userId: vote.user.id,
@@ -348,6 +309,7 @@ export const planningPokerMutations = {
 					message: 'Only the session creator can finalize tasks'
 				});
 			}
+			await assertProjectIsActive(ctx.db, session.projectId);
 
 			const currentTaskId = session.taskIds[session.currentTaskIndex];
 			if (!currentTaskId) {
@@ -386,7 +348,7 @@ export const planningPokerMutations = {
 			});
 
 			await ctx.realtime.trigger(
-				`planning-poker-${input.sessionId}`,
+				`presence-planning-poker-${input.sessionId}`,
 				'task-finalized',
 				{
 					sessionId: input.sessionId,
@@ -430,6 +392,8 @@ export const planningPokerMutations = {
 				});
 			}
 
+			await assertProjectIsActive(ctx.db, session.projectId);
+
 			const updatedSession = await ctx.db.planningPokerSession.update({
 				where: { id: input.sessionId },
 				data: {
@@ -438,7 +402,7 @@ export const planningPokerMutations = {
 			});
 
 			await ctx.realtime.trigger(
-				`planning-poker-${input.sessionId}`,
+				`presence-planning-poker-${input.sessionId}`,
 				'session-ended',
 				{
 					sessionId: input.sessionId

@@ -9,15 +9,27 @@ model Project {
   maxParticipants Int
   accessType      ProjectAccessTypeEnum
   difficulty      ProjectDifficultyEnum
+  creditCost      Int?
   figmaProjectUrl String?
-  tasks           Task[]
-  categoryId      String
-  category        Category               @relation(fields: [categoryId], references: [id])
+  publicCode      String?                @unique
+  nextTaskNumber  Int                    @default(1)
+
+  canceledAt                    DateTime?
+  canceledById                  String?
+  cancellationReason            String?
+  refundCreditsOnCancellation   Boolean   @default(false)
+  refundedCreditsOnCancellation Int       @default(0)
+
+  tasks      Task[]
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
   epics                 Epic[]
   sprints               Sprint[]
   members               User[]
   planningPokerSessions PlanningPokerSession[]
+  invitations           ProjectInvitation[]
 
+  @@index([canceledAt])
   @@schema("public")
 }

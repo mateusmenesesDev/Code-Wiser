@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "app": {
+    "directory": ".",
+    "packageManager": "bun"
+  },
+  "setup": {
+    "name": "install",
+    "command": "echo install-ok",
+    "timeoutSeconds": 60
+  },
+  "checks": [
+    {
+      "name": "test",
+      "command": "echo test-ok",
+      "timeoutSeconds": 60
+    }
+  ],
+  "preview": {
+    "provider": "github-deployment",
+    "environmentPattern": "remediation-*",
+    "timeoutSeconds": 900
+  },
+  "fixtures": {
+    "seed": {
+      "name": "seed",
+      "command": "echo seed-ok",
+      "timeoutSeconds": 60
+    },
+    "reset": {
+      "name": "reset",
+      "command": "echo reset-ok",
+      "timeoutSeconds": 60
+    },
+    "testTenant": "local-test"
+  },
+  "harnesses": {
+    "browser": false,
+    "http": false,
+    "httpScenarios": [],
+    "commands": [
+      {
+        "name": "smoke",
+        "command": "echo reproduce-ok",
+        "timeoutSeconds": 60
+      }
+    ]
+  },
+  "security": {
+    "secretRefs": [],
+    "allowedEgress": [],
+    "allowedSandboxEndpoints": []
+  },
+  "sandbox": {
+    "cpuLimit": 2,
+    "memoryLimitMb": 4096,
+    "diskQuotaMb": 10240
+  },
+  "observation": {
+    "windowDays": 7,
+    "releaseDetectionTimeoutDays": 7
+  },
+  "patch": {
+    "maxFiles": 8,
+    "maxLines": 350,
+    "forbiddenPaths": ["prisma/migrations/", "src/middleware.ts"],
+    "highRisk": {
+      "dependencies": false,
+      "migrations": false,
+      "authentication": false,
+      "infrastructure": false
+    }
+  }
+}

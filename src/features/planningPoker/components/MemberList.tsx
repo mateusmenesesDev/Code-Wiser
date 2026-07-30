@@ -18,7 +18,12 @@ interface MemberListProps {
 export function MemberList({ members, currentUserId }: MemberListProps) {
 	return (
 		<div className="space-y-2">
-			<h3 className="mb-4 font-semibold text-sm">Participants</h3>
+			<h3 className="mb-4 font-semibold text-sm">
+				Online members ({members.length})
+			</h3>
+			{members.length === 0 && (
+				<p className="text-muted-foreground text-sm">No one is online yet.</p>
+			)}
 			{members.map((member) => {
 				const isCurrentUser = member.id === currentUserId;
 				return (

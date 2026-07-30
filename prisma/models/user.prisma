@@ -33,14 +33,21 @@ model User {
   remainingWeeklySessions  Int              @default(1)
   weeklySessionsResetAt    DateTime?
 
+  normalOnboardingCompletedAt     DateTime?
+  mentorshipOnboardingCompletedAt DateTime?
+
   tasks                        Task[]
   projects                     Project[]
   comments                     Comment[]
+  taskAttachments              TaskAttachment[]
   prReviews                    PullRequestReview[]
   createdPlanningPokerSessions PlanningPokerSession[] @relation("PlanningPokerSessionCreator")
   planningPokerVotes           PlanningPokerVote[]
   notifications                Notification[]
+  projectInvitationsReceived   ProjectInvitation[]  @relation("ProjectInvitationsReceived")
+  projectInvitationsSent       ProjectInvitation[]  @relation("ProjectInvitationsSent")
   mentorshipBookings           MentorshipBooking[]
+  feedbackReports              FeedbackReport[]
 
   @@schema("public")
 }

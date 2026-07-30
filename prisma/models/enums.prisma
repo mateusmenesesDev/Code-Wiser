@@ -108,6 +108,38 @@ enum NotificationType {
   TASK_STATUS_CHANGED
   TASK_BLOCKED
   TASK_UNBLOCKED
+  PROJECT_MEMBER_ADDED
+  PROJECT_INVITATION_RECEIVED
+  PROJECT_INVITATION_ACCEPTED
+  PROJECT_INVITATION_DECLINED
+  PROJECT_INVITATION_CANCELED
+  PROJECT_MEMBER_REMOVED
+  PROJECT_CANCELED
+
+  @@schema("public")
+}
+
+// Internal state for member removals and optional credit refunds.
+enum ProjectMemberRemovalRefundStatus {
+  NOT_APPLICABLE
+  NOT_REQUESTED
+  REFUNDED
+
+  @@schema("public")
+}
+
+enum ProjectCreditPaymentEvidenceSource {
+  PROJECT_CREATION
+  PROJECT_INVITATION_ACCEPTANCE
+
+  @@schema("public")
+}
+
+enum ProjectInvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELED
 
   @@schema("public")
 }

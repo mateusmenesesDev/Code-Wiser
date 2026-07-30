@@ -1,165 +1,61 @@
-## Authentication Overview
+# Authentication and authorization
 
-This app uses Clerk for authentication and organization-based authorization, integrated with Next.js App Router and tRPC.
+Clerk provides identity and organization claims. tRPC procedures enforce server authorization. UI guards are not enough.
 
-- Clerk middleware protects requests and injects auth context.
-- Server-side auth is accessed via `auth()` and tRPC context.
-- UI is conditionally rendered with Clerk’s `Protect` component.
-- Roles are organization-scoped; "admin" grants elevated access.
+## Key files
 
-### Key files
-
-- `src/middleware.ts`: `clerkMiddleware()` for request auth context.
-- `src/app/layout.tsx`: wraps app in `ClerkProvider` and syncs active org.
-- `src/features/auth/components/SyncActiveOrganizations.tsx`: auto-sets org.
-- `src/server/api/trpc.ts`: creates tRPC context with session and role; defines `publicProcedure`, `protectedProcedure`, `adminProcedure`.
-- `src/app/api/trpc/[trpc]/route.ts` and `src/trpc/server.ts`: wire tRPC handlers and RSC caller with auth-aware headers.
-- `src/app/api/webhooks/clerk/route.ts`: verifies Clerk webhooks (create/update/delete user in DB).
-- `src/app/(auth)/sso-callback/page.tsx`: handles OAuth redirect with Clerk.
-- `src/app/api/uploadthing/core.ts`: enforces auth for uploads.
-- Example UI guards: `src/common/components/layout/Header/HeaderItem.tsx`, `src/features/templates/components/AdminTemplatesPage.tsx`.
+- `src/middleware.ts`: `clerkMiddleware()` attaches Clerk auth context to requests.
+- `src/app/layout.tsx`: wraps the app in `ClerkProvider` and renders `SyncActiveOrganization`.
+- `src/features/auth/components/SyncActiveOrganizations.tsx`: sets the active org from `sessionClaims.membership` when none is active.
+- `src/server/api/trpc.ts`: creates tRPC context and exports `publicProcedure`, `protectedProcedure`, `adminProcedure`, `mentorshipProcedure`.
+- `src/app/api/trpc/[trpc]/route.ts`: tRPC HTTP boundary.
+- `src/trpc/server.ts`: RSC tRPC caller with request headers.
+- `src/app/api/webhooks/clerk/route.ts`: verifies Clerk webhooks and mirrors user create/update/delete into the DB.
+- `src/app/api/uploadthing/core.ts`: upload auth boundary.
 
 ## Runtime flow
 
-1. Request enters via Next.js routes
-
-- `src/middleware.ts` runs `clerkMiddleware()` to attach Clerk session/claims.
-
-2. Providers and org sync
-
-- `src/app/layout.tsx` uses `ClerkProvider` and renders `SyncActiveOrganization` with `sessionClaims?.membership` to ensure an active organization is set client-side when missing.
-
-3. Server context for API and RSC
-
-- `src/server/api/trpc.ts` `createTRPCContext` calls `auth()` to read `session` and computes `isAdmin` based on org claims.
-- `protectedProcedure` requires `ctx.session.userId`.
-- `adminProcedure` requires `ctx.isAdmin`.
-
-4. Webhooks and side effects
-
-- `src/app/api/webhooks/clerk/route.ts` verifies via Svix using `env.CLERK_WEBHOOK_SECRET` and mirrors user changes to the app DB.
-
-5. Uploads and other server routes
-
-- `src/app/api/uploadthing/core.ts` calls `auth()` and rejects when `!userId`.
-- Other routes (e.g., Stripe checkout) read `auth()` to associate actions to the user.
+1. Request enters Next.js and Clerk middleware makes `auth()` available.
+2. Root layout installs Clerk and syncs a default active organization client-side.
+3. tRPC context calls `auth()`, exposes `session`, and computes `isAdmin` from org role claims.
+4. Procedures enforce access:
+   - `publicProcedure`: no login requirement.
+   - `protectedProcedure`: requires `ctx.session.userId`.
+   - `adminProcedure`: requires signed-in user and admin org role.
+   - `mentorshipProcedure`: requires signed-in user with DB `mentorshipStatus === 'ACTIVE'`.
+5. Webhooks and route handlers that bypass tRPC must call `auth()` or verify their own webhook signatures.
 
 ## Roles and claims
 
-- Clerk session includes organization claims under `session.sessionClaims.o` with shape `{ id, rol, slg }`.
-- `isAdmin` is true if `rol === 'admin'` or `session.has({ role: 'org:admin' })`.
-- Use `adminProcedure` for admin-only tRPC endpoints and `Protect role="org:admin"` for admin-only UI.
+- Clerk org claims are read from `session.sessionClaims?.o` with `{ id, rol, slg }` shape.
+- Admin is true when `rol === 'admin'` or `session.has({ role: 'org:admin' })`.
+- Use Clerk `<Protect role="org:admin">` only for hiding UI; use `adminProcedure` for the actual server permission check.
 
-## Server usage patterns
+## Patterns
 
-### tRPC protected procedure (require signed-in user)
+- New user-owned tRPC operation: use `protectedProcedure`; read `ctx.session.userId`; check row ownership/membership before DB writes.
+- New admin operation: use `adminProcedure` even if the page is under `/admin`.
+- New mentorship-only operation: use `mentorshipProcedure` or share the domain check in `src/features/mentorship/utils` / `src/server/services/mentorship` when appropriate.
+- New route handler: call `auth()` from `@clerk/nextjs/server`, reject missing `userId`, validate request body, then perform work.
+- New webhook: verify provider signature first; webhook trust does not come from Clerk session.
 
-```ts
-import { protectedProcedure } from "~/server/api/trpc";
+## User mirroring
 
-export const exampleRouter = {
-  getMine: protectedProcedure.query(({ ctx }) => {
-    const userId = ctx.session.userId;
-    return ctx.db.resource.findMany({ where: { ownerId: userId } });
-  }),
-};
-```
+`src/app/api/webhooks/clerk/route.ts` handles:
 
-### tRPC admin-only procedure (require org admin)
+- `user.created`: creates an app DB user for Google/GitHub OAuth users.
+- `user.updated`: updates email/name.
+- `user.deleted`: deletes by Clerk user ID.
 
-```ts
-import { adminProcedure } from "~/server/api/trpc";
+If user fields or onboarding state change, update the Prisma user model and this webhook path together.
 
-export const adminRouter = {
-  deleteAny: adminProcedure.mutation(async ({ ctx, input }) => {
-    return ctx.db.resource.delete({ where: { id: input.id } });
-  }),
-};
-```
+## Environment ownership
 
-### Read auth in a Route Handler
+`CLERK_WEBHOOK_SECRET` is validated in `src/env.js` and required by the Clerk webhook route. Clerk publishable/secret keys are deployment configuration, not code-level setup guidance.
 
-```ts
-import { auth } from "@clerk/nextjs/server";
+## Review checklist
 
-export async function POST() {
-  const { userId } = auth();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
-  // handle request for userId
-  return new Response("ok");
-}
-```
-
-## Client usage patterns
-
-### UI protection
-
-```tsx
-import { Protect } from "@clerk/nextjs";
-
-export function AdminOnly({ children }: { children: React.ReactNode }) {
-  return <Protect role="org:admin">{children}</Protect>;
-}
-```
-
-### Sign in and sign out (custom hook)
-
-- `src/features/auth/hooks/useAuth.ts` wraps Clerk SDK for OAuth authentication (Google and GitHub) and sign out.
-- Components using it: `SigninDialog` for OAuth authentication flows.
-
-## SSO callback
-
-- `src/app/(auth)/sso-callback/page.tsx` renders `AuthenticateWithRedirectCallback` to complete OAuth flows.
-
-## Webhooks
-
-- `src/app/api/webhooks/clerk/route.ts`
-  - Verifies `svix-*` headers using `env.CLERK_WEBHOOK_SECRET`.
-  - Handles:
-    - `user.created`: creates a DB user only for Google OAuth users.
-    - `user.updated`: updates email/name.
-    - `user.deleted`: deletes DB user by Clerk ID.
-
-## Uploads
-
-- `src/app/api/uploadthing/core.ts` requires `auth().userId`; rejects with `UploadThingError('Unauthorized')` otherwise.
-
-## Environment variables
-
-Defined/validated in `src/env.js`:
-
-- `CLERK_WEBHOOK_SECRET`: required to verify Clerk webhooks.
-
-Common Clerk variables (configure in your deployment env):
-
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk frontend key.
-- `CLERK_SECRET_KEY`: Clerk backend key.
-
-Other relevant variables (used elsewhere): Stripe keys/price IDs and `UPLOADTHING_TOKEN`.
-
-## How to add auth to new features
-
-- Server (tRPC):
-
-  - Require sign-in: use `protectedProcedure`.
-  - Require admin: use `adminProcedure`.
-  - Access user: `ctx.session.userId`.
-
-- Server (Route Handlers/RSC):
-
-  - Call `auth()` from `@clerk/nextjs/server` to get `{ userId, orgId, sessionId, sessionClaims }`.
-
-- Client UI:
-  - Wrap admin-only elements with `<Protect role="org:admin">`.
-
-## Reference map (where to look in code)
-
-- Middleware: `src/middleware.ts`
-- Providers/layout: `src/app/layout.tsx`
-- Org sync: `src/features/auth/components/SyncActiveOrganizations.tsx`
-- tRPC context and procedures: `src/server/api/trpc.ts`
-- App router tRPC endpoints: `src/app/api/trpc/[trpc]/route.ts`
-- RSC tRPC helper: `src/trpc/server.ts`
-- UI guards: `src/common/components/layout/Header/HeaderItem.tsx`, `src/features/templates/components/AdminTemplatesPage.tsx`
-- Webhooks: `src/app/api/webhooks/clerk/route.ts`
-- Upload auth: `src/app/api/uploadthing/core.ts`
+- Is every server mutation protected by the right tRPC procedure or `auth()` check?
+- Is ownership checked after authentication, not inferred from UI state?
+- Are admin-only pages backed by `adminProcedure`?
+- Are webhook handlers signature-verified before side effects?

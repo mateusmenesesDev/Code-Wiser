@@ -1,0 +1,31 @@
+model ProjectMemberRemovalAudit {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  projectId            String
+  projectTitleSnapshot String
+  userId               String
+  userEmailSnapshot    String
+  removedById          String
+  reason               String?
+
+  memberCountBefore Int
+  wasLastMember     Boolean @default(false)
+  wasSelfRemoval    Boolean @default(false)
+  tasksUnassigned   Int     @default(0)
+
+  refundEligible  Boolean                          @default(false)
+  refundRequested Boolean                          @default(false)
+  refundStatus    ProjectMemberRemovalRefundStatus @default(NOT_APPLICABLE)
+  refundedCredits Int?
+
+  paymentEvidenceId String?                       @unique
+  paymentEvidence   ProjectCreditPaymentEvidence? @relation(fields: [paymentEvidenceId], references: [id], onDelete: SetNull)
+
+  legacyPaymentEvidenceInvitationId String?            @unique
+  legacyPaymentEvidenceInvitation   ProjectInvitation? @relation(fields: [legacyPaymentEvidenceInvitationId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, userId])
+  @@index([removedById])
+  @@schema("public")
+}
