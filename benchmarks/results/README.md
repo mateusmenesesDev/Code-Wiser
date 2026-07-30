@@ -10,5 +10,6 @@ JSON reports from `bun run bench` / `bun run bench:full`.
 | `after-phase-3.json` | After enrolled aggregates. My-projects **round-trips: 25 → 1** (1 list + 2×P fan-out removed) |
 | `after-phase-4.json` | After slim admin list + narrow `getById`. Admin page lean vs heavy payload ≈ **10 KB vs 43 KB** |
 | `after-phase-5.json` | Org-admin projection: admin resolution **O(U) Clerk → O(1) local `isOrgAdmin` query** |
+| `after-phase-6.json` | Template clone + bulk-create use UUID maps + `createMany` (same as project-from-template). `bulkInsertClone` ≈ **1.9s** mean for 150 tasks (3 inserts vs prior per-row creates) |
 
 Compare later phases by re-running with `--label after-phase-N` and diffing the same metrics (catalog `payloadBytes`, my-projects `roundTrips`, clone `bulkInsertClone`, client means).

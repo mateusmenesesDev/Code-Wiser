@@ -171,10 +171,33 @@ export async function runServerBenches(
 		adminActiveProjects
 	};
 
+	// Select only columns needed for clone remaps. Avoid full Task scalars so the
+	// bench still runs when remote schema lags local (e.g. missing assigneeId).
+	const cloneTaskSelect = {
+		id: true,
+		title: true,
+		description: true,
+		type: true,
+		tags: true,
+		priority: true,
+		status: true,
+		order: true,
+		storyPoints: true,
+		epicId: true,
+		sprintId: true
+	} as const;
+
 	let sourceTemplate: Awaited<
-		ReturnType<typeof db.projectTemplate.findFirst<{
-			include: { tasks: true; epics: true; sprints: true; category: true };
-		}>>
+		ReturnType<
+			typeof db.projectTemplate.findFirst<{
+				include: {
+					tasks: { select: typeof cloneTaskSelect };
+					epics: true;
+					sprints: true;
+					category: true;
+				};
+			}>
+		>
 	> = null;
 
 	try {
@@ -184,7 +207,7 @@ export async function runServerBenches(
 				status: 'APPROVED'
 			},
 			include: {
-				tasks: true,
+				tasks: { select: cloneTaskSelect },
 				epics: true,
 				sprints: true,
 				category: true
@@ -212,7 +235,7 @@ export async function runServerBenches(
 			db.projectTemplate.findUniqueOrThrow({
 				where: { id: sourceTemplate.id },
 				include: {
-					tasks: true,
+					tasks: { select: cloneTaskSelect },
 					epics: true,
 					sprints: true
 				}

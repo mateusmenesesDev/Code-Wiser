@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { UTApi } from 'uploadthing/server';
@@ -357,65 +358,49 @@ export const projectTemplateMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { projectTemplateId, data } = input;
 
-			// Increase timeout to 30 seconds for large bulk operations
 			return await ctx.db.$transaction(
 				async (prisma) => {
-					// Create epics first (in parallel)
 					const epicTitleToId: Record<string, string> = {};
-					const epicPromises = (data.epics || []).map(async (epicData) => {
-						const epic = await prisma.epic.create({
-							data: {
-								title: epicData.title,
-								description: epicData.description,
-								projectTemplate: {
-									connect: { id: projectTemplateId }
-								}
-							}
-						});
-						return { title: epicData.title, id: epic.id };
+					const epicRows = (data.epics || []).map((epicData) => {
+						const id = randomUUID();
+						epicTitleToId[epicData.title] = id;
+						return {
+							id,
+							title: epicData.title,
+							description: epicData.description,
+							projectTemplateId
+						};
 					});
 
-					const createdEpics = await Promise.all(epicPromises);
-					for (const { title, id } of createdEpics) {
-						epicTitleToId[title] = id;
+					if (epicRows.length > 0) {
+						await prisma.epic.createMany({ data: epicRows });
 					}
 
-					// Create sprints (in parallel)
 					const sprintTitleToId: Record<string, string> = {};
 					const sprintCount = await prisma.sprint.count({
 						where: { projectTemplateId }
 					});
 
-					const sprintsToCreate = data.sprints || [];
-					const sprintPromises = sprintsToCreate.map(async (sprintData, i) => {
-						if (!sprintData) return null;
-						const sprint = await prisma.sprint.create({
-							data: {
-								title: sprintData.title,
-								description: sprintData.description,
-								startDate: sprintData.startDate
-									? new Date(sprintData.startDate)
-									: null,
-								endDate: sprintData.endDate
-									? new Date(sprintData.endDate)
-									: null,
-								order: sprintData.order ?? sprintCount + i,
-								projectTemplate: {
-									connect: { id: projectTemplateId }
-								}
-							}
-						});
-						return { title: sprintData.title, id: sprint.id };
+					const sprintRows = (data.sprints || []).map((sprintData, i) => {
+						const id = randomUUID();
+						sprintTitleToId[sprintData.title] = id;
+						return {
+							id,
+							title: sprintData.title,
+							description: sprintData.description,
+							startDate: sprintData.startDate
+								? new Date(sprintData.startDate)
+								: null,
+							endDate: sprintData.endDate ? new Date(sprintData.endDate) : null,
+							order: sprintData.order ?? sprintCount + i,
+							projectTemplateId
+						};
 					});
 
-					const createdSprints = await Promise.all(sprintPromises);
-					for (const result of createdSprints) {
-						if (result) {
-							sprintTitleToId[result.title] = result.id;
-						}
+					if (sprintRows.length > 0) {
+						await prisma.sprint.createMany({ data: sprintRows });
 					}
 
-					// Validate and prepare tasks
 					const warnings: string[] = [];
 					const taskCount = data.tasks?.length ?? 0;
 					const publicNumberStart = taskCount
@@ -427,85 +412,47 @@ export const projectTemplateMutations = {
 								})
 							).nextTaskNumber - taskCount
 						: 1;
-					const tasksToCreate = (data.tasks || []).map(
-						(taskData, taskIndex) => {
-							// Validate epic and sprint references
-							if (taskData.epicTitle && !epicTitleToId[taskData.epicTitle]) {
-								warnings.push(
-									`Task "${taskData.title}": Epic "${taskData.epicTitle}" not found. Task will be created without epic.`
-								);
-							}
-							if (
-								taskData.sprintTitle &&
-								!sprintTitleToId[taskData.sprintTitle]
-							) {
-								warnings.push(
-									`Task "${taskData.title}": Sprint "${taskData.sprintTitle}" not found. Task will be created without sprint.`
-								);
-							}
 
-							return {
-								title: taskData.title,
-								description: taskData.description,
-								type: taskData.type,
-								priority: taskData.priority,
-								tags: taskData.tags || [],
-								blocked: taskData.blocked ?? false,
-								blockedReason: taskData.blockedReason,
-								status: taskData.status,
-								order: taskData.order,
-								storyPoints: taskData.storyPoints,
-								dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
-								publicNumber: publicNumberStart + taskIndex,
-								epicId: taskData.epicTitle
-									? epicTitleToId[taskData.epicTitle] || null
-									: null,
-								sprintId: taskData.sprintTitle
-									? sprintTitleToId[taskData.sprintTitle] || null
-									: null
-							};
+					const taskRows = (data.tasks || []).map((taskData, taskIndex) => {
+						if (taskData.epicTitle && !epicTitleToId[taskData.epicTitle]) {
+							warnings.push(
+								`Task "${taskData.title}": Epic "${taskData.epicTitle}" not found. Task will be created without epic.`
+							);
 						}
-					);
+						if (
+							taskData.sprintTitle &&
+							!sprintTitleToId[taskData.sprintTitle]
+						) {
+							warnings.push(
+								`Task "${taskData.title}": Sprint "${taskData.sprintTitle}" not found. Task will be created without sprint.`
+							);
+						}
 
-					// Create tasks in batches to avoid overwhelming the database
-					const batchSize = 50;
-					const taskBatches = [];
-					for (let i = 0; i < tasksToCreate.length; i += batchSize) {
-						taskBatches.push(tasksToCreate.slice(i, i + batchSize));
-					}
+						return {
+							title: taskData.title,
+							description: taskData.description,
+							type: taskData.type,
+							priority: taskData.priority,
+							tags: taskData.tags || [],
+							blocked: taskData.blocked ?? false,
+							blockedReason: taskData.blockedReason,
+							status: taskData.status,
+							order: taskData.order,
+							storyPoints: taskData.storyPoints,
+							dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+							publicNumber: publicNumberStart + taskIndex,
+							projectTemplateId,
+							epicId: taskData.epicTitle
+								? (epicTitleToId[taskData.epicTitle] ?? null)
+								: null,
+							sprintId: taskData.sprintTitle
+								? (sprintTitleToId[taskData.sprintTitle] ?? null)
+								: null
+						};
+					});
 
-					const tasks = [];
-					for (const batch of taskBatches) {
-						const batchPromises = batch.map(async (taskData) => {
-							const task = await prisma.task.create({
-								data: {
-									title: taskData.title,
-									description: taskData.description,
-									type: taskData.type,
-									priority: taskData.priority,
-									tags: taskData.tags,
-									blocked: taskData.blocked,
-									blockedReason: taskData.blockedReason,
-									status: taskData.status,
-									order: taskData.order,
-									storyPoints: taskData.storyPoints,
-									dueDate: taskData.dueDate,
-									publicNumber: taskData.publicNumber,
-									projectTemplate: {
-										connect: { id: projectTemplateId }
-									},
-									epic: taskData.epicId
-										? { connect: { id: taskData.epicId } }
-										: undefined,
-									sprint: taskData.sprintId
-										? { connect: { id: taskData.sprintId } }
-										: undefined
-								}
-							});
-							return task;
-						});
-						const batchResults = await Promise.all(batchPromises);
-						tasks.push(...batchResults);
+					if (taskRows.length > 0) {
+						await prisma.task.createMany({ data: taskRows });
 					}
 
 					if (warnings.length > 0) {
@@ -513,15 +460,15 @@ export const projectTemplateMutations = {
 					}
 
 					return {
-						epicsCreated: data.epics?.length || 0,
-						sprintsCreated: data.sprints?.length || 0,
-						tasksCreated: tasks.length,
+						epicsCreated: epicRows.length,
+						sprintsCreated: sprintRows.length,
+						tasksCreated: taskRows.length,
 						warnings: warnings.length > 0 ? warnings : undefined
 					};
 				},
 				{
-					maxWait: 10000, // Maximum time to wait for a transaction slot
-					timeout: 30000 // Maximum time the transaction can run (30 seconds)
+					maxWait: 10000,
+					timeout: 30000
 				}
 			);
 		}),
@@ -546,12 +493,7 @@ export const projectTemplateMutations = {
 					include: {
 						sprints: true,
 						epics: true,
-						tasks: {
-							include: {
-								epic: true,
-								sprint: true
-							}
-						},
+						tasks: true,
 						technologies: true,
 						learningOutcomes: true,
 						milestones: true,
@@ -584,7 +526,7 @@ export const projectTemplateMutations = {
 							technologies,
 							learningOutcomes,
 							milestones,
-							images,
+							images: _images,
 							category,
 							...templateData
 						} = originalTemplate;
@@ -620,69 +562,78 @@ export const projectTemplateMutations = {
 						});
 
 						const sprintIdMap: Record<string, string> = {};
-						const sprintPromises = sprints.map(async (sprint) => {
-							const { id: oldId, projectTemplateId, ...sprintData } = sprint;
-							const newSprint = await prisma.sprint.create({
-								data: {
-									...sprintData,
-									projectTemplateId: newTemplate.id
-								}
+						if (sprints.length > 0) {
+							await prisma.sprint.createMany({
+								data: sprints.map((sprint) => {
+									const {
+										id: oldId,
+										projectTemplateId: _projectTemplateId,
+										projectId: _projectId,
+										createdAt: _sprintCreatedAt,
+										updatedAt: _sprintUpdatedAt,
+										...sprintData
+									} = sprint;
+									const newId = randomUUID();
+									sprintIdMap[oldId] = newId;
+									return {
+										...sprintData,
+										id: newId,
+										projectTemplateId: newTemplate.id,
+										projectId: null
+									};
+								})
 							});
-							return { oldId, newId: newSprint.id };
-						});
-						const sprintResults = await Promise.all(sprintPromises);
-						for (const { oldId, newId } of sprintResults) {
-							sprintIdMap[oldId] = newId;
 						}
 
 						const epicIdMap: Record<string, string> = {};
-						const epicPromises = epics.map(async (epic) => {
-							const { id: oldId, projectTemplateId, ...epicData } = epic;
-							const newEpic = await prisma.epic.create({
-								data: {
-									...epicData,
-									projectTemplateId: newTemplate.id
-								}
+						if (epics.length > 0) {
+							await prisma.epic.createMany({
+								data: epics.map((epic) => {
+									const {
+										id: oldId,
+										projectTemplateId: _projectTemplateId,
+										projectId: _projectId,
+										createdAt: _epicCreatedAt,
+										updatedAt: _epicUpdatedAt,
+										...epicData
+									} = epic;
+									const newId = randomUUID();
+									epicIdMap[oldId] = newId;
+									return {
+										...epicData,
+										id: newId,
+										projectTemplateId: newTemplate.id,
+										projectId: null
+									};
+								})
 							});
-							return { oldId, newId: newEpic.id };
-						});
-						const epicResults = await Promise.all(epicPromises);
-						for (const { oldId, newId } of epicResults) {
-							epicIdMap[oldId] = newId;
 						}
 
-						const batchSize = 50;
-						const taskBatches = [];
-						for (let i = 0; i < tasks.length; i += batchSize) {
-							taskBatches.push(tasks.slice(i, i + batchSize));
-						}
+						if (tasks.length > 0) {
+							await prisma.task.createMany({
+								data: tasks.map((task) => {
+									const {
+										id: _taskId,
+										epicId,
+										sprintId,
+										projectTemplateId: _projectTemplateId,
+										projectId: _projectId,
+										assigneeId: _assigneeId,
+										createdAt: _taskCreatedAt,
+										updatedAt: _taskUpdatedAt,
+										...taskData
+									} = task;
 
-						for (const batch of taskBatches) {
-							const taskPromises = batch.map(async (task) => {
-								const {
-									id: _taskId,
-									epicId,
-									sprintId,
-									projectTemplateId,
-									projectId,
-									assigneeId,
-									epic: _epic,
-									sprint: _sprint,
-									...taskData
-								} = task;
-
-								return prisma.task.create({
-									data: {
+									return {
 										...taskData,
 										projectTemplateId: newTemplate.id,
-										epicId: epicId ? epicIdMap[epicId] : null,
-										sprintId: sprintId ? sprintIdMap[sprintId] : null,
+										epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
+										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
 										projectId: null,
 										assigneeId: null
-									}
-								});
+									};
+								})
 							});
-							await Promise.all(taskPromises);
 						}
 
 						return newTemplate.id;

@@ -117,11 +117,11 @@ Rewrite template clone and JSON bulk-create to use UUID remapping + bulk inserts
 
 ### Acceptance criteria
 
-- [ ] Clone and bulk-create use bulk inserts with in-memory id remaps (not per-row creates as the primary path)
-- [ ] Cloned/imported graphs match pre-change content fidelity
-- [ ] Failures roll back; no partial graphs left behind
-- [ ] Project-from-template path remains correct and is the documented standard for graph copy
-- [ ] After-benchmark shows materially lower clone/bulk duration at stress scale
+- [x] Clone and bulk-create use bulk inserts with in-memory id remaps (not per-row creates as the primary path)
+- [x] Cloned/imported graphs match pre-change content fidelity
+- [x] Failures roll back; no partial graphs left behind
+- [x] Project-from-template path remains correct and is the documented standard for graph copy
+- [x] After-benchmark shows materially lower clone/bulk duration at stress scale
 
 ---
 
