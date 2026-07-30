@@ -98,12 +98,12 @@ Add the org-admin projection on `User`, extend the Clerk webhook for organizatio
 
 ### Acceptance criteria
 
-- [ ] Schema projection exists and is populated by backfill for current org admins
-- [ ] Membership grant/revoke in Clerk updates the projection via webhook
-- [ ] Notification admin recipient lookup is a local DB query (no default O(U) Clerk fan-out)
-- [ ] Deploy/backfill order is documented; old scan is removed after cutover
-- [ ] Admin-only notification targeting semantics are unchanged for non-admins
-- [ ] Stress/path check shows admin resolution cost independent of total non-admin user count
+- [x] Schema projection exists and is populated by backfill for current org admins
+- [x] Membership grant/revoke in Clerk updates the projection via webhook
+- [x] Notification admin recipient lookup is a local DB query (no default O(U) Clerk fan-out)
+- [x] Deploy/backfill order is documented; old scan is removed after cutover
+- [x] Admin-only notification targeting semantics are unchanged for non-admins
+- [x] Stress/path check shows admin resolution cost independent of total non-admin user count
 
 ---
 

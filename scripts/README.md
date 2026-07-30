@@ -6,6 +6,10 @@ This directory contains utility scripts for database maintenance and migrations.
 
 See [benchmarks/README.md](./benchmarks/README.md) for the Phase 1+ harness (`bun run bench`, `bun run bench:seed`, `bun run bench:full`).
 
+## Org admin projection
+
+See [backfill-org-admins.md](./backfill-org-admins.md) for deploy order and repair (`bun run db:backfill-org-admins`).
+
 ## Available Scripts
 
 ### backfill-public-task-ids.ts

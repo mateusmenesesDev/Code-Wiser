@@ -1,4 +1,3 @@
-import { clerkClient } from '@clerk/nextjs/server';
 import type { NotificationType, PrismaClient } from '@prisma/client';
 import { getBaseUrl } from '~/server/utils/getBaseUrl';
 
@@ -54,42 +53,14 @@ export async function getAdminUsers(): Promise<
 > {
 	try {
 		const { db } = await import('~/server/db');
-		const allUsers = await db.user.findMany({
+		return await db.user.findMany({
+			where: { isOrgAdmin: true },
 			select: {
 				id: true,
 				email: true,
 				name: true
 			}
 		});
-
-		const adminUsers: Array<{
-			id: string;
-			email: string;
-			name: string | null;
-		}> = [];
-
-		await Promise.all(
-			allUsers.map(async (user) => {
-				try {
-					const organizationMemberships =
-						await clerkClient.users.getOrganizationMembershipList({
-							userId: user.id
-						});
-
-					const isAdmin = organizationMemberships.data.some(
-						(membership) => membership.role === 'org:admin'
-					);
-
-					if (isAdmin) {
-						adminUsers.push(user);
-					}
-				} catch {
-					// Skip users that can't be fetched from Clerk
-				}
-			})
-		);
-
-		return adminUsers;
 	} catch (error) {
 		console.error('Failed to get admin users:', error);
 		return [];

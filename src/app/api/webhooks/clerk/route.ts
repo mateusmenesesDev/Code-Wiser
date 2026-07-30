@@ -7,6 +7,8 @@ import {
 	deleteUser,
 	updateUser
 } from '~/server/api/routers/user/queries';
+import { db } from '~/server/db';
+import { applyOrgAdminMembership } from '~/server/services/clerk/applyOrgAdminMembership';
 
 export async function POST(req: Request) {
 	// You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
@@ -98,6 +100,22 @@ export async function POST(req: Request) {
 			}
 			await deleteUser(evt.data.id);
 			break;
+		case 'organizationMembership.created':
+		case 'organizationMembership.updated':
+		case 'organizationMembership.deleted': {
+			const userId = evt.data.public_user_data?.user_id;
+			const result = await applyOrgAdminMembership(db, {
+				userId,
+				role: evt.data.role,
+				eventType
+			});
+			if (!result.updated && userId) {
+				console.warn(
+					`Org admin sync skipped — no local user for Clerk id ${userId}`
+				);
+			}
+			break;
+		}
 	}
 
 	return new Response('', { status: 200 });

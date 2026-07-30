@@ -1,0 +1,14 @@
+{
+  "phase": "phase-5",
+  "label": "after-phase-5",
+  "createdAt": "2026-07-30T23:26:00.000Z",
+  "notes": "Admin resolution is a single DB findMany(where: { isOrgAdmin: true }). Cost is independent of total non-admin user count; Clerk is no longer called per user.",
+  "server": {
+    "available": true,
+    "adminResolution": {
+      "previous": "O(U) Clerk membership lookups",
+      "current": "O(1) local query filtered by isOrgAdmin",
+      "clerkFanOut": false
+    }
+  }
+}
