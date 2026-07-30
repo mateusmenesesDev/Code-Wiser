@@ -22,6 +22,13 @@ export type ServerBenchReport = {
 		heavyPayloadBytes: number;
 		latency: SampleSummary;
 	};
+	reorderWrite?: {
+		taskCount: number;
+		serialStatements: number;
+		bulkStatements: number;
+		serialUpdate: SampleSummary;
+		bulkUpdate: SampleSummary;
+	};
 	clone?: {
 		sourceTaskCount: number;
 		loadGraph: SampleSummary;

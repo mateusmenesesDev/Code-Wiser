@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import type { PrismaClient } from '@prisma/client';
+import { buildBulkTaskOrderUpdateSql } from '~/server/api/routers/task/mutations/taskOrderUpdates';
+import {
+	approvedCatalogInclude,
+	approvedCatalogOrderBy
+} from '~/server/api/routers/template/queries/project/approvedCatalogQuery';
+import { buildEnrolledProjectStats } from '~/server/api/routers/project/queries/enrolledProjectStats';
 import {
 	measureAsync,
 	measureSync,
@@ -7,11 +13,6 @@ import {
 	summarizeSamples
 } from './measure';
 import type { ServerBenchReport } from './report';
-import {
-	approvedCatalogInclude,
-	approvedCatalogOrderBy
-} from '~/server/api/routers/template/queries/project/approvedCatalogQuery';
-import { buildEnrolledProjectStats } from '~/server/api/routers/project/queries/enrolledProjectStats';
 import {
 	STRESS_TITLE_PREFIX,
 	countMyProjectsRoundTrips
@@ -155,6 +156,62 @@ export async function runServerBenches(
 		latency: summarizeSamples(adminSamples)
 	};
 
+	let reorderWrite: ServerBenchReport['reorderWrite'];
+	try {
+		const reorderProject = await db.project.findFirst({
+			where: { title: { startsWith: STRESS_TITLE_PREFIX } },
+			select: {
+				id: true,
+				tasks: {
+					take: 40,
+					orderBy: { order: 'asc' },
+					select: { id: true, order: true, status: true }
+				}
+			}
+		});
+
+		if (reorderProject && reorderProject.tasks.length >= 2) {
+			const original = reorderProject.tasks.map((task) => ({
+				id: task.id,
+				order: task.order ?? 0,
+				status: task.status ?? undefined
+			}));
+			const rotated = original.map((task, index) => ({
+				id: task.id,
+				order: (index + 1) % original.length,
+				status: task.status
+			}));
+
+			// Compare N single-row raw updates vs one multi-row VALUES update.
+			// Avoid Prisma `task.update` so schema drift (e.g. assigneeId) does not abort.
+			const { durationMs: serialDurationMs } = await measureAsync(async () => {
+				for (const update of rotated) {
+					await db.$executeRaw(buildBulkTaskOrderUpdateSql([update]));
+				}
+				await db.$executeRaw(buildBulkTaskOrderUpdateSql(original));
+			});
+
+			const bulkSamples: number[] = [];
+			for (let i = 0; i < Math.min(iterations, 3); i++) {
+				const { durationMs } = await measureAsync(async () => {
+					await db.$executeRaw(buildBulkTaskOrderUpdateSql(rotated));
+					await db.$executeRaw(buildBulkTaskOrderUpdateSql(original));
+				});
+				bulkSamples.push(durationMs);
+			}
+
+			reorderWrite = {
+				taskCount: original.length,
+				serialStatements: original.length,
+				bulkStatements: 1,
+				serialUpdate: summarizeSamples([serialDurationMs]),
+				bulkUpdate: summarizeSamples(bulkSamples)
+			};
+		}
+	} catch {
+		reorderWrite = undefined;
+	}
+
 	const baseReport = {
 		available: true as const,
 		catalog: {
@@ -168,7 +225,8 @@ export async function runServerBenches(
 			roundTrips: countMyProjectsRoundTrips(stressProjects.length),
 			latency: summarizeSamples(myProjectsSamples)
 		},
-		adminActiveProjects
+		adminActiveProjects,
+		...(reorderWrite ? { reorderWrite } : {})
 	};
 
 	// Select only columns needed for clone remaps. Avoid full Task scalars so the

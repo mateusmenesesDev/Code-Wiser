@@ -154,10 +154,10 @@ Make persisting drag order/status updates efficient: batch or reduce statements 
 
 ### Acceptance criteria
 
-- [ ] Full-column reorder persistence is not N serial updates without need
-- [ ] Unchanged order/status rows are not written when a client diff is available
-- [ ] Authorization and transactional safety for order updates remain correct
-- [ ] After-benchmark shows improved reorder persistence latency or statement count at stress scale
+- [x] Full-column reorder persistence is not N serial updates without need
+- [x] Unchanged order/status rows are not written when a client diff is available
+- [x] Authorization and transactional safety for order updates remain correct
+- [x] After-benchmark shows improved reorder persistence latency or statement count at stress scale
 
 ---
 

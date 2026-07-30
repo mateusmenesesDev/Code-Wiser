@@ -1,4 +1,3 @@
-import type { TaskStatusEnum } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -17,6 +16,10 @@ import {
 	userHasAccessToProject
 } from '~/server/utils/auth';
 import { deleteUploadThingFiles } from '../attachments/taskAttachment.utils';
+import {
+	buildBulkTaskOrderUpdateSql,
+	selectChangedTaskOrderUpdates
+} from './taskOrderUpdates';
 
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 
@@ -303,10 +306,28 @@ export const taskMutations = {
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			if (input.updates.length === 0) {
+				return { success: true, updatedCount: 0 };
+			}
+
+			const updateIds = [...new Set(input.updates.map((update) => update.id))];
 			const tasks = await ctx.db.task.findMany({
-				where: { id: { in: input.updates.map((update) => update.id) } },
-				select: { projectId: true }
+				where: { id: { in: updateIds } },
+				select: {
+					id: true,
+					order: true,
+					status: true,
+					projectId: true
+				}
 			});
+
+			if (tasks.length !== updateIds.length) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'One or more tasks were not found'
+				});
+			}
+
 			const projectIds = [
 				...new Set(
 					tasks
@@ -322,18 +343,19 @@ export const taskMutations = {
 				await assertProjectIsActive(ctx.db, projectId);
 			}
 
-			await ctx.db.$transaction(
-				input.updates.map((update) =>
-					ctx.db.task.update({
-						where: { id: update.id },
-						data: {
-							order: update.order,
-							...(update.status && { status: update.status as TaskStatusEnum })
-						}
-					})
-				)
+			const currentById = new Map(tasks.map((task) => [task.id, task]));
+			const changedUpdates = selectChangedTaskOrderUpdates(
+				input.updates,
+				currentById
 			);
-			return { success: true };
+
+			if (changedUpdates.length === 0) {
+				return { success: true, updatedCount: 0 };
+			}
+
+			await ctx.db.$executeRaw(buildBulkTaskOrderUpdateSql(changedUpdates));
+
+			return { success: true, updatedCount: changedUpdates.length };
 		}),
 
 	delete: protectedProcedure

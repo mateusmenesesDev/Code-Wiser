@@ -1,0 +1,135 @@
+{
+  "phase": "phase-8",
+  "label": "after-phase-8",
+  "createdAt": "2026-07-30T23:38:33.165Z",
+  "scale": {
+    "templates": 20,
+    "tasksPerTemplate": 150,
+    "enrolledProjects": 12,
+    "boardTasks": 400,
+    "sprintsPerTemplate": 4,
+    "epicsPerTemplate": 3
+  },
+  "client": {
+    "scale": {
+      "boardTasks": 400
+    },
+    "iterations": 5,
+    "benches": {
+      "reorderKanban": {
+        "count": 5,
+        "minMs": 0.04454399999999481,
+        "maxMs": 0.633738000000001,
+        "meanMs": 0.20986499999999922,
+        "p50Ms": 0.11802099999999882,
+        "p95Ms": 0.633738000000001
+      },
+      "toKanbanOrderUpdates": {
+        "count": 5,
+        "minMs": 0.12894800000000117,
+        "maxMs": 0.8959589999999977,
+        "meanMs": 0.37196079999999937,
+        "p50Ms": 0.2515150000000048,
+        "p95Ms": 0.8959589999999977
+      },
+      "groupBySprint": {
+        "count": 5,
+        "minMs": 0.03341100000000097,
+        "maxMs": 0.200724000000001,
+        "meanMs": 0.10819400000000172,
+        "p50Ms": 0.0691320000000033,
+        "p95Ms": 0.200724000000001
+      }
+    }
+  },
+  "server": {
+    "available": true,
+    "catalog": {
+      "latency": {
+        "count": 3,
+        "minMs": 494.9572360000002,
+        "maxMs": 2186.086156,
+        "meanMs": 1060.7302513333332,
+        "p50Ms": 501.1473619999997,
+        "p95Ms": 2186.086156
+      },
+      "payloadBytes": 14662,
+      "templateCount": 20,
+      "taskCount": 3000
+    },
+    "myProjects": {
+      "enrolledProjects": 12,
+      "roundTrips": 1,
+      "latency": {
+        "count": 3,
+        "minMs": 370.890711,
+        "maxMs": 1491.6770709999996,
+        "meanMs": 824.0311556666667,
+        "p50Ms": 609.5256850000005,
+        "p95Ms": 1491.6770709999996
+      }
+    },
+    "adminActiveProjects": {
+      "projectCount": 12,
+      "leanPayloadBytes": 10003,
+      "heavyPayloadBytes": 43123,
+      "latency": {
+        "count": 3,
+        "minMs": 491.71522600000026,
+        "maxMs": 847.6827800000001,
+        "meanMs": 610.7618533333338,
+        "p50Ms": 492.8875540000008,
+        "p95Ms": 847.6827800000001
+      }
+    },
+    "reorderWrite": {
+      "taskCount": 40,
+      "serialStatements": 40,
+      "bulkStatements": 1,
+      "serialUpdate": {
+        "count": 1,
+        "minMs": 5354.4862600000015,
+        "maxMs": 5354.4862600000015,
+        "meanMs": 5354.4862600000015,
+        "p50Ms": 5354.4862600000015,
+        "p95Ms": 5354.4862600000015
+      },
+      "bulkUpdate": {
+        "count": 3,
+        "minMs": 250.95704400000068,
+        "maxMs": 258.83423700000094,
+        "meanMs": 254.38553333333402,
+        "p50Ms": 253.36531900000045,
+        "p95Ms": 258.83423700000094
+      }
+    },
+    "clone": {
+      "sourceTaskCount": 150,
+      "loadGraph": {
+        "count": 3,
+        "minMs": 488.3086609999991,
+        "maxMs": 630.5743920000023,
+        "meanMs": 538.2718133333341,
+        "p50Ms": 495.93238700000074,
+        "p95Ms": 630.5743920000023
+      },
+      "loadPayloadBytes": 45285,
+      "inMemoryRemap": {
+        "count": 3,
+        "minMs": 0.055451000000175554,
+        "maxMs": 0.38716199999907985,
+        "meanMs": 0.16611966666581188,
+        "p50Ms": 0.055745999998180196,
+        "p95Ms": 0.38716199999907985
+      },
+      "bulkInsertClone": {
+        "count": 3,
+        "minMs": 1330.6129970000002,
+        "maxMs": 2885.031484000003,
+        "meanMs": 1889.190444000001,
+        "p50Ms": 1451.9268510000002,
+        "p95Ms": 2885.031484000003
+      }
+    }
+  }
+}
