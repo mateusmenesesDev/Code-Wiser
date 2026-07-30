@@ -124,7 +124,13 @@ const applyUpdateUpdates = (
 	taskId: string,
 	data: UpdateTaskInput
 ) => {
-	const updates = convertUndefinedToNull(data, ['epicId', 'sprintId']);
+	const { assigneeIds, ...rest } = data;
+	const updates = {
+		...convertUndefinedToNull(rest, ['epicId', 'sprintId']),
+		...(assigneeIds !== undefined && {
+			assignees: assigneeIds.map((id) => ({ id, name: null }))
+		})
+	};
 
 	if (config.updateKanban) {
 		helpers.updateOptimisticKanbanData(projectId, taskId, updates);

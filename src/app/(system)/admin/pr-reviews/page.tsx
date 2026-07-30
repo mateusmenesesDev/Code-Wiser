@@ -37,12 +37,11 @@ function PRReviewsContent() {
 
 	const uniqueUsers = Array.from(
 		new Map(
-			(reviews ?? []).map((review) => [
-				review.task.assignee?.id,
-				review.task.assignee
-			])
+			(reviews ?? [])
+				.flatMap((review) => review.task.assignees)
+				.map((assignee) => [assignee.id, assignee])
 		).values()
-	).filter(Boolean);
+	);
 
 	const filteredReviews = reviews ?? [];
 

@@ -123,7 +123,7 @@ export const projectMutations = {
 								epicId: epicId ? epicIdMap[epicId] : null,
 								sprintId: sprintId ? sprintIdMap[sprintId] : null,
 								projectTemplateId: null,
-								assigneeId: user.id
+								assignees: { connect: [{ id: user.id }] }
 							}
 						});
 					}

@@ -17,17 +17,23 @@ export const getKanbanQueries = {
 					projectId: input.projectId,
 					sprintId: input.filters?.sprintId,
 					priority: input.filters?.priority,
-					assigneeId: input.filters?.assigneeId,
-					epicId: input.filters?.epicId
+					epicId: input.filters?.epicId,
+					...(input.filters?.assigneeId
+						? {
+								assignees: {
+									some: { id: input.filters.assigneeId }
+								}
+							}
+						: {})
 				},
-			select: {
-				id: true,
-				title: true,
-				status: true,
-				order: true,
-				priority: true,
-				storyPoints: true,
-				assignee: {
+				select: {
+					id: true,
+					title: true,
+					status: true,
+					order: true,
+					priority: true,
+					storyPoints: true,
+					assignees: {
 						select: {
 							id: true,
 							name: true

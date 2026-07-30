@@ -37,7 +37,7 @@ export const getProjectQueries = {
 					},
 					tasks: {
 						include: {
-							assignee: {
+							assignees: {
 								select: {
 									id: true,
 									name: true

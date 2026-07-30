@@ -35,7 +35,7 @@ interface NotifyTaskStatusChangedParams {
 	taskTitle: string;
 	oldStatus: string;
 	newStatus: string;
-	assigneeId: string | null;
+	assigneeIds: string[];
 	projectId: string;
 	projectName: string;
 	changedByUserId: string;
@@ -51,7 +51,7 @@ export async function notifyTaskStatusChanged(
 		taskTitle,
 		oldStatus,
 		newStatus,
-		assigneeId,
+		assigneeIds,
 		projectId,
 		projectName,
 		changedByUserId,
@@ -75,8 +75,10 @@ export async function notifyTaskStatusChanged(
 
 	const usersToNotify: string[] = [];
 
-	if (assigneeId && assigneeId !== changedByUserId) {
-		usersToNotify.push(assigneeId);
+	for (const assigneeId of assigneeIds) {
+		if (assigneeId !== changedByUserId && !usersToNotify.includes(assigneeId)) {
+			usersToNotify.push(assigneeId);
+		}
 	}
 
 	const adminUsers = await getAdminUsers();
@@ -109,7 +111,7 @@ interface NotifyTaskBlockedParams {
 	taskId: string;
 	taskTitle: string;
 	isBlocked: boolean;
-	assigneeId: string | null;
+	assigneeIds: string[];
 	projectId: string;
 	projectName: string;
 	changedByUserId: string;
@@ -124,7 +126,7 @@ export async function notifyTaskBlocked(
 		taskId,
 		taskTitle,
 		isBlocked,
-		assigneeId,
+		assigneeIds,
 		projectId,
 		projectName,
 		changedByUserId,
@@ -142,8 +144,10 @@ export async function notifyTaskBlocked(
 
 	const usersToNotify: string[] = [];
 
-	if (assigneeId && assigneeId !== changedByUserId) {
-		usersToNotify.push(assigneeId);
+	for (const assigneeId of assigneeIds) {
+		if (assigneeId !== changedByUserId && !usersToNotify.includes(assigneeId)) {
+			usersToNotify.push(assigneeId);
+		}
 	}
 
 	const adminUsers = await getAdminUsers();

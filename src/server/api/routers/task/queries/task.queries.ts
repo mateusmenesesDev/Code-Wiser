@@ -11,7 +11,7 @@ export const taskQueries = {
 			const task = await ctx.db.task.findUnique({
 				where: { id: input.id },
 				include: {
-					assignee: {
+					assignees: {
 						select: {
 							id: true,
 							name: true
@@ -56,7 +56,7 @@ export const taskQueries = {
 					}
 				},
 				include: {
-					assignee: {
+					assignees: {
 						select: {
 							id: true,
 							name: true

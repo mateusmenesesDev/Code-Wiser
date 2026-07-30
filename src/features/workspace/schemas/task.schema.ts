@@ -13,7 +13,7 @@ export const baseTaskSchema = z.object({
 	sprintId: z.string().nullable().optional(),
 	blocked: z.boolean().optional(),
 	blockedReason: z.string().optional(),
-	assigneeId: z.string().nullable().optional(),
+	assigneeIds: z.array(z.string()).optional(),
 	status: z.nativeEnum(TaskStatusEnum).optional(),
 	order: z.number().optional(),
 	storyPoints: z.number().optional(),

@@ -13,8 +13,7 @@ const sprintInclude = {
 			storyPoints: true,
 			order: true,
 			sprintId: true,
-			assigneeId: true,
-			assignee: {
+			assignees: {
 				select: { id: true, name: true }
 			}
 		}

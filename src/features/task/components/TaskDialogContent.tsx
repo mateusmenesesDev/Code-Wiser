@@ -41,6 +41,7 @@ import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
 import { api } from '~/trpc/react';
 import { getStatusLabel, resetFormData } from '../utils';
+import { AssigneesInput } from './AssigneesInput';
 import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
 import { TaskComments } from './TaskComments';
@@ -115,7 +116,8 @@ export function TaskDialogContent({
 			status: TaskStatusEnum.BACKLOG,
 			priority: TaskPriorityEnum.MEDIUM,
 			blocked: false,
-			tags: []
+			tags: [],
+			assigneeIds: []
 		}
 	});
 
@@ -456,40 +458,19 @@ export function TaskDialogContent({
 							</Select>
 						</div>
 
-						{/* Assignee */}
-						<div>
-							<Label htmlFor="assigneeId" className="mb-2 block">
-								Assignee
-							</Label>
-							<Select
-								value={form.watch('assigneeId') ?? 'none'}
-								onValueChange={(value) =>
-									form.setValue(
-										'assigneeId',
-										value === 'none' ? undefined : value,
-										{ shouldDirty: true }
-									)
+						{/* Assignees */}
+						{!isTemplate && (
+							<AssigneesInput
+								value={form.watch('assigneeIds') ?? []}
+								onChange={(assigneeIds) =>
+									form.setValue('assigneeIds', assigneeIds, {
+										shouldDirty: true
+									})
 								}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Select assignee" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">No assignee</SelectItem>
-									{isLoadingMembers ? (
-										<SelectItem value="loading" disabled>
-											Loading members...
-										</SelectItem>
-									) : (
-										projectMembers?.map((member) => (
-											<SelectItem key={member.id} value={member.id}>
-												{member.name || member.email}
-											</SelectItem>
-										))
-									)}
-								</SelectContent>
-							</Select>
-						</div>
+								members={projectMembers}
+								isLoading={isLoadingMembers}
+							/>
+						)}
 
 						{/* Due Date */}
 						<div>

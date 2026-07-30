@@ -11,11 +11,11 @@ export type PRReviewWithRelations = PullRequestReview & {
 		id: string;
 		title: string;
 		prUrl: string | null;
-		assignee: {
+		assignees: {
 			id: string;
 			name: string | null;
 			email: string;
-		} | null;
+		}[];
 		project: {
 			id: string;
 			title: string;
