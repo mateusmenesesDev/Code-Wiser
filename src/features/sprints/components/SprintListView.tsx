@@ -57,9 +57,9 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 						{task.priority}
 					</Badge>
 				)}
-				{task.assignees.length > 0 && (
+				{(task.assignees?.length ?? 0) > 0 && (
 					<div className="flex items-center -space-x-1">
-						{task.assignees.slice(0, 3).map((assignee) => (
+						{(task.assignees ?? []).slice(0, 3).map((assignee) => (
 							<div
 								key={assignee.id}
 								className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-medium text-[10px] text-primary ring-2 ring-background"
@@ -68,9 +68,9 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 								{assignee.name?.charAt(0).toUpperCase()}
 							</div>
 						))}
-						{task.assignees.length > 3 && (
+						{(task.assignees?.length ?? 0) > 3 && (
 							<div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted font-medium text-[10px] text-muted-foreground ring-2 ring-background">
-								+{task.assignees.length - 3}
+								+{(task.assignees?.length ?? 0) - 3}
 							</div>
 						)}
 					</div>

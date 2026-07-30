@@ -44,7 +44,7 @@ export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 						{task.priority}
 					</Badge>
 
-					<AssigneeAvatars assignees={task.assignees} />
+					<AssigneeAvatars assignees={task.assignees ?? []} />
 				</div>
 			</div>{' '}
 		</KanbanCard>

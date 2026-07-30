@@ -38,7 +38,7 @@ function PRReviewsContent() {
 	const uniqueUsers = Array.from(
 		new Map(
 			(reviews ?? [])
-				.flatMap((review) => review.task.assignees)
+				.flatMap((review) => review.task.assignees ?? [])
 				.map((assignee) => [assignee.id, assignee])
 		).values()
 	);

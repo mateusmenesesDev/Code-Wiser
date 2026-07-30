@@ -151,7 +151,7 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 					<TableBody>
 						{reviews.map((review) => {
 							const statusBadge = getStatusBadge(review.status);
-							const students = review.task.assignees;
+							const students = review.task.assignees ?? [];
 							const project = review.task.project;
 
 							return (

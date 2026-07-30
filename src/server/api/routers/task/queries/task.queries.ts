@@ -89,7 +89,11 @@ export const taskQueries = {
 	getAssigneeImage: protectedProcedure
 		.input(z.object({ assigneeId: z.string() }))
 		.query(async ({ input }) => {
-			const assignee = await clerkClient.users.getUser(input.assigneeId);
-			return assignee?.imageUrl;
+			try {
+				const assignee = await clerkClient.users.getUser(input.assigneeId);
+				return assignee?.imageUrl ?? null;
+			} catch {
+				return null;
+			}
 		})
 };

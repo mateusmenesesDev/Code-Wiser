@@ -40,20 +40,21 @@ export function AssigneesInput({
 	isLoading
 }: AssigneesInputProps) {
 	const [open, setOpen] = useState(false);
+	const selectedIds = Array.isArray(value) ? value : [];
 
 	const selectedMembers =
-		members?.filter((member) => value.includes(member.id)) ?? [];
+		members?.filter((member) => selectedIds.includes(member.id)) ?? [];
 
 	const toggleAssignee = (memberId: string) => {
-		if (value.includes(memberId)) {
-			onChange(value.filter((id) => id !== memberId));
+		if (selectedIds.includes(memberId)) {
+			onChange(selectedIds.filter((id) => id !== memberId));
 			return;
 		}
-		onChange([...value, memberId]);
+		onChange([...selectedIds, memberId]);
 	};
 
 	const removeAssignee = (memberId: string) => {
-		onChange(value.filter((id) => id !== memberId));
+		onChange(selectedIds.filter((id) => id !== memberId));
 	};
 
 	return (
@@ -86,11 +87,12 @@ export function AssigneesInput({
 							<CommandEmpty>No members found.</CommandEmpty>
 							<CommandGroup>
 								{members?.map((member) => {
-									const isSelected = value.includes(member.id);
+									const isSelected = selectedIds.includes(member.id);
+									const label = member.name || member.email || member.id;
 									return (
 										<CommandItem
 											key={member.id}
-											value={`${member.name ?? ''} ${member.email}`}
+											value={label}
 											onSelect={() => toggleAssignee(member.id)}
 										>
 											<Check
@@ -99,7 +101,7 @@ export function AssigneesInput({
 													isSelected ? 'opacity-100' : 'opacity-0'
 												)}
 											/>
-											{member.name || member.email}
+											{label}
 										</CommandItem>
 									);
 								})}

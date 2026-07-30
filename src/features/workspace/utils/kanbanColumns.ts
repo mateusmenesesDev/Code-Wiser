@@ -72,7 +72,7 @@ export function generateKanbanColumns(
 				filters.priority === 'all' || task.priority === filters.priority;
 			const assigneeMatch =
 				filters.assignee === 'all' ||
-				task.assignees.some((a) => a.id === filters.assignee);
+				(task.assignees ?? []).some((a) => a.id === filters.assignee);
 
 			return sprintMatch && priorityMatch && assigneeMatch;
 		});
