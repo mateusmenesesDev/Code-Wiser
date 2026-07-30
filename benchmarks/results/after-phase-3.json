@@ -1,0 +1,54 @@
+{
+  "phase": "phase-3",
+  "label": "after-phase-3",
+  "createdAt": "2026-07-30T23:20:42.400Z",
+  "scale": {
+    "templates": 20,
+    "tasksPerTemplate": 150,
+    "enrolledProjects": 12,
+    "boardTasks": 400,
+    "sprintsPerTemplate": 4,
+    "epicsPerTemplate": 3
+  },
+  "client": {
+    "scale": {
+      "boardTasks": 400
+    },
+    "iterations": 25,
+    "benches": {
+      "reorderKanban": {
+        "count": 25,
+        "minMs": 0.02064099999999769,
+        "maxMs": 0.4174459999999982,
+        "meanMs": 0.04829899999999981,
+        "p50Ms": 0.02802199999999999,
+        "p95Ms": 0.1239840000000001
+      },
+      "toKanbanOrderUpdates": {
+        "count": 25,
+        "minMs": 0.0922210000000021,
+        "maxMs": 0.736972999999999,
+        "meanMs": 0.1387105999999997,
+        "p50Ms": 0.10396999999999679,
+        "p95Ms": 0.2518299999999982
+      },
+      "groupBySprint": {
+        "count": 25,
+        "minMs": 0.02761199999999775,
+        "maxMs": 0.12025299999999817,
+        "meanMs": 0.03620888000000036,
+        "p50Ms": 0.029820000000000846,
+        "p95Ms": 0.09185999999999694
+      }
+    }
+  },
+  "server": {
+    "available": true,
+    "reason": "Full DB suite blocked by schema drift vs remote DB (assigneeId); round-trips verified via unit tests + harness metric",
+    "myProjects": {
+      "enrolledProjects": 12,
+      "roundTrips": 1,
+      "previousRoundTrips": 25
+    }
+  }
+}

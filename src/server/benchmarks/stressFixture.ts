@@ -130,7 +130,4 @@ export function createInMemoryStressFixture(
 	};
 }
 
-/** Round-trips for the current "my projects" fan-out: 1 list + 2 per project. */
-export function countMyProjectsRoundTrips(enrolledProjects: number): number {
-	return 1 + enrolledProjects * 2;
-}
+export { countMyProjectsRoundTrips } from '~/server/api/routers/project/queries/enrolledProjectStats';

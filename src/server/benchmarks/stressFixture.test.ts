@@ -48,7 +48,7 @@ describe('stressFixture', () => {
 		});
 	});
 
-	it('counts my-projects fan-out round-trips as 1 + 2 per project', () => {
-		expect(countMyProjectsRoundTrips(12)).toBe(25);
+	it('counts my-projects as a single aggregated round-trip', () => {
+		expect(countMyProjectsRoundTrips(12)).toBe(1);
 	});
 });

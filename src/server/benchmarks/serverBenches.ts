@@ -58,23 +58,24 @@ export async function runServerBenches(
 	const myProjectsSamples: number[] = [];
 	for (let i = 0; i < iterations; i++) {
 		const { durationMs } = await measureAsync(async () => {
-			await db.project.findMany({
+			const projects = await db.project.findMany({
 				where: { title: { startsWith: STRESS_TITLE_PREFIX } },
 				select: { id: true, title: true }
 			});
-			await Promise.all(
-				stressProjects.map(async (project) => {
-					await db.task.findMany({
-						where: { projectId: project.id },
-						select: { status: true }
-					});
-					await db.task.findFirst({
-						where: { projectId: project.id },
-						orderBy: { updatedAt: 'desc' },
-						select: { updatedAt: true }
-					});
+			const projectIds = projects.map((project) => project.id);
+			if (projectIds.length === 0) return;
+			await Promise.all([
+				db.task.groupBy({
+					by: ['projectId', 'status'],
+					where: { projectId: { in: projectIds } },
+					_count: { _all: true }
+				}),
+				db.task.groupBy({
+					by: ['projectId'],
+					where: { projectId: { in: projectIds } },
+					_max: { updatedAt: true }
 				})
-			);
+			]);
 		});
 		myProjectsSamples.push(durationMs);
 	}

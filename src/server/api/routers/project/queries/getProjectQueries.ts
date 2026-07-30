@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
+import { buildEnrolledProjectStats } from './enrolledProjectStats';
 
 export const getProjectQueries = {
 	getWorkspaceInfo: protectedProcedure
@@ -89,8 +90,8 @@ export const getProjectQueries = {
 			return project;
 		}),
 
-	getEnrolled: protectedProcedure.query(({ ctx }) =>
-		ctx.db.project.findMany({
+	getEnrolled: protectedProcedure.query(async ({ ctx }) => {
+		const projects = await ctx.db.project.findMany({
 			where: {
 				canceledAt: null,
 				members: { some: { id: ctx.session?.userId } }
@@ -102,8 +103,50 @@ export const getProjectQueries = {
 					}
 				}
 			}
-		})
-	),
+		});
+
+		if (projects.length === 0) {
+			return [];
+		}
+
+		const projectIds = projects.map((project) => project.id);
+
+		const [statusGroups, lastActivityGroups] = await Promise.all([
+			ctx.db.task.groupBy({
+				by: ['projectId', 'status'],
+				where: { projectId: { in: projectIds } },
+				_count: { _all: true }
+			}),
+			ctx.db.task.groupBy({
+				by: ['projectId'],
+				where: { projectId: { in: projectIds } },
+				_max: { updatedAt: true }
+			})
+		]);
+
+		const lastActivityByProjectId: Record<string, Date | null | undefined> =
+			{};
+		for (const row of lastActivityGroups) {
+			if (row.projectId) {
+				lastActivityByProjectId[row.projectId] = row._max.updatedAt;
+			}
+		}
+
+		const stats = buildEnrolledProjectStats({
+			projectIds,
+			statusCounts: statusGroups.map((row) => ({
+				projectId: row.projectId,
+				status: row.status,
+				count: row._count._all
+			})),
+			lastActivityByProjectId
+		});
+
+		return projects.map((project) => ({
+			...project,
+			...stats[project.id]
+		}));
+	}),
 
 	getActiveProjects: adminProcedure
 		.input(

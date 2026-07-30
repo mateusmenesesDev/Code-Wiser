@@ -62,11 +62,11 @@ Replace per-project progress and last-activity fan-out with an aggregated read p
 
 ### Acceptance criteria
 
-- [ ] Progress and last activity for enrolled projects do not require O(P) metric round-trips
-- [ ] Progress meaning (completed vs total) matches pre-change behavior
-- [ ] Last activity remains based on latest task update in the project
-- [ ] Zero-task projects behave as today (0% / empty)
-- [ ] After-benchmark shows reduced round-trips and improved list latency under the stress fixture
+- [x] Progress and last activity for enrolled projects do not require O(P) metric round-trips
+- [x] Progress meaning (completed vs total) matches pre-change behavior
+- [x] Last activity remains based on latest task update in the project
+- [x] Zero-task projects behave as today (0% / empty)
+- [x] After-benchmark shows reduced round-trips and improved list latency under the stress fixture
 
 ---
 

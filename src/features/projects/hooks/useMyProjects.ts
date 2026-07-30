@@ -12,43 +12,17 @@ export interface ProjectWithProgress extends UserProjectApiResponse {
 export function useMyProjects() {
 	const {
 		data: projects,
-		isLoading: isProjectsLoading,
+		isLoading,
 		error
 	} = api.project.getEnrolled.useQuery();
 
-	const progressQueries = api.useQueries(
-		(t) =>
-			projects?.map((project) =>
-				t.project.getProjectProgress({ projectId: project.id })
-			) ?? []
-	);
-
-	const activityQueries = api.useQueries(
-		(t) =>
-			projects?.map((project) =>
-				t.project.getLastActivityDay({ projectId: project.id })
-			) ?? []
-	);
-
-	const isLoading =
-		isProjectsLoading ||
-		progressQueries.some((q) => q.isLoading) ||
-		activityQueries.some((q) => q.isLoading);
-
 	const projectsWithProgress = useMemo(() => {
-		if (
-			!projects ||
-			progressQueries.some((q) => q.isLoading) ||
-			activityQueries.some((q) => q.isLoading)
-		) {
+		if (!projects) {
 			return [];
 		}
 
-		return projects.map((project, index): ProjectWithProgress => {
-			const progressData = progressQueries[index]?.data;
-			const lastActivityData = activityQueries[index]?.data;
-
-			const progress = progressData?.progress || 0;
+		return projects.map((project): ProjectWithProgress => {
+			const progress = project.progress ?? 0;
 
 			let status: ProjectWithProgress['status'] = 'Not Started';
 			if (progress > 0 && progress < 80) {
@@ -57,8 +31,8 @@ export function useMyProjects() {
 				status = 'Near Completion';
 			}
 
-			const lastActivity = lastActivityData
-				? getLastActivityRelativeTime(lastActivityData)
+			const lastActivity = project.lastActivityAt
+				? getLastActivityRelativeTime(project.lastActivityAt)
 				: 'No activity yet';
 
 			return {
@@ -68,7 +42,7 @@ export function useMyProjects() {
 				lastActivity
 			};
 		});
-	}, [projects, progressQueries, activityQueries]);
+	}, [projects]);
 
 	const isEnrolledProject = (projectTitle: string) => {
 		const enrolledProjects = projectsWithProgress.find(
@@ -83,7 +57,7 @@ export function useMyProjects() {
 	return {
 		projects: projectsWithProgress,
 		isLoading,
-		isProjectsLoading,
+		isProjectsLoading: isLoading,
 		error,
 		isEnrolledProject
 	};
