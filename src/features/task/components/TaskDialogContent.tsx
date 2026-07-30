@@ -576,10 +576,21 @@ export function TaskDialogContent({
 							<Input
 								id="dueDate"
 								type="date"
-								{...form.register('dueDate', {
-									setValueAs: (value: string) =>
-										value && value.trim() !== '' ? new Date(value) : undefined
-								})}
+								value={(() => {
+									const dueDate = form.watch('dueDate');
+									if (dueDate instanceof Date && !Number.isNaN(dueDate.getTime())) {
+										return dueDate.toISOString().slice(0, 10);
+									}
+									return typeof dueDate === 'string' ? dueDate : '';
+								})()}
+								onChange={(event) => {
+									const next = event.target.value;
+									form.setValue(
+										'dueDate',
+										next.trim() !== '' ? new Date(next) : undefined,
+										{ shouldDirty: true }
+									);
+								}}
 							/>
 						</div>
 
