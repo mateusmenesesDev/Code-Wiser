@@ -44,29 +44,6 @@ export const getProjectQueries = {
 						select: {
 							id: true
 						}
-					},
-					tasks: {
-						include: {
-							assignee: {
-								select: {
-									id: true,
-									name: true
-								}
-							},
-							sprint: {
-								select: {
-									id: true,
-									title: true
-								}
-							},
-							epic: {
-								select: {
-									id: true,
-									title: true
-								}
-							}
-						},
-						orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 					}
 				}
 			});
@@ -153,19 +130,59 @@ export const getProjectQueries = {
 			z.object({
 				limit: z.number().min(1).max(100).default(20),
 				cursor: z.string().nullish(),
-				status: z.enum(['active', 'canceled', 'all']).default('active')
+				status: z.enum(['active', 'canceled', 'all']).default('active'),
+				search: z.string().trim().optional()
 			})
 		)
 		.query(async ({ ctx, input }) => {
 			const { limit, cursor } = input;
+			const search = input.search?.trim();
+
+			const statusWhere =
+				input.status === 'active'
+					? { canceledAt: null }
+					: input.status === 'canceled'
+						? { canceledAt: { not: null } }
+						: {};
+
+			const searchWhere = search
+				? {
+						OR: [
+							{
+								title: {
+									contains: search,
+									mode: 'insensitive' as const
+								}
+							},
+							{
+								members: {
+									some: {
+										OR: [
+											{
+												name: {
+													contains: search,
+													mode: 'insensitive' as const
+												}
+											},
+											{
+												email: {
+													contains: search,
+													mode: 'insensitive' as const
+												}
+											}
+										]
+									}
+								}
+							}
+						]
+					}
+				: {};
 
 			const projects = await ctx.db.project.findMany({
-				where:
-					input.status === 'active'
-						? { canceledAt: null }
-						: input.status === 'canceled'
-							? { canceledAt: { not: null } }
-							: undefined,
+				where: {
+					...statusWhere,
+					...searchWhere
+				},
 				take: limit + 1,
 				cursor: cursor ? { id: cursor } : undefined,
 				orderBy: {
@@ -173,12 +190,6 @@ export const getProjectQueries = {
 				},
 				include: {
 					category: true,
-					tasks: {
-						select: {
-							id: true,
-							status: true
-						}
-					},
 					members: {
 						select: {
 							id: true,
@@ -196,7 +207,40 @@ export const getProjectQueries = {
 					nextCursor = nextItem.id;
 				}
 			}
-			return { projects, nextCursor };
+
+			if (projects.length === 0) {
+				return { projects: [], nextCursor };
+			}
+
+			const projectIds = projects.map((project) => project.id);
+			const statusGroups = await ctx.db.task.groupBy({
+				by: ['projectId', 'status'],
+				where: { projectId: { in: projectIds } },
+				_count: { _all: true }
+			});
+
+			const stats = buildEnrolledProjectStats({
+				projectIds,
+				statusCounts: statusGroups.map((row) => ({
+					projectId: row.projectId,
+					status: row.status,
+					count: row._count._all
+				})),
+				lastActivityByProjectId: {}
+			});
+
+			return {
+				projects: projects.map((project) => {
+					const projectStats = stats[project.id];
+					return {
+						...project,
+						totalTasks: projectStats?.totalTasks ?? 0,
+						completedTasks: projectStats?.completedTasks ?? 0,
+						progress: projectStats?.progress ?? 0
+					};
+				}),
+				nextCursor
+			};
 		}),
 
 	getLastActivityDay: protectedProcedure

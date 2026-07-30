@@ -80,11 +80,11 @@ Slim the admin active-projects page data: progress via counts/aggregates instead
 
 ### Acceptance criteria
 
-- [ ] Admin project pages include progress aggregates without full per-project task arrays
-- [ ] Cursor pagination / next page behavior is unchanged
-- [ ] Member search/filter remains usable (server-side if that avoids heavy payloads)
-- [ ] Project detail no longer double-embeds full tasks for views that fetch tasks separately
-- [ ] After-benchmark shows smaller admin list payloads at stress scale
+- [x] Admin project pages include progress aggregates without full per-project task arrays
+- [x] Cursor pagination / next page behavior is unchanged
+- [x] Member search/filter remains usable (server-side if that avoids heavy payloads)
+- [x] Project detail no longer double-embeds full tasks for views that fetch tasks separately
+- [x] After-benchmark shows smaller admin list payloads at stress scale
 
 ---
 

@@ -11,6 +11,7 @@ import {
 	approvedCatalogInclude,
 	approvedCatalogOrderBy
 } from '~/server/api/routers/template/queries/project/approvedCatalogQuery';
+import { buildEnrolledProjectStats } from '~/server/api/routers/project/queries/enrolledProjectStats';
 import {
 	STRESS_TITLE_PREFIX,
 	countMyProjectsRoundTrips
@@ -80,34 +81,126 @@ export async function runServerBenches(
 		myProjectsSamples.push(durationMs);
 	}
 
-	const sourceTemplate = await db.projectTemplate.findFirst({
-		where: {
-			title: { startsWith: STRESS_TITLE_PREFIX },
-			status: 'APPROVED'
+	const adminSamples: number[] = [];
+	let adminLeanPayload = 0;
+	let adminHeavyPayload = 0;
+	let adminProjectCount = 0;
+
+	for (let i = 0; i < iterations; i++) {
+		const { result, durationMs } = await measureAsync(async () => {
+			const projects = await db.project.findMany({
+				where: {
+					canceledAt: null,
+					title: { startsWith: STRESS_TITLE_PREFIX }
+				},
+				take: 20,
+				orderBy: { updatedAt: 'desc' },
+				include: {
+					category: true,
+					members: {
+						select: { id: true, name: true, email: true }
+					}
+				}
+			});
+			const projectIds = projects.map((project) => project.id);
+			const statusGroups =
+				projectIds.length === 0
+					? []
+					: await db.task.groupBy({
+							by: ['projectId', 'status'],
+							where: { projectId: { in: projectIds } },
+							_count: { _all: true }
+						});
+			const stats = buildEnrolledProjectStats({
+				projectIds,
+				statusCounts: statusGroups.map((row) => ({
+					projectId: row.projectId,
+					status: row.status,
+					count: row._count._all
+				})),
+				lastActivityByProjectId: {}
+			});
+			return projects.map((project) => ({
+				...project,
+				...stats[project.id]
+			}));
+		});
+		adminSamples.push(durationMs);
+		if (i === 0) {
+			adminLeanPayload = payloadBytes(result);
+			adminProjectCount = result.length;
+			const heavy = await db.project.findMany({
+				where: {
+					canceledAt: null,
+					title: { startsWith: STRESS_TITLE_PREFIX }
+				},
+				take: 20,
+				orderBy: { updatedAt: 'desc' },
+				include: {
+					category: true,
+					tasks: { select: { id: true, status: true } },
+					members: {
+						select: { id: true, name: true, email: true }
+					}
+				}
+			});
+			adminHeavyPayload = payloadBytes(heavy);
+		}
+	}
+
+	const adminActiveProjects = {
+		projectCount: adminProjectCount,
+		leanPayloadBytes: adminLeanPayload,
+		heavyPayloadBytes: adminHeavyPayload,
+		latency: summarizeSamples(adminSamples)
+	};
+
+	const baseReport = {
+		available: true as const,
+		catalog: {
+			latency: summarizeSamples(catalogSamples),
+			payloadBytes: catalogPayload,
+			templateCount,
+			taskCount
 		},
-		include: {
-			tasks: true,
-			epics: true,
-			sprints: true,
-			category: true
+		myProjects: {
+			enrolledProjects: stressProjects.length,
+			roundTrips: countMyProjectsRoundTrips(stressProjects.length),
+			latency: summarizeSamples(myProjectsSamples)
 		},
-		orderBy: { createdAt: 'asc' }
-	});
+		adminActiveProjects
+	};
+
+	let sourceTemplate: Awaited<
+		ReturnType<typeof db.projectTemplate.findFirst<{
+			include: { tasks: true; epics: true; sprints: true; category: true };
+		}>>
+	> = null;
+
+	try {
+		sourceTemplate = await db.projectTemplate.findFirst({
+			where: {
+				title: { startsWith: STRESS_TITLE_PREFIX },
+				status: 'APPROVED'
+			},
+			include: {
+				tasks: true,
+				epics: true,
+				sprints: true,
+				category: true
+			},
+			orderBy: { createdAt: 'asc' }
+		});
+	} catch (error) {
+		return {
+			...baseReport,
+			reason: `Clone bench skipped: ${error instanceof Error ? error.message : 'unknown error'}`
+		};
+	}
 
 	if (!sourceTemplate) {
 		return {
-			available: true,
-			catalog: {
-				latency: summarizeSamples(catalogSamples),
-				payloadBytes: catalogPayload,
-				templateCount,
-				taskCount
-			},
-			myProjects: {
-				enrolledProjects: stressProjects.length,
-				roundTrips: countMyProjectsRoundTrips(stressProjects.length),
-				latency: summarizeSamples(myProjectsSamples)
-			},
+			...baseReport,
 			reason: 'No stress template found for clone bench'
 		};
 	}
@@ -243,18 +336,7 @@ export async function runServerBenches(
 	}
 
 	return {
-		available: true,
-		catalog: {
-			latency: summarizeSamples(catalogSamples),
-			payloadBytes: catalogPayload,
-			templateCount,
-			taskCount
-		},
-		myProjects: {
-			enrolledProjects: stressProjects.length,
-			roundTrips: countMyProjectsRoundTrips(stressProjects.length),
-			latency: summarizeSamples(myProjectsSamples)
-		},
+		...baseReport,
 		clone: {
 			sourceTaskCount: sourceTemplate.tasks.length,
 			loadGraph: summarizeSamples(loadSamples),

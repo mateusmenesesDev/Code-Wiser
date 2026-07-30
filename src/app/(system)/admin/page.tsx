@@ -83,7 +83,8 @@ function MentorDashboardContent() {
 	} = api.project.getActiveProjects.useInfiniteQuery(
 		{
 			limit: 12,
-			status: statusFilter
+			status: statusFilter,
+			search: searchTerm.trim() || undefined
 		},
 		{
 			getNextPageParam: (lastPage) => lastPage.nextCursor
@@ -140,24 +141,6 @@ function MentorDashboardContent() {
 			refundCredits: refundCanceledProjectCredits,
 			reason: cancellationReason.trim()
 		});
-	};
-
-	const filteredProjects = projects.filter(
-		(project) =>
-			project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			project.members.some(
-				(member) =>
-					member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					member.email.toLowerCase().includes(searchTerm.toLowerCase())
-			)
-	);
-
-	const getProgressForProject = (project: (typeof projects)[0]) => {
-		const totalTasks = project.tasks.length;
-		const completedTasks = project.tasks.filter(
-			(task) => task.status === 'DONE'
-		).length;
-		return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 	};
 
 	const getStatusBadge = (progress: number) => {
@@ -277,7 +260,7 @@ function MentorDashboardContent() {
 						</Table>
 					</CardContent>
 				</Card>
-			) : filteredProjects.length === 0 ? (
+			) : projects.length === 0 ? (
 				<Card className="py-16 text-center">
 					<CardContent>
 						<Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
@@ -310,8 +293,8 @@ function MentorDashboardContent() {
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{filteredProjects.map((project) => {
-										const progress = getProgressForProject(project);
+									{projects.map((project) => {
+										const progress = project.progress;
 										const status = getStatusBadge(progress);
 										const student = project.members[0];
 

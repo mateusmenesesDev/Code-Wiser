@@ -16,6 +16,12 @@ export type ServerBenchReport = {
 		roundTrips: number;
 		latency: SampleSummary;
 	};
+	adminActiveProjects?: {
+		projectCount: number;
+		leanPayloadBytes: number;
+		heavyPayloadBytes: number;
+		latency: SampleSummary;
+	};
 	clone?: {
 		sourceTaskCount: number;
 		loadGraph: SampleSummary;

@@ -140,15 +140,12 @@ export function useKanbanData(
 						tasks: newOptimisticTasks
 					};
 				});
-			} else {
-				utils.project.getById.setData(queryKey, (oldData) => {
-					if (!oldData) return oldData;
-					return {
-						...oldData,
-						tasks: newOptimisticTasks
-					};
-				});
 			}
+
+			utils.task.getAllByProjectId.setData(
+				{ projectId, isTemplate: actualIsTemplate },
+				newOptimisticTasks
+			);
 
 			setOptimisticTasks(newOptimisticTasks);
 
