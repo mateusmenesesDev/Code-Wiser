@@ -171,7 +171,7 @@ Run mentorship week count queries concurrently or as one bucketed query; replace
 
 ### Acceptance criteria
 
-- [ ] Mentorship week stats are not limited by serial independent count latency
-- [ ] Weekly session reset updates active mentees in a set-based statement
-- [ ] User list avatars do not grow as unbounded per-row Clerk calls beyond current page needs (mitigation in place)
-- [ ] Final benchmark summary documents cumulative gains vs Phase 1 baseline for the program’s target paths
+- [x] Mentorship week stats are not limited by serial independent count latency
+- [x] Weekly session reset updates active mentees in a set-based statement
+- [x] User list avatars do not grow as unbounded per-row Clerk calls beyond current page needs (mitigation in place)
+- [x] Final benchmark summary documents cumulative gains vs Phase 1 baseline for the program’s target paths

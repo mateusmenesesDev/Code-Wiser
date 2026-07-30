@@ -1,6 +1,9 @@
 import { getAvailableSlotsSchema } from '~/features/mentorship/schemas/mentorship.schema';
 import { getAvailableSlots } from '~/server/services/calcom/calcomService';
-import { getWeekBoundaries } from '~/server/services/mentorship/mentorshipService';
+import {
+	bucketScheduledBookingsByWeek,
+	buildWeekWindows
+} from '~/server/services/mentorship/weeklyBookingCounts';
 import { mentorshipProcedure, protectedProcedure } from '../../trpc';
 
 export const mentorshipQueries = {
@@ -25,26 +28,22 @@ export const mentorshipQueries = {
 
 		const hasAvailableSessions = (info?.remainingWeeklySessions ?? 0) > 0;
 
-		// Build per-week scheduled booking counts for the 4-week calendar window
-		// so the client can compute lock states without additional round-trips.
-		const weeklyBookingCounts: { weekStart: Date; scheduledCount: number }[] =
-			[];
-
-		for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
-			const weekAnchor = new Date(now);
-			weekAnchor.setUTCDate(now.getUTCDate() + weekOffset * 7);
-			const { weekStart, weekEnd } = getWeekBoundaries(weekAnchor);
-
-			const scheduledCount = await ctx.db.mentorshipBooking.count({
-				where: {
-					userId,
-					scheduledAt: { gte: weekStart, lt: weekEnd },
-					status: 'SCHEDULED'
-				}
-			});
-
-			weeklyBookingCounts.push({ weekStart, scheduledCount });
-		}
+		// One range query + in-memory bucketing instead of 4 serial counts.
+		const weeks = buildWeekWindows(now, 4);
+		const rangeStart = weeks[0]?.weekStart;
+		const rangeEnd = weeks[weeks.length - 1]?.weekEnd;
+		const bookings =
+			rangeStart && rangeEnd
+				? await ctx.db.mentorshipBooking.findMany({
+						where: {
+							userId,
+							status: 'SCHEDULED',
+							scheduledAt: { gte: rangeStart, lt: rangeEnd }
+						},
+						select: { scheduledAt: true }
+					})
+				: [];
+		const weeklyBookingCounts = bucketScheduledBookingsByWeek(bookings, weeks);
 
 		return {
 			remainingWeeklySessions: info?.remainingWeeklySessions ?? 0,

@@ -55,7 +55,7 @@ function StudentAvatar({
 	const fallback = (name || email || '?').slice(0, 1).toUpperCase();
 	return (
 		<Avatar className="h-6 w-6">
-			<AvatarImage src={imageUrl} alt={name ?? email} />
+			<AvatarImage src={imageUrl ?? undefined} alt={name ?? email} />
 			<AvatarFallback>{fallback}</AvatarFallback>
 		</Avatar>
 	);

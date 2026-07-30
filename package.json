@@ -22,6 +22,8 @@
 		"db:backfill-public-task-ids:dry": "infisical run -- bun scripts/backfill-public-task-ids.ts --dry-run",
 		"db:backfill-org-admins": "infisical run -- bun scripts/backfill-org-admins.ts",
 		"db:backfill-org-admins:dry": "infisical run -- bun scripts/backfill-org-admins.ts --dry-run",
+		"db:backfill-user-images": "infisical run -- bun scripts/backfill-user-image-urls.ts",
+		"db:backfill-user-images:dry": "infisical run -- bun scripts/backfill-user-image-urls.ts --dry-run",
 		"dev": "infisical run -- next dev",
 		"dev:ngr": "ngrok http 3000",
 		"postinstall": "prisma generate",

@@ -5,6 +5,7 @@ type UserData = {
 	email: string;
 	name: string;
 	id: string;
+	imageUrl?: string | null;
 };
 
 export async function createUser(data: UserData) {
@@ -15,7 +16,7 @@ export async function createUser(data: UserData) {
 
 export async function updateUser(
 	id: string,
-	data: Partial<{ email: string; name: string }>
+	data: Partial<{ email: string; name: string; imageUrl: string | null }>
 ) {
 	return await db.user.update({
 		where: { id },
@@ -57,6 +58,7 @@ export async function getAllUsers(options?: {
 				id: true,
 				email: true,
 				name: true,
+				imageUrl: true,
 				credits: true,
 				mentorshipStatus: true,
 				mentorshipType: true,

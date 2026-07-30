@@ -192,29 +192,19 @@ export async function resetAllWeeklySessions(): Promise<{
 	try {
 		const nextReset = getNextResetDate();
 
-		// Get all users with active mentorship
-		const activeUsers = await db.user.findMany({
-			where: { mentorshipStatus: 'ACTIVE' },
-			select: { id: true, weeklyMentorshipSessions: true }
-		});
-
-		// Update each user individually
-		// Note: We can't use updateMany with column references in Prisma
-		await Promise.all(
-			activeUsers.map((user) =>
-				db.user.update({
-					where: { id: user.id },
-					data: {
-						remainingWeeklySessions: user.weeklyMentorshipSessions,
-						weeklySessionsResetAt: nextReset
-					}
-				})
-			)
-		);
+		// Column-to-column assignment requires raw SQL (Prisma updateMany cannot).
+		const count = await db.$executeRaw`
+			UPDATE "User"
+			SET
+				"remainingWeeklySessions" = "weeklyMentorshipSessions",
+				"weeklySessionsResetAt" = ${nextReset},
+				"updatedAt" = NOW()
+			WHERE "mentorshipStatus" = 'ACTIVE'
+		`;
 
 		return {
 			success: true,
-			count: activeUsers.length
+			count: Number(count)
 		};
 	} catch (error) {
 		console.error('Error resetting weekly sessions:', error);
