@@ -1,4 +1,5 @@
 import {
+	groupTasksBySprintId,
 	reorderKanbanItems,
 	toKanbanOrderUpdates
 } from '~/common/utils/kanbanReorder';
@@ -31,18 +32,6 @@ export type ClientBenchReport = {
 		groupBySprint: SampleSummary;
 	};
 };
-
-function groupTasksBySprint(
-	tasks: Array<{ id: string; sprintId: string | null }>
-) {
-	const groups = new Map<string | null, typeof tasks>();
-	for (const task of tasks) {
-		const bucket = groups.get(task.sprintId) ?? [];
-		bucket.push(task);
-		groups.set(task.sprintId, bucket);
-	}
-	return groups;
-}
 
 export function runClientBenches(options?: {
 	boardTasks?: number;
@@ -78,7 +67,7 @@ export function runClientBenches(options?: {
 		);
 		orderUpdateSamples.push(orderUpdates.durationMs);
 
-		const grouped = measureSync(() => groupTasksBySprint(board));
+		const grouped = measureSync(() => groupTasksBySprintId(board));
 		groupSamples.push(grouped.durationMs);
 	}
 

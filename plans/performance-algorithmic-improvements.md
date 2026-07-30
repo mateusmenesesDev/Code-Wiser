@@ -135,12 +135,12 @@ Unify optimistic reorder and order patches onto the shared kanban helpers (Maps,
 
 ### Acceptance criteria
 
-- [ ] Kanban optimistic updates and task order cache patches share one reorder → order-update pipeline
-- [ ] Column generation / backlog grouping avoid repeated full-list scans per status/sprint
-- [ ] Filtered kanban merge semantics for hidden tasks are preserved
-- [ ] Bulk-delete optimistic removal is Set-based (O(n + d))
-- [ ] Unit tests cover reorder, merge-visible, and grouping correctness
-- [ ] Client microbenchmarks improve (or stay equal) vs nested-find baseline on large boards
+- [x] Kanban optimistic updates and task order cache patches share one reorder → order-update pipeline
+- [x] Column generation / backlog grouping avoid repeated full-list scans per status/sprint
+- [x] Filtered kanban merge semantics for hidden tasks are preserved
+- [x] Bulk-delete optimistic removal is Set-based (O(n + d))
+- [x] Unit tests cover reorder, merge-visible, and grouping correctness
+- [x] Client microbenchmarks improve (or stay equal) vs nested-find baseline on large boards
 
 ---
 

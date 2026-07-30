@@ -4,7 +4,7 @@ import { ProjectMethodologyEnum, type TaskStatusEnum } from '@prisma/client';
 import { AlertTriangle } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { parseAsString, useQueryState, useQueryStates } from 'nuqs';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import {
 	KanbanBoard,
 	KanbanCards,
@@ -12,7 +12,10 @@ import {
 	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
-import { toKanbanOrderUpdates } from '~/common/utils/kanbanReorder';
+import {
+	bucketTasksByStatus,
+	toKanbanOrderUpdates
+} from '~/common/utils/kanbanReorder';
 import Backlog from '~/features/backlog/components/Backlog';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 import { columns } from '~/features/kanban/constants';
@@ -44,6 +47,7 @@ const Workspace = () => {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	const tasks = filterTasks(allTasks ?? []);
+	const tasksByStatus = useMemo(() => bucketTasksByStatus(tasks), [tasks]);
 	const isScrum = projectInfo?.methodology === ProjectMethodologyEnum.SCRUM;
 	const isCanceled =
 		projectInfo?.canceledAt !== null && projectInfo?.canceledAt !== undefined;
@@ -166,7 +170,7 @@ const Workspace = () => {
 							onDataChange={handleDataChange}
 						>
 							{(column) => {
-								const columnTasks = tasks.filter((t) => t.status === column.id);
+								const columnTasks = tasksByStatus.get(column.id) ?? [];
 								return (
 									<KanbanBoard
 										id={column.id}

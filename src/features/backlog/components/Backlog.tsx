@@ -21,6 +21,7 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { groupTasksBySprintId } from '~/common/utils/kanbanReorder';
 import { useSprintQueries } from '~/features/sprints/hooks/useSprintQueries';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import { useTask } from '~/features/task/hooks/useTask';
@@ -67,14 +68,21 @@ export default function Backlog({ projectId }: { projectId: string }) {
 		[setTaskId]
 	);
 
+	const tasksBySprint = groupTasksBySprintId(tasks ?? []);
+
 	const moveTask = useCallback(
 		(dragIndex: number, hoverIndex: number, groupTaskIds?: string[]) => {
 			if (dragIndex === hoverIndex) return;
 
+			const groupIdSet =
+				groupTaskIds && groupTaskIds.length > 0
+					? new Set(groupTaskIds)
+					: null;
+
 			const groupTasks = (tasks ?? [])
 				.filter((task) =>
-					groupTaskIds?.length
-						? groupTaskIds.includes(task.id)
+					groupIdSet
+						? groupIdSet.has(task.id)
 						: task.status === TaskStatusEnum.BACKLOG && !task.sprintId
 				)
 				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -96,19 +104,16 @@ export default function Backlog({ projectId }: { projectId: string }) {
 		[tasks, updateTaskOrders]
 	);
 
-	const backlogTasks = tasks
-		?.filter((task) => task.status === TaskStatusEnum.BACKLOG && !task.sprintId)
+	const backlogTasks = (tasksBySprint.get(null) ?? [])
+		.filter((task) => task.status === TaskStatusEnum.BACKLOG)
 		.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
 	const sprintTaskMap = new Map(
 		(sprints ?? []).map((sprint) => {
-			const sprintTasks = tasks
-				?.filter(
-					(task) =>
-						task.status !== TaskStatusEnum.DONE && task.sprintId === sprint.id
-				)
+			const sprintTasks = (tasksBySprint.get(sprint.id) ?? [])
+				.filter((task) => task.status !== TaskStatusEnum.DONE)
 				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-			return [sprint.id, sprintTasks ?? []] as const;
+			return [sprint.id, sprintTasks] as const;
 		})
 	);
 

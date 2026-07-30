@@ -3,7 +3,7 @@
 import { SprintStatusEnum, type TaskStatusEnum } from '@prisma/client';
 import dayjs from 'dayjs';
 import { CheckCircle2, Clock, LayoutGrid, List, Play, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
@@ -14,7 +14,10 @@ import {
 	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
-import { toKanbanOrderUpdates } from '~/common/utils/kanbanReorder';
+import {
+	bucketTasksByStatus,
+	toKanbanOrderUpdates
+} from '~/common/utils/kanbanReorder';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 import { columns } from '~/features/kanban/constants';
 import { cn } from '~/lib/utils';
@@ -128,6 +131,7 @@ export default function SprintBoard({
 		projectId,
 		filters: { sprintId: sprint.id }
 	});
+	const tasksByStatus = useMemo(() => bucketTasksByStatus(tasks), [tasks]);
 
 	const updateTaskOrders = api.task.updateTaskOrders.useMutation({
 		onSettled: () => {
@@ -241,7 +245,7 @@ export default function SprintBoard({
 						onDataChange={handleDataChange}
 					>
 						{(column) => {
-							const columnTasks = tasks.filter((t) => t.status === column.id);
+							const columnTasks = tasksByStatus.get(column.id) ?? [];
 							return (
 								<KanbanBoard
 									id={column.id}

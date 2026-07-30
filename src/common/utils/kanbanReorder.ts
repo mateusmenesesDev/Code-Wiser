@@ -86,9 +86,13 @@ export const mergeVisibleKanbanItems = <T extends KanbanReorderItem>(
 	if (allData.length === visibleData.length) return visibleData;
 
 	const visibleIds = new Set(visibleData.map((task) => task.id));
+	const seenStatuses = new Set<string>();
 	const statuses: string[] = [];
 	const rememberStatus = (status: string | null) => {
-		if (status && !statuses.includes(status)) statuses.push(status);
+		if (status && !seenStatuses.has(status)) {
+			seenStatuses.add(status);
+			statuses.push(status);
+		}
 	};
 
 	for (const task of allData) rememberStatus(task.status);
@@ -168,4 +172,93 @@ export const toKanbanOrderUpdates = <T extends KanbanOrderedItem>(
 			previous?.order !== update.order || previous?.status !== update.status
 		);
 	});
+};
+
+export type TaskOrderPatch = {
+	id: string;
+	order: number;
+	status?: string;
+};
+
+export const applyTaskOrderUpdates = <
+	T extends { id: string; order?: number | null; status?: unknown }
+>(
+	tasks: T[],
+	updates: TaskOrderPatch[],
+	options?: { sort?: boolean }
+): T[] => {
+	const updatesById = new Map(updates.map((update) => [update.id, update]));
+	const next = tasks.map((task) => {
+		const update = updatesById.get(task.id);
+		if (!update) return task;
+
+		if (update.status !== undefined) {
+			return {
+				...task,
+				order: update.order,
+				status: update.status as T['status']
+			};
+		}
+
+		return {
+			...task,
+			order: update.order
+		};
+	});
+
+	if (options?.sort === false) return next;
+
+	return next.sort((a, b) => {
+		const statusOrder = String(a.status ?? '').localeCompare(
+			String(b.status ?? '')
+		);
+		if (statusOrder !== 0) return statusOrder;
+		return (a.order ?? 0) - (b.order ?? 0);
+	});
+};
+
+export const removeTasksByIds = <T extends { id: string }>(
+	tasks: T[],
+	ids: Iterable<string>
+): T[] => {
+	const idSet = ids instanceof Set ? ids : new Set(ids);
+	if (idSet.size === 0) return tasks;
+	return tasks.filter((task) => !idSet.has(task.id));
+};
+
+export const bucketTasksByStatus = <T extends { status: string | null }>(
+	tasks: T[]
+): Map<string, T[]> => {
+	const buckets = new Map<string, T[]>();
+	for (const task of tasks) {
+		if (!task.status) continue;
+		const bucket = buckets.get(task.status) ?? [];
+		bucket.push(task);
+		buckets.set(task.status, bucket);
+	}
+	return buckets;
+};
+
+export const groupTasksBySprintId = <
+	T extends { sprintId: string | null }
+>(
+	tasks: T[]
+): Map<string | null, T[]> => {
+	const groups = new Map<string | null, T[]>();
+	for (const task of tasks) {
+		const bucket = groups.get(task.sprintId) ?? [];
+		bucket.push(task);
+		groups.set(task.sprintId, bucket);
+	}
+	return groups;
+};
+
+export const idsByStatusFromBuckets = <T extends { id: string }>(
+	buckets: Map<string, T[]>
+): Map<string, Set<string>> => {
+	const idsByStatus = new Map<string, Set<string>>();
+	for (const [status, statusTasks] of buckets) {
+		idsByStatus.set(status, new Set(statusTasks.map((task) => task.id)));
+	}
+	return idsByStatus;
 };

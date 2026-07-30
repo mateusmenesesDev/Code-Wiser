@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+	applyTaskOrderUpdates,
+	bucketTasksByStatus,
+	groupTasksBySprintId,
+	mergeVisibleKanbanItems,
+	removeTasksByIds,
 	reorderKanbanItems,
 	toKanbanOrderUpdates,
 	toPerColumnOrderUpdates
@@ -139,5 +144,72 @@ describe('kanban reorder', () => {
 		expect(toKanbanOrderUpdates(allData, visibleData)).toEqual([
 			{ id: 'progress-1', order: 2, status: 'TODO' }
 		]);
+	});
+
+	it('merges visible order while keeping hidden ranks per status', () => {
+		const allData = [
+			task('visible-1', 'TODO', 0),
+			task('hidden', 'TODO', 1),
+			task('visible-2', 'TODO', 2)
+		];
+		const visibleData = [
+			task('visible-2', 'TODO', 2),
+			task('visible-1', 'TODO', 0)
+		];
+
+		expect(mergeVisibleKanbanItems(allData, visibleData).map((t) => t.id)).toEqual(
+			['visible-2', 'hidden', 'visible-1']
+		);
+	});
+
+	it('applies order updates with a Map in one pass', () => {
+		const data = [
+			task('a', 'TODO', 0),
+			task('b', 'TODO', 1),
+			task('c', 'IN_PROGRESS', 0)
+		];
+
+		expect(
+			applyTaskOrderUpdates(data, [
+				{ id: 'b', order: 0, status: 'IN_PROGRESS' },
+				{ id: 'c', order: 1, status: 'IN_PROGRESS' }
+			])
+		).toEqual([
+			task('b', 'IN_PROGRESS', 0),
+			task('c', 'IN_PROGRESS', 1),
+			task('a', 'TODO', 0)
+		]);
+	});
+
+	it('buckets tasks by status in a single pass', () => {
+		const buckets = bucketTasksByStatus([
+			task('a', 'TODO'),
+			task('b', 'IN_PROGRESS'),
+			task('c', 'TODO')
+		]);
+
+		expect(buckets.get('TODO')?.map((t) => t.id)).toEqual(['a', 'c']);
+		expect(buckets.get('IN_PROGRESS')?.map((t) => t.id)).toEqual(['b']);
+	});
+
+	it('groups tasks by sprint id in a single pass', () => {
+		const groups = groupTasksBySprintId([
+			{ id: 'a', sprintId: null },
+			{ id: 'b', sprintId: 's1' },
+			{ id: 'c', sprintId: 's1' },
+			{ id: 'd', sprintId: null }
+		]);
+
+		expect(groups.get(null)?.map((t) => t.id)).toEqual(['a', 'd']);
+		expect(groups.get('s1')?.map((t) => t.id)).toEqual(['b', 'c']);
+	});
+
+	it('removes tasks with a Set of ids', () => {
+		expect(
+			removeTasksByIds(
+				[task('a', 'TODO'), task('b', 'TODO'), task('c', 'TODO')],
+				['a', 'c']
+			).map((t) => t.id)
+		).toEqual(['b']);
 	});
 });

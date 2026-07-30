@@ -2,8 +2,10 @@
 
 import type { TaskStatusEnum } from '@prisma/client';
 import { useQueryState } from 'nuqs';
+import { useMemo } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
+import { bucketTasksByStatus } from '~/common/utils/kanbanReorder';
 import { columns } from '~/features/kanban/constants';
 import { formatPublicTaskId } from '~/lib/publicTaskId';
 import type { RouterOutputs } from '~/trpc/react';
@@ -77,12 +79,13 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 
 export default function SprintListView({ tasks }: SprintListViewProps) {
 	const orderedStatuses = columns.map((c) => c.id as TaskStatusEnum);
+	const tasksByStatus = useMemo(() => bucketTasksByStatus(tasks), [tasks]);
 
 	return (
 		<div className="h-full overflow-y-auto p-4">
 			<div className="space-y-6">
 				{orderedStatuses.map((status) => {
-					const statusTasks = tasks.filter((t) => t.status === status);
+					const statusTasks = tasksByStatus.get(status) ?? [];
 					if (statusTasks.length === 0) return null;
 
 					const column = columns.find((c) => c.id === status);

@@ -27,13 +27,19 @@ import {
 	type HTMLAttributes,
 	type ReactNode,
 	createContext,
+	useCallback,
 	useContext,
+	useMemo,
 	useState
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Card } from '~/common/components/ui/card';
 import { ScrollArea, ScrollBar } from '~/common/components/ui/scroll-area';
-import { reorderKanbanItems } from '~/common/utils/kanbanReorder';
+import {
+	bucketTasksByStatus,
+	idsByStatusFromBuckets,
+	reorderKanbanItems
+} from '~/common/utils/kanbanReorder';
 import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 
@@ -52,12 +58,14 @@ type KanbanContextProps<
 > = {
 	columns: C[];
 	data: T[];
+	tasksByStatus: Map<string, T[]>;
 	activeCardId: string | null;
 };
 
 const KanbanContext = createContext<KanbanContextProps>({
 	columns: [],
 	data: [],
+	tasksByStatus: new Map(),
 	activeCardId: null
 });
 
@@ -159,10 +167,10 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
 	className,
 	...props
 }: KanbanCardsProps<T>) => {
-	const { data, activeCardId } = useContext(
+	const { tasksByStatus, activeCardId } = useContext(
 		KanbanContext
 	) as KanbanContextProps<T>;
-	const filteredData = data.filter((item) => item.status === props.id);
+	const filteredData = tasksByStatus.get(props.id) ?? [];
 	const items = filteredData.map((item) => item.id);
 	const { isOver, setNodeRef } = useDroppable({
 		id: props.id
@@ -246,6 +254,16 @@ export const KanbanProvider = <
 	const [activeCardId, setActiveCardId] = useState<string | null>(null);
 	const [activeCard, setActiveCard] = useState<T | null>(null);
 
+	const tasksByStatus = useMemo(() => bucketTasksByStatus(data), [data]);
+	const idsByStatus = useMemo(
+		() => idsByStatusFromBuckets(tasksByStatus),
+		[tasksByStatus]
+	);
+	const columnIdSet = useMemo(
+		() => new Set(columns.map((col) => col.id)),
+		[columns]
+	);
+
 	const sensors = useSensors(
 		useSensor(MouseSensor, {
 			activationConstraint: {
@@ -263,31 +281,29 @@ export const KanbanProvider = <
 
 	// Prefer cards inside the column under the pointer. This keeps drops in the
 	// gap between two cards anchored to the nearest card instead of the column.
-	const collisionDetection: CollisionDetection = (args) => {
-		const columnIds = new Set(columns.map((col) => col.id));
-		const pointerCollisions = pointerWithin(args);
-		const overColumn = pointerCollisions.find((collision) =>
-			columnIds.has(collision.id as string)
-		);
-
-		if (overColumn) {
-			const overColumnId = String(overColumn.id);
-			const itemIdsInColumn = new Set(
-				data
-					.filter((item) => item.status === overColumnId)
-					.map((item) => item.id)
-			);
-			const cardCollisions = closestCenter(args).filter((collision) =>
-				itemIdsInColumn.has(collision.id as string)
+	const collisionDetection: CollisionDetection = useCallback(
+		(args) => {
+			const pointerCollisions = pointerWithin(args);
+			const overColumn = pointerCollisions.find((collision) =>
+				columnIdSet.has(collision.id as string)
 			);
 
-			return cardCollisions.length > 0
-				? [...cardCollisions, overColumn]
-				: [overColumn];
-		}
+			if (overColumn) {
+				const overColumnId = String(overColumn.id);
+				const itemIdsInColumn = idsByStatus.get(overColumnId) ?? new Set();
+				const cardCollisions = closestCenter(args).filter((collision) =>
+					itemIdsInColumn.has(collision.id as string)
+				);
 
-		return closestCenter(args);
-	};
+				return cardCollisions.length > 0
+					? [...cardCollisions, overColumn]
+					: [overColumn];
+			}
+
+			return closestCenter(args);
+		},
+		[columnIdSet, idsByStatus]
+	);
 
 	const handleDragStart = (event: DragStartEvent) => {
 		const card = data.find((item) => item.id === event.active.id);
@@ -365,7 +381,9 @@ export const KanbanProvider = <
 	};
 
 	return (
-		<KanbanContext.Provider value={{ columns, data, activeCardId }}>
+		<KanbanContext.Provider
+			value={{ columns, data, tasksByStatus, activeCardId }}
+		>
 			<DndContext
 				accessibility={{ announcements }}
 				collisionDetection={collisionDetection}

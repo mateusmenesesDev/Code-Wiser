@@ -1,4 +1,4 @@
-import type { TaskStatusEnum } from '@prisma/client';
+import { applyTaskOrderUpdates } from '~/common/utils/kanbanReorder';
 import { api } from '~/trpc/react';
 
 export const useKanbanMutations = (projectId: string) => {
@@ -13,29 +13,10 @@ export const useKanbanMutations = (projectId: string) => {
 
 			// Optimistically update to the new value
 			if (previousTasks) {
-				const updatesById = new Map(
-					updates.map((update) => [update.id, update])
+				utils.kanban.getKanbanData.setData(
+					{ projectId },
+					applyTaskOrderUpdates(previousTasks, updates)
 				);
-				const optimisticTasks = previousTasks
-					.map((task) => {
-						const update = updatesById.get(task.id);
-						if (!update) return task;
-
-						return {
-							...task,
-							order: update.order,
-							status: update.status as TaskStatusEnum
-						};
-					})
-					.sort((a, b) => {
-						const statusOrder = String(a.status).localeCompare(
-							String(b.status)
-						);
-						if (statusOrder !== 0) return statusOrder;
-						return (a.order ?? 0) - (b.order ?? 0);
-					});
-
-				utils.kanban.getKanbanData.setData({ projectId }, optimisticTasks);
 			}
 
 			return { previousTasks };

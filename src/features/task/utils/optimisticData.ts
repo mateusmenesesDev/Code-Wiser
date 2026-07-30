@@ -1,4 +1,5 @@
 import { convertUndefinedToNull } from '~/common/utils/convertion';
+import { removeTasksByIds } from '~/common/utils/kanbanReorder';
 import type { api } from '~/trpc/react';
 import type { RouterOutputs } from '~/trpc/react';
 import type {
@@ -170,16 +171,18 @@ const applyBulkDeleteUpdates = (
 	taskIds: string[]
 ) => {
 	if (config.updateKanban && taskIds.length > 0) {
+		const deletedIds = new Set(taskIds);
 		utils.kanban.getKanbanData.setData({ projectId }, (old) => {
 			if (!old) return old;
-			return old.filter((task) => !taskIds.includes(task.id));
+			return removeTasksByIds(old, deletedIds);
 		});
 	}
 
 	if (config.updateBacklog && taskIds.length > 0) {
+		const deletedIds = new Set(taskIds);
 		utils.task.getAllByProjectId.setData({ projectId, isTemplate }, (old) => {
 			if (!old) return old;
-			return old.filter((task) => !taskIds.includes(task.id));
+			return removeTasksByIds(old, deletedIds);
 		});
 	}
 };

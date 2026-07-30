@@ -1,7 +1,7 @@
-import { TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import { toast } from 'sonner';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { normalizeDate } from '~/common/utils/convertion';
+import { applyTaskOrderUpdates } from '~/common/utils/kanbanReorder';
 import { api } from '~/trpc/react';
 import type {
 	CreateTaskInput,
@@ -195,57 +195,18 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 			});
 
 			if (previousProjectData) {
-				const optimisticTasks = [...previousProjectData.tasks];
-				for (const { id: taskId, order } of updates) {
-					const taskIndex = optimisticTasks.findIndex((t) => t.id === taskId);
-					if (taskIndex !== -1) {
-						const existingTask = optimisticTasks[taskIndex];
-						if (existingTask) {
-							optimisticTasks[taskIndex] = {
-								...existingTask,
-								id: existingTask.id,
-								order,
-								type: existingTask.type || TaskTypeEnum.TASK,
-								status: existingTask.status || TaskStatusEnum.BACKLOG,
-								createdAt: existingTask.createdAt || new Date(),
-								updatedAt: existingTask.updatedAt || new Date(),
-								title: existingTask.title,
-								description: existingTask.description || null,
-								priority: existingTask.priority || null,
-								tags: existingTask.tags,
-								epicId: existingTask.epicId || null,
-								sprintId: existingTask.sprintId || null
-							};
-						}
-					}
-				}
-
 				utils.projectTemplate.getById.setData(queryKey, {
 					...previousProjectData,
-					tasks: optimisticTasks
+					tasks: applyTaskOrderUpdates(previousProjectData.tasks, updates, {
+						sort: false
+					})
 				});
 			}
 
 			if (previousTaskData) {
-				const optimisticTaskData = [...previousTaskData];
-				for (const { id: taskId, order } of updates) {
-					const taskIndex = optimisticTaskData.findIndex(
-						(t) => t.id === taskId
-					);
-					if (taskIndex !== -1) {
-						const existingTask = optimisticTaskData[taskIndex];
-						if (existingTask) {
-							optimisticTaskData[taskIndex] = {
-								...existingTask,
-								order
-							};
-						}
-					}
-				}
-
 				utils.task.getAllByProjectId.setData(
 					{ projectId, isTemplate },
-					optimisticTaskData
+					applyTaskOrderUpdates(previousTaskData, updates, { sort: false })
 				);
 			}
 
