@@ -112,7 +112,14 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 					</div>
 				</div>
 				<div className="flex flex-1 overflow-hidden">
-					<div className="flex-1 overflow-y-auto p-6" />
+					<div className="flex flex-1 items-center justify-center overflow-y-auto p-6">
+						{isTransitioning && (
+							<div className="flex items-center gap-2 text-muted-foreground text-sm">
+								<Loader2 className="h-4 w-4 animate-spin" />
+								<span>Moving to next story…</span>
+							</div>
+						)}
+					</div>
 					<div className="w-80 border-l bg-muted/30 p-4">
 						{userId && <MemberList members={members} currentUserId={userId} />}
 					</div>
@@ -163,10 +170,19 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 				<div className="flex-1 overflow-y-auto p-6">
 					<div className="mx-auto max-w-4xl space-y-6">
 						{/* Progress */}
-						<div className="text-center">
+						<div className="space-y-2 text-center">
 							<p className="text-muted-foreground text-sm">
 								Task {currentTaskIndex + 1} of {totalTasks}
 							</p>
+							{isTransitioning && (
+								<div
+									className="flex items-center justify-center gap-2 text-muted-foreground text-sm"
+									aria-live="polite"
+								>
+									<Loader2 className="h-3.5 w-3.5 animate-spin" />
+									<span>Moving to next story…</span>
+								</div>
+							)}
 						</div>
 
 						{/* Task Card */}
@@ -179,7 +195,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 								<VotingCards
 									selectedValue={selectedValue}
 									onSelect={handleVote}
-									disabled={allVoted}
+									disabled={allVoted || isTransitioning}
 								/>
 							</div>
 						)}
@@ -212,6 +228,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 												min="1"
 												placeholder="1, 2, 3, 5, 8, 13, 21"
 												value={finalStoryPoints ?? ''}
+												disabled={isFinalizing}
 												onChange={(e) => {
 													const value = e.target.value;
 													setFinalStoryPoints(
@@ -236,7 +253,9 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 												{isFinalizing ? (
 													<>
 														<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-														Finalizing...
+														{isTransitioning
+															? 'Moving to next story…'
+															: 'Finalizing...'}
 													</>
 												) : isLastTask ? (
 													'Finalize Last Task & End Session'

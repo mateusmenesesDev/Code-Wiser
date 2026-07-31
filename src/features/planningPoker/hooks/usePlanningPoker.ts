@@ -114,14 +114,18 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		}
 	});
 
-	const { data: currentTaskData, isPlaceholderData: isTaskPlaceholder } =
-		api.task.getById.useQuery(
-			{ id: currentTaskId },
-			{
-				enabled: !!currentTaskId && currentTaskId !== '',
-				placeholderData: keepPreviousData
-			}
-		);
+	const {
+		data: currentTaskData,
+		isPlaceholderData: isTaskPlaceholder,
+		isError: isTaskError,
+		isFetching: isTaskFetching
+	} = api.task.getById.useQuery(
+		{ id: currentTaskId },
+		{
+			enabled: !!currentTaskId && currentTaskId !== '',
+			placeholderData: keepPreviousData
+		}
+	);
 
 	const currentTask = currentTaskData
 		? {
@@ -181,6 +185,25 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		isTaskPlaceholder,
 		refetchVotes
 	]);
+
+	useEffect(() => {
+		if (!isTransitioning) return;
+		if (!isTaskError || isTaskFetching) return;
+
+		setIsTransitioning(false);
+		toast.error('Failed to load next story');
+	}, [isTransitioning, isTaskError, isTaskFetching]);
+
+	useEffect(() => {
+		if (!isTransitioning) return;
+
+		const timeoutId = setTimeout(() => {
+			setIsTransitioning(false);
+			toast.error('Timed out moving to the next story');
+		}, 10_000);
+
+		return () => clearTimeout(timeoutId);
+	}, [isTransitioning]);
 
 	useEffect(() => {
 		if (isTransitioning) return;
@@ -350,7 +373,8 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		totalTasks: session?.taskIds.length ?? 0,
 		isLoading: !session || (!currentTask && !isTransitioning),
 		isTransitioning,
-		isFinalizing: finalizeTaskMutation.isPending,
+		isFinalizing:
+			finalizeTaskMutation.isPending || isTransitioning,
 		isEnding: endSessionMutation.isPending
 	};
 }
