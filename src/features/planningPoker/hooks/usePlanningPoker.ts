@@ -37,6 +37,14 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		);
 
 	const currentTaskId = session?.taskIds[session?.currentTaskIndex ?? 0] ?? '';
+	const nextTaskId =
+		session?.taskIds[(session?.currentTaskIndex ?? 0) + 1] ?? null;
+
+	useEffect(() => {
+		if (!nextTaskId) return;
+
+		void utils.task.getById.prefetch({ id: nextTaskId });
+	}, [nextTaskId, utils.task.getById]);
 
 	const { data: votes, refetch: refetchVotes } =
 		api.planningPoker.getSessionVotes.useQuery(
