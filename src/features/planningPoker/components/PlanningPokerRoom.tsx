@@ -5,6 +5,7 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useSetAtom } from 'jotai';
 import { Loader2, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
@@ -17,6 +18,8 @@ import { MemberList } from './MemberList';
 import { TaskCard } from './TaskCard';
 import { VoteResults } from './VoteResults';
 import { VotingCards } from './VotingCards';
+
+const SESSION_COMPLETE_REDIRECT_MS = 1800;
 
 interface PlanningPokerRoomProps {
 	sessionId: string;
@@ -48,9 +51,20 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		totalTasks,
 		isLoading,
 		isTransitioning,
+		isSessionComplete,
 		isFinalizing,
 		isEnding
 	} = usePlanningPoker({ sessionId });
+
+	useEffect(() => {
+		if (!isSessionComplete || !session?.projectId) return;
+
+		const timeoutId = setTimeout(() => {
+			router.push(`/workspace/${session.projectId}`);
+		}, SESSION_COMPLETE_REDIRECT_MS);
+
+		return () => clearTimeout(timeoutId);
+	}, [isSessionComplete, session?.projectId, router]);
 
 	const handleEndSessionClick = () => {
 		setDialogState((prev) => ({
@@ -61,7 +75,6 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 
 	const handleEndSessionConfirm = () => {
 		handleEndSession();
-		router.push(`/workspace/${session?.projectId}`);
 	};
 
 	const handleFinalizeLastTaskClick = () => {
@@ -73,10 +86,30 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 
 	const handleFinalizeLastTaskConfirm = () => {
 		handleFinalizeTask();
-		// After finalizing, end the session
-		handleEndSession();
-		router.push(`/workspace/${session?.projectId}`);
 	};
+
+	if (isSessionComplete) {
+		return (
+			<div className="flex h-screen flex-col">
+				<div className="border-b bg-card p-4">
+					<div>
+						<h1 className="font-bold text-2xl">Planning Poker</h1>
+						{session?.project.title && (
+							<p className="text-muted-foreground text-sm">
+								{session.project.title}
+							</p>
+						)}
+					</div>
+				</div>
+				<div className="flex flex-1 flex-col items-center justify-center gap-2 p-6">
+					<h2 className="font-semibold text-2xl">Session complete</h2>
+					<p className="text-muted-foreground text-sm">
+						Returning to workspace…
+					</p>
+				</div>
+			</div>
+		);
+	}
 
 	if (isLoading) {
 		return (
@@ -148,7 +181,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 								variant="destructive"
 								size="sm"
 								onClick={handleEndSessionClick}
-								disabled={isEnding}
+								disabled={isEnding || isFinalizing}
 							>
 								{isEnding ? (
 									<>

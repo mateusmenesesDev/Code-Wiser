@@ -45,7 +45,7 @@ export interface TaskFinalizedSSEData {
 	sessionId: string;
 	taskId: string;
 	finalStoryPoints: number | null;
-	nextTaskIndex: number;
+	nextTaskIndex: number | null;
 }
 
 export interface SessionEndedSSEData {

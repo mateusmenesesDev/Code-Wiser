@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import type {
 	PlanningPokerStoryPoint,
 	SSEMessage,
+	TaskFinalizedSSEData,
 	VoteSSEData
 } from '~/features/planningPoker/types/planningPoker.types';
 import { formatPublicTaskId } from '~/lib/publicTaskId';
@@ -28,6 +29,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	const [showResults, setShowResults] = useState(false);
 	const [finalStoryPoints, setFinalStoryPoints] = useState<number | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
+	const [isSessionComplete, setIsSessionComplete] = useState(false);
 	const previousTaskIdRef = useRef<string>('');
 
 	const { data: session, refetch: refetchSession } =
@@ -60,7 +62,13 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		);
 
 	const beginTaskTransition = useCallback(() => {
+		if (isSessionComplete) return;
 		setIsTransitioning(true);
+	}, [isSessionComplete]);
+
+	const beginSessionComplete = useCallback(() => {
+		setIsTransitioning(false);
+		setIsSessionComplete(true);
 	}, []);
 
 	const voteMutation = api.planningPoker.vote.useMutation({
@@ -82,9 +90,6 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	});
 
 	const finalizeTaskMutation = api.planningPoker.finalizeTask.useMutation({
-		onMutate: () => {
-			beginTaskTransition();
-		},
 		onSuccess: (data) => {
 			utils.planningPoker.getSession.setData({ sessionId }, (previous) => {
 				if (!previous) return previous;
@@ -95,6 +100,13 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 					status: data.session.status
 				};
 			});
+
+			if (data.isLastTask) {
+				beginSessionComplete();
+			} else {
+				beginTaskTransition();
+			}
+
 			void refetchSession();
 		},
 		onError: (error) => {
@@ -115,7 +127,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 
 	const endSessionMutation = api.planningPoker.endSession.useMutation({
 		onSuccess: () => {
-			toast.success('Session ended!');
+			beginSessionComplete();
 		},
 		onError: (error) => {
 			toast.error(error.message || 'Failed to end session');
@@ -165,6 +177,8 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	}, [session, currentTask]);
 
 	useEffect(() => {
+		if (isSessionComplete) return;
+
 		const previousTaskId = previousTaskIdRef.current;
 
 		if (previousTaskId && currentTaskId && previousTaskId !== currentTaskId) {
@@ -172,10 +186,10 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		}
 
 		previousTaskIdRef.current = currentTaskId;
-	}, [currentTaskId]);
+	}, [currentTaskId, isSessionComplete]);
 
 	useEffect(() => {
-		if (!isTransitioning) return;
+		if (!isTransitioning || isSessionComplete) return;
 		if (!currentTaskId || !currentTaskData) return;
 		if (isTaskPlaceholder) return;
 		if (currentTaskData.id !== currentTaskId) return;
@@ -188,6 +202,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		void refetchVotes();
 	}, [
 		isTransitioning,
+		isSessionComplete,
 		currentTaskId,
 		currentTaskData,
 		isTaskPlaceholder,
@@ -195,15 +210,15 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	]);
 
 	useEffect(() => {
-		if (!isTransitioning) return;
+		if (!isTransitioning || isSessionComplete) return;
 		if (!isTaskError || isTaskFetching) return;
 
 		setIsTransitioning(false);
 		toast.error('Failed to load next story');
-	}, [isTransitioning, isTaskError, isTaskFetching]);
+	}, [isTransitioning, isSessionComplete, isTaskError, isTaskFetching]);
 
 	useEffect(() => {
-		if (!isTransitioning) return;
+		if (!isTransitioning || isSessionComplete) return;
 
 		const timeoutId = setTimeout(() => {
 			setIsTransitioning(false);
@@ -211,10 +226,10 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		}, 10_000);
 
 		return () => clearTimeout(timeoutId);
-	}, [isTransitioning]);
+	}, [isTransitioning, isSessionComplete]);
 
 	useEffect(() => {
-		if (isTransitioning) return;
+		if (isTransitioning || isSessionComplete) return;
 
 		if (votes && userId && currentTaskId) {
 			const votesForTask = votes.filter((v) => v.taskId === currentTaskId);
@@ -225,7 +240,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 				setSelectedValue(undefined);
 			}
 		}
-	}, [votes, userId, currentTaskId, isTransitioning]);
+	}, [votes, userId, currentTaskId, isTransitioning, isSessionComplete]);
 
 	const handleRealtimeEvent = useCallback(
 		(event: SSEMessage) => {
@@ -239,7 +254,14 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 					break;
 				}
 				case 'task-finalized': {
-					beginTaskTransition();
+					const data = event.data as TaskFinalizedSSEData;
+
+					if (data.nextTaskIndex == null) {
+						beginSessionComplete();
+					} else {
+						beginTaskTransition();
+					}
+
 					void utils.planningPoker.getSession
 						.invalidate({ sessionId })
 						.then(() => {
@@ -248,8 +270,8 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 					break;
 				}
 				case 'session-ended': {
-					toast.success('Session ended!');
-					refetchSession();
+					beginSessionComplete();
+					void refetchSession();
 					break;
 				}
 			}
@@ -261,7 +283,8 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			refetchSession,
 			sessionId,
 			utils,
-			beginTaskTransition
+			beginTaskTransition,
+			beginSessionComplete
 		]
 	);
 
@@ -303,7 +326,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	}, [currentTaskVotes, onlineMembers]);
 
 	useEffect(() => {
-		if (isTransitioning) return;
+		if (isTransitioning || isSessionComplete) return;
 
 		if (!currentTaskId || onlineMembers.length === 0) {
 			setAllVoted(false);
@@ -319,11 +342,17 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 
 		setAllVoted(hasEveryOnlineMemberVoted);
 		setShowResults(hasEveryOnlineMemberVoted);
-	}, [currentTaskVotes, currentTaskId, onlineMembers, isTransitioning]);
+	}, [
+		currentTaskVotes,
+		currentTaskId,
+		onlineMembers,
+		isTransitioning,
+		isSessionComplete
+	]);
 
 	const handleVote = useCallback(
 		(value: PlanningPokerStoryPoint) => {
-			if (!sessionId) return;
+			if (!sessionId || isSessionComplete) return;
 
 			setSelectedValue(value);
 
@@ -339,23 +368,29 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 				});
 			}
 		},
-		[sessionId, selectedValue, voteMutation, changeVoteMutation]
+		[
+			sessionId,
+			selectedValue,
+			voteMutation,
+			changeVoteMutation,
+			isSessionComplete
+		]
 	);
 
 	const handleFinalizeTask = useCallback(() => {
-		if (!sessionId) return;
+		if (!sessionId || isSessionComplete) return;
 
 		finalizeTaskMutation.mutate({
 			sessionId,
 			finalStoryPoints: finalStoryPoints ?? undefined
 		});
-	}, [sessionId, finalStoryPoints, finalizeTaskMutation]);
+	}, [sessionId, finalStoryPoints, finalizeTaskMutation, isSessionComplete]);
 
 	const handleEndSession = useCallback(() => {
-		if (!sessionId) return;
+		if (!sessionId || isSessionComplete) return;
 
 		endSessionMutation.mutate({ sessionId });
-	}, [sessionId, endSessionMutation]);
+	}, [sessionId, endSessionMutation, isSessionComplete]);
 
 	const isCreator = session?.createdById === userId;
 	const isLastTask =
@@ -379,10 +414,12 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		isLastTask,
 		currentTaskIndex: displayTaskIndex,
 		totalTasks: session?.taskIds.length ?? 0,
-		isLoading: !session || (!currentTask && !isTransitioning),
+		isLoading:
+			!isSessionComplete && (!session || (!currentTask && !isTransitioning)),
 		isTransitioning,
+		isSessionComplete,
 		isFinalizing:
-			finalizeTaskMutation.isPending || isTransitioning,
-		isEnding: endSessionMutation.isPending
+			finalizeTaskMutation.isPending || isTransitioning || isSessionComplete,
+		isEnding: endSessionMutation.isPending || isSessionComplete
 	};
 }
