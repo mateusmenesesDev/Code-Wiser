@@ -1,7 +1,8 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { keepPreviousData } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type {
 	PlanningPokerStoryPoint,
@@ -26,6 +27,8 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	const [allVoted, setAllVoted] = useState(false);
 	const [showResults, setShowResults] = useState(false);
 	const [finalStoryPoints, setFinalStoryPoints] = useState<number | null>(null);
+	const [isTransitioning, setIsTransitioning] = useState(false);
+	const previousTaskIdRef = useRef<string>('');
 
 	const { data: session, refetch: refetchSession } =
 		api.planningPoker.getSession.useQuery(
@@ -43,9 +46,14 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			},
 			{
 				enabled: !!session && !!currentTaskId && session.taskIds.length > 0,
-				refetchInterval: false
+				refetchInterval: false,
+				placeholderData: keepPreviousData
 			}
 		);
+
+	const beginTaskTransition = useCallback(() => {
+		setIsTransitioning(true);
+	}, []);
 
 	const voteMutation = api.planningPoker.vote.useMutation({
 		onSuccess: () => {
@@ -66,17 +74,24 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	});
 
 	const finalizeTaskMutation = api.planningPoker.finalizeTask.useMutation({
-		onSuccess: () => {
-			setShowResults(false);
-			setSelectedValue(undefined);
-			setFinalStoryPoints(null);
-			setAllVoted(false);
-			setTimeout(() => {
-				refetchSession();
-				refetchVotes();
-			}, 100);
+		onMutate: () => {
+			beginTaskTransition();
+		},
+		onSuccess: (data) => {
+			utils.planningPoker.getSession.setData({ sessionId }, (previous) => {
+				if (!previous) return previous;
+
+				return {
+					...previous,
+					currentTaskIndex: data.session.currentTaskIndex,
+					status: data.session.status
+				};
+			});
+			void refetchSession();
 		},
 		onError: (error) => {
+			setIsTransitioning(false);
+
 			const zodError = error.data?.zodError;
 			let errorMessage = 'Failed to finalize task';
 
@@ -99,10 +114,14 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		}
 	});
 
-	const { data: currentTaskData } = api.task.getById.useQuery(
-		{ id: currentTaskId },
-		{ enabled: !!currentTaskId && currentTaskId !== '' }
-	);
+	const { data: currentTaskData, isPlaceholderData: isTaskPlaceholder } =
+		api.task.getById.useQuery(
+			{ id: currentTaskId },
+			{
+				enabled: !!currentTaskId && currentTaskId !== '',
+				placeholderData: keepPreviousData
+			}
+		);
 
 	const currentTask = currentTaskData
 		? {
@@ -117,36 +136,65 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 			}
 		: null;
 
+	const displayedTaskId = currentTask?.id ?? currentTaskId;
+
 	const currentTaskVotes = useMemo(
-		() => votes?.filter((v) => v.taskId === currentTaskId) ?? [],
-		[votes, currentTaskId]
+		() => votes?.filter((v) => v.taskId === displayedTaskId) ?? [],
+		[votes, displayedTaskId]
 	);
 
-	useEffect(() => {
-		if (currentTaskId && session) {
-			setShowResults(false);
-			setAllVoted(false);
-			setSelectedValue(undefined);
-			setFinalStoryPoints(null);
-			const timeoutId = setTimeout(() => {
-				refetchVotes();
-			}, 100);
-
-			return () => clearTimeout(timeoutId);
+	const displayTaskIndex = useMemo(() => {
+		if (!session || !currentTask) {
+			return session?.currentTaskIndex ?? 0;
 		}
-	}, [currentTaskId, session, refetchVotes]);
+
+		const index = session.taskIds.indexOf(currentTask.id);
+		return index >= 0 ? index : (session.currentTaskIndex ?? 0);
+	}, [session, currentTask]);
 
 	useEffect(() => {
+		const previousTaskId = previousTaskIdRef.current;
+
+		if (previousTaskId && currentTaskId && previousTaskId !== currentTaskId) {
+			setIsTransitioning(true);
+		}
+
+		previousTaskIdRef.current = currentTaskId;
+	}, [currentTaskId]);
+
+	useEffect(() => {
+		if (!isTransitioning) return;
+		if (!currentTaskId || !currentTaskData) return;
+		if (isTaskPlaceholder) return;
+		if (currentTaskData.id !== currentTaskId) return;
+
+		setShowResults(false);
+		setSelectedValue(undefined);
+		setFinalStoryPoints(null);
+		setAllVoted(false);
+		setIsTransitioning(false);
+		void refetchVotes();
+	}, [
+		isTransitioning,
+		currentTaskId,
+		currentTaskData,
+		isTaskPlaceholder,
+		refetchVotes
+	]);
+
+	useEffect(() => {
+		if (isTransitioning) return;
+
 		if (votes && userId && currentTaskId) {
-			const currentTaskVotes = votes.filter((v) => v.taskId === currentTaskId);
-			const userVote = currentTaskVotes.find((v) => v.userId === userId);
+			const votesForTask = votes.filter((v) => v.taskId === currentTaskId);
+			const userVote = votesForTask.find((v) => v.userId === userId);
 			if (userVote) {
 				setSelectedValue(userVote.storyPoints as PlanningPokerStoryPoint);
 			} else if (currentTaskId) {
 				setSelectedValue(undefined);
 			}
 		}
-	}, [votes, userId, currentTaskId]);
+	}, [votes, userId, currentTaskId, isTransitioning]);
 
 	const handleRealtimeEvent = useCallback(
 		(event: SSEMessage) => {
@@ -160,11 +208,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 					break;
 				}
 				case 'task-finalized': {
-					setShowResults(false);
-					setSelectedValue(undefined);
-					setFinalStoryPoints(null);
-					setAllVoted(false);
-
+					beginTaskTransition();
 					void utils.planningPoker.getSession
 						.invalidate({ sessionId })
 						.then(() => {
@@ -179,7 +223,15 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 				}
 			}
 		},
-		[userId, currentTaskId, refetchVotes, refetchSession, sessionId, utils]
+		[
+			userId,
+			currentTaskId,
+			refetchVotes,
+			refetchSession,
+			sessionId,
+			utils,
+			beginTaskTransition
+		]
 	);
 
 	const onConnected = useCallback(() => {}, []);
@@ -220,6 +272,8 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	}, [currentTaskVotes, onlineMembers]);
 
 	useEffect(() => {
+		if (isTransitioning) return;
+
 		if (!currentTaskId || onlineMembers.length === 0) {
 			setAllVoted(false);
 			setShowResults(false);
@@ -234,7 +288,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 
 		setAllVoted(hasEveryOnlineMemberVoted);
 		setShowResults(hasEveryOnlineMemberVoted);
-	}, [currentTaskVotes, currentTaskId, onlineMembers]);
+	}, [currentTaskVotes, currentTaskId, onlineMembers, isTransitioning]);
 
 	const handleVote = useCallback(
 		(value: PlanningPokerStoryPoint) => {
@@ -274,7 +328,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 
 	const isCreator = session?.createdById === userId;
 	const isLastTask =
-		(session?.currentTaskIndex ?? 0) >= (session?.taskIds.length ?? 0) - 1;
+		displayTaskIndex >= (session?.taskIds.length ?? 0) - 1;
 
 	return {
 		session,
@@ -292,9 +346,10 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		handleEndSession,
 		isCreator,
 		isLastTask,
-		currentTaskIndex: session?.currentTaskIndex ?? 0,
+		currentTaskIndex: displayTaskIndex,
 		totalTasks: session?.taskIds.length ?? 0,
-		isLoading: !session || !currentTask,
+		isLoading: !session || (!currentTask && !isTransitioning),
+		isTransitioning,
 		isFinalizing: finalizeTaskMutation.isPending,
 		isEnding: endSessionMutation.isPending
 	};

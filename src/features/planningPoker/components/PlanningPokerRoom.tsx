@@ -45,6 +45,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		currentTaskIndex,
 		totalTasks,
 		isLoading,
+		isTransitioning,
 		isFinalizing,
 		isEnding
 	} = usePlanningPoker({ sessionId });
@@ -86,12 +87,35 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		);
 	}
 
-	if (!session || !currentTask) {
+	if (!session || (!currentTask && !isTransitioning)) {
 		return (
 			<div className="flex h-screen items-center justify-center">
 				<div className="text-center">
 					<h2 className="mb-2 font-semibold text-xl">Session not found</h2>
 					<Button onClick={() => router.back()}>Go Back</Button>
+				</div>
+			</div>
+		);
+	}
+
+	if (!currentTask) {
+		return (
+			<div className="flex h-screen flex-col">
+				<div className="border-b bg-card p-4">
+					<div className="flex items-center justify-between">
+						<div>
+							<h1 className="font-bold text-2xl">Planning Poker</h1>
+							<p className="text-muted-foreground text-sm">
+								{session.project.title}
+							</p>
+						</div>
+					</div>
+				</div>
+				<div className="flex flex-1 overflow-hidden">
+					<div className="flex-1 overflow-y-auto p-6" />
+					<div className="w-80 border-l bg-muted/30 p-4">
+						{userId && <MemberList members={members} currentUserId={userId} />}
+					</div>
 				</div>
 			</div>
 		);
