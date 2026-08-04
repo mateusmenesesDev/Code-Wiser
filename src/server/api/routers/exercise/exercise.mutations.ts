@@ -163,7 +163,7 @@ export const exerciseMutations = {
 					trackId: track.id,
 					isArchived: false
 				},
-				select: { id: true, trackId: true }
+				select: { id: true, trackId: true, title: true }
 			});
 
 			if (challenges.length !== uniqueChallengeIds.length) {
@@ -183,10 +183,16 @@ export const exerciseMutations = {
 			});
 
 			if (activeProgress.length > 0) {
+				const activeIds = new Set(
+					activeProgress.map((progress) => progress.challengeId)
+				);
+				const conflictingTitles = challenges
+					.filter((challenge) => activeIds.has(challenge.id))
+					.map((challenge) => challenge.title);
+
 				throw new TRPCError({
 					code: 'CONFLICT',
-					message:
-						'One or more selected challenges already have an active review cycle'
+					message: `These challenges already have an active review cycle (In review or Changes requested): ${conflictingTitles.join(', ')}`
 				});
 			}
 

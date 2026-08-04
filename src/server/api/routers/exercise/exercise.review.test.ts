@@ -155,7 +155,7 @@ describe('exercise requestReview', () => {
 		});
 	});
 
-	it('rejects challenges that already have an active review cycle', async () => {
+	it('rejects challenges that already have an active review cycle with a clear message', async () => {
 		mockDb.user.findUnique.mockResolvedValue({
 			mentorshipStatus: 'ACTIVE'
 		} as never);
@@ -163,10 +163,10 @@ describe('exercise requestReview', () => {
 			id: trackId
 		} as never);
 		mockDb.exerciseChallenge.findMany.mockResolvedValue([
-			{ id: challengeA, trackId }
+			{ id: challengeA, trackId, title: 'Counter App' }
 		] as never);
 		mockDb.userChallengeProgress.findMany.mockResolvedValue([
-			{ challengeId: challengeA, status: 'IN_REVIEW' }
+			{ challengeId: challengeA, status: 'CHANGES_REQUESTED' }
 		] as never);
 
 		await expect(
@@ -176,7 +176,69 @@ describe('exercise requestReview', () => {
 				challengeIds: [challengeA]
 			})
 		).rejects.toMatchObject({
-			code: 'CONFLICT'
+			code: 'CONFLICT',
+			message:
+				'These challenges already have an active review cycle (In review or Changes requested): Counter App'
 		});
+	});
+
+	it('allows requesting review again for an already APPROVED challenge', async () => {
+		mockDb.user.findUnique.mockResolvedValue({
+			mentorshipStatus: 'ACTIVE'
+		} as never);
+		mockDb.exerciseTrack.findFirst.mockResolvedValue({
+			id: trackId
+		} as never);
+		mockDb.exerciseChallenge.findMany.mockResolvedValue([
+			{ id: challengeA, trackId, title: 'Counter App' }
+		] as never);
+		// DB filters active cycles to IN_REVIEW / CHANGES_REQUESTED only,
+		// so an APPROVED challenge yields no conflicting rows.
+		mockDb.userChallengeProgress.findMany.mockResolvedValue([] as never);
+		mockDb.$transaction.mockImplementation(async (fn: unknown) => {
+			if (typeof fn === 'function') {
+				return fn(mockDb);
+			}
+			return fn;
+		});
+		mockDb.exerciseReviewSubmission.create.mockResolvedValue({
+			id: '55555555-5555-5555-5555-555555555555',
+			prUrl,
+			trackId,
+			submittedById: 'user-1',
+			decisions: [{ challengeId: challengeA, status: 'PENDING' }]
+		} as never);
+		mockDb.userChallengeProgress.upsert.mockResolvedValue({
+			challengeId: challengeA,
+			status: 'IN_REVIEW'
+		} as never);
+
+		const result = await caller.requestReview({
+			trackId,
+			prUrl,
+			challengeIds: [challengeA]
+		});
+
+		expect(mockDb.userChallengeProgress.findMany).toHaveBeenCalledWith({
+			where: {
+				userId: 'user-1',
+				challengeId: { in: [challengeA] },
+				status: { in: ['IN_REVIEW', 'CHANGES_REQUESTED'] }
+			},
+			select: { challengeId: true, status: true }
+		});
+		expect(mockDb.userChallengeProgress.upsert).toHaveBeenCalledWith({
+			where: {
+				userId_challengeId: {
+					userId: 'user-1',
+					challengeId: challengeA
+				}
+			},
+			create: expect.objectContaining({
+				status: 'IN_REVIEW'
+			}),
+			update: { status: 'IN_REVIEW' }
+		});
+		expect(result.decisions[0]?.challengeId).toBe(challengeA);
 	});
 });

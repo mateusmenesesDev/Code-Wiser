@@ -146,10 +146,10 @@ After a challenge is Approved, the mentee may request review again (new cycle). 
 
 ### Acceptance criteria
 
-- [ ] Mentee can request review again for an `APPROVED` challenge (mentorship still required)
-- [ ] New request moves that challenge to `IN_REVIEW` for the new cycle
-- [ ] System rejects adding a challenge that already has an active `IN_REVIEW` or `CHANGES_REQUESTED` cycle to another conflicting open submission
-- [ ] Error messaging is clear when a conflicting review is attempted
+- [x] Mentee can request review again for an `APPROVED` challenge (mentorship still required)
+- [x] New request moves that challenge to `IN_REVIEW` for the new cycle
+- [x] System rejects adding a challenge that already has an active `IN_REVIEW` or `CHANGES_REQUESTED` cycle to another conflicting open submission
+- [x] Error messaging is clear when a conflicting review is attempted
 
 ---
 

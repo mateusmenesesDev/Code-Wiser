@@ -96,7 +96,9 @@ export function RequestExerciseReviewDialog({
 					<DialogTitle>Request exercise review</DialogTitle>
 					<DialogDescription>
 						Paste your GitHub pull request URL and select which challenges this
-						PR covers.
+						PR covers. Approved challenges can be submitted again for a new
+						review cycle. Challenges already in review or awaiting changes
+						cannot be selected.
 					</DialogDescription>
 				</DialogHeader>
 

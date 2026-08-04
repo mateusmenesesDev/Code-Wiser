@@ -144,7 +144,9 @@ export default function ExerciseChallengePage({
 						(hasActiveMentorship ? (
 							<Button variant="outline" onClick={() => setReviewOpen(true)}>
 								<GitPullRequest className="mr-2 h-4 w-4" />
-								Request review
+								{challenge.status === 'APPROVED'
+									? 'Request review again'
+									: 'Request review'}
 							</Button>
 						) : (
 							<div className="w-full space-y-2 rounded-md border p-4">
