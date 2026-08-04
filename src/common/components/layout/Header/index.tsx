@@ -51,7 +51,16 @@ const Header = () => {
 		return true;
 	});
 
-	const allMenuItems = [...filteredMenuItems, ...MENU_ITEMS_WITH_PERMISSION];
+	const publicMenuItems = filteredMenuItems.filter(
+		(item) => !item.loginRequired
+	);
+	const privateMenuItems = filteredMenuItems.filter(
+		(item) => item.loginRequired
+	);
+	const loggedInMenuItems = [
+		...privateMenuItems,
+		...MENU_ITEMS_WITH_PERMISSION
+	];
 
 	return (
 		<header className="border-b bg-background/80 backdrop-blur-md">
@@ -63,8 +72,11 @@ const Header = () => {
 
 					{/* Navigation */}
 					<nav className="hidden items-center gap-8 md:flex">
+						{publicMenuItems.map((item) => (
+							<MenuItem key={item.href} item={item} />
+						))}
 						{isLoggedIn &&
-							allMenuItems.map((item) =>
+							loggedInMenuItems.map((item) =>
 								!item.orgPermission ? (
 									<MenuItem key={item.href} item={item} />
 								) : (

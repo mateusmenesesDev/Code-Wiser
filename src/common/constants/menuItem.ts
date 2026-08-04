@@ -1,4 +1,5 @@
 import {
+	BookOpen,
 	Calendar,
 	FolderOpen,
 	GitPullRequest,
@@ -18,6 +19,11 @@ type MenuItem = {
 };
 
 export const MENU_ITEMS: MenuItem[] = [
+	{
+		href: '/exercises',
+		Icon: BookOpen,
+		label: 'Exercises'
+	},
 	{
 		href: '/my-projects',
 		Icon: FolderOpen,
@@ -49,6 +55,15 @@ export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 		label: 'Admin Templates',
 		orgPermission: {
 			permission: 'org:project:edit_template',
+			role: 'org:admin'
+		}
+	},
+	{
+		href: '/admin/exercises',
+		Icon: BookOpen,
+		label: 'Admin Exercises',
+		orgPermission: {
+			permission: 'org:project:create',
 			role: 'org:admin'
 		}
 	},

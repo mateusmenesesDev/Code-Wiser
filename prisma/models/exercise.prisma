@@ -1,0 +1,46 @@
+enum ExerciseChallengeDifficulty {
+  EASY
+  MEDIUM
+  HARD
+
+  @@schema("public")
+}
+
+model ExerciseTrack {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  slug        String   @unique
+  description String
+  repoUrl     String   @default("")
+  isPublished Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+
+  challenges ExerciseChallenge[]
+
+  @@index([isPublished, isArchived, sortOrder])
+  @@schema("public")
+}
+
+model ExerciseChallenge {
+  id                 String                      @id @default(uuid())
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  title              String
+  slug               String
+  difficulty         ExerciseChallengeDifficulty
+  description        String
+  setupInstructions  String
+  acceptanceCriteria String
+  isArchived         Boolean                     @default(false)
+  sortOrder          Int                         @default(0)
+
+  trackId String
+  track   ExerciseTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, slug])
+  @@index([trackId, difficulty, sortOrder])
+  @@schema("public")
+}
