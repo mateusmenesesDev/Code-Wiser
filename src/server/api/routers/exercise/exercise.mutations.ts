@@ -7,6 +7,7 @@ import { slugify } from '~/features/exercises/lib/slugify';
 import {
 	createExerciseChallengeSchema,
 	createExerciseTrackSchema,
+	decideExerciseReviewSchema,
 	exerciseChallengeIdSchema,
 	exerciseTrackIdSchema,
 	reorderExerciseChallengesSchema,
@@ -230,6 +231,77 @@ export const exerciseMutations = {
 				}
 
 				return submission;
+			});
+		}),
+
+	decideChallengeReview: adminProcedure
+		.input(decideExerciseReviewSchema)
+		.mutation(async ({ ctx, input }) => {
+			const reviewerId = ctx.session.userId;
+			if (!reviewerId) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' });
+			}
+
+			const decision = await ctx.db.exerciseReviewDecision.findUnique({
+				where: { id: input.decisionId },
+				include: {
+					submission: {
+						select: {
+							id: true,
+							submittedById: true,
+							decisions: {
+								select: { id: true, status: true }
+							}
+						}
+					}
+				}
+			});
+
+			if (!decision) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Review decision not found'
+				});
+			}
+
+			const progressStatus =
+				input.status === ExerciseReviewDecisionStatus.APPROVED
+					? UserChallengeProgressStatus.APPROVED
+					: UserChallengeProgressStatus.CHANGES_REQUESTED;
+
+			const remainingPending = decision.submission.decisions.some(
+				(item) =>
+					item.id !== decision.id &&
+					item.status === ExerciseReviewDecisionStatus.PENDING
+			);
+
+			return ctx.db.$transaction(async (tx) => {
+				const updated = await tx.exerciseReviewDecision.update({
+					where: { id: decision.id },
+					data: {
+						status: input.status,
+						mentorComment: input.mentorComment?.trim() || null,
+						reviewedAt: new Date(),
+						reviewedById: reviewerId
+					}
+				});
+
+				await tx.userChallengeProgress.update({
+					where: {
+						userId_challengeId: {
+							userId: decision.submission.submittedById,
+							challengeId: decision.challengeId
+						}
+					},
+					data: { status: progressStatus }
+				});
+
+				await tx.exerciseReviewSubmission.update({
+					where: { id: decision.submission.id },
+					data: { needsAttention: remainingPending }
+				});
+
+				return updated;
 			});
 		}),
 

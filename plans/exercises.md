@@ -105,15 +105,15 @@ Dedicated admin queue at `/admin/exercise-reviews` listing submissions that need
 
 ### Acceptance criteria
 
-- [ ] `/admin/exercise-reviews` lists pending exercise submissions separately from `/admin/pr-reviews`
-- [ ] Queue shows track, challenge(s), student, PR link, and useful timestamps
-- [ ] Submission detail shows each linked challenge with individual status
-- [ ] Admin can approve one challenge and request changes on another on the same submission
-- [ ] Optional mentor comment is stored and shown to the mentee
-- [ ] Decisions update `UserChallengeProgress` to `APPROVED` or `CHANGES_REQUESTED` immediately
-- [ ] Only admins can perform decisions; non-admins are rejected
-- [ ] Empty queue state is clear
-- [ ] PR opens via external GitHub link from the queue/detail
+- [x] `/admin/exercise-reviews` lists pending exercise submissions separately from `/admin/pr-reviews`
+- [x] Queue shows track, challenge(s), student, PR link, and useful timestamps
+- [x] Submission detail shows each linked challenge with individual status
+- [x] Admin can approve one challenge and request changes on another on the same submission
+- [x] Optional mentor comment is stored and shown to the mentee
+- [x] Decisions update `UserChallengeProgress` to `APPROVED` or `CHANGES_REQUESTED` immediately
+- [x] Only admins can perform decisions; non-admins are rejected
+- [x] Empty queue state is clear
+- [x] PR opens via external GitHub link from the queue/detail
 
 ---
 

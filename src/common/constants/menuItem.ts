@@ -1,6 +1,7 @@
 import {
 	BookOpen,
 	Calendar,
+	ClipboardCheck,
 	FolderOpen,
 	GitPullRequest,
 	UserCog,
@@ -80,6 +81,15 @@ export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
 		href: '/admin/pr-reviews',
 		Icon: GitPullRequest,
 		label: 'PR Reviews',
+		orgPermission: {
+			permission: 'org:project:create',
+			role: 'org:admin'
+		}
+	},
+	{
+		href: '/admin/exercise-reviews',
+		Icon: ClipboardCheck,
+		label: 'Exercise Reviews',
 		orgPermission: {
 			permission: 'org:project:create',
 			role: 'org:admin'

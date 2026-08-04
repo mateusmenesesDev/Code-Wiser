@@ -154,6 +154,46 @@ export default function ExerciseChallengePage({
 				</div>
 			)}
 
+			{challenge.latestMentorFeedback && (
+				<Card className="mb-6">
+					<CardHeader>
+						<CardTitle level={2} className="text-lg">
+							Mentor feedback
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-2">
+						<Badge
+							variant={
+								challenge.latestMentorFeedback.status === 'APPROVED'
+									? 'success'
+									: 'destructive'
+							}
+						>
+							{challenge.latestMentorFeedback.status === 'APPROVED'
+								? 'Approved'
+								: 'Changes requested'}
+						</Badge>
+						{challenge.latestMentorFeedback.mentorComment ? (
+							<p className="whitespace-pre-wrap text-sm">
+								{challenge.latestMentorFeedback.mentorComment}
+							</p>
+						) : (
+							<p className="text-muted-foreground text-sm">
+								No comment left with this decision.
+							</p>
+						)}
+						<a
+							href={challenge.latestMentorFeedback.prUrl}
+							target="_blank"
+							rel="noreferrer"
+							className="inline-block text-sm underline"
+						>
+							Open related PR
+						</a>
+					</CardContent>
+				</Card>
+			)}
+
 			{!user ? (
 				<Card>
 					<CardContent className="space-y-4 py-8">

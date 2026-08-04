@@ -2,6 +2,7 @@ import { UserChallengeProgressStatus } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import {
 	exerciseChallengeSlugSchema,
+	exerciseReviewSubmissionIdSchema,
 	exerciseTrackIdSchema,
 	exerciseTrackSlugSchema
 } from '~/features/exercises/schemas/exercise.schema';
@@ -185,6 +186,13 @@ export const exerciseQueries = {
 			const hasCloneableRepo = Boolean(challenge.track.repoUrl.trim());
 
 			let status: UserChallengeProgressStatus | null = null;
+			let latestMentorFeedback: {
+				status: 'APPROVED' | 'CHANGES_REQUESTED' | 'PENDING';
+				mentorComment: string | null;
+				prUrl: string;
+				reviewedAt: Date | null;
+			} | null = null;
+
 			if (ctx.session.userId) {
 				const progress = await ctx.db.userChallengeProgress.findUnique({
 					where: {
@@ -196,6 +204,30 @@ export const exerciseQueries = {
 					select: { status: true }
 				});
 				status = resolveProgressStatus(progress?.status);
+
+				const latestDecision = await ctx.db.exerciseReviewDecision.findFirst({
+					where: {
+						challengeId: challenge.id,
+						submission: { submittedById: ctx.session.userId },
+						status: { in: ['APPROVED', 'CHANGES_REQUESTED'] }
+					},
+					orderBy: { reviewedAt: 'desc' },
+					select: {
+						status: true,
+						mentorComment: true,
+						reviewedAt: true,
+						submission: { select: { prUrl: true } }
+					}
+				});
+
+				if (latestDecision) {
+					latestMentorFeedback = {
+						status: latestDecision.status,
+						mentorComment: latestDecision.mentorComment,
+						prUrl: latestDecision.submission.prUrl,
+						reviewedAt: latestDecision.reviewedAt
+					};
+				}
 			}
 
 			return {
@@ -205,6 +237,7 @@ export const exerciseQueries = {
 				difficulty: challenge.difficulty,
 				sortOrder: challenge.sortOrder,
 				status,
+				latestMentorFeedback,
 				track: {
 					id: challenge.track.id,
 					name: challenge.track.name,
@@ -268,5 +301,70 @@ export const exerciseQueries = {
 				...track,
 				challenges: sortChallengesByDifficultyThenOrder(track.challenges)
 			};
+		}),
+
+	adminListReviewQueue: adminProcedure.query(async ({ ctx }) => {
+		return ctx.db.exerciseReviewSubmission.findMany({
+			where: { needsAttention: true },
+			orderBy: { createdAt: 'asc' },
+			include: {
+				track: {
+					select: { id: true, name: true, slug: true }
+				},
+				submittedBy: {
+					select: { id: true, name: true, email: true }
+				},
+				decisions: {
+					include: {
+						challenge: {
+							select: { id: true, title: true, slug: true, difficulty: true }
+						}
+					},
+					orderBy: { createdAt: 'asc' }
+				}
+			}
+		});
+	}),
+
+	adminGetReviewSubmission: adminProcedure
+		.input(exerciseReviewSubmissionIdSchema)
+		.query(async ({ ctx, input }) => {
+			const submission = await ctx.db.exerciseReviewSubmission.findUnique({
+				where: { id: input.id },
+				include: {
+					track: {
+						select: { id: true, name: true, slug: true }
+					},
+					submittedBy: {
+						select: { id: true, name: true, email: true }
+					},
+					decisions: {
+						include: {
+							challenge: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+									difficulty: true,
+									acceptanceCriteria: true
+								}
+							},
+							reviewedBy: {
+								select: { id: true, name: true, email: true }
+							}
+						},
+						orderBy: { createdAt: 'asc' }
+					}
+				}
+			});
+
+			if (!submission) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Review submission not found'
+				});
+			}
+
+			return submission;
 		})
 };

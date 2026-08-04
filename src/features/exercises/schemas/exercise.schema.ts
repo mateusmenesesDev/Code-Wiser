@@ -1,4 +1,7 @@
-import { ExerciseChallengeDifficulty } from '@prisma/client';
+import {
+	ExerciseChallengeDifficulty,
+	ExerciseReviewDecisionStatus
+} from '@prisma/client';
 import { z } from 'zod';
 import { slugSchemaRegex } from '../lib/slugify';
 
@@ -109,4 +112,17 @@ export const requestExerciseReviewSchema = z.object({
 	trackId: z.string().uuid(),
 	prUrl: githubPullRequestUrlSchema,
 	challengeIds: z.array(z.string().uuid()).min(1, 'Select at least one challenge')
+});
+
+export const exerciseReviewSubmissionIdSchema = z.object({
+	id: z.string().uuid()
+});
+
+export const decideExerciseReviewSchema = z.object({
+	decisionId: z.string().uuid(),
+	status: z.enum([
+		ExerciseReviewDecisionStatus.APPROVED,
+		ExerciseReviewDecisionStatus.CHANGES_REQUESTED
+	]),
+	mentorComment: z.string().trim().max(5000).optional()
 });
