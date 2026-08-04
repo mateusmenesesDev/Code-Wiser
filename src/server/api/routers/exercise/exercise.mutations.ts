@@ -10,6 +10,7 @@ import {
 	decideExerciseReviewSchema,
 	exerciseChallengeIdSchema,
 	exerciseTrackIdSchema,
+	notifyExercisePrUpdatedSchema,
 	reorderExerciseChallengesSchema,
 	requestExerciseReviewSchema,
 	updateExerciseChallengeSchema,
@@ -231,6 +232,82 @@ export const exerciseMutations = {
 				}
 
 				return submission;
+			});
+		}),
+
+	notifyPrUpdated: mentorshipProcedure
+		.input(notifyExercisePrUpdatedSchema)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.userId;
+			if (!userId) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' });
+			}
+
+			const submission = await ctx.db.exerciseReviewSubmission.findFirst({
+				where: {
+					id: input.submissionId,
+					submittedById: userId
+				},
+				include: {
+					decisions: {
+						select: {
+							id: true,
+							status: true,
+							challengeId: true
+						}
+					}
+				}
+			});
+
+			if (!submission) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Review submission not found'
+				});
+			}
+
+			const changesRequested = submission.decisions.filter(
+				(decision) =>
+					decision.status === ExerciseReviewDecisionStatus.CHANGES_REQUESTED
+			);
+
+			if (changesRequested.length === 0) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message:
+						'This submission has no challenges awaiting your PR update'
+				});
+			}
+
+			return ctx.db.$transaction(async (tx) => {
+				for (const decision of changesRequested) {
+					await tx.exerciseReviewDecision.update({
+						where: { id: decision.id },
+						data: {
+							status: ExerciseReviewDecisionStatus.PENDING,
+							reviewedAt: null,
+							reviewedById: null
+						}
+					});
+
+					await tx.userChallengeProgress.update({
+						where: {
+							userId_challengeId: {
+								userId,
+								challengeId: decision.challengeId
+							}
+						},
+						data: { status: UserChallengeProgressStatus.IN_REVIEW }
+					});
+				}
+
+				return tx.exerciseReviewSubmission.update({
+					where: { id: submission.id },
+					data: {
+						needsAttention: true,
+						updateNote: input.updateNote?.trim() || null
+					}
+				});
 			});
 		}),
 

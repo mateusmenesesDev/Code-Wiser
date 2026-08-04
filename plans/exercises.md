@@ -127,12 +127,12 @@ When challenges on a submission are in Changes requested, the mentee updates the
 
 ### Acceptance criteria
 
-- [ ] Mentee with ACTIVE mentorship can notify PR update on a submission that has at least one `CHANGES_REQUESTED` challenge
-- [ ] Notify moves only linked challenges in `CHANGES_REQUESTED` back to `IN_REVIEW`
-- [ ] Approved challenges on that submission remain `APPROVED`
-- [ ] Optional note from the mentee is stored/visible to the mentor on re-review
-- [ ] Submission reappears in the mentor queue for the challenges still needing review
-- [ ] Notify is blocked without ACTIVE mentorship
+- [x] Mentee with ACTIVE mentorship can notify PR update on a submission that has at least one `CHANGES_REQUESTED` challenge
+- [x] Notify moves only linked challenges in `CHANGES_REQUESTED` back to `IN_REVIEW`
+- [x] Approved challenges on that submission remain `APPROVED`
+- [x] Optional note from the mentee is stored/visible to the mentor on re-review
+- [x] Submission reappears in the mentor queue for the challenges still needing review
+- [x] Notify is blocked without ACTIVE mentorship
 
 ---
 

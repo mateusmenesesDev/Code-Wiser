@@ -126,3 +126,8 @@ export const decideExerciseReviewSchema = z.object({
 	]),
 	mentorComment: z.string().trim().max(5000).optional()
 });
+
+export const notifyExercisePrUpdatedSchema = z.object({
+	submissionId: z.string().uuid(),
+	updateNote: z.string().trim().max(2000).optional()
+});

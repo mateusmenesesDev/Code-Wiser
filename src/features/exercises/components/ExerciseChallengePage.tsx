@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, GitPullRequest, Play } from 'lucide-react';
+import { ArrowLeft, GitPullRequest, Play, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import {
 	PROGRESS_STATUS_LABELS,
 	progressStatusBadgeVariant
 } from '../lib/progressStatus';
+import { NotifyPrUpdatedDialog } from './NotifyPrUpdatedDialog';
 import { RequestExerciseReviewDialog } from './RequestExerciseReviewDialog';
 
 type ExerciseChallengePageProps = {
@@ -35,6 +36,7 @@ export default function ExerciseChallengePage({
 	const { openDialog } = useDialog('signIn');
 	const utils = api.useUtils();
 	const [reviewOpen, setReviewOpen] = useState(false);
+	const [prUpdatedOpen, setPrUpdatedOpen] = useState(false);
 	const { data: challenge, isLoading, error } =
 		api.exercise.getPublishedChallengeBySlug.useQuery({
 			trackSlug,
@@ -53,6 +55,10 @@ export default function ExerciseChallengePage({
 		Boolean(user) &&
 		challenge?.status !== 'IN_REVIEW' &&
 		challenge?.status !== 'CHANGES_REQUESTED';
+	const canNotifyPrUpdate =
+		Boolean(user) &&
+		challenge?.status === 'CHANGES_REQUESTED' &&
+		Boolean(challenge.updatableSubmission);
 
 	const startMutation = api.exercise.startChallenge.useMutation({
 		onSuccess: async () => {
@@ -123,7 +129,7 @@ export default function ExerciseChallengePage({
 				</div>
 			</div>
 
-			{(canStart || canRequestReview) && (
+			{(canStart || canRequestReview || canNotifyPrUpdate) && (
 				<div className="mb-6 flex flex-wrap gap-3">
 					{canStart && (
 						<Button
@@ -145,6 +151,22 @@ export default function ExerciseChallengePage({
 								<p className="text-muted-foreground text-sm">
 									Active mentorship is required to request exercise reviews.
 									There is no credits fallback for this flow.
+								</p>
+								<Button asChild variant="outline" size="sm">
+									<Link href="/pricing">View mentorship plans</Link>
+								</Button>
+							</div>
+						))}
+					{canNotifyPrUpdate &&
+						(hasActiveMentorship ? (
+							<Button variant="outline" onClick={() => setPrUpdatedOpen(true)}>
+								<RefreshCw className="mr-2 h-4 w-4" />
+								I updated the PR
+							</Button>
+						) : (
+							<div className="w-full space-y-2 rounded-md border p-4">
+								<p className="text-muted-foreground text-sm">
+									Active mentorship is required to notify a PR update.
 								</p>
 								<Button asChild variant="outline" size="sm">
 									<Link href="/pricing">View mentorship plans</Link>
@@ -282,6 +304,17 @@ export default function ExerciseChallengePage({
 					trackSlug={track.slug}
 					challenges={track.challenges}
 					initialChallengeIds={[challenge.id]}
+				/>
+			)}
+
+			{challenge.updatableSubmission && (
+				<NotifyPrUpdatedDialog
+					open={prUpdatedOpen}
+					onOpenChange={setPrUpdatedOpen}
+					submissionId={challenge.updatableSubmission.id}
+					prUrl={challenge.updatableSubmission.prUrl}
+					trackSlug={trackSlug}
+					challengeSlug={challengeSlug}
 				/>
 			)}
 		</div>

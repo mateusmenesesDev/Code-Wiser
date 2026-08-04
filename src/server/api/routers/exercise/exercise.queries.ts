@@ -192,6 +192,10 @@ export const exerciseQueries = {
 				prUrl: string;
 				reviewedAt: Date | null;
 			} | null = null;
+			let updatableSubmission: {
+				id: string;
+				prUrl: string;
+			} | null = null;
 
 			if (ctx.session.userId) {
 				const progress = await ctx.db.userChallengeProgress.findUnique({
@@ -216,7 +220,7 @@ export const exerciseQueries = {
 						status: true,
 						mentorComment: true,
 						reviewedAt: true,
-						submission: { select: { prUrl: true } }
+						submission: { select: { id: true, prUrl: true } }
 					}
 				});
 
@@ -227,6 +231,13 @@ export const exerciseQueries = {
 						prUrl: latestDecision.submission.prUrl,
 						reviewedAt: latestDecision.reviewedAt
 					};
+
+					if (latestDecision.status === 'CHANGES_REQUESTED') {
+						updatableSubmission = {
+							id: latestDecision.submission.id,
+							prUrl: latestDecision.submission.prUrl
+						};
+					}
 				}
 			}
 
@@ -238,6 +249,7 @@ export const exerciseQueries = {
 				sortOrder: challenge.sortOrder,
 				status,
 				latestMentorFeedback,
+				updatableSubmission,
 				track: {
 					id: challenge.track.id,
 					name: challenge.track.name,

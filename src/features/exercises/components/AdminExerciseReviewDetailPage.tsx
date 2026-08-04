@@ -91,6 +91,12 @@ export default function AdminExerciseReviewDetailPage({
 						{submission.prUrl}
 						<ExternalLink className="h-4 w-4" />
 					</a>
+					{submission.updateNote && (
+						<div className="rounded-md border bg-muted/40 p-3 text-sm">
+							<p className="mb-1 font-medium">Mentee update note</p>
+							<p className="whitespace-pre-wrap">{submission.updateNote}</p>
+						</div>
+					)}
 				</div>
 
 				<div className="space-y-4">
