@@ -1,7 +1,8 @@
 'use client';
 
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, GitPullRequest, Play } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -19,6 +20,7 @@ import {
 	PROGRESS_STATUS_LABELS,
 	progressStatusBadgeVariant
 } from '../lib/progressStatus';
+import { RequestExerciseReviewDialog } from './RequestExerciseReviewDialog';
 
 type ExerciseChallengePageProps = {
 	trackSlug: string;
@@ -32,11 +34,25 @@ export default function ExerciseChallengePage({
 	const { user } = useAuth();
 	const { openDialog } = useDialog('signIn');
 	const utils = api.useUtils();
+	const [reviewOpen, setReviewOpen] = useState(false);
 	const { data: challenge, isLoading, error } =
 		api.exercise.getPublishedChallengeBySlug.useQuery({
 			trackSlug,
 			challengeSlug
 		});
+	const { data: track } = api.exercise.getPublishedTrackBySlug.useQuery(
+		{ slug: trackSlug },
+		{ enabled: Boolean(user) }
+	);
+	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
+		undefined,
+		{ enabled: Boolean(user) }
+	);
+	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+	const canRequestReview =
+		Boolean(user) &&
+		challenge?.status !== 'IN_REVIEW' &&
+		challenge?.status !== 'CHANGES_REQUESTED';
 
 	const startMutation = api.exercise.startChallenge.useMutation({
 		onSuccess: async () => {
@@ -107,15 +123,34 @@ export default function ExerciseChallengePage({
 				</div>
 			</div>
 
-			{canStart && (
-				<div className="mb-6">
-					<Button
-						onClick={() => startMutation.mutate({ id: challenge.id })}
-						disabled={startMutation.isPending}
-					>
-						<Play className="mr-2 h-4 w-4" />
-						{startMutation.isPending ? 'Starting...' : 'Start'}
-					</Button>
+			{(canStart || canRequestReview) && (
+				<div className="mb-6 flex flex-wrap gap-3">
+					{canStart && (
+						<Button
+							onClick={() => startMutation.mutate({ id: challenge.id })}
+							disabled={startMutation.isPending}
+						>
+							<Play className="mr-2 h-4 w-4" />
+							{startMutation.isPending ? 'Starting...' : 'Start'}
+						</Button>
+					)}
+					{canRequestReview &&
+						(hasActiveMentorship ? (
+							<Button variant="outline" onClick={() => setReviewOpen(true)}>
+								<GitPullRequest className="mr-2 h-4 w-4" />
+								Request review
+							</Button>
+						) : (
+							<div className="w-full space-y-2 rounded-md border p-4">
+								<p className="text-muted-foreground text-sm">
+									Active mentorship is required to request exercise reviews.
+									There is no credits fallback for this flow.
+								</p>
+								<Button asChild variant="outline" size="sm">
+									<Link href="/pricing">View mentorship plans</Link>
+								</Button>
+							</div>
+						))}
 				</div>
 			)}
 
@@ -197,6 +232,17 @@ export default function ExerciseChallengePage({
 				<p className="text-muted-foreground">
 					Challenge brief is unavailable.
 				</p>
+			)}
+
+			{track && challenge && (
+				<RequestExerciseReviewDialog
+					open={reviewOpen}
+					onOpenChange={setReviewOpen}
+					trackId={track.id}
+					trackSlug={track.slug}
+					challenges={track.challenges}
+					initialChallengeIds={[challenge.id]}
+				/>
 			)}
 		</div>
 	);

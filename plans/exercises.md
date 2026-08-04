@@ -84,14 +84,14 @@ Mentees with ACTIVE mentorship can request review by submitting a GitHub PR URL 
 
 ### Acceptance criteria
 
-- [ ] `ExerciseReviewSubmission` (and per-challenge links/decisions) can be created with PR URL + selected challenge ids on one track
-- [ ] Request review requires ACTIVE mentorship; otherwise fails with a clear error and UI explains the gate
-- [ ] No credits fallback when mentorship is inactive
-- [ ] PR URL is validated as a GitHub pull request URL (format only)
-- [ ] Only challenges belonging to that track can be selected
-- [ ] Successful request moves each selected challenge’s progress to `IN_REVIEW`
-- [ ] Mentee can have reviews open on multiple challenges at once (different submissions or multi-select as designed)
-- [ ] Domain remains separate from task `PullRequestReview`
+- [x] `ExerciseReviewSubmission` (and per-challenge links/decisions) can be created with PR URL + selected challenge ids on one track
+- [x] Request review requires ACTIVE mentorship; otherwise fails with a clear error and UI explains the gate
+- [x] No credits fallback when mentorship is inactive
+- [x] PR URL is validated as a GitHub pull request URL (format only)
+- [x] Only challenges belonging to that track can be selected
+- [x] Successful request moves each selected challenge’s progress to `IN_REVIEW`
+- [x] Mentee can have reviews open on multiple challenges at once (different submissions or multi-select as designed)
+- [x] Domain remains separate from task `PullRequestReview`
 
 ---
 

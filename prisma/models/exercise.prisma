@@ -16,6 +16,14 @@ enum UserChallengeProgressStatus {
   @@schema("public")
 }
 
+enum ExerciseReviewDecisionStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+
+  @@schema("public")
+}
+
 model ExerciseTrack {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now())
@@ -28,7 +36,8 @@ model ExerciseTrack {
   isArchived  Boolean  @default(false)
   sortOrder   Int      @default(0)
 
-  challenges ExerciseChallenge[]
+  challenges  ExerciseChallenge[]
+  submissions ExerciseReviewSubmission[]
 
   @@index([isPublished, isArchived, sortOrder])
   @@schema("public")
@@ -50,7 +59,8 @@ model ExerciseChallenge {
   trackId String
   track   ExerciseTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
-  progress UserChallengeProgress[]
+  progress  UserChallengeProgress[]
+  decisions ExerciseReviewDecision[]
 
   @@unique([trackId, slug])
   @@index([trackId, difficulty, sortOrder])
@@ -72,5 +82,50 @@ model UserChallengeProgress {
   @@unique([userId, challengeId])
   @@index([userId, status])
   @@index([challengeId])
+  @@schema("public")
+}
+
+model ExerciseReviewSubmission {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  prUrl     String
+  updateNote String?
+  needsAttention Boolean @default(true)
+
+  trackId String
+  track   ExerciseTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  submittedById String
+  submittedBy   User   @relation("ExerciseReviewSubmissions", fields: [submittedById], references: [id], onDelete: Cascade)
+
+  decisions ExerciseReviewDecision[]
+
+  @@index([needsAttention, createdAt])
+  @@index([submittedById, createdAt])
+  @@index([trackId, createdAt])
+  @@schema("public")
+}
+
+model ExerciseReviewDecision {
+  id            String                       @id @default(uuid())
+  createdAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @updatedAt
+  status        ExerciseReviewDecisionStatus @default(PENDING)
+  mentorComment String?
+  reviewedAt    DateTime?
+
+  submissionId String
+  submission   ExerciseReviewSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  challengeId String
+  challenge   ExerciseChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  reviewedById String?
+  reviewedBy   User?   @relation("ExerciseReviewDecisions", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([submissionId, challengeId])
+  @@index([challengeId, status])
+  @@index([status, updatedAt])
   @@schema("public")
 }

@@ -1,4 +1,7 @@
-import { UserChallengeProgressStatus } from '@prisma/client';
+import {
+	ExerciseReviewDecisionStatus,
+	UserChallengeProgressStatus
+} from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { slugify } from '~/features/exercises/lib/slugify';
 import {
@@ -7,10 +10,20 @@ import {
 	exerciseChallengeIdSchema,
 	exerciseTrackIdSchema,
 	reorderExerciseChallengesSchema,
+	requestExerciseReviewSchema,
 	updateExerciseChallengeSchema,
 	updateExerciseTrackSchema
 } from '~/features/exercises/schemas/exercise.schema';
-import { adminProcedure, protectedProcedure } from '../../trpc';
+import {
+	adminProcedure,
+	mentorshipProcedure,
+	protectedProcedure
+} from '../../trpc';
+
+const ACTIVE_REVIEW_STATUSES: UserChallengeProgressStatus[] = [
+	UserChallengeProgressStatus.IN_REVIEW,
+	UserChallengeProgressStatus.CHANGES_REQUESTED
+];
 
 async function ensureUniqueTrackSlug(
 	db: {
@@ -113,6 +126,110 @@ export const exerciseMutations = {
 					status: UserChallengeProgressStatus.IN_PROGRESS,
 					startedAt: new Date()
 				}
+			});
+		}),
+
+	requestReview: mentorshipProcedure
+		.input(requestExerciseReviewSchema)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.userId;
+			if (!userId) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' });
+			}
+
+			const uniqueChallengeIds = [...new Set(input.challengeIds)];
+
+			const track = await ctx.db.exerciseTrack.findFirst({
+				where: {
+					id: input.trackId,
+					isPublished: true,
+					isArchived: false
+				},
+				select: { id: true }
+			});
+
+			if (!track) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Track not found'
+				});
+			}
+
+			const challenges = await ctx.db.exerciseChallenge.findMany({
+				where: {
+					id: { in: uniqueChallengeIds },
+					trackId: track.id,
+					isArchived: false
+				},
+				select: { id: true, trackId: true }
+			});
+
+			if (challenges.length !== uniqueChallengeIds.length) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'All selected challenges must belong to this published track'
+				});
+			}
+
+			const activeProgress = await ctx.db.userChallengeProgress.findMany({
+				where: {
+					userId,
+					challengeId: { in: uniqueChallengeIds },
+					status: { in: ACTIVE_REVIEW_STATUSES }
+				},
+				select: { challengeId: true, status: true }
+			});
+
+			if (activeProgress.length > 0) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message:
+						'One or more selected challenges already have an active review cycle'
+				});
+			}
+
+			const now = new Date();
+
+			return ctx.db.$transaction(async (tx) => {
+				const submission = await tx.exerciseReviewSubmission.create({
+					data: {
+						prUrl: input.prUrl,
+						trackId: track.id,
+						submittedById: userId,
+						needsAttention: true,
+						decisions: {
+							create: uniqueChallengeIds.map((challengeId) => ({
+								challengeId,
+								status: ExerciseReviewDecisionStatus.PENDING
+							}))
+						}
+					},
+					include: {
+						decisions: true
+					}
+				});
+
+				for (const challengeId of uniqueChallengeIds) {
+					await tx.userChallengeProgress.upsert({
+						where: {
+							userId_challengeId: {
+								userId,
+								challengeId
+							}
+						},
+						create: {
+							userId,
+							challengeId,
+							status: UserChallengeProgressStatus.IN_REVIEW,
+							startedAt: now
+						},
+						update: {
+							status: UserChallengeProgressStatus.IN_REVIEW
+						}
+					});
+				}
+
+				return submission;
 			});
 		}),
 

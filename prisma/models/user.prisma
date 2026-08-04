@@ -42,6 +42,8 @@ model User {
   notifications                Notification[]
   mentorshipBookings           MentorshipBooking[]
   challengeProgress            UserChallengeProgress[]
+  exerciseReviewSubmissions    ExerciseReviewSubmission[] @relation("ExerciseReviewSubmissions")
+  exerciseReviewDecisions      ExerciseReviewDecision[]   @relation("ExerciseReviewDecisions")
 
   @@schema("public")
 }

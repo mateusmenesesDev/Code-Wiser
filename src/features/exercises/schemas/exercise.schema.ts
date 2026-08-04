@@ -96,3 +96,17 @@ export const exerciseChallengeSlugSchema = z.object({
 	trackSlug: z.string().trim().min(1),
 	challengeSlug: z.string().trim().min(1)
 });
+
+export const githubPullRequestUrlSchema = z
+	.string()
+	.trim()
+	.regex(
+		/^https:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+\/?$/,
+		'PR URL must be a valid GitHub pull request URL'
+	);
+
+export const requestExerciseReviewSchema = z.object({
+	trackId: z.string().uuid(),
+	prUrl: githubPullRequestUrlSchema,
+	challengeIds: z.array(z.string().uuid()).min(1, 'Select at least one challenge')
+});

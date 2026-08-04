@@ -1,7 +1,8 @@
 'use client';
 
-import { ArrowLeft, Copy, Terminal } from 'lucide-react';
+import { ArrowLeft, Copy, GitPullRequest, Terminal } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -19,6 +20,7 @@ import {
 	PROGRESS_STATUS_LABELS,
 	progressStatusBadgeVariant
 } from '../lib/progressStatus';
+import { RequestExerciseReviewDialog } from './RequestExerciseReviewDialog';
 
 type ExerciseTrackPageProps = {
 	trackSlug: string;
@@ -28,8 +30,14 @@ export default function ExerciseTrackPage({
 	trackSlug
 }: ExerciseTrackPageProps) {
 	const { user } = useAuth();
+	const [reviewOpen, setReviewOpen] = useState(false);
 	const { data: track, isLoading, error } =
 		api.exercise.getPublishedTrackBySlug.useQuery({ slug: trackSlug });
+	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
+		undefined,
+		{ enabled: Boolean(user) }
+	);
+	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
 
 	const copyCloneCommand = async () => {
 		if (!track?.repoUrl) return;
@@ -116,6 +124,38 @@ export default function ExerciseTrackPage({
 				</Card>
 			)}
 
+			{user && (
+				<Card className="mb-8">
+					<CardHeader>
+						<CardTitle level={2} className="flex items-center gap-2 text-lg">
+							<GitPullRequest className="h-5 w-5" />
+							Request review
+						</CardTitle>
+						<CardDescription>
+							Submit a GitHub PR covering one or more challenges from this
+							track. Mentors review the code on GitHub.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{hasActiveMentorship ? (
+							<Button onClick={() => setReviewOpen(true)}>
+								Request review
+							</Button>
+						) : (
+							<div className="space-y-3">
+								<p className="text-muted-foreground text-sm">
+									Active mentorship is required to request exercise reviews.
+									There is no credits fallback for this flow.
+								</p>
+								<Button asChild variant="outline">
+									<Link href="/pricing">View mentorship plans</Link>
+								</Button>
+							</div>
+						)}
+					</CardContent>
+				</Card>
+			)}
+
 			<div className="space-y-3">
 				<h2 className="font-semibold text-xl">Challenges</h2>
 				{track.challenges.length === 0 ? (
@@ -155,6 +195,16 @@ export default function ExerciseTrackPage({
 					))
 				)}
 			</div>
+
+			{track && (
+				<RequestExerciseReviewDialog
+					open={reviewOpen}
+					onOpenChange={setReviewOpen}
+					trackId={track.id}
+					trackSlug={track.slug}
+					challenges={track.challenges}
+				/>
+			)}
 		</div>
 	);
 }
