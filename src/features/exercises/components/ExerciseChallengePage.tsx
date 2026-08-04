@@ -1,7 +1,8 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Play } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -10,10 +11,14 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
-import { useAuth } from '~/features/auth/hooks/useAuth';
 import { useDialog } from '~/common/hooks/useDialog';
+import { useAuth } from '~/features/auth/hooks/useAuth';
 import { api } from '~/trpc/react';
 import { DIFFICULTY_LABELS, difficultyBadgeVariant } from '../lib/difficulty';
+import {
+	PROGRESS_STATUS_LABELS,
+	progressStatusBadgeVariant
+} from '../lib/progressStatus';
 
 type ExerciseChallengePageProps = {
 	trackSlug: string;
@@ -26,11 +31,26 @@ export default function ExerciseChallengePage({
 }: ExerciseChallengePageProps) {
 	const { user } = useAuth();
 	const { openDialog } = useDialog('signIn');
+	const utils = api.useUtils();
 	const { data: challenge, isLoading, error } =
 		api.exercise.getPublishedChallengeBySlug.useQuery({
 			trackSlug,
 			challengeSlug
 		});
+
+	const startMutation = api.exercise.startChallenge.useMutation({
+		onSuccess: async () => {
+			toast.success('Challenge started');
+			await Promise.all([
+				utils.exercise.getPublishedChallengeBySlug.invalidate({
+					trackSlug,
+					challengeSlug
+				}),
+				utils.exercise.getPublishedTrackBySlug.invalidate({ slug: trackSlug })
+			]);
+		},
+		onError: (mutationError) => toast.error(mutationError.message)
+	});
 
 	if (isLoading) {
 		return (
@@ -55,6 +75,7 @@ export default function ExerciseChallengePage({
 		challenge.description &&
 		challenge.setupInstructions &&
 		challenge.acceptanceCriteria;
+	const canStart = Boolean(user) && challenge.status === 'NOT_STARTED';
 
 	return (
 		<div className="container mx-auto px-4 py-8">
@@ -74,10 +95,29 @@ export default function ExerciseChallengePage({
 						{challenge.title}
 					</h1>
 				</div>
-				<Badge variant={difficultyBadgeVariant(challenge.difficulty)}>
-					{DIFFICULTY_LABELS[challenge.difficulty]}
-				</Badge>
+				<div className="flex flex-wrap items-center gap-2">
+					{challenge.status && (
+						<Badge variant={progressStatusBadgeVariant(challenge.status)}>
+							{PROGRESS_STATUS_LABELS[challenge.status]}
+						</Badge>
+					)}
+					<Badge variant={difficultyBadgeVariant(challenge.difficulty)}>
+						{DIFFICULTY_LABELS[challenge.difficulty]}
+					</Badge>
+				</div>
 			</div>
+
+			{canStart && (
+				<div className="mb-6">
+					<Button
+						onClick={() => startMutation.mutate({ id: challenge.id })}
+						disabled={startMutation.isPending}
+					>
+						<Play className="mr-2 h-4 w-4" />
+						{startMutation.isPending ? 'Starting...' : 'Start'}
+					</Button>
+				</div>
+			)}
 
 			{!user ? (
 				<Card>

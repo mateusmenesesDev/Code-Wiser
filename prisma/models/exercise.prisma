@@ -6,6 +6,16 @@ enum ExerciseChallengeDifficulty {
   @@schema("public")
 }
 
+enum UserChallengeProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  IN_REVIEW
+  APPROVED
+  CHANGES_REQUESTED
+
+  @@schema("public")
+}
+
 model ExerciseTrack {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now())
@@ -40,7 +50,27 @@ model ExerciseChallenge {
   trackId String
   track   ExerciseTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
+  progress UserChallengeProgress[]
+
   @@unique([trackId, slug])
   @@index([trackId, difficulty, sortOrder])
+  @@schema("public")
+}
+
+model UserChallengeProgress {
+  id        String                      @id @default(uuid())
+  createdAt DateTime                    @default(now())
+  updatedAt DateTime                    @updatedAt
+  status    UserChallengeProgressStatus @default(NOT_STARTED)
+  startedAt DateTime?
+
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challengeId String
+  challenge   ExerciseChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@index([userId, status])
+  @@index([challengeId])
   @@schema("public")
 }

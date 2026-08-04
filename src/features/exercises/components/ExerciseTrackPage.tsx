@@ -15,6 +15,10 @@ import {
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { api } from '~/trpc/react';
 import { DIFFICULTY_LABELS, difficultyBadgeVariant } from '../lib/difficulty';
+import {
+	PROGRESS_STATUS_LABELS,
+	progressStatusBadgeVariant
+} from '../lib/progressStatus';
 
 type ExerciseTrackPageProps = {
 	trackSlug: string;
@@ -134,9 +138,18 @@ export default function ExerciseTrackPage({
 										{challenge.title}
 									</p>
 								</div>
-								<Badge variant={difficultyBadgeVariant(challenge.difficulty)}>
-									{DIFFICULTY_LABELS[challenge.difficulty]}
-								</Badge>
+								<div className="flex flex-wrap items-center gap-2">
+									{challenge.status && (
+										<Badge
+											variant={progressStatusBadgeVariant(challenge.status)}
+										>
+											{PROGRESS_STATUS_LABELS[challenge.status]}
+										</Badge>
+									)}
+									<Badge variant={difficultyBadgeVariant(challenge.difficulty)}>
+										{DIFFICULTY_LABELS[challenge.difficulty]}
+									</Badge>
+								</div>
 							</div>
 						</Link>
 					))

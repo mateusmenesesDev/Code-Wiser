@@ -1,3 +1,4 @@
+import { UserChallengeProgressStatus } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import {
 	exerciseChallengeSlugSchema,
@@ -11,6 +12,12 @@ const DIFFICULTY_ORDER = {
 	MEDIUM: 1,
 	HARD: 2
 } as const;
+
+function resolveProgressStatus(
+	status: UserChallengeProgressStatus | undefined
+): UserChallengeProgressStatus {
+	return status ?? UserChallengeProgressStatus.NOT_STARTED;
+}
 
 function sortChallengesByDifficultyThenOrder<
 	T extends { difficulty: keyof typeof DIFFICULTY_ORDER; sortOrder: number }
@@ -92,6 +99,30 @@ export const exerciseQueries = {
 
 			const isLoggedIn = Boolean(ctx.session.userId);
 			const hasCloneableRepo = Boolean(track.repoUrl.trim());
+			const sortedChallenges = sortChallengesByDifficultyThenOrder(
+				track.challenges
+			);
+
+			let progressByChallengeId = new Map<
+				string,
+				UserChallengeProgressStatus
+			>();
+
+			if (ctx.session.userId && sortedChallenges.length > 0) {
+				const progressRows = await ctx.db.userChallengeProgress.findMany({
+					where: {
+						userId: ctx.session.userId,
+						challengeId: {
+							in: sortedChallenges.map((challenge) => challenge.id)
+						}
+					},
+					select: { challengeId: true, status: true }
+				});
+
+				progressByChallengeId = new Map(
+					progressRows.map((row) => [row.challengeId, row.status])
+				);
+			}
 
 			return {
 				id: track.id,
@@ -101,7 +132,12 @@ export const exerciseQueries = {
 				sortOrder: track.sortOrder,
 				repoUrl: isLoggedIn && hasCloneableRepo ? track.repoUrl : null,
 				isCloneable: isLoggedIn && hasCloneableRepo,
-				challenges: sortChallengesByDifficultyThenOrder(track.challenges)
+				challenges: sortedChallenges.map((challenge) => ({
+					...challenge,
+					status: isLoggedIn
+						? resolveProgressStatus(progressByChallengeId.get(challenge.id))
+						: null
+				}))
 			};
 		}),
 
@@ -148,12 +184,27 @@ export const exerciseQueries = {
 			const isLoggedIn = Boolean(ctx.session.userId);
 			const hasCloneableRepo = Boolean(challenge.track.repoUrl.trim());
 
+			let status: UserChallengeProgressStatus | null = null;
+			if (ctx.session.userId) {
+				const progress = await ctx.db.userChallengeProgress.findUnique({
+					where: {
+						userId_challengeId: {
+							userId: ctx.session.userId,
+							challengeId: challenge.id
+						}
+					},
+					select: { status: true }
+				});
+				status = resolveProgressStatus(progress?.status);
+			}
+
 			return {
 				id: challenge.id,
 				title: challenge.title,
 				slug: challenge.slug,
 				difficulty: challenge.difficulty,
 				sortOrder: challenge.sortOrder,
+				status,
 				track: {
 					id: challenge.track.id,
 					name: challenge.track.name,

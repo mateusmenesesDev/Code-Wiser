@@ -1,3 +1,4 @@
+import { UserChallengeProgressStatus } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { slugify } from '~/features/exercises/lib/slugify';
 import {
@@ -9,7 +10,7 @@ import {
 	updateExerciseChallengeSchema,
 	updateExerciseTrackSchema
 } from '~/features/exercises/schemas/exercise.schema';
-import { adminProcedure } from '../../trpc';
+import { adminProcedure, protectedProcedure } from '../../trpc';
 
 async function ensureUniqueTrackSlug(
 	db: {
@@ -65,6 +66,56 @@ async function ensureUniqueChallengeSlug(
 }
 
 export const exerciseMutations = {
+	startChallenge: protectedProcedure
+		.input(exerciseChallengeIdSchema)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.userId;
+			if (!userId) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' });
+			}
+
+			const challenge = await ctx.db.exerciseChallenge.findFirst({
+				where: {
+					id: input.id,
+					isArchived: false,
+					track: {
+						isPublished: true,
+						isArchived: false
+					}
+				},
+				select: { id: true }
+			});
+
+			if (!challenge) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Challenge not found'
+				});
+			}
+
+			const existing = await ctx.db.userChallengeProgress.findUnique({
+				where: {
+					userId_challengeId: {
+						userId,
+						challengeId: challenge.id
+					}
+				}
+			});
+
+			if (existing) {
+				return existing;
+			}
+
+			return ctx.db.userChallengeProgress.create({
+				data: {
+					userId,
+					challengeId: challenge.id,
+					status: UserChallengeProgressStatus.IN_PROGRESS,
+					startedAt: new Date()
+				}
+			});
+		}),
+
 	createTrack: adminProcedure
 		.input(createExerciseTrackSchema)
 		.mutation(async ({ ctx, input }) => {

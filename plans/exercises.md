@@ -65,12 +65,12 @@ Per-user progress on challenges. A logged-in user (with or without mentorship) c
 
 ### Acceptance criteria
 
-- [ ] `UserChallengeProgress` exists and is unique per user + challenge
-- [ ] Start transitions `NOT_STARTED` → `IN_PROGRESS` for the authenticated user
-- [ ] Track list and challenge detail show the viewer’s status when logged in
-- [ ] Users without active mentorship can still Start and see progress
-- [ ] Unauthenticated users cannot Start; mutation is rejected
-- [ ] Status set includes at least the values needed for later phases (`NOT_STARTED`, `IN_PROGRESS`, `IN_REVIEW`, `APPROVED`, `CHANGES_REQUESTED`) even if only Start is exercised here
+- [x] `UserChallengeProgress` exists and is unique per user + challenge
+- [x] Start transitions `NOT_STARTED` → `IN_PROGRESS` for the authenticated user
+- [x] Track list and challenge detail show the viewer’s status when logged in
+- [x] Users without active mentorship can still Start and see progress
+- [x] Unauthenticated users cannot Start; mutation is rejected
+- [x] Status set includes at least the values needed for later phases (`NOT_STARTED`, `IN_PROGRESS`, `IN_REVIEW`, `APPROVED`, `CHANGES_REQUESTED`) even if only Start is exercised here
 
 ---
 
