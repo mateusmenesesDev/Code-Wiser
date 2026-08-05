@@ -1,6 +1,12 @@
 'use client';
 
-import { ArrowLeft, GitPullRequest, Play, RefreshCw } from 'lucide-react';
+import {
+	ArrowLeft,
+	Copy,
+	GitPullRequest,
+	Play,
+	RefreshCw
+} from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -9,6 +15,7 @@ import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
@@ -51,8 +58,11 @@ export default function ExerciseChallengePage({
 		{ enabled: Boolean(user) }
 	);
 	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+	const isArchived =
+		Boolean(challenge?.isArchived) || Boolean(challenge?.track.isArchived);
 	const canRequestReview =
 		Boolean(user) &&
+		!isArchived &&
 		challenge?.status !== 'IN_REVIEW' &&
 		challenge?.status !== 'CHANGES_REQUESTED';
 	const canNotifyPrUpdate =
@@ -73,6 +83,12 @@ export default function ExerciseChallengePage({
 		},
 		onError: (mutationError) => toast.error(mutationError.message)
 	});
+
+	const copyCloneCommand = async () => {
+		if (!challenge?.track.repoUrl) return;
+		await navigator.clipboard.writeText(`git clone ${challenge.track.repoUrl}`);
+		toast.success('Clone command copied');
+	};
 
 	if (isLoading) {
 		return (
@@ -97,7 +113,8 @@ export default function ExerciseChallengePage({
 		challenge.description &&
 		challenge.setupInstructions &&
 		challenge.acceptanceCriteria;
-	const canStart = Boolean(user) && challenge.status === 'NOT_STARTED';
+	const canStart =
+		Boolean(user) && !isArchived && challenge.status === 'NOT_STARTED';
 
 	return (
 		<div className="container mx-auto px-4 py-8">
@@ -116,8 +133,15 @@ export default function ExerciseChallengePage({
 					<h1 className="font-bold text-3xl text-foreground">
 						{challenge.title}
 					</h1>
+					{isArchived && (
+						<p className="mt-2 text-muted-foreground text-sm">
+							This challenge is archived. You can still view your progress and
+							mentor feedback; new starts and review requests are closed.
+						</p>
+					)}
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
+					{isArchived && <Badge variant="secondary">Archived</Badge>}
 					{challenge.status && (
 						<Badge variant={progressStatusBadgeVariant(challenge.status)}>
 							{PROGRESS_STATUS_LABELS[challenge.status]}
@@ -130,51 +154,54 @@ export default function ExerciseChallengePage({
 			</div>
 
 			{(canStart || canRequestReview || canNotifyPrUpdate) && (
-				<div className="mb-6 flex flex-wrap gap-3">
-					{canStart && (
-						<Button
-							onClick={() => startMutation.mutate({ id: challenge.id })}
-							disabled={startMutation.isPending}
-						>
-							<Play className="mr-2 h-4 w-4" />
-							{startMutation.isPending ? 'Starting...' : 'Start'}
-						</Button>
-					)}
-					{canRequestReview &&
-						(hasActiveMentorship ? (
+				<div className="mb-6 space-y-3">
+					<div className="flex flex-wrap gap-3">
+						{canStart && (
+							<Button
+								onClick={() => startMutation.mutate({ id: challenge.id })}
+								disabled={startMutation.isPending}
+							>
+								<Play className="mr-2 h-4 w-4" />
+								{startMutation.isPending ? 'Starting...' : 'Start challenge'}
+							</Button>
+						)}
+						{canRequestReview && hasActiveMentorship && (
 							<Button variant="outline" onClick={() => setReviewOpen(true)}>
 								<GitPullRequest className="mr-2 h-4 w-4" />
 								{challenge.status === 'APPROVED'
 									? 'Request review again'
 									: 'Request review'}
 							</Button>
-						) : (
-							<div className="w-full space-y-2 rounded-md border p-4">
-								<p className="text-muted-foreground text-sm">
-									Active mentorship is required to request exercise reviews.
-									There is no credits fallback for this flow.
-								</p>
-								<Button asChild variant="outline" size="sm">
-									<Link href="/pricing">View mentorship plans</Link>
-								</Button>
-							</div>
-						))}
-					{canNotifyPrUpdate &&
-						(hasActiveMentorship ? (
-							<Button variant="outline" onClick={() => setPrUpdatedOpen(true)}>
+						)}
+						{canNotifyPrUpdate && hasActiveMentorship && (
+							<Button onClick={() => setPrUpdatedOpen(true)}>
 								<RefreshCw className="mr-2 h-4 w-4" />
 								I updated the PR
 							</Button>
-						) : (
-							<div className="w-full space-y-2 rounded-md border p-4">
-								<p className="text-muted-foreground text-sm">
-									Active mentorship is required to notify a PR update.
-								</p>
-								<Button asChild variant="outline" size="sm">
-									<Link href="/pricing">View mentorship plans</Link>
-								</Button>
-							</div>
-						))}
+						)}
+					</div>
+					{canRequestReview && !hasActiveMentorship && (
+						<div className="space-y-2 rounded-md border p-4">
+							<p className="text-muted-foreground text-sm">
+								Active mentorship is required to request exercise reviews. There
+								is no credits fallback for this flow.
+							</p>
+							<Button asChild variant="outline" size="sm">
+								<Link href="/pricing">View mentorship plans</Link>
+							</Button>
+						</div>
+					)}
+					{canNotifyPrUpdate && !hasActiveMentorship && (
+						<div className="space-y-2 rounded-md border p-4">
+							<p className="text-muted-foreground text-sm">
+								Active mentorship is required to notify a PR update. You can
+								still view this challenge and mentor feedback.
+							</p>
+							<Button asChild variant="outline" size="sm">
+								<Link href="/pricing">View mentorship plans</Link>
+							</Button>
+						</div>
+					)}
 				</div>
 			)}
 
@@ -234,21 +261,32 @@ export default function ExerciseChallengePage({
 						<Card>
 							<CardHeader>
 								<CardTitle level={2} className="text-lg">
-									Repository
+									Clone the track repository
 								</CardTitle>
+								<CardDescription>
+									Work on this challenge in the shared track repo, then open a
+									PR when you are ready for review.
+								</CardDescription>
 							</CardHeader>
-							<CardContent className="space-y-2">
+							<CardContent className="space-y-3">
 								<code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-sm">
 									git clone {challenge.track.repoUrl}
 								</code>
-								<a
-									href={challenge.track.repoUrl}
-									target="_blank"
-									rel="noreferrer"
-									className="text-sm underline"
-								>
-									Open on GitHub
-								</a>
+								<div className="flex flex-wrap gap-2">
+									<Button variant="outline" onClick={copyCloneCommand}>
+										<Copy className="mr-2 h-4 w-4" />
+										Copy clone command
+									</Button>
+									<Button asChild variant="outline">
+										<a
+											href={challenge.track.repoUrl}
+											target="_blank"
+											rel="noreferrer"
+										>
+											Open on GitHub
+										</a>
+									</Button>
+								</div>
 							</CardContent>
 						</Card>
 					)}
@@ -298,7 +336,7 @@ export default function ExerciseChallengePage({
 				</p>
 			)}
 
-			{track && challenge && (
+			{track && challenge && !isArchived && (
 				<RequestExerciseReviewDialog
 					open={reviewOpen}
 					onOpenChange={setReviewOpen}

@@ -89,34 +89,40 @@ describe('exercise public queries', () => {
 			description: 'React track',
 			repoUrl: 'https://github.com/org/react-exercises',
 			sortOrder: 0,
+			isPublished: true,
+			isArchived: false,
 			challenges: [
 				{
 					id: 'c-hard',
 					title: 'Hard one',
 					slug: 'hard-one',
 					difficulty: 'HARD',
-					sortOrder: 0
+					sortOrder: 0,
+					isArchived: false
 				},
 				{
 					id: 'c-easy-2',
 					title: 'Easy two',
 					slug: 'easy-two',
 					difficulty: 'EASY',
-					sortOrder: 1
+					sortOrder: 1,
+					isArchived: false
 				},
 				{
 					id: 'c-easy-1',
 					title: 'Easy one',
 					slug: 'easy-one',
 					difficulty: 'EASY',
-					sortOrder: 0
+					sortOrder: 0,
+					isArchived: false
 				},
 				{
 					id: 'c-medium',
 					title: 'Medium one',
 					slug: 'medium-one',
 					difficulty: 'MEDIUM',
-					sortOrder: 0
+					sortOrder: 0,
+					isArchived: false
 				}
 			]
 		} as never);
@@ -140,6 +146,7 @@ describe('exercise public queries', () => {
 			slug: 'counter',
 			difficulty: 'EASY',
 			sortOrder: 0,
+			isArchived: false,
 			description: 'Build a counter',
 			setupInstructions: 'npm install',
 			acceptanceCriteria: 'Tests pass',
@@ -147,7 +154,9 @@ describe('exercise public queries', () => {
 				id: 'track-1',
 				name: 'React',
 				slug: 'react',
-				repoUrl: 'https://github.com/org/react-exercises'
+				repoUrl: 'https://github.com/org/react-exercises',
+				isPublished: true,
+				isArchived: false
 			}
 		} as never);
 

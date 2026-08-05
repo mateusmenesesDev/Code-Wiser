@@ -26,6 +26,7 @@ type SelectableChallenge = {
 	slug: string;
 	difficulty: 'EASY' | 'MEDIUM' | 'HARD';
 	status: UserChallengeProgressStatus | null;
+	isArchived?: boolean;
 };
 
 type RequestExerciseReviewDialogProps = {
@@ -64,7 +65,8 @@ export function RequestExerciseReviewDialog({
 		() =>
 			challenges.filter(
 				(challenge) =>
-					!challenge.status || !ACTIVE_REVIEW_STATUSES.has(challenge.status)
+					!challenge.isArchived &&
+					(!challenge.status || !ACTIVE_REVIEW_STATUSES.has(challenge.status))
 			),
 		[challenges]
 	);

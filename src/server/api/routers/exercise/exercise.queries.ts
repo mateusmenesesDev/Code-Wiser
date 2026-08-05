@@ -66,11 +66,7 @@ export const exerciseQueries = {
 		.input(exerciseTrackSlugSchema)
 		.query(async ({ ctx, input }) => {
 			const track = await ctx.db.exerciseTrack.findFirst({
-				where: {
-					slug: input.slug,
-					isPublished: true,
-					isArchived: false
-				},
+				where: { slug: input.slug },
 				select: {
 					id: true,
 					name: true,
@@ -78,14 +74,16 @@ export const exerciseQueries = {
 					description: true,
 					repoUrl: true,
 					sortOrder: true,
+					isPublished: true,
+					isArchived: true,
 					challenges: {
-						where: { isArchived: false },
 						select: {
 							id: true,
 							title: true,
 							slug: true,
 							difficulty: true,
-							sortOrder: true
+							sortOrder: true,
+							isArchived: true
 						}
 					}
 				}
@@ -99,22 +97,19 @@ export const exerciseQueries = {
 			}
 
 			const isLoggedIn = Boolean(ctx.session.userId);
-			const hasCloneableRepo = Boolean(track.repoUrl.trim());
-			const sortedChallenges = sortChallengesByDifficultyThenOrder(
-				track.challenges
-			);
+			const isPubliclyVisible = track.isPublished && !track.isArchived;
 
 			let progressByChallengeId = new Map<
 				string,
 				UserChallengeProgressStatus
 			>();
 
-			if (ctx.session.userId && sortedChallenges.length > 0) {
+			if (ctx.session.userId && track.challenges.length > 0) {
 				const progressRows = await ctx.db.userChallengeProgress.findMany({
 					where: {
 						userId: ctx.session.userId,
 						challengeId: {
-							in: sortedChallenges.map((challenge) => challenge.id)
+							in: track.challenges.map((challenge) => challenge.id)
 						}
 					},
 					select: { challengeId: true, status: true }
@@ -125,16 +120,40 @@ export const exerciseQueries = {
 				);
 			}
 
+			const hasViewerProgress = progressByChallengeId.size > 0;
+
+			if (!isPubliclyVisible && !hasViewerProgress) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Track not found'
+				});
+			}
+
+			const visibleChallenges = track.challenges.filter((challenge) => {
+				if (!challenge.isArchived) return isPubliclyVisible || hasViewerProgress;
+				return progressByChallengeId.has(challenge.id);
+			});
+
+			const sortedChallenges =
+				sortChallengesByDifficultyThenOrder(visibleChallenges);
+			const hasCloneableRepo = Boolean(track.repoUrl.trim());
+
 			return {
 				id: track.id,
 				name: track.name,
 				slug: track.slug,
 				description: track.description,
 				sortOrder: track.sortOrder,
+				isArchived: track.isArchived,
 				repoUrl: isLoggedIn && hasCloneableRepo ? track.repoUrl : null,
 				isCloneable: isLoggedIn && hasCloneableRepo,
 				challenges: sortedChallenges.map((challenge) => ({
-					...challenge,
+					id: challenge.id,
+					title: challenge.title,
+					slug: challenge.slug,
+					difficulty: challenge.difficulty,
+					sortOrder: challenge.sortOrder,
+					isArchived: challenge.isArchived,
 					status: isLoggedIn
 						? resolveProgressStatus(progressByChallengeId.get(challenge.id))
 						: null
@@ -148,11 +167,8 @@ export const exerciseQueries = {
 			const challenge = await ctx.db.exerciseChallenge.findFirst({
 				where: {
 					slug: input.challengeSlug,
-					isArchived: false,
 					track: {
-						slug: input.trackSlug,
-						isPublished: true,
-						isArchived: false
+						slug: input.trackSlug
 					}
 				},
 				select: {
@@ -161,6 +177,7 @@ export const exerciseQueries = {
 					slug: true,
 					difficulty: true,
 					sortOrder: true,
+					isArchived: true,
 					description: true,
 					setupInstructions: true,
 					acceptanceCriteria: true,
@@ -169,7 +186,9 @@ export const exerciseQueries = {
 							id: true,
 							name: true,
 							slug: true,
-							repoUrl: true
+							repoUrl: true,
+							isPublished: true,
+							isArchived: true
 						}
 					}
 				}
@@ -183,9 +202,13 @@ export const exerciseQueries = {
 			}
 
 			const isLoggedIn = Boolean(ctx.session.userId);
-			const hasCloneableRepo = Boolean(challenge.track.repoUrl.trim());
+			const isPubliclyVisible =
+				!challenge.isArchived &&
+				challenge.track.isPublished &&
+				!challenge.track.isArchived;
 
 			let status: UserChallengeProgressStatus | null = null;
+			let hasProgress = false;
 			let latestMentorFeedback: {
 				status: 'APPROVED' | 'CHANGES_REQUESTED' | 'PENDING';
 				mentorComment: string | null;
@@ -207,6 +230,7 @@ export const exerciseQueries = {
 					},
 					select: { status: true }
 				});
+				hasProgress = Boolean(progress);
 				status = resolveProgressStatus(progress?.status);
 
 				const latestDecision = await ctx.db.exerciseReviewDecision.findFirst({
@@ -241,12 +265,22 @@ export const exerciseQueries = {
 				}
 			}
 
+			if (!isPubliclyVisible && !hasProgress) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Challenge not found'
+				});
+			}
+
+			const hasCloneableRepo = Boolean(challenge.track.repoUrl.trim());
+
 			return {
 				id: challenge.id,
 				title: challenge.title,
 				slug: challenge.slug,
 				difficulty: challenge.difficulty,
 				sortOrder: challenge.sortOrder,
+				isArchived: challenge.isArchived,
 				status,
 				latestMentorFeedback,
 				updatableSubmission,
@@ -254,6 +288,7 @@ export const exerciseQueries = {
 					id: challenge.track.id,
 					name: challenge.track.name,
 					slug: challenge.track.slug,
+					isArchived: challenge.track.isArchived,
 					repoUrl:
 						isLoggedIn && hasCloneableRepo ? challenge.track.repoUrl : null,
 					isCloneable: isLoggedIn && hasCloneableRepo

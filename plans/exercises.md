@@ -181,10 +181,10 @@ Harden lifecycle: archived tracks/challenges stay out of the default catalog, bu
 
 ### Acceptance criteria
 
-- [ ] Archiving a track or challenge hides it from the default public catalog
-- [ ] Admins can still finish open reviews for archived track/challenge content
-- [ ] Historical/in-flight progress remains visible to the mentee after archive where applicable
-- [ ] When mentorship lapses, mentee can still view existing in-flight/historical exercise review state
-- [ ] When mentorship lapses, new review requests and “PR updated” are rejected until ACTIVE
-- [ ] Admins can still close in-flight reviews while the mentee’s mentorship is inactive
-- [ ] Primary student CTAs are clear for the happy path (clone, Start, Request review, I updated the PR)
+- [x] Archiving a track or challenge hides it from the default public catalog
+- [x] Admins can still finish open reviews for archived track/challenge content
+- [x] Historical/in-flight progress remains visible to the mentee after archive where applicable
+- [x] When mentorship lapses, mentee can still view existing in-flight/historical exercise review state
+- [x] When mentorship lapses, new review requests and “PR updated” are rejected until ACTIVE
+- [x] Admins can still close in-flight reviews while the mentee’s mentorship is inactive
+- [x] Primary student CTAs are clear for the happy path (clone, Start, Request review, I updated the PR)

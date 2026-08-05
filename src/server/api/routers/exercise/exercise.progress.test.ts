@@ -95,20 +95,24 @@ describe('exercise progress', () => {
 			description: 'React track',
 			repoUrl: 'https://github.com/org/react',
 			sortOrder: 0,
+			isPublished: true,
+			isArchived: false,
 			challenges: [
 				{
 					id: '22222222-2222-2222-2222-222222222222',
 					title: 'Counter',
 					slug: 'counter',
 					difficulty: 'EASY',
-					sortOrder: 0
+					sortOrder: 0,
+					isArchived: false
 				},
 				{
 					id: '44444444-4444-4444-4444-444444444444',
 					title: 'Todo',
 					slug: 'todo',
 					difficulty: 'MEDIUM',
-					sortOrder: 0
+					sortOrder: 0,
+					isArchived: false
 				}
 			]
 		} as never);
@@ -144,6 +148,7 @@ describe('exercise progress', () => {
 			slug: 'counter',
 			difficulty: 'EASY',
 			sortOrder: 0,
+			isArchived: false,
 			description: 'Build a counter',
 			setupInstructions: 'npm i',
 			acceptanceCriteria: 'Tests pass',
@@ -151,7 +156,9 @@ describe('exercise progress', () => {
 				id: '11111111-1111-1111-1111-111111111111',
 				name: 'React',
 				slug: 'react',
-				repoUrl: 'https://github.com/org/react'
+				repoUrl: 'https://github.com/org/react',
+				isPublished: true,
+				isArchived: false
 			}
 		} as never);
 		mockDb.userChallengeProgress.findUnique.mockResolvedValue({
