@@ -10,6 +10,8 @@ import {
 	decideExerciseReviewSchema,
 	exerciseChallengeIdSchema,
 	exerciseTrackIdSchema,
+	githubRepoPathFromPullRequestUrl,
+	githubRepoPathFromUrl,
 	notifyExercisePrUpdatedSchema,
 	reorderExerciseChallengesSchema,
 	requestExerciseReviewSchema,
@@ -152,13 +154,23 @@ export const exerciseMutations = {
 					isPublished: true,
 					isArchived: false
 				},
-				select: { id: true, name: true }
+				select: { id: true, name: true, repoUrl: true }
 			});
 
 			if (!track) {
 				throw new TRPCError({
 					code: 'NOT_FOUND',
 					message: 'Track not found'
+				});
+			}
+
+			const trackRepoPath = githubRepoPathFromUrl(track.repoUrl);
+			const prRepoPath = githubRepoPathFromPullRequestUrl(input.prUrl);
+			if (trackRepoPath && prRepoPath && trackRepoPath !== prRepoPath) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message:
+						'PR URL must belong to this track repository'
 				});
 			}
 
@@ -393,6 +405,13 @@ export const exerciseMutations = {
 				throw new TRPCError({
 					code: 'NOT_FOUND',
 					message: 'Review decision not found'
+				});
+			}
+
+			if (decision.status !== ExerciseReviewDecisionStatus.PENDING) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'This challenge has already been reviewed'
 				});
 			}
 

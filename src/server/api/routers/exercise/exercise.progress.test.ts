@@ -164,6 +164,7 @@ describe('exercise progress', () => {
 		mockDb.userChallengeProgress.findUnique.mockResolvedValue({
 			status: 'IN_PROGRESS'
 		} as never);
+		mockDb.exerciseReviewDecision.findFirst.mockResolvedValue(null);
 
 		const result = await caller.getPublishedChallengeBySlug({
 			trackSlug: 'react',
@@ -171,5 +172,48 @@ describe('exercise progress', () => {
 		});
 
 		expect(result.status).toBe('IN_PROGRESS');
+		expect(result.activePrUrl).toBeNull();
+	});
+
+	it('exposes the active PR URL while a challenge is in review', async () => {
+		mockDb.exerciseChallenge.findFirst.mockResolvedValue({
+			id: '22222222-2222-2222-2222-222222222222',
+			title: 'Counter',
+			slug: 'counter',
+			difficulty: 'EASY',
+			sortOrder: 0,
+			isArchived: false,
+			description: 'Build a counter',
+			setupInstructions: 'npm i',
+			acceptanceCriteria: 'Tests pass',
+			track: {
+				id: '11111111-1111-1111-1111-111111111111',
+				name: 'React',
+				slug: 'react',
+				repoUrl: 'https://github.com/org/react',
+				isPublished: true,
+				isArchived: false
+			}
+		} as never);
+		mockDb.userChallengeProgress.findUnique.mockResolvedValue({
+			status: 'IN_REVIEW'
+		} as never);
+		mockDb.exerciseReviewDecision.findFirst
+			.mockResolvedValueOnce({
+				status: 'PENDING',
+				submission: {
+					id: '55555555-5555-5555-5555-555555555555',
+					prUrl: 'https://github.com/org/react/pull/12'
+				}
+			} as never)
+			.mockResolvedValueOnce(null);
+
+		const result = await caller.getPublishedChallengeBySlug({
+			trackSlug: 'react',
+			challengeSlug: 'counter'
+		});
+
+		expect(result.status).toBe('IN_REVIEW');
+		expect(result.activePrUrl).toBe('https://github.com/org/react/pull/12');
 	});
 });

@@ -227,4 +227,33 @@ describe('exercise mentor review queue', () => {
 			})
 		).rejects.toMatchObject({ code: 'FORBIDDEN' });
 	});
+
+	it('rejects deciding a challenge that is already decided', async () => {
+		mockDb.exerciseReviewDecision.findUnique.mockResolvedValue({
+			id: decisionA,
+			status: 'APPROVED',
+			challengeId: challengeA,
+			submissionId,
+			challenge: {
+				title: 'Counter',
+				slug: 'counter',
+				track: { slug: 'react' }
+			},
+			submission: {
+				id: submissionId,
+				submittedById: studentId,
+				decisions: [{ id: decisionA, status: 'APPROVED' }]
+			}
+		} as never);
+
+		await expect(
+			caller.decideChallengeReview({
+				decisionId: decisionA,
+				status: 'CHANGES_REQUESTED'
+			})
+		).rejects.toMatchObject({
+			code: 'CONFLICT',
+			message: 'This challenge has already been reviewed'
+		});
+	});
 });

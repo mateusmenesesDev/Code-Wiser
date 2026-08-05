@@ -55,12 +55,14 @@ describe('exercise requestReview', () => {
 		} as never);
 		mockDb.exerciseTrack.findFirst.mockResolvedValue({
 			id: trackId,
+			name: 'React',
 			isPublished: true,
-			isArchived: false
+			isArchived: false,
+			repoUrl: 'https://github.com/org/react-exercises'
 		} as never);
 		mockDb.exerciseChallenge.findMany.mockResolvedValue([
-			{ id: challengeA, trackId },
-			{ id: challengeB, trackId }
+			{ id: challengeA, trackId, title: 'Counter' },
+			{ id: challengeB, trackId, title: 'Todo' }
 		] as never);
 		mockDb.userChallengeProgress.findMany.mockResolvedValue([] as never);
 		mockDb.$transaction.mockImplementation(async (fn: unknown) => {
@@ -138,12 +140,35 @@ describe('exercise requestReview', () => {
 		).rejects.toMatchObject({ code: 'BAD_REQUEST' });
 	});
 
+	it('rejects PR URLs that do not belong to the track repository', async () => {
+		mockDb.user.findUnique.mockResolvedValue({
+			mentorshipStatus: 'ACTIVE'
+		} as never);
+		mockDb.exerciseTrack.findFirst.mockResolvedValue({
+			id: trackId,
+			name: 'React',
+			repoUrl: 'https://github.com/org/react-exercises'
+		} as never);
+
+		await expect(
+			caller.requestReview({
+				trackId,
+				prUrl: 'https://github.com/other/repo/pull/3',
+				challengeIds: [challengeA]
+			})
+		).rejects.toMatchObject({
+			code: 'BAD_REQUEST',
+			message: 'PR URL must belong to this track repository'
+		});
+	});
+
 	it('rejects challenges that do not belong to the track', async () => {
 		mockDb.user.findUnique.mockResolvedValue({
 			mentorshipStatus: 'ACTIVE'
 		} as never);
 		mockDb.exerciseTrack.findFirst.mockResolvedValue({
-			id: trackId
+			id: trackId,
+			repoUrl: ''
 		} as never);
 		mockDb.exerciseChallenge.findMany.mockResolvedValue([
 			{ id: challengeA, trackId }
@@ -166,7 +191,8 @@ describe('exercise requestReview', () => {
 			mentorshipStatus: 'ACTIVE'
 		} as never);
 		mockDb.exerciseTrack.findFirst.mockResolvedValue({
-			id: trackId
+			id: trackId,
+			repoUrl: 'https://github.com/org/react-exercises'
 		} as never);
 		mockDb.exerciseChallenge.findMany.mockResolvedValue([
 			{ id: challengeA, trackId, title: 'Counter App' }
@@ -193,7 +219,9 @@ describe('exercise requestReview', () => {
 			mentorshipStatus: 'ACTIVE'
 		} as never);
 		mockDb.exerciseTrack.findFirst.mockResolvedValue({
-			id: trackId
+			id: trackId,
+			name: 'React',
+			repoUrl: 'https://github.com/org/react-exercises'
 		} as never);
 		mockDb.exerciseChallenge.findMany.mockResolvedValue([
 			{ id: challengeA, trackId, title: 'Counter App' }

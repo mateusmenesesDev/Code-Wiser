@@ -209,6 +209,7 @@ export const exerciseQueries = {
 
 			let status: UserChallengeProgressStatus | null = null;
 			let hasProgress = false;
+			let activePrUrl: string | null = null;
 			let latestMentorFeedback: {
 				status: 'APPROVED' | 'CHANGES_REQUESTED' | 'PENDING';
 				mentorComment: string | null;
@@ -233,6 +234,29 @@ export const exerciseQueries = {
 				hasProgress = Boolean(progress);
 				status = resolveProgressStatus(progress?.status);
 
+				const openDecision = await ctx.db.exerciseReviewDecision.findFirst({
+					where: {
+						challengeId: challenge.id,
+						submission: { submittedById: ctx.session.userId },
+						status: { in: ['PENDING', 'CHANGES_REQUESTED'] }
+					},
+					orderBy: { createdAt: 'desc' },
+					select: {
+						status: true,
+						submission: { select: { id: true, prUrl: true } }
+					}
+				});
+
+				if (openDecision) {
+					activePrUrl = openDecision.submission.prUrl;
+					if (openDecision.status === 'CHANGES_REQUESTED') {
+						updatableSubmission = {
+							id: openDecision.submission.id,
+							prUrl: openDecision.submission.prUrl
+						};
+					}
+				}
+
 				const latestDecision = await ctx.db.exerciseReviewDecision.findFirst({
 					where: {
 						challengeId: challenge.id,
@@ -255,13 +279,6 @@ export const exerciseQueries = {
 						prUrl: latestDecision.submission.prUrl,
 						reviewedAt: latestDecision.reviewedAt
 					};
-
-					if (latestDecision.status === 'CHANGES_REQUESTED') {
-						updatableSubmission = {
-							id: latestDecision.submission.id,
-							prUrl: latestDecision.submission.prUrl
-						};
-					}
 				}
 			}
 
@@ -282,6 +299,7 @@ export const exerciseQueries = {
 				sortOrder: challenge.sortOrder,
 				isArchived: challenge.isArchived,
 				status,
+				activePrUrl,
 				latestMentorFeedback,
 				updatableSubmission,
 				track: {

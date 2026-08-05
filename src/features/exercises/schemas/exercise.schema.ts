@@ -103,10 +103,60 @@ export const exerciseChallengeSlugSchema = z.object({
 export const githubPullRequestUrlSchema = z
 	.string()
 	.trim()
-	.regex(
-		/^https:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+\/?$/,
-		'PR URL must be a valid GitHub pull request URL'
+	.transform((value) => {
+		try {
+			const url = new URL(value);
+			const match = url.pathname.match(
+				/^\/([\w.-]+)\/([\w.-]+)\/pull\/(\d+)(?:\/.*)?$/
+			);
+			if (
+				!match ||
+				(url.hostname !== 'github.com' && url.hostname !== 'www.github.com')
+			) {
+				return value;
+			}
+			return `https://github.com/${match[1]}/${match[2]}/pull/${match[3]}`;
+		} catch {
+			return value;
+		}
+	})
+	.refine(
+		(value) =>
+			/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+$/.test(value),
+		{ message: 'PR URL must be a valid GitHub pull request URL' }
 	);
+
+export function githubRepoPathFromUrl(repoUrl: string): string | null {
+	try {
+		const url = new URL(repoUrl.trim());
+		const match = url.pathname.match(/^\/([\w.-]+)\/([\w.-]+)\/?$/);
+		if (
+			!match ||
+			(url.hostname !== 'github.com' && url.hostname !== 'www.github.com')
+		) {
+			return null;
+		}
+		return `${match[1]}/${match[2]}`.toLowerCase();
+	} catch {
+		return null;
+	}
+}
+
+export function githubRepoPathFromPullRequestUrl(prUrl: string): string | null {
+	try {
+		const url = new URL(prUrl.trim());
+		const match = url.pathname.match(/^\/([\w.-]+)\/([\w.-]+)\/pull\/\d+$/);
+		if (
+			!match ||
+			(url.hostname !== 'github.com' && url.hostname !== 'www.github.com')
+		) {
+			return null;
+		}
+		return `${match[1]}/${match[2]}`.toLowerCase();
+	} catch {
+		return null;
+	}
+}
 
 export const requestExerciseReviewSchema = z.object({
 	trackId: z.string().uuid(),

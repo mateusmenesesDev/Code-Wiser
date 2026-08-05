@@ -12,6 +12,12 @@ async function resetDatabase() {
 	try {
 		// Delete in reverse dependency order to avoid foreign key constraint errors
 		console.log('🧹 Clearing comments...');
+		await prisma.exerciseReviewDecision.deleteMany();
+		await prisma.exerciseReviewSubmission.deleteMany();
+		await prisma.userChallengeProgress.deleteMany();
+		await prisma.exerciseChallenge.deleteMany();
+		await prisma.exerciseTrack.deleteMany();
+
 		await prisma.comment.deleteMany();
 
 		console.log('🧹 Clearing tasks...');

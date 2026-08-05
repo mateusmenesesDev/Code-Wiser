@@ -205,6 +205,33 @@ export default function ExerciseChallengePage({
 				</div>
 			)}
 
+			{challenge.activePrUrl &&
+				(challenge.status === 'IN_REVIEW' ||
+					challenge.status === 'CHANGES_REQUESTED') && (
+					<Card className="mb-6">
+						<CardHeader>
+							<CardTitle level={2} className="text-lg">
+								Your pull request
+							</CardTitle>
+							<CardDescription>
+								{challenge.status === 'IN_REVIEW'
+									? 'This challenge is waiting on mentor review.'
+									: 'Update the same PR, then notify your mentor.'}
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<a
+								href={challenge.activePrUrl}
+								target="_blank"
+								rel="noreferrer"
+								className="break-all text-sm underline"
+							>
+								{challenge.activePrUrl}
+							</a>
+						</CardContent>
+					</Card>
+				)}
+
 			{challenge.latestMentorFeedback && (
 				<Card className="mb-6">
 					<CardHeader>
