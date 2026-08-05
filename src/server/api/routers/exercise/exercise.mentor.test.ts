@@ -27,6 +27,12 @@ vi.mock('~/server/realtime', () => ({
 	getRealtimeService: () => ({})
 }));
 
+vi.mock('~/server/services/notification/exerciseNotifications', () => ({
+	notifyExerciseReviewRequested: vi.fn().mockResolvedValue(undefined),
+	notifyExercisePrUpdated: vi.fn().mockResolvedValue(undefined),
+	notifyExerciseChallengeResponse: vi.fn().mockResolvedValue(undefined)
+}));
+
 describe('exercise mentor review queue', () => {
 	const createCaller = createCallerFactory(exerciseRouter);
 	let caller: ReturnType<typeof createCaller>;
@@ -90,6 +96,11 @@ describe('exercise mentor review queue', () => {
 			status: 'PENDING',
 			challengeId: challengeA,
 			submissionId,
+			challenge: {
+				title: 'Counter',
+				slug: 'counter',
+				track: { slug: 'react' }
+			},
 			submission: {
 				id: submissionId,
 				submittedById: studentId,
@@ -99,6 +110,7 @@ describe('exercise mentor review queue', () => {
 				]
 			}
 		} as never);
+		mockDb.user.findUnique.mockResolvedValue({ name: 'Mentor' } as never);
 		mockDb.$transaction.mockImplementation(async (fn: unknown) => {
 			if (typeof fn === 'function') {
 				return fn(mockDb);
@@ -150,6 +162,11 @@ describe('exercise mentor review queue', () => {
 			status: 'PENDING',
 			challengeId: challengeB,
 			submissionId,
+			challenge: {
+				title: 'Todo',
+				slug: 'todo',
+				track: { slug: 'react' }
+			},
 			submission: {
 				id: submissionId,
 				submittedById: studentId,
@@ -159,6 +176,7 @@ describe('exercise mentor review queue', () => {
 				]
 			}
 		} as never);
+		mockDb.user.findUnique.mockResolvedValue({ name: 'Mentor' } as never);
 		mockDb.$transaction.mockImplementation(async (fn: unknown) => {
 			if (typeof fn === 'function') {
 				return fn(mockDb);

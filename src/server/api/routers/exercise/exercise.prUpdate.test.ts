@@ -25,6 +25,12 @@ vi.mock('~/server/realtime', () => ({
 	getRealtimeService: () => ({})
 }));
 
+vi.mock('~/server/services/notification/exerciseNotifications', () => ({
+	notifyExerciseReviewRequested: vi.fn().mockResolvedValue(undefined),
+	notifyExercisePrUpdated: vi.fn().mockResolvedValue(undefined),
+	notifyExerciseChallengeResponse: vi.fn().mockResolvedValue(undefined)
+}));
+
 describe('exercise notifyPrUpdated', () => {
 	const createCaller = createCallerFactory(exerciseRouter);
 	let caller: ReturnType<typeof createCaller>;
@@ -51,16 +57,20 @@ describe('exercise notifyPrUpdated', () => {
 		mockDb.exerciseReviewSubmission.findFirst.mockResolvedValue({
 			id: submissionId,
 			submittedById: 'user-1',
+			track: { name: 'React' },
+			submittedBy: { name: 'Ada' },
 			decisions: [
 				{
 					id: decisionApproved,
 					status: 'APPROVED',
-					challengeId: challengeApproved
+					challengeId: challengeApproved,
+					challenge: { title: 'Counter' }
 				},
 				{
 					id: decisionChanges,
 					status: 'CHANGES_REQUESTED',
-					challengeId: challengeChanges
+					challengeId: challengeChanges,
+					challenge: { title: 'Todo' }
 				}
 			]
 		} as never);
@@ -131,11 +141,14 @@ describe('exercise notifyPrUpdated', () => {
 		mockDb.exerciseReviewSubmission.findFirst.mockResolvedValue({
 			id: submissionId,
 			submittedById: 'user-1',
+			track: { name: 'React' },
+			submittedBy: { name: 'Ada' },
 			decisions: [
 				{
 					id: decisionApproved,
 					status: 'APPROVED',
-					challengeId: challengeApproved
+					challengeId: challengeApproved,
+					challenge: { title: 'Counter' }
 				}
 			]
 		} as never);

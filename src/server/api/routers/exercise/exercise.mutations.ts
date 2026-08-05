@@ -17,6 +17,11 @@ import {
 	updateExerciseTrackSchema
 } from '~/features/exercises/schemas/exercise.schema';
 import {
+	notifyExerciseChallengeResponse,
+	notifyExercisePrUpdated,
+	notifyExerciseReviewRequested
+} from '~/server/services/notification/exerciseNotifications';
+import {
 	adminProcedure,
 	mentorshipProcedure,
 	protectedProcedure
@@ -147,7 +152,7 @@ export const exerciseMutations = {
 					isPublished: true,
 					isArchived: false
 				},
-				select: { id: true }
+				select: { id: true, name: true }
 			});
 
 			if (!track) {
@@ -157,14 +162,20 @@ export const exerciseMutations = {
 				});
 			}
 
-			const challenges = await ctx.db.exerciseChallenge.findMany({
-				where: {
-					id: { in: uniqueChallengeIds },
-					trackId: track.id,
-					isArchived: false
-				},
-				select: { id: true, trackId: true, title: true }
-			});
+			const [challenges, member] = await Promise.all([
+				ctx.db.exerciseChallenge.findMany({
+					where: {
+						id: { in: uniqueChallengeIds },
+						trackId: track.id,
+						isArchived: false
+					},
+					select: { id: true, trackId: true, title: true }
+				}),
+				ctx.db.user.findUnique({
+					where: { id: userId },
+					select: { name: true }
+				})
+			]);
 
 			if (challenges.length !== uniqueChallengeIds.length) {
 				throw new TRPCError({
@@ -198,8 +209,8 @@ export const exerciseMutations = {
 
 			const now = new Date();
 
-			return ctx.db.$transaction(async (tx) => {
-				const submission = await tx.exerciseReviewSubmission.create({
+			const submission = await ctx.db.$transaction(async (tx) => {
+				const created = await tx.exerciseReviewSubmission.create({
 					data: {
 						prUrl: input.prUrl,
 						trackId: track.id,
@@ -237,8 +248,21 @@ export const exerciseMutations = {
 					});
 				}
 
-				return submission;
+				return created;
 			});
+
+			await notifyExerciseReviewRequested({
+				db: ctx.db,
+				memberName: member?.name ?? null,
+				submissionId: submission.id,
+				trackName: track.name,
+				challengeTitles: challenges.map((challenge) => challenge.title),
+				prUrl: input.prUrl
+			}).catch((error) => {
+				console.error('Failed to send exercise review notification:', error);
+			});
+
+			return submission;
 		}),
 
 	notifyPrUpdated: mentorshipProcedure
@@ -255,11 +279,14 @@ export const exerciseMutations = {
 					submittedById: userId
 				},
 				include: {
+					track: { select: { name: true } },
+					submittedBy: { select: { name: true } },
 					decisions: {
 						select: {
 							id: true,
 							status: true,
-							challengeId: true
+							challengeId: true,
+							challenge: { select: { title: true } }
 						}
 					}
 				}
@@ -285,7 +312,7 @@ export const exerciseMutations = {
 				});
 			}
 
-			return ctx.db.$transaction(async (tx) => {
+			const updated = await ctx.db.$transaction(async (tx) => {
 				for (const decision of changesRequested) {
 					await tx.exerciseReviewDecision.update({
 						where: { id: decision.id },
@@ -315,6 +342,21 @@ export const exerciseMutations = {
 					}
 				});
 			});
+
+			await notifyExercisePrUpdated({
+				db: ctx.db,
+				memberName: submission.submittedBy.name,
+				submissionId: submission.id,
+				trackName: submission.track.name,
+				challengeTitles: changesRequested.map(
+					(decision) => decision.challenge.title
+				),
+				updateNote: input.updateNote
+			}).catch((error) => {
+				console.error('Failed to send exercise PR update notification:', error);
+			});
+
+			return updated;
 		}),
 
 	decideChallengeReview: adminProcedure
@@ -328,6 +370,13 @@ export const exerciseMutations = {
 			const decision = await ctx.db.exerciseReviewDecision.findUnique({
 				where: { id: input.decisionId },
 				include: {
+					challenge: {
+						select: {
+							title: true,
+							slug: true,
+							track: { select: { slug: true } }
+						}
+					},
 					submission: {
 						select: {
 							id: true,
@@ -358,8 +407,13 @@ export const exerciseMutations = {
 					item.status === ExerciseReviewDecisionStatus.PENDING
 			);
 
-			return ctx.db.$transaction(async (tx) => {
-				const updated = await tx.exerciseReviewDecision.update({
+			const mentor = await ctx.db.user.findUnique({
+				where: { id: reviewerId },
+				select: { name: true }
+			});
+
+			const updated = await ctx.db.$transaction(async (tx) => {
+				const saved = await tx.exerciseReviewDecision.update({
 					where: { id: decision.id },
 					data: {
 						status: input.status,
@@ -384,8 +438,26 @@ export const exerciseMutations = {
 					data: { needsAttention: remainingPending }
 				});
 
-				return updated;
+				return saved;
 			});
+
+			await notifyExerciseChallengeResponse({
+				db: ctx.db,
+				memberId: decision.submission.submittedById,
+				mentorName: mentor?.name,
+				challengeTitle: decision.challenge.title,
+				trackSlug: decision.challenge.track.slug,
+				challengeSlug: decision.challenge.slug,
+				status: input.status,
+				mentorComment: input.mentorComment
+			}).catch((error) => {
+				console.error(
+					'Failed to send exercise challenge response notification:',
+					error
+				);
+			});
+
+			return updated;
 		}),
 
 	createTrack: adminProcedure

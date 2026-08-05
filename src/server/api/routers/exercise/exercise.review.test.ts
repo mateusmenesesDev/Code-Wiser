@@ -25,6 +25,12 @@ vi.mock('~/server/realtime', () => ({
 	getRealtimeService: () => ({})
 }));
 
+vi.mock('~/server/services/notification/exerciseNotifications', () => ({
+	notifyExerciseReviewRequested: vi.fn().mockResolvedValue(undefined),
+	notifyExercisePrUpdated: vi.fn().mockResolvedValue(undefined),
+	notifyExerciseChallengeResponse: vi.fn().mockResolvedValue(undefined)
+}));
+
 describe('exercise requestReview', () => {
 	const createCaller = createCallerFactory(exerciseRouter);
 	let caller: ReturnType<typeof createCaller>;

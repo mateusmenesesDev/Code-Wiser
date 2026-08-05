@@ -7,6 +7,11 @@
 
 export { createNotification, getAdminUsers } from './base';
 export { notifyPRRequested, notifyPRResponse } from './prNotifications';
+export {
+	notifyExerciseChallengeResponse,
+	notifyExercisePrUpdated,
+	notifyExerciseReviewRequested
+} from './exerciseNotifications';
 export { notifyTaskComment } from './commentNotifications';
 export {
 	notifyTaskAssigned,

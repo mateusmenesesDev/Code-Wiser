@@ -163,11 +163,11 @@ Wire exercise review lifecycle into the existing notification system: admins not
 
 ### Acceptance criteria
 
-- [ ] Admins receive a notification when a mentee requests an exercise review
-- [ ] Admins receive a notification when a mentee marks a PR as updated
-- [ ] Mentee receives a notification when a challenge is approved
-- [ ] Mentee receives a notification when changes are requested on a challenge
-- [ ] Notification types/links land the user on the relevant exercises or admin queue surface
+- [x] Admins receive a notification when a mentee requests an exercise review
+- [x] Admins receive a notification when a mentee marks a PR as updated
+- [x] Mentee receives a notification when a challenge is approved
+- [x] Mentee receives a notification when changes are requested on a challenge
+- [x] Notification types/links land the user on the relevant exercises or admin queue surface
 
 ---
 
