@@ -1,399 +1,58 @@
-## Forms and Validation
+# Forms and validation
 
-This document covers form-specific patterns, validation strategies, and components in the mentorship system. For broader architecture, see `design.md`, for data fetching see `query.md`, and for authentication patterns see `authentication.md`.
+Forms use React Hook Form for state and Zod for validation. Keep schemas near the owning feature and validate again at the API boundary.
 
-### Form Stack
+## Core files
 
-**Core Libraries:**
+- `src/common/components/ui/form.tsx`: shadcn/Radix + React Hook Form wrapper (`Form`, `FormField`, `FormItem`, `FormControl`, `FormMessage`, etc.).
+- `src/common/components/RichText.tsx`: TipTap editor integrated with form context and UploadThing image upload.
+- `src/features/*/schemas/*.schema.ts`: feature-owned Zod schemas.
+- `src/features/schemas/*`: shared schema helpers only.
 
-- **React Hook Form v7.53.2**: Form state management and validation
-- **@hookform/resolvers v3.9.1**: Zod integration resolver
-- **Zod**: Schema validation with TypeScript inference
+## Ownership
 
-**UI Layer:**
+- Feature form UI belongs in `src/features/<domain>/components`.
+- Feature schemas belong in `src/features/<domain>/schemas` unless shared by multiple domains.
+- Server procedures should import/reuse schemas or define boundary-specific schemas close to the owning router.
+- Avoid putting domain validation in `common`.
 
-- **Custom Form Wrapper**: `src/common/components/ui/form.tsx` - React Hook Form + Radix UI integration
-- **Specialized Components**: Rich text editor, file uploads, OTP inputs
+## Standard pattern
 
-### Form Architecture
+1. Define a Zod schema for the form/API input.
+2. Initialize React Hook Form with `zodResolver(schema)` and typed defaults.
+3. Use `FormField` for controlled components (`Select`, custom inputs, rich text, dialogs).
+4. Use simple registered inputs only when they stay simple.
+5. Submit through a tRPC mutation or route handler.
+6. On success, reset/close/navigate and invalidate affected queries.
+7. On error, show a user-facing message and map field errors where useful.
 
-#### Component System
+## Important existing forms
 
-```ts
-// Core form wrapper integrating React Hook Form with Radix UI
-const Form = FormProvider; // React Hook Form context
+- Templates: `src/features/templates/components/CreateProjectTemplateDialog.tsx`, edit-template components, and `templates/schemas/template.schema.ts`.
+- Tasks/comments: `src/features/task/components/TaskDialog*.tsx`, `src/features/workspace/schemas/task.schema.ts`, `workspace/schemas/comment.schema.ts`.
+- Sprints/epics: `src/features/sprints/components/SprintDialog.tsx`, `src/features/epics/components/EpicDialog.tsx`.
+- Users/admin: `src/features/users/components/EditUserDialog.tsx`.
+- Feedback/PR review/planning poker/mentorship: feature-local component and schema folders.
 
-const FormField = <TFieldValues, TName>({ ...props }: ControllerProps) => (
-  <FormFieldContext.Provider value={{ name: props.name }}>
-    <Controller {...props} />
-  </FormFieldContext.Provider>
-);
+## Validation guidance
 
-// Automatic error handling and accessibility
-const useFormField = () => {
-  // Returns: error, formItemId, formDescriptionId, formMessageId
-};
-```
+- Prefer schema-first validation with clear messages.
+- Use `refine`/`superRefine` for cross-field business rules.
+- Build create/update schemas from shared base pieces only when it reduces duplication without hiding intent.
+- Do not trust client validation; tRPC `.input(schema)` or route-handler parsing is the source of truth.
+- Keep transforms explicit. If UI shape differs from API shape, name the conversion and keep it near the form or feature utility.
 
-**Component Hierarchy:**
+## State guidance
 
-- `Form` → `FormField` → `FormItem` → `FormLabel` + `FormControl` + `FormMessage`
-- Automatic ARIA attributes and error state management
-- Consistent styling via TailwindCSS design tokens
+- Form state stays in React Hook Form.
+- Dialog open/close can be local state or shared dialog atoms when multiple components coordinate.
+- Server data comes from tRPC/React Query; do not copy query results into form state except for edit defaults/reset.
+- URL-backed filters use `nuqs`, not form state.
 
-#### Validation Strategy
+## Review checklist
 
-**Schema-First with Zod:**
-
-```ts
-// Reusable validation building blocks
-export const baseSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-});
-
-// Composed schemas with cross-field validation
-export const createSchema = baseSchema.extend({
-  description: z.string().min(10, "Description must be at least 10 characters"),
-});
-
-export const updateSchema = baseSchema
-  .partial()
-  .refine((data) => data.name || data.email, {
-    message: "At least one field must be provided",
-  });
-```
-
-### Form Patterns
-
-#### 1. Complex Forms with Controller Pattern
-
-**Pattern**: FormField wrapper for complex components
-
-```ts
-<FormField
-  control={form.control}
-  name="difficulty"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Difficulty</FormLabel>
-      <Select onValueChange={field.onChange} defaultValue={field.value}>
-        <FormControl>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-        </FormControl>
-        <SelectContent>
-          <SelectItem value="BEGINNER">Beginner</SelectItem>
-          <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
-          <SelectItem value="ADVANCED">Advanced</SelectItem>
-        </SelectContent>
-      </Select>
-      <FormMessage />
-    </FormItem>
-  )}
-/>
-```
-
-#### 2. Dynamic Array Fields
-
-**Pattern**: Add/remove functionality with validation
-
-```ts
-function AddListField({ form, fieldName, label, placeholder }) {
-  const [newValue, setNewValue] = useState("");
-
-  const addItem = () => {
-    if (newValue.trim()) {
-      const currentItems = form.watch(fieldName) || [];
-      form.setValue(fieldName, [...currentItems, newValue.trim()]);
-      setNewValue("");
-    }
-  };
-
-  const removeItem = (index: number) => {
-    const currentItems = form.watch(fieldName) || [];
-    form.setValue(
-      fieldName,
-      currentItems.filter((_, i) => i !== index)
-    );
-  };
-
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <div className="flex gap-2">
-        <Input
-          placeholder={placeholder}
-          value={newValue}
-          onChange={(e) => setNewValue(e.target.value)}
-          onKeyDown={(e) =>
-            e.key === "Enter" && (e.preventDefault(), addItem())
-          }
-        />
-        <Button type="button" onClick={addItem} variant="outline" size="icon">
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <div className="space-y-1">
-        {form.watch(fieldName)?.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between rounded-md bg-secondary p-2"
-          >
-            <span className="text-sm">{item}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => removeItem(index)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-### Specialized Components
-
-#### Rich Text Editor
-
-**TipTap Integration** (`src/common/components/RichText.tsx`):
-
-```ts
-export default function RichText() {
-  const { setValue, watch } = useFormContext();
-  const content = watch("description") || "";
-
-  const editor = useEditor({
-    extensions: [StarterKit, Image],
-    content,
-    onUpdate({ editor }) {
-      setValue("description", editor.getHTML(), { shouldDirty: true });
-    },
-    editorProps: {
-      handlePaste(_, event) {
-        // Handle image paste from clipboard
-      },
-      handleDrop(_, event) {
-        // Handle image drag & drop
-      },
-    },
-  });
-
-  const handleImageUpload = async (file: File) => {
-    const [res] = await uploadFiles("imageUploader", { files: [file] });
-    if (res) editor?.chain().focus().setImage({ src: res.url }).run();
-  };
-
-  return <EditorContent editor={editor} />;
-}
-```
-
-**Features:**
-
-- Automatic form integration via `useFormContext`
-- Image upload with drag & drop support
-- UploadThing integration for secure file handling
-
-#### File Upload Components
-
-**Image Upload with Preview**:
-
-```ts
-export function ProjectImages({ form }) {
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const newImages = files.map((file) => ({
-        url: URL.createObjectURL(file),
-        alt: file.name,
-      }));
-      setValue("images", [...(watch("images") || []), ...newImages]);
-    }
-  };
-
-  return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-      {watch("images")?.map((image, index) => (
-        <div key={image.url} className="relative aspect-square">
-          <Image src={image.url} alt={`Project image ${index + 1}`} fill />
-          <Button onClick={() => removeImage(index)}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={handleImageUpload}
-      />
-    </div>
-  );
-}
-```
-
-#### Password Input with Toggle
-
-```ts
-const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ showPasswordToggle = false, ...props }, ref) => {
-    const [showPassword, setShowPassword] = useState(false);
-
-    return (
-      <div className="relative">
-        <input type={showPassword ? "text" : "password"} ref={ref} {...props} />
-        {showPasswordToggle && (
-          <Button type="button" onClick={() => setShowPassword(!showPassword)}>
-            {showPassword ? <EyeOff /> : <Eye />}
-          </Button>
-        )}
-      </div>
-    );
-  }
-);
-```
-
-### Validation Schemas
-
-#### Common Patterns
-
-**File**: `src/features/templates/schemas/template.schema.ts`
-
-```ts
-export const createProjectTemplateSchema = baseTemplateSchema
-  .refine(
-    (data) => {
-      if (
-        data.accessType === "CREDITS" &&
-        (!data.credits || data.credits <= 0)
-      ) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: "Credits are required for credit-based projects",
-      path: ["credits"],
-    }
-  )
-  .refine((data) => data.minParticipants <= data.maxParticipants, {
-    message: "Min participants cannot exceed max participants",
-    path: ["maxParticipants"],
-  });
-```
-
-### Error Handling
-
-#### Client-Side Error Display
-
-**ErrorMessage Component** (`src/common/components/ErrorMessage.tsx`):
-
-```ts
-export function ErrorMessage({ message, className }) {
-  const [animateRef] = useAnimate<HTMLDivElement>();
-
-  return (
-    <div ref={animateRef}>
-      {message && (
-        <p className={cn("text-red-500 text-sm", className)}>{message}</p>
-      )}
-    </div>
-  );
-}
-```
-
-#### Server Integration
-
-**tRPC Error Formatting** (already covered in `query.md`):
-
-- Zod validation errors automatically mapped to form fields
-- Type-safe error handling with field-specific messages
-- Integration with React Hook Form's `setError` for server validation
-
-### Best Practices
-
-#### Form State Management
-
-```ts
-// ✅ Use controller pattern for complex components
-<FormField control={form.control} name="field" render={({ field }) => ...} />
-
-// ✅ Use register for simple inputs
-<Input {...register("email")} />
-
-// ✅ Reset forms properly for edit modes
-useEffect(() => {
-  if (isDialogOpen && existingData) {
-    form.reset(transformedData);
-  }
-}, [isDialogOpen, existingData, form]);
-```
-
-#### Schema Design
-
-```ts
-// ✅ Build reusable validation schemas
-const baseSchema = z.object({
-  /* common fields */
-});
-const createSchema = baseSchema.omit({ id: true });
-const updateSchema = baseSchema.partial().required({ id: true });
-
-// ✅ Use custom refinements for business logic
-const schema = baseSchema.superRefine((data, ctx) => {
-  if (data.condition && !data.requiredField) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Field required when condition is met",
-      path: ["requiredField"],
-    });
-  }
-});
-```
-
-#### Performance Optimization
-
-```ts
-// ✅ Isolate form components to prevent unnecessary re-renders
-const EmailField = React.memo(({ form }) => (
-  <FormField control={form.control} name="email" render={...} />
-));
-
-// ✅ Use debounced validation for expensive operations
-const debouncedValidation = useMemo(
-  () => debounce(async (value) => { /* validation */ }, 300),
-  []
-);
-```
-
-### Related Files
-
-**Core Infrastructure:**
-
-- `src/common/components/ui/form.tsx` - Form component system
-- `src/common/components/ErrorMessage.tsx` - Error display with animations
-
-**Schemas:**
-
-- `src/features/schemas/auth.schema.ts` - Authentication validation
-- `src/features/workspace/schemas/task.schema.ts` - Task management
-- `src/features/templates/schemas/template.schema.ts` - Template creation
-
-**Specialized Components:**
-
-- `src/common/components/RichText.tsx` - TipTap rich text editor
-- `src/common/components/ui/input.tsx` - Input variants including password
-- `src/common/components/ui/GenericCombobox.tsx` - Multi-select combobox
-
-**Form Implementations:**
-
-- `src/features/auth/components/Signin/SigninDialog.tsx` - OAuth authentication dialog
-- `src/features/task/components/TaskDialog.tsx` - Complex form with rich editor
-- `src/features/templates/components/CreateProjectTemplateDialog.tsx` - Multi-step wizard
+- Schema lives with the domain and is reused at the server boundary.
+- Mutation is protected by the correct procedure.
+- Submit handler invalidates the minimum affected queries.
+- Edit forms call `reset` when loaded data/dialog target changes.
+- Complex inputs use `FormField` + `FormControl` so labels, ARIA, and errors stay wired.

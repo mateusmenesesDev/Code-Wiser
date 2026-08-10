@@ -2,7 +2,9 @@ import { Protect } from '@clerk/nextjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useEffect, useRef, useState } from 'react';
+import type { FieldErrors } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
@@ -21,6 +23,7 @@ import { Textarea } from '~/common/components/ui/textarea';
 import { useTask } from '~/features/task/hooks/useTask';
 import {
 	createTaskSchema,
+	FIBONACCI_STORY_POINTS,
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { cn } from '~/lib/utils';
@@ -39,16 +42,29 @@ import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useUser } from '~/common/hooks/useUser';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { api } from '~/trpc/react';
-import { getStatusLabel, resetFormData } from '../utils';
+import {
+	getStatusLabel,
+	normalizeStoryPointsForForm,
+	resetFormData
+} from '../utils';
+import {
+	reportStagedUploadResult,
+	uploadAndLinkStagedAttachments
+} from '../utils/uploadStagedAttachments';
+import { AssigneesInput } from './AssigneesInput';
 import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
+import { TaskAttachments } from './TaskAttachments';
 import { TaskComments } from './TaskComments';
 
 interface TaskDialogProps {
 	taskId?: string;
 	projectId: string;
-	onClose: () => void;
+	onRequestClose: () => void;
+	onCloseAfterSuccess: () => void;
+	onDirtyChange?: (isDirty: boolean) => void;
 }
 
 dayjs.extend(relativeTime);
@@ -60,7 +76,9 @@ type TaskFormData =
 export function TaskDialogContent({
 	taskId,
 	projectId,
-	onClose
+	onRequestClose,
+	onCloseAfterSuccess,
+	onDirtyChange
 }: TaskDialogProps) {
 	const isTemplate = useIsTemplate();
 	const { userHasMentorship, userCredits } = useUser();
@@ -81,6 +99,10 @@ export function TaskDialogContent({
 		{ id: taskId || '' },
 		{ enabled: !!taskId }
 	);
+	const publicTaskId = formatPublicTaskId(
+		task?.project?.publicCode ?? task?.projectTemplate?.publicCode,
+		task?.publicNumber
+	);
 
 	const { data: epics } = api.epic.getAllByProjectId.useQuery({
 		projectId,
@@ -92,14 +114,21 @@ export function TaskDialogContent({
 	});
 
 	const {
-		deleteTask,
-		updateTask,
-		createTask,
+		deleteTaskAsync,
+		updateTaskAsync,
+		createTaskAsync,
 		generateTaskDescription,
-		isGeneratingDescription
+		isGeneratingDescription,
+		isCreatingTask
 	} = useTask({
 		projectId
 	});
+
+	const createAttachmentMutation = api.task.attachments.create.useMutation();
+
+	const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+	const [isUploadingStaged, setIsUploadingStaged] = useState(false);
+	const [stagedUploadProgress, setStagedUploadProgress] = useState(0);
 
 	const { data: projectMembers, isLoading: isLoadingMembers } =
 		api.project.getMembers.useQuery(
@@ -115,14 +144,30 @@ export function TaskDialogContent({
 			status: TaskStatusEnum.BACKLOG,
 			priority: TaskPriorityEnum.MEDIUM,
 			blocked: false,
-			tags: []
+			tags: [],
+			assigneeIds: []
 		}
 	});
 
+	const prevTaskIdRef = useRef<string | undefined>(undefined);
+
 	useEffect(() => {
-		const formData = resetFormData(task, projectId, isTemplate);
-		form.reset(formData);
+		const currentTaskId = task?.id;
+		const taskIdChanged = currentTaskId !== prevTaskIdRef.current;
+		prevTaskIdRef.current = currentTaskId;
+
+		// Only reset when safe: task ID changed (switching tasks) or form is clean.
+		// Skipping reset when dirty prevents a background refetch from wiping in-progress edits.
+		if (taskIdChanged || !form.formState.isDirty) {
+			const formData = resetFormData(task, projectId, isTemplate);
+			form.reset(formData);
+		}
 	}, [form, projectId, task, isTemplate]);
+
+	const { isDirty } = form.formState;
+	useEffect(() => {
+		onDirtyChange?.(isDirty);
+	}, [isDirty, onDirtyChange]);
 
 	// Update PR URL from active review
 	useEffect(() => {
@@ -161,33 +206,76 @@ export function TaskDialogContent({
 	}, [task, epics, sprints, form]);
 
 	const onSubmit = async (data: TaskFormData) => {
-		console.log('data', data);
-		if (isEditing && task) {
-			updateTask({
-				id: task.id,
-				...data,
-				isTemplate
-			});
-		} else {
-			createTask({
-				...data,
-				status: TaskStatusEnum.BACKLOG,
-				isTemplate
-			} as CreateTaskInput);
+		try {
+			if (isEditing && task) {
+				await updateTaskAsync({
+					id: task.id,
+					...data,
+					isTemplate
+				});
+			} else {
+				const created = await createTaskAsync({
+					...data,
+					status: TaskStatusEnum.BACKLOG,
+					isTemplate
+				} as CreateTaskInput);
+
+				if (stagedFiles.length > 0) {
+					setIsUploadingStaged(true);
+					setStagedUploadProgress(0);
+					try {
+						const result = await uploadAndLinkStagedAttachments({
+							taskId: created.id,
+							files: stagedFiles,
+							linkAttachment: (input) =>
+								createAttachmentMutation.mutateAsync(input),
+							onProgress: setStagedUploadProgress
+						});
+						reportStagedUploadResult(result);
+					} finally {
+						setIsUploadingStaged(false);
+						setStagedUploadProgress(0);
+					}
+				}
+			}
+			onCloseAfterSuccess();
+		} catch {
+			// Errors are surfaced via mutation onError / toast; keep staged files on create failure
 		}
-		onClose();
 	};
 
-	const handleDelete = () => {
-		if (task) {
-			deleteTask(task.id);
-			onClose();
+	const handleDelete = async () => {
+		if (!task) return;
+		try {
+			await deleteTaskAsync(task.id);
+			onCloseAfterSuccess();
+		} catch {
+			// Errors are surfaced via mutation onError / toast
 		}
 	};
+
+	const onInvalidSubmit = (errors: FieldErrors<TaskFormData>) => {
+		const first = Object.values(errors)[0];
+		const msg =
+			first && typeof first === 'object' && 'message' in first
+				? String(first.message)
+				: 'Please fix the highlighted fields.';
+		toast.error(msg);
+	};
+
+	const storyPointsWatch = normalizeStoryPointsForForm(
+		form.watch('storyPoints')
+	);
+	const storyPointsIsFibonacci =
+		storyPointsWatch == null ||
+		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
 
 	return (
 		<FormProvider {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+			<form
+				onSubmit={form.handleSubmit(onSubmit, onInvalidSubmit)}
+				className="space-y-6"
+			>
 				<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 					{/* Main Content */}
 					<div className="space-y-6 lg:col-span-2">
@@ -211,7 +299,7 @@ export function TaskDialogContent({
 
 						{/* Description */}
 						<div className="space-y-2">
-							<RichText />
+							<RichText key={task?.id ?? `new-${projectId}`} />
 							{/* biome-ignore lint/a11y/useValidAriaRole: Clerk Protect component uses role prop for authorization */}
 							<Protect role="org:admin">
 								<Button
@@ -398,6 +486,16 @@ export function TaskDialogContent({
 							</div>
 						)}
 
+						{/* Attachments — create stages files; edit uploads immediately */}
+						<TaskAttachments
+							taskId={taskId}
+							isEditing={!!task}
+							stagedFiles={stagedFiles}
+							onStagedFilesChange={setStagedFiles}
+							isUploadingStaged={isUploadingStaged}
+							stagedUploadProgress={stagedUploadProgress}
+						/>
+
 						{/* Comments - use taskId directly to allow parallel fetching */}
 						<TaskComments taskId={taskId || ''} isEditing={!!task} />
 					</div>
@@ -411,11 +509,11 @@ export function TaskDialogContent({
 							</Label>
 							<Select
 								value={form.watch('status')}
-								onValueChange={(value) =>
-									form.setValue('status', value as TaskStatusEnum, {
-										shouldDirty: true
-									})
-								}
+								onValueChange={(value) => {
+									const next = value as TaskStatusEnum;
+									if (next === form.getValues('status')) return;
+									form.setValue('status', next, { shouldDirty: true });
+								}}
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Select status" />
@@ -437,11 +535,11 @@ export function TaskDialogContent({
 							</Label>
 							<Select
 								value={form.watch('priority')}
-								onValueChange={(value) =>
-									form.setValue('priority', value as TaskPriorityEnum, {
-										shouldDirty: true
-									})
-								}
+								onValueChange={(value) => {
+									const next = value as TaskPriorityEnum;
+									if (next === form.getValues('priority')) return;
+									form.setValue('priority', next, { shouldDirty: true });
+								}}
 							>
 								<SelectTrigger>
 									<SelectValue placeholder="Select priority" />
@@ -456,40 +554,19 @@ export function TaskDialogContent({
 							</Select>
 						</div>
 
-						{/* Assignee */}
-						<div>
-							<Label htmlFor="assigneeId" className="mb-2 block">
-								Assignee
-							</Label>
-							<Select
-								value={form.watch('assigneeId') ?? 'none'}
-								onValueChange={(value) =>
-									form.setValue(
-										'assigneeId',
-										value === 'none' ? undefined : value,
-										{ shouldDirty: true }
-									)
+						{/* Assignees */}
+						{!isTemplate && (
+							<AssigneesInput
+								value={form.watch('assigneeIds') ?? []}
+								onChange={(assigneeIds) =>
+									form.setValue('assigneeIds', assigneeIds, {
+										shouldDirty: true
+									})
 								}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Select assignee" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">No assignee</SelectItem>
-									{isLoadingMembers ? (
-										<SelectItem value="loading" disabled>
-											Loading members...
-										</SelectItem>
-									) : (
-										projectMembers?.map((member) => (
-											<SelectItem key={member.id} value={member.id}>
-												{member.name || member.email}
-											</SelectItem>
-										))
-									)}
-								</SelectContent>
-							</Select>
-						</div>
+								members={projectMembers}
+								isLoading={isLoadingMembers}
+							/>
+						)}
 
 						{/* Due Date */}
 						<div>
@@ -499,10 +576,21 @@ export function TaskDialogContent({
 							<Input
 								id="dueDate"
 								type="date"
-								{...form.register('dueDate', {
-									setValueAs: (value: string) =>
-										value && value.trim() !== '' ? new Date(value) : undefined
-								})}
+								value={(() => {
+									const dueDate = form.watch('dueDate');
+									if (dueDate instanceof Date && !Number.isNaN(dueDate.getTime())) {
+										return dueDate.toISOString().slice(0, 10);
+									}
+									return typeof dueDate === 'string' ? dueDate : '';
+								})()}
+								onChange={(event) => {
+									const next = event.target.value;
+									form.setValue(
+										'dueDate',
+										next.trim() !== '' ? new Date(next) : undefined,
+										{ shouldDirty: true }
+									);
+								}}
 							/>
 						</div>
 
@@ -511,18 +599,48 @@ export function TaskDialogContent({
 							<Label htmlFor="storyPoints" className="mb-2 block">
 								Story Points
 							</Label>
-							<Input
-								id="storyPoints"
-								type="number"
-								min="1"
-								placeholder="e.g. 1, 2, 3, 5, 8, 13, 21"
-								{...form.register('storyPoints', {
-									setValueAs: (value: string) => {
-										const num = Number.parseInt(value, 10);
-										return value && !Number.isNaN(num) ? num : undefined;
+							<Select
+								value={
+									storyPointsWatch == null ? 'none' : String(storyPointsWatch)
+								}
+								onValueChange={(value) => {
+									const current = normalizeStoryPointsForForm(
+										form.getValues('storyPoints')
+									);
+									if (value === 'none') {
+										const raw = form.getValues('storyPoints') as unknown;
+										if (raw === undefined || raw === null || raw === '') {
+											return;
+										}
+										form.setValue('storyPoints', undefined, {
+											shouldDirty: true
+										});
+										return;
 									}
-								})}
-							/>
+									const parsed = Number.parseInt(value, 10);
+									if (!Number.isFinite(parsed)) return;
+									if (parsed === current) return;
+									form.setValue('storyPoints', parsed, { shouldDirty: true });
+								}}
+							>
+								<SelectTrigger id="storyPoints">
+									<SelectValue placeholder="Fibonacci estimate" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">None</SelectItem>
+									{FIBONACCI_STORY_POINTS.map((n) => (
+										<SelectItem key={n} value={String(n)}>
+											{n}
+										</SelectItem>
+									))}
+									{!storyPointsIsFibonacci && storyPointsWatch != null && (
+										<SelectItem value={String(storyPointsWatch)}>
+											{storyPointsWatch} (not in Fibonacci — pick a standard
+											value)
+										</SelectItem>
+									)}
+								</SelectContent>
+							</Select>
 						</div>
 
 						{/* Epic */}
@@ -630,6 +748,8 @@ export function TaskDialogContent({
 									id="blocked"
 									checked={form.watch('blocked') ?? false}
 									onCheckedChange={(checked) => {
+										if (checked === (form.getValues('blocked') ?? false))
+											return;
 										form.setValue('blocked', checked, {
 											shouldDirty: true
 										});
@@ -670,7 +790,16 @@ export function TaskDialogContent({
 						<div>
 							<TagsInput
 								value={form.watch('tags') || []}
-								onChange={(tags) => form.setValue('tags', tags)}
+								onChange={(tags) => {
+									const prev = form.getValues('tags') || [];
+									if (
+										prev.length === tags.length &&
+										prev.every((t, i) => t === tags[i])
+									) {
+										return;
+									}
+									form.setValue('tags', tags, { shouldDirty: true });
+								}}
 							/>
 						</div>
 
@@ -685,7 +814,7 @@ export function TaskDialogContent({
 										Task ID
 									</h3>
 									<code className="rounded bg-muted px-2 py-1 text-xs">
-										{task.id}
+										{publicTaskId ?? String(task.order ?? 0)}
 									</code>
 								</div>
 
@@ -714,36 +843,58 @@ export function TaskDialogContent({
 							<Button
 								type="button"
 								variant="destructive"
-								disabled={form.formState.isSubmitting}
+								disabled={
+									form.formState.isSubmitting ||
+									isCreatingTask ||
+									isUploadingStaged
+								}
 							>
 								<Trash2 className="mr-2 h-4 w-4" />
 								Delete Task
 							</Button>
 						</ConfirmationDialog>
 					)}
-					<div className="ml-auto flex gap-2">
+					<div className="ml-auto flex items-center gap-2">
+						{form.formState.isDirty && (
+							<span className="text-muted-foreground text-xs">
+								Unsaved changes
+							</span>
+						)}
 						<Button
 							type="button"
 							variant="outline"
-							onClick={onClose}
-							disabled={form.formState.isSubmitting}
+							onClick={onRequestClose}
+							disabled={
+								form.formState.isSubmitting ||
+								isCreatingTask ||
+								isUploadingStaged
+							}
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
-							disabled={form.formState.isSubmitting || !form.formState.isDirty}
+							disabled={
+								form.formState.isSubmitting ||
+								isCreatingTask ||
+								isUploadingStaged ||
+								!form.formState.isDirty
+							}
 						>
-							{form.formState.isSubmitting && (
+							{(form.formState.isSubmitting ||
+								isCreatingTask ||
+								isUploadingStaged) && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 							)}
-							{form.formState.isSubmitting
-								? isEditing
-									? 'Updating...'
-									: 'Creating...'
-								: isEditing
-									? 'Update Task'
-									: 'Create Task'}
+							{isUploadingStaged
+								? 'Uploading attachments...'
+								: form.formState.isSubmitting || isCreatingTask
+									? isEditing
+										? 'Updating...'
+										: 'Creating...'
+									: isEditing
+										? 'Update Task'
+										: 'Create Task'}
 						</Button>
 					</div>
 				</div>

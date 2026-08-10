@@ -26,7 +26,12 @@ export const useKanbanFilters = () => {
 		return tasks.filter((task) => {
 			if (sprint !== 'all' && task.sprint?.id !== sprint) return false;
 			if (priority && task.priority !== priority) return false;
-			if (assignee !== 'all' && task.assignee?.id !== assignee) return false;
+			if (
+				assignee !== 'all' &&
+				!(task.assignees ?? []).some((a) => a.id === assignee)
+			) {
+				return false;
+			}
 			return true;
 		});
 	};

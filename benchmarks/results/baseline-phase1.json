@@ -1,0 +1,49 @@
+{
+  "phase": "phase-1",
+  "label": "baseline-phase1",
+  "createdAt": "2026-07-29T23:28:58.552Z",
+  "scale": {
+    "templates": 20,
+    "tasksPerTemplate": 150,
+    "enrolledProjects": 12,
+    "boardTasks": 400,
+    "sprintsPerTemplate": 4,
+    "epicsPerTemplate": 3
+  },
+  "client": {
+    "scale": {
+      "boardTasks": 400
+    },
+    "iterations": 25,
+    "benches": {
+      "reorderKanban": {
+        "count": 25,
+        "minMs": 0.021308000000004768,
+        "maxMs": 0.4265839999999912,
+        "meanMs": 0.051266480000000454,
+        "p50Ms": 0.027569999999997208,
+        "p95Ms": 0.11094199999999432
+      },
+      "toKanbanOrderUpdates": {
+        "count": 25,
+        "minMs": 0.09132199999999102,
+        "maxMs": 1.6020770000000084,
+        "meanMs": 0.19487328000000162,
+        "p50Ms": 0.10359899999997424,
+        "p95Ms": 0.3843960000000095
+      },
+      "groupBySprint": {
+        "count": 25,
+        "minMs": 0.027688000000011925,
+        "maxMs": 0.11381899999997813,
+        "meanMs": 0.03878515999999877,
+        "p50Ms": 0.03008399999998801,
+        "p95Ms": 0.09359399999999596
+      }
+    }
+  },
+  "server": {
+    "available": false,
+    "reason": "Skipped (--client-only or missing DATABASE_URL)"
+  }
+}

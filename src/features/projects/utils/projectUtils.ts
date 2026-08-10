@@ -11,6 +11,30 @@ export function createProjectData(
 	};
 }
 
+export function formatParticipantsCount(
+	minParticipants: number,
+	maxParticipants: number
+): string {
+	if (minParticipants === maxParticipants) {
+		return String(minParticipants);
+	}
+
+	return `${minParticipants}-${maxParticipants}`;
+}
+
+export function formatParticipantsRange(
+	minParticipants: number,
+	maxParticipants: number
+): string {
+	const count = formatParticipantsCount(minParticipants, maxParticipants);
+
+	if (minParticipants === maxParticipants) {
+		return `${count} participant${minParticipants === 1 ? '' : 's'}`;
+	}
+
+	return `${count} participants`;
+}
+
 export function getLastActivityRelativeTime(dateInput: string | null): string {
 	if (!dateInput) {
 		return 'No activity yet';

@@ -183,9 +183,11 @@ export const createOptimisticKanbanTask = (
 		priority: newTask.priority || null,
 		order: null,
 		storyPoints: null,
+		publicNumber: null,
+		project: null,
 		sprint: null,
 		epic: null,
-		assignee: null
+		assignees: []
 	};
 };
 
@@ -205,7 +207,9 @@ export const createOptimisticBacklogTask = (
 		projectId: isTemplate ? null : (projectId ?? null),
 		projectTemplateId: isTemplate ? (projectId ?? null) : null,
 		kanbanColumn: null,
-		assignee: null,
+		project: null,
+		projectTemplate: null,
+		assignees: [],
 		sprint: null,
 		epic: null,
 		type: newTask.type || null,
@@ -218,8 +222,8 @@ export const createOptimisticBacklogTask = (
 		blockedReason: newTask.blockedReason || null,
 		dueDate: newTask.dueDate || null,
 		storyPoints: newTask.storyPoints || null,
+		publicNumber: null,
 		epicId: newTask.epicId || null,
-		sprintId: newTask.sprintId || null,
-		assigneeId: newTask.assigneeId || null
+		sprintId: newTask.sprintId || null
 	} as BacklogTask;
 };

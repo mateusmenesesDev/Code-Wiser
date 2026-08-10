@@ -20,20 +20,26 @@ import {
 	useSensor,
 	useSensors
 } from '@dnd-kit/core';
-import { SortableContext, arrayMove, useSortable } from '@dnd-kit/sortable';
+import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { TaskStatusEnum } from '@prisma/client';
 import {
 	Fragment,
 	type HTMLAttributes,
 	type ReactNode,
 	createContext,
+	useCallback,
 	useContext,
+	useMemo,
 	useState
 } from 'react';
 import { createPortal } from 'react-dom';
 import { Card } from '~/common/components/ui/card';
 import { ScrollArea, ScrollBar } from '~/common/components/ui/scroll-area';
+import {
+	bucketTasksByStatus,
+	idsByStatusFromBuckets,
+	reorderKanbanItems
+} from '~/common/utils/kanbanReorder';
 import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 
@@ -52,12 +58,14 @@ type KanbanContextProps<
 > = {
 	columns: C[];
 	data: T[];
+	tasksByStatus: Map<string, T[]>;
 	activeCardId: string | null;
 };
 
 const KanbanContext = createContext<KanbanContextProps>({
 	columns: [],
 	data: [],
+	tasksByStatus: new Map(),
 	activeCardId: null
 });
 
@@ -159,10 +167,10 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
 	className,
 	...props
 }: KanbanCardsProps<T>) => {
-	const { data, activeCardId } = useContext(
+	const { tasksByStatus, activeCardId } = useContext(
 		KanbanContext
 	) as KanbanContextProps<T>;
-	const filteredData = data.filter((item) => item.status === props.id);
+	const filteredData = tasksByStatus.get(props.id) ?? [];
 	const items = filteredData.map((item) => item.id);
 	const { isOver, setNodeRef } = useDroppable({
 		id: props.id
@@ -246,6 +254,16 @@ export const KanbanProvider = <
 	const [activeCardId, setActiveCardId] = useState<string | null>(null);
 	const [activeCard, setActiveCard] = useState<T | null>(null);
 
+	const tasksByStatus = useMemo(() => bucketTasksByStatus(data), [data]);
+	const idsByStatus = useMemo(
+		() => idsByStatusFromBuckets(tasksByStatus),
+		[tasksByStatus]
+	);
+	const columnIdSet = useMemo(
+		() => new Set(columns.map((col) => col.id)),
+		[columns]
+	);
+
 	const sensors = useSensors(
 		useSensor(MouseSensor, {
 			activationConstraint: {
@@ -261,27 +279,31 @@ export const KanbanProvider = <
 		useSensor(KeyboardSensor)
 	);
 
-	// Optimized collision detection for better performance
-	const collisionDetection: CollisionDetection = (args) => {
-		// Use pointerWithin for columns (droppables) - faster and more accurate
-		const pointerCollisions = pointerWithin(args);
-		const columnIds = new Set(columns.map((col) => col.id));
-		const droppableCollisions = pointerCollisions.filter((collision) =>
-			columnIds.has(collision.id as string)
-		);
+	// Prefer cards inside the column under the pointer. This keeps drops in the
+	// gap between two cards anchored to the nearest card instead of the column.
+	const collisionDetection: CollisionDetection = useCallback(
+		(args) => {
+			const pointerCollisions = pointerWithin(args);
+			const overColumn = pointerCollisions.find((collision) =>
+				columnIdSet.has(collision.id as string)
+			);
 
-		// If we're over a column, check for nearby cards for precise positioning
-		if (droppableCollisions.length > 0) {
-			const cardCollisions = closestCenter(args);
-			// Prioritize cards for better positioning, but keep column for empty areas
-			return cardCollisions.length > 0
-				? [...cardCollisions, ...droppableCollisions]
-				: droppableCollisions;
-		}
+			if (overColumn) {
+				const overColumnId = String(overColumn.id);
+				const itemIdsInColumn = idsByStatus.get(overColumnId) ?? new Set();
+				const cardCollisions = closestCenter(args).filter((collision) =>
+					itemIdsInColumn.has(collision.id as string)
+				);
 
-		// Otherwise, use closestCenter for cards
-		return closestCenter(args);
-	};
+				return cardCollisions.length > 0
+					? [...cardCollisions, overColumn]
+					: [overColumn];
+			}
+
+			return closestCenter(args);
+		},
+		[columnIdSet, idsByStatus]
+	);
 
 	const handleDragStart = (event: DragStartEvent) => {
 		const card = data.find((item) => item.id === event.active.id);
@@ -310,66 +332,25 @@ export const KanbanProvider = <
 			return;
 		}
 
-		let newData = [...data];
+		const activeRect = active.rect.current.translated;
+		const insertPosition =
+			activeRect &&
+			activeRect.top + activeRect.height / 2 <
+				over.rect.top + over.rect.height / 2
+				? 'before'
+				: 'after';
 
-		const activeItem = newData.find((item) => item.id === active.id);
-		const overItem = newData.find((item) => item.id === over.id);
+		const newData = reorderKanbanItems(
+			data,
+			active.id as string,
+			over.id as string,
+			columns.map((column) => column.id),
+			insertPosition
+		);
 
-		if (!activeItem) {
-			return;
+		if (newData !== data) {
+			onDataChange?.(newData);
 		}
-
-		const activeColumn = activeItem.status;
-
-		if (!activeColumn) {
-			return; // Can't proceed without a valid status
-		}
-
-		// First check if over.id is a column ID (prioritize column detection)
-		const overColumnId = columns.find((col) => col.id === over.id)?.id;
-
-		let overColumn: TaskStatusEnum;
-		if (overColumnId) {
-			// Dropping directly on a column
-			overColumn = overColumnId as TaskStatusEnum;
-		} else if (overItem?.status) {
-			// Dropping on another card - use that card's column
-			overColumn = overItem.status as TaskStatusEnum;
-		} else {
-			// Fallback to active column (shouldn't happen)
-			overColumn = activeColumn;
-		}
-
-		// Update status if moving to a different column
-		if (activeColumn !== overColumn) {
-			activeItem.status = overColumn;
-		}
-
-		// If dropping on another card (not directly on column), reorder within the column
-		if (overItem && !overColumnId) {
-			const oldIndex = newData.findIndex((item) => item.id === active.id);
-			const newIndex = newData.findIndex((item) => item.id === over.id);
-			if (oldIndex !== -1 && newIndex !== -1) {
-				newData = arrayMove(newData, oldIndex, newIndex);
-			}
-		} else {
-			// If dropping on a column directly, move the item to the end of that column
-			const oldIndex = newData.findIndex((item) => item.id === active.id);
-			if (oldIndex !== -1) {
-				newData.splice(oldIndex, 1);
-				// Find the last index of items in the target column
-				let insertIndex = newData.length;
-				for (let i = newData.length - 1; i >= 0; i--) {
-					if (newData[i]?.status === overColumn) {
-						insertIndex = i + 1;
-						break;
-					}
-				}
-				newData.splice(insertIndex, 0, activeItem);
-			}
-		}
-
-		onDataChange?.(newData);
 	};
 
 	const announcements: Announcements = {
@@ -400,7 +381,9 @@ export const KanbanProvider = <
 	};
 
 	return (
-		<KanbanContext.Provider value={{ columns, data, activeCardId }}>
+		<KanbanContext.Provider
+			value={{ columns, data, tasksByStatus, activeCardId }}
+		>
 			<DndContext
 				accessibility={{ announcements }}
 				collisionDetection={collisionDetection}

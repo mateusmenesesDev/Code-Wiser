@@ -1,6 +1,14 @@
 'use client';
 
-import { Calendar, Clock, ExternalLink, Video, X } from 'lucide-react';
+import {
+	Calendar,
+	Clock,
+	ExternalLink,
+	RefreshCw,
+	Video,
+	X
+} from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
@@ -25,10 +33,14 @@ import {
 	formatSessionDate,
 	formatSessionTime
 } from '../utils/mentorshipAccess';
+import { RescheduleModal } from './reschedule-modal';
 
 export function MyBookingsList() {
 	const utils = api.useUtils();
 	const { data: bookings, isLoading } = api.mentorship.getMyBookings.useQuery();
+	const [rescheduleBookingId, setRescheduleBookingId] = useState<
+		string | undefined
+	>();
 
 	const cancelBookingMutation = api.mentorship.cancelBooking.useMutation({
 		onSuccess: async () => {
@@ -36,6 +48,7 @@ export function MyBookingsList() {
 
 			await utils.mentorship.getMyBookings.invalidate();
 			await utils.mentorship.getMyMentorshipWeekInfo.invalidate();
+			await utils.mentorship.getAvailableSlots.invalidate();
 		},
 		onError: (error) => {
 			toast.error(`Failed to cancel booking: ${error.message}`);
@@ -44,6 +57,13 @@ export function MyBookingsList() {
 
 	const handleCancelBooking = (bookingId: string) => {
 		cancelBookingMutation.mutate({ bookingId });
+	};
+
+	const handleRescheduleSuccess = async () => {
+		toast.success('Session rescheduled successfully');
+		await utils.mentorship.getMyBookings.invalidate();
+		await utils.mentorship.getMyMentorshipWeekInfo.invalidate();
+		await utils.mentorship.getAvailableSlots.invalidate();
 	};
 
 	const getStatusBadge = (status: string) => {
@@ -88,7 +108,7 @@ export function MyBookingsList() {
 	return (
 		<div className="space-y-6">
 			{/* Upcoming Bookings */}
-			<Card>
+			<Card data-onboarding="mentorship-bookings">
 				<CardHeader>
 					<CardTitle>Upcoming Sessions</CardTitle>
 					<CardDescription>Your scheduled mentorship sessions</CardDescription>
@@ -165,20 +185,31 @@ export function MyBookingsList() {
 										</TableCell>
 										<TableCell className="text-right">
 											{booking.status === 'SCHEDULED' && (
-												<ConfirmationDialog
-													title="Cancel Session"
-													description="Are you sure you want to cancel this session? Your weekly session count will be restored."
-													onConfirm={() => handleCancelBooking(booking.id)}
-												>
+												<div className="flex items-center justify-end gap-1">
 													<Button
 														variant="ghost"
 														size="sm"
+														onClick={() => setRescheduleBookingId(booking.id)}
 														disabled={cancelBookingMutation.isPending}
 													>
-														<X className="mr-1 h-4 w-4" />
-														Cancel
+														<RefreshCw className="mr-1 h-4 w-4" />
+														Reschedule
 													</Button>
-												</ConfirmationDialog>
+													<ConfirmationDialog
+														title="Cancel Session"
+														description="Are you sure you want to cancel this session? Your weekly session count will be restored."
+														onConfirm={() => handleCancelBooking(booking.id)}
+													>
+														<Button
+															variant="ghost"
+															size="sm"
+															disabled={cancelBookingMutation.isPending}
+														>
+															<X className="mr-1 h-4 w-4" />
+															Cancel
+														</Button>
+													</ConfirmationDialog>
+												</div>
 											)}
 										</TableCell>
 									</TableRow>
@@ -227,6 +258,16 @@ export function MyBookingsList() {
 						</Table>
 					</CardContent>
 				</Card>
+			)}
+			{rescheduleBookingId && (
+				<RescheduleModal
+					bookingId={rescheduleBookingId}
+					open={!!rescheduleBookingId}
+					onOpenChange={(open) => {
+						if (!open) setRescheduleBookingId(undefined);
+					}}
+					onSuccess={handleRescheduleSuccess}
+				/>
 			)}
 		</div>
 	);

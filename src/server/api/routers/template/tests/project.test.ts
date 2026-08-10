@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProjectTemplateApiResponse } from '~/features/projects/types/Projects.type';
+import type { ProjectsTemplateApiOutput } from '~/features/projects/types/Projects.type';
+
+type ProjectTemplateRow = ProjectsTemplateApiOutput[number];
 import mockDb from '~/server/__mocks__/db';
 import { appRouter } from '~/server/api/root';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
@@ -30,7 +32,7 @@ describe('project template procedures testing', () => {
 	});
 
 	it('should return all project templates', async () => {
-		const mockProjectTemplate: ProjectTemplateApiResponse = {
+		const mockProjectTemplate = {
 			id: 'test-id',
 			projectId: 'test-project-id',
 			title: 'Test Project',
@@ -50,7 +52,7 @@ describe('project template procedures testing', () => {
 			technologies: [
 				{ id: 'test-technology', name: 'test-technology', approved: true }
 			]
-		};
+		} as unknown as ProjectTemplateRow;
 
 		mockDb.projectTemplate.findMany.mockResolvedValue([mockProjectTemplate]);
 		// Then try to get it

@@ -79,6 +79,8 @@ export interface CalcomBookingPayload {
 	smsReminderNumber?: string;
 	rescheduleUid?: string;
 	rescheduleReason?: string;
+	/** Present on some reschedule webhooks: previous booking uid */
+	rescheduledFromUid?: string;
 	cancellationReason?: string;
 }
 

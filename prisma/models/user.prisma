@@ -24,6 +24,12 @@ model User {
   stripeCustomerId     String? @unique
   stripeSubscriptionId String? @unique
 
+  /// Projection of Clerk profile image URL (synced via user.created / user.updated webhooks).
+  imageUrl String?
+
+  /// Projection of Clerk org:admin membership for notification fan-out (synced via webhook).
+  isOrgAdmin Boolean @default(false)
+
   // Mentorship
   mentorshipStatus         MentorshipStatus @default(INACTIVE)
   mentorshipType           MentorshipType?  @default(MONTHLY)
@@ -33,17 +39,25 @@ model User {
   remainingWeeklySessions  Int              @default(1)
   weeklySessionsResetAt    DateTime?
 
+  normalOnboardingCompletedAt     DateTime?
+  mentorshipOnboardingCompletedAt DateTime?
+
   tasks                        Task[]
   projects                     Project[]
   comments                     Comment[]
+  taskAttachments              TaskAttachment[]
   prReviews                    PullRequestReview[]
   createdPlanningPokerSessions PlanningPokerSession[] @relation("PlanningPokerSessionCreator")
   planningPokerVotes           PlanningPokerVote[]
   notifications                Notification[]
+  projectInvitationsReceived   ProjectInvitation[]        @relation("ProjectInvitationsReceived")
+  projectInvitationsSent       ProjectInvitation[]        @relation("ProjectInvitationsSent")
   mentorshipBookings           MentorshipBooking[]
   challengeProgress            UserChallengeProgress[]
   exerciseReviewSubmissions    ExerciseReviewSubmission[] @relation("ExerciseReviewSubmissions")
   exerciseReviewDecisions      ExerciseReviewDecision[]   @relation("ExerciseReviewDecisions")
+  feedbackReports              FeedbackReport[]
 
+  @@index([isOrgAdmin])
   @@schema("public")
 }

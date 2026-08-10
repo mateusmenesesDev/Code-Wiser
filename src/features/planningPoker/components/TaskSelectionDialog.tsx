@@ -15,6 +15,7 @@ import {
 	DialogTitle
 } from '~/common/components/ui/dialog';
 import { Label } from '~/common/components/ui/label';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { api } from '~/trpc/react';
 
 interface TaskSelectionDialogProps {
@@ -106,7 +107,22 @@ export function TaskSelectionDialog({
 												htmlFor={task.id}
 												className="flex-1 cursor-pointer space-y-1"
 											>
-												<div className="font-medium">{task.title}</div>
+												<div className="flex items-center gap-2">
+													{formatPublicTaskId(
+														task.project?.publicCode ??
+															task.projectTemplate?.publicCode,
+														task.publicNumber
+													) && (
+														<span className="font-mono text-muted-foreground text-xs">
+															{formatPublicTaskId(
+																task.project?.publicCode ??
+																	task.projectTemplate?.publicCode,
+																task.publicNumber
+															)}
+														</span>
+													)}
+													<span className="font-medium">{task.title}</span>
+												</div>
 												{task.description && (
 													<div className="line-clamp-2 text-muted-foreground text-sm">
 														{task.description

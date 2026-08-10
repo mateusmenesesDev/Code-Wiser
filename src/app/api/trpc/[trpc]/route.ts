@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
@@ -21,14 +22,24 @@ const handler = (req: NextRequest) =>
 		req,
 		router: appRouter,
 		createContext: () => createContext(req),
-		onError:
-			env.NODE_ENV === 'development'
-				? ({ path, error }) => {
-						console.error(
-							`❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`
-						);
+		onError: ({ path, error, type }) => {
+			if (env.NODE_ENV === 'development') {
+				console.error(
+					`❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`
+				);
+			}
+
+			// Expected client/auth errors stay out of Sentry; unexpected failures
+			// never become unhandled Next.js errors because tRPC serializes them.
+			if (error.code === 'INTERNAL_SERVER_ERROR') {
+				Sentry.captureException(error.cause ?? error, {
+					tags: {
+						trpc_path: path ?? 'unknown',
+						trpc_type: type
 					}
-				: undefined
+				});
+			}
+		}
 	});
 
 export { handler as GET, handler as POST };

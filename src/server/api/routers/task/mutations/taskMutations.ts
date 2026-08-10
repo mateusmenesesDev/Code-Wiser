@@ -1,4 +1,3 @@
-import type { TaskStatusEnum } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -12,9 +11,19 @@ import {
 	notifyTaskBlocked,
 	notifyTaskStatusChanged
 } from '~/server/services/notification/notificationService';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectIsActive,
+	userHasAccessToProject
+} from '~/server/utils/auth';
+import { deleteUploadThingFiles } from '../attachments/taskAttachment.utils';
+import {
+	buildBulkTaskOrderUpdateSql,
+	selectChangedTaskOrderUpdates
+} from './taskOrderUpdates';
 
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
+
+const MAX_TRANSACTION_RETRIES = 3;
 
 const createRelationshipUpdate = (
 	id: string | null | undefined
@@ -27,42 +36,76 @@ export const taskMutations = {
 	create: protectedProcedure
 		.input(createTaskSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { isTemplate, projectId, epicId, sprintId, assigneeId, ...rest } =
+			const { isTemplate, projectId, epicId, sprintId, assigneeIds, ...rest } =
 				input;
 
 			const hasAccess = await userHasAccessToProject(ctx, projectId);
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+			if (!isTemplate) {
+				await assertProjectIsActive(ctx.db, projectId);
+			}
 
-			try {
-				const task = await ctx.db.task.create({
-					data: {
-						...rest,
-						...(isTemplate
-							? { projectTemplate: { connect: { id: projectId } } }
-							: { project: { connect: { id: projectId } } }),
-						assignee: assigneeId ? { connect: { id: assigneeId } } : undefined,
-						epic: epicId ? { connect: { id: epicId } } : undefined,
-						sprint: sprintId ? { connect: { id: sprintId } } : undefined
+			for (let attempt = 1; attempt <= MAX_TRANSACTION_RETRIES; attempt += 1) {
+				try {
+					const task = await ctx.db.$transaction(async (prisma) => {
+						const counter = isTemplate
+							? await prisma.projectTemplate.update({
+									where: { id: projectId },
+									data: { nextTaskNumber: { increment: 1 } },
+									select: { nextTaskNumber: true }
+								})
+							: await prisma.project.update({
+									where: { id: projectId },
+									data: { nextTaskNumber: { increment: 1 } },
+									select: { nextTaskNumber: true }
+								});
+
+						return prisma.task.create({
+							data: {
+								...rest,
+								publicNumber: counter.nextTaskNumber - 1,
+								...(isTemplate
+									? { projectTemplate: { connect: { id: projectId } } }
+									: { project: { connect: { id: projectId } } }),
+								assignees: assigneeIds?.length
+									? { connect: assigneeIds.map((id) => ({ id })) }
+									: undefined,
+								epic: epicId ? { connect: { id: epicId } } : undefined,
+								sprint: sprintId ? { connect: { id: sprintId } } : undefined
+							}
+						});
+					});
+					return task;
+				} catch (error) {
+					if (
+						error instanceof Prisma.PrismaClientKnownRequestError &&
+						error.code === 'P2034' &&
+						attempt < MAX_TRANSACTION_RETRIES
+					) {
+						continue;
 					}
-				});
-				return task;
-			} catch (error) {
-				if (
-					error instanceof Prisma.PrismaClientKnownRequestError &&
-					error.code === 'P2002'
-				) {
+					if (
+						error instanceof Prisma.PrismaClientKnownRequestError &&
+						error.code === 'P2002'
+					) {
+						throw new TRPCError({
+							code: 'CONFLICT',
+							message: `A task with the title "${rest.title}" already exists in this project`
+						});
+					}
 					throw new TRPCError({
-						code: 'CONFLICT',
-						message: `A task with the title "${rest.title}" already exists in this project`
+						code: 'INTERNAL_SERVER_ERROR',
+						message: 'Something went wrong while creating the task'
 					});
 				}
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: 'Something went wrong while creating the task'
-				});
 			}
+
+			throw new TRPCError({
+				code: 'INTERNAL_SERVER_ERROR',
+				message: 'Something went wrong while creating the task'
+			});
 		}),
 
 	update: protectedProcedure
@@ -72,7 +115,7 @@ export const taskMutations = {
 				id,
 				epicId,
 				sprintId,
-				assigneeId,
+				assigneeIds,
 				projectId,
 				isTemplate,
 				...rest
@@ -84,7 +127,6 @@ export const taskMutations = {
 				select: {
 					id: true,
 					projectId: true,
-					assigneeId: true,
 					status: true,
 					blocked: true,
 					title: true,
@@ -99,7 +141,7 @@ export const taskMutations = {
 							}
 						}
 					},
-					assignee: {
+					assignees: {
 						select: {
 							id: true,
 							name: true
@@ -123,15 +165,20 @@ export const taskMutations = {
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 			}
+			if (existingTask.projectId && !isTemplate) {
+				await assertProjectIsActive(ctx.db, existingTask.projectId);
+			}
 
-			const oldAssigneeId = existingTask.assigneeId;
+			const oldAssigneeIds = existingTask.assignees.map((a) => a.id);
 			const oldStatus = existingTask.status;
 			const oldBlocked = existingTask.blocked;
 
 			const updateData = {
 				...rest,
-				...(createRelationshipUpdate(assigneeId) && {
-					assignee: createRelationshipUpdate(assigneeId)
+				...(assigneeIds !== undefined && {
+					assignees: {
+						set: assigneeIds.map((assigneeId) => ({ id: assigneeId }))
+					}
 				}),
 				...(createRelationshipUpdate(epicId) && {
 					epic: createRelationshipUpdate(epicId)
@@ -145,12 +192,14 @@ export const taskMutations = {
 				where: { id },
 				data: {
 					...updateData,
-					...(input.isTemplate
-						? { projectTemplate: { connect: { id: input.projectId } } }
-						: { project: { connect: { id: input.projectId } } })
+					...(projectId
+						? isTemplate
+							? { projectTemplate: { connect: { id: projectId } } }
+							: { project: { connect: { id: projectId } } }
+						: {})
 				},
 				include: {
-					assignee: {
+					assignees: {
 						select: {
 							id: true,
 							name: true
@@ -172,29 +221,29 @@ export const taskMutations = {
 				});
 
 				const notificationPromises: Promise<void>[] = [];
+				const currentAssigneeIds = task.assignees.map((a) => a.id);
 
-				// Notify if assignee changed
-				if (
-					assigneeId !== undefined &&
-					assigneeId !== oldAssigneeId &&
-					task.assignee &&
-					assigneeId
-				) {
-					notificationPromises.push(
-						notifyTaskAssigned({
-							db: ctx.db,
-							taskId: task.id,
-							taskTitle: task.title,
-							assigneeId,
-							projectId: existingTask.projectId,
-							projectName: existingTask.project.title
-						}).catch((error) => {
-							console.error(
-								'Failed to send task assigned notification:',
-								error
-							);
-						})
+				if (assigneeIds !== undefined) {
+					const newlyAssignedIds = assigneeIds.filter(
+						(assigneeId) => !oldAssigneeIds.includes(assigneeId)
 					);
+					for (const newlyAssignedId of newlyAssignedIds) {
+						notificationPromises.push(
+							notifyTaskAssigned({
+								db: ctx.db,
+								taskId: task.id,
+								taskTitle: task.title,
+								assigneeId: newlyAssignedId,
+								projectId: existingTask.projectId,
+								projectName: existingTask.project.title
+							}).catch((error) => {
+								console.error(
+									'Failed to send task assigned notification:',
+									error
+								);
+							})
+						);
+					}
 				}
 
 				// Notify if status changed
@@ -206,7 +255,7 @@ export const taskMutations = {
 							taskTitle: task.title,
 							oldStatus: oldStatus ?? '',
 							newStatus: rest.status,
-							assigneeId: task.assigneeId,
+							assigneeIds: currentAssigneeIds,
 							projectId: existingTask.projectId,
 							projectName: existingTask.project.title,
 							changedByUserId: ctx.session.userId as string,
@@ -228,7 +277,7 @@ export const taskMutations = {
 							taskId: task.id,
 							taskTitle: task.title,
 							isBlocked: rest.blocked,
-							assigneeId: task.assigneeId,
+							assigneeIds: currentAssigneeIds,
 							projectId: existingTask.projectId,
 							projectName: existingTask.project.title,
 							changedByUserId: ctx.session.userId as string,
@@ -258,18 +307,56 @@ export const taskMutations = {
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			await ctx.db.$transaction(
-				input.updates.map((update) =>
-					ctx.db.task.update({
-						where: { id: update.id },
-						data: {
-							order: update.order,
-							...(update.status && { status: update.status as TaskStatusEnum })
-						}
-					})
+			if (input.updates.length === 0) {
+				return { success: true, updatedCount: 0 };
+			}
+
+			const updateIds = [...new Set(input.updates.map((update) => update.id))];
+			const tasks = await ctx.db.task.findMany({
+				where: { id: { in: updateIds } },
+				select: {
+					id: true,
+					order: true,
+					status: true,
+					projectId: true
+				}
+			});
+
+			if (tasks.length !== updateIds.length) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'One or more tasks were not found'
+				});
+			}
+
+			const projectIds = [
+				...new Set(
+					tasks
+						.map((task) => task.projectId)
+						.filter((id): id is string => id !== null)
 				)
+			];
+			for (const projectId of projectIds) {
+				const hasAccess = await userHasAccessToProject(ctx, projectId);
+				if (!hasAccess) {
+					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+				}
+				await assertProjectIsActive(ctx.db, projectId);
+			}
+
+			const currentById = new Map(tasks.map((task) => [task.id, task]));
+			const changedUpdates = selectChangedTaskOrderUpdates(
+				input.updates,
+				currentById
 			);
-			return { success: true };
+
+			if (changedUpdates.length === 0) {
+				return { success: true, updatedCount: 0 };
+			}
+
+			await ctx.db.$executeRaw(buildBulkTaskOrderUpdateSql(changedUpdates));
+
+			return { success: true, updatedCount: changedUpdates.length };
 		}),
 
 	delete: protectedProcedure
@@ -303,9 +390,19 @@ export const taskMutations = {
 				if (!hasAccess) {
 					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 				}
+				await assertProjectIsActive(ctx.db, existingTask.projectId);
 			}
 
+			// Collect storage keys before cascade-deleting attachment rows with the task,
+			// then best-effort delete UploadThing blobs after the DB delete succeeds.
+			const attachments = await ctx.db.taskAttachment.findMany({
+				where: { taskId },
+				select: { key: true }
+			});
+			const attachmentKeys = attachments.map((attachment) => attachment.key);
+
 			await ctx.db.task.delete({ where: { id: taskId } });
+			await deleteUploadThingFiles(attachmentKeys);
 
 			if (existingTask.projectId) {
 				const { getBaseUrl } = await import('~/server/utils/getBaseUrl');
@@ -369,14 +466,29 @@ export const taskMutations = {
 				if (!hasAccess) {
 					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 				}
+				await assertProjectIsActive(ctx.db, projectId);
 			}
 
-			return ctx.db.task.deleteMany({
+			const attachments = await ctx.db.taskAttachment.findMany({
+				where: {
+					taskId: {
+						in: input.taskIds
+					}
+				},
+				select: { key: true }
+			});
+			const attachmentKeys = attachments.map((attachment) => attachment.key);
+
+			const result = await ctx.db.task.deleteMany({
 				where: {
 					id: {
 						in: input.taskIds
 					}
 				}
 			});
+
+			await deleteUploadThingFiles(attachmentKeys);
+
+			return result;
 		})
 };

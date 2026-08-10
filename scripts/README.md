@@ -2,7 +2,41 @@
 
 This directory contains utility scripts for database maintenance and migrations.
 
+## Performance benchmarks
+
+See [benchmarks/README.md](./benchmarks/README.md) for the Phase 1+ harness (`bun run bench`, `bun run bench:seed`, `bun run bench:full`).
+
+## Org admin projection
+
+See [backfill-org-admins.md](./backfill-org-admins.md) for deploy order and repair (`bun run db:backfill-org-admins`).
+
 ## Available Scripts
+
+### backfill-public-task-ids.ts
+
+Backfills display-only task IDs after `prisma db push` adds the nullable columns.
+
+**When to use:**
+
+- After deploying the public task ID schema with `db:push`
+- Any time existing projects/templates/tasks have missing `publicCode`, `publicNumber`, or stale `nextTaskNumber`
+
+**How to run:**
+
+```bash
+# Preview changes
+bun db:backfill-public-task-ids:dry
+
+# Apply changes
+bun db:backfill-public-task-ids
+```
+
+**What it does:**
+
+1. Fills missing project/template `publicCode` from the title, suffixing duplicates (`CODE`, `CODE_2`, ...)
+2. Fills missing task `publicNumber` by current visible order: `order`, `createdAt`, `id`
+3. Raises `nextTaskNumber` to at least max existing task number + 1
+4. Preserves existing public codes and task numbers
 
 ### fix-reset-dates.ts
 

@@ -1,4 +1,5 @@
 import { TaskStatusEnum } from '@prisma/client';
+import { bucketTasksByStatus } from '~/common/utils/kanbanReorder';
 import type { TasksApiOutput } from '../types/Task.type';
 
 export interface KanbanColumn {
@@ -71,28 +72,28 @@ export function generateKanbanColumns(
 			const priorityMatch =
 				filters.priority === 'all' || task.priority === filters.priority;
 			const assigneeMatch =
-				filters.assignee === 'all' || task.assigneeId === filters.assignee;
+				filters.assignee === 'all' ||
+				(task.assignees ?? []).some((a) => a.id === filters.assignee);
 
 			return sprintMatch && priorityMatch && assigneeMatch;
 		});
 	}
 
+	const tasksByStatus = bucketTasksByStatus(filteredTasks ?? []);
 	const columns: KanbanColumn[] = [];
 
 	for (const status of Object.values(TaskStatusEnum)) {
 		const config = KANBAN_COLUMN_CONFIG[status];
-		const columnTasks = filteredTasks
-			.filter((task) => task.status === status)
-			.sort((a, b) => {
-				if (a.order == null && b.order == null) {
-					return (
-						new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-					);
-				}
-				if (a.order == null) return 1;
-				if (b.order == null) return -1;
-				return a.order - b.order;
-			});
+		const columnTasks = [...(tasksByStatus.get(status) ?? [])].sort((a, b) => {
+			if (a.order == null && b.order == null) {
+				return (
+					new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+				);
+			}
+			if (a.order == null) return 1;
+			if (b.order == null) return -1;
+			return a.order - b.order;
+		});
 
 		columns.push({
 			id: status,

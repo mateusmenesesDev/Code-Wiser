@@ -10,7 +10,7 @@ export const prReviewQueries = {
 			const where: {
 				status?: PullRequestReviewStatusEnum;
 				task?: {
-					assigneeId?: string;
+					assignees?: { some: { id: string } };
 					projectId?: { not: null };
 				};
 			} = {};
@@ -26,7 +26,7 @@ export const prReviewQueries = {
 			if (input?.userId) {
 				where.task = {
 					...where.task,
-					assigneeId: input.userId
+					assignees: { some: { id: input.userId } }
 				};
 			}
 
@@ -44,7 +44,8 @@ export const prReviewQueries = {
 						select: {
 							id: true,
 							title: true,
-							assignee: {
+							publicNumber: true,
+							assignees: {
 								select: {
 									id: true,
 									name: true,
@@ -54,7 +55,8 @@ export const prReviewQueries = {
 							project: {
 								select: {
 									id: true,
-									title: true
+									title: true,
+									publicCode: true
 								}
 							}
 						}

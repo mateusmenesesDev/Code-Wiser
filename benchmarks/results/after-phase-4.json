@@ -1,0 +1,87 @@
+{
+  "phase": "phase-4",
+  "label": "after-phase-4",
+  "createdAt": "2026-07-30T23:24:16.590Z",
+  "scale": {
+    "templates": 20,
+    "tasksPerTemplate": 150,
+    "enrolledProjects": 12,
+    "boardTasks": 400,
+    "sprintsPerTemplate": 4,
+    "epicsPerTemplate": 3
+  },
+  "client": {
+    "scale": {
+      "boardTasks": 400
+    },
+    "iterations": 10,
+    "benches": {
+      "reorderKanban": {
+        "count": 10,
+        "minMs": 0.030121000000001175,
+        "maxMs": 0.44967899999999617,
+        "meanMs": 0.08375869999999992,
+        "p50Ms": 0.0341850000000008,
+        "p95Ms": 0.44967899999999617
+      },
+      "toKanbanOrderUpdates": {
+        "count": 10,
+        "minMs": 0.10775199999999785,
+        "maxMs": 0.7863550000000004,
+        "meanMs": 0.2086402000000021,
+        "p50Ms": 0.12763900000000206,
+        "p95Ms": 0.7863550000000004
+      },
+      "groupBySprint": {
+        "count": 10,
+        "minMs": 0.027311999999994896,
+        "maxMs": 0.13597900000000607,
+        "meanMs": 0.04935170000000042,
+        "p50Ms": 0.033633999999999276,
+        "p95Ms": 0.13597900000000607
+      }
+    }
+  },
+  "server": {
+    "available": true,
+    "catalog": {
+      "latency": {
+        "count": 3,
+        "minMs": 484.9988790000002,
+        "maxMs": 2156.127882,
+        "meanMs": 1042.5881266666668,
+        "p50Ms": 486.6376190000001,
+        "p95Ms": 2156.127882
+      },
+      "payloadBytes": 14662,
+      "templateCount": 20,
+      "taskCount": 3000
+    },
+    "myProjects": {
+      "enrolledProjects": 12,
+      "roundTrips": 1,
+      "latency": {
+        "count": 3,
+        "minMs": 254.4179610000001,
+        "maxMs": 1519.7614509999999,
+        "meanMs": 755.9756533333331,
+        "p50Ms": 493.74754799999937,
+        "p95Ms": 1519.7614509999999
+      }
+    },
+    "adminActiveProjects": {
+      "projectCount": 12,
+      "leanPayloadBytes": 10003,
+      "heavyPayloadBytes": 43123,
+      "latency": {
+        "count": 3,
+        "minMs": 502.28818499999943,
+        "maxMs": 962.7059429999999,
+        "meanMs": 656.6556269999998,
+        "p50Ms": 504.972753,
+        "p95Ms": 962.7059429999999
+      }
+    },
+    "reason": "Clone bench skipped: \nInvalid `db.projectTemplate.findFirst()` invocation in\n/home/mateus/mentoria/Code-Wiser/src/server/benchmarks/serverBenches.ts:181:45\n\n  178 > = null;\n  179 \n  180 try {\n→ 181 \tsourceTemplate = await db.projectTemplate.findFirst(\nThe column `public.Task.assigneeId` does not exist in the current database."
+  }
+}

@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 
-import { LogIn, Moon, Sparkles, Sun } from 'lucide-react';
+import { Calendar, LogIn, Moon, Sparkles, Sun } from 'lucide-react';
 import { Switch } from '~/common/components/ui/switch';
 import {
 	MENU_ITEMS,
@@ -33,20 +33,26 @@ const Header = () => {
 	}, []);
 	const { user } = useAuth();
 	const isLoggedIn = !!user;
-	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
+	const {
+		data: mentorshipStatus,
+		isError: mentorshipStatusErrored,
+		isLoading: mentorshipStatusLoading
+	} = api.user.getMentorshipStatus.useQuery(undefined, {
 		enabled: isLoggedIn
 	});
-	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
-		undefined,
-		{
-			enabled: isLoggedIn
-		}
-	);
+	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+	const shouldShowCreditsBadge =
+		isLoggedIn &&
+		(mentorshipStatus?.mentorshipStatus === 'INACTIVE' ||
+			mentorshipStatusErrored);
+	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
+		enabled: shouldShowCreditsBadge
+	});
 
 	// Filter menu items based on mentorship status
 	const filteredMenuItems = MENU_ITEMS.filter((item) => {
 		if (item.requiresMentorship) {
-			return mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+			return hasActiveMentorship;
 		}
 		return true;
 	});
@@ -64,14 +70,14 @@ const Header = () => {
 
 	return (
 		<header className="border-b bg-background/80 backdrop-blur-md">
-			<div className="container mx-auto py-2">
-				<div className="flex items-center justify-between">
-					<Link href="/">
+			<div className="w-full px-4 py-2 sm:px-6 lg:px-8">
+				<div className="flex items-center justify-between gap-6">
+					<Link href="/" className="shrink-0">
 						<CodeWiseIcon />
 					</Link>
 
 					{/* Navigation */}
-					<nav className="hidden items-center gap-8 md:flex">
+					<nav className="hidden flex-1 items-center justify-center gap-4 md:flex lg:gap-6 xl:gap-8">
 						{publicMenuItems.map((item) => (
 							<MenuItem key={item.href} item={item} />
 						))}
@@ -86,7 +92,7 @@ const Header = () => {
 					</nav>
 
 					{/* Right Section */}
-					<div className="flex items-center gap-4">
+					<div className="flex shrink-0 items-center gap-4">
 						<div className="flex items-center gap-2">
 							<Sun className="h-4 w-4" />
 							{mounted ? (
@@ -104,17 +110,31 @@ const Header = () => {
 
 						{isLoggedIn ? (
 							<>
-								{/* Credits Badge */}
-								<Badge variant="purple-gradient">
-									<Sparkles className="mr-1 h-3 w-3" />
-									{userCredits?.credits ?? 0} credits
-								</Badge>
+								{hasActiveMentorship ? (
+									<Link href="/mentorship">
+										<Badge variant="success" className="whitespace-nowrap">
+											<Calendar className="mr-1 h-3 w-3" />
+											Mentorship Active
+										</Badge>
+									</Link>
+								) : shouldShowCreditsBadge && !mentorshipStatusLoading ? (
+									<Badge
+										variant="purple-gradient"
+										className="whitespace-nowrap"
+										data-onboarding="user-credits"
+									>
+										<Sparkles className="mr-1 h-3 w-3" />
+										{userCredits?.credits ?? 0} credits
+									</Badge>
+								) : null}
 
 								{/* Notifications */}
 								<NotificationBell />
 
 								{/* User Menu */}
-								<HeaderAvatarMenu />
+								<span data-onboarding="my-projects-access">
+									<HeaderAvatarMenu />
+								</span>
 							</>
 						) : (
 							<div className="flex items-center gap-3">

@@ -5,7 +5,10 @@ import {
 	updateEpicSchema
 } from '~/features/epics/schemas/epics.schema';
 import { protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectIsActive,
+	userHasAccessToProject
+} from '~/server/utils/auth';
 
 export const epicMutations = {
 	create: protectedProcedure
@@ -16,6 +19,9 @@ export const epicMutations = {
 			const hasAccess = await userHasAccessToProject(ctx, projectId);
 			if (!hasAccess) {
 				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			}
+			if (!isTemplate) {
+				await assertProjectIsActive(ctx.db, projectId);
 			}
 
 			const epic = await ctx.db.epic.create({
@@ -73,6 +79,7 @@ export const epicMutations = {
 				if (!hasAccess) {
 					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 				}
+				await assertProjectIsActive(ctx.db, existingEpic.projectId);
 			}
 
 			await ctx.db.$transaction(async (tx) => {
@@ -116,6 +123,7 @@ export const epicMutations = {
 				if (!hasAccess) {
 					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
 				}
+				await assertProjectIsActive(ctx.db, existingEpic.projectId);
 			}
 
 			await ctx.db.epic.update({

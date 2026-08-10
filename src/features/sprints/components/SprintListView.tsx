@@ -2,9 +2,12 @@
 
 import type { TaskStatusEnum } from '@prisma/client';
 import { useQueryState } from 'nuqs';
+import { useMemo } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
+import { bucketTasksByStatus } from '~/common/utils/kanbanReorder';
 import { columns } from '~/features/kanban/constants';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import type { RouterOutputs } from '~/trpc/react';
 
 type KanbanTask = RouterOutputs['kanban']['getKanbanData'][number];
@@ -28,6 +31,10 @@ const statusDisplayName: Partial<Record<TaskStatusEnum, string>> = {
 const TaskRow = ({ task }: { task: KanbanTask }) => {
 	const [, setTaskId] = useQueryState('taskId');
 	const storyPoints = (task as { storyPoints?: number | null }).storyPoints;
+	const publicTaskId = formatPublicTaskId(
+		task.project?.publicCode,
+		task.publicNumber
+	);
 
 	return (
 		<button
@@ -35,6 +42,11 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 			onClick={() => setTaskId(task.id)}
 			className="flex w-full items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left transition-colors hover:border-border hover:bg-muted/30"
 		>
+			{publicTaskId && (
+				<span className="font-mono text-muted-foreground text-xs">
+					{publicTaskId}
+				</span>
+			)}
 			<span className="min-w-0 flex-1 truncate font-medium text-sm">
 				{task.title}
 			</span>
@@ -47,13 +59,29 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 						{task.priority}
 					</Badge>
 				)}
-				{task.assignee && (
-					<div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-medium text-[10px] text-primary">
-						{task.assignee.name?.charAt(0).toUpperCase()}
+				{(task.assignees?.length ?? 0) > 0 && (
+					<div className="flex items-center -space-x-1">
+						{(task.assignees ?? []).slice(0, 3).map((assignee) => (
+							<div
+								key={assignee.id}
+								className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-medium text-[10px] text-primary ring-2 ring-background"
+								title={assignee.name ?? undefined}
+							>
+								{assignee.name?.charAt(0).toUpperCase()}
+							</div>
+						))}
+						{(task.assignees?.length ?? 0) > 3 && (
+							<div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted font-medium text-[10px] text-muted-foreground ring-2 ring-background">
+								+{(task.assignees?.length ?? 0) - 3}
+							</div>
+						)}
 					</div>
 				)}
 				{storyPoints != null && storyPoints > 0 && (
-					<Badge variant="secondary" className="px-1.5 py-0 font-mono text-xs tabular-nums">
+					<Badge
+						variant="secondary"
+						className="px-1.5 py-0 font-mono text-xs tabular-nums"
+					>
 						{storyPoints}
 					</Badge>
 				)}
@@ -62,16 +90,15 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 	);
 };
 
-export default function SprintListView({
-	tasks
-}: SprintListViewProps) {
+export default function SprintListView({ tasks }: SprintListViewProps) {
 	const orderedStatuses = columns.map((c) => c.id as TaskStatusEnum);
+	const tasksByStatus = useMemo(() => bucketTasksByStatus(tasks), [tasks]);
 
 	return (
 		<div className="h-full overflow-y-auto p-4">
 			<div className="space-y-6">
 				{orderedStatuses.map((status) => {
-					const statusTasks = tasks.filter((t) => t.status === status);
+					const statusTasks = tasksByStatus.get(status) ?? [];
 					if (statusTasks.length === 0) return null;
 
 					const column = columns.find((c) => c.id === status);

@@ -1,9 +1,11 @@
 'use client';
 
 import { Protect, useUser } from '@clerk/nextjs';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useSetAtom } from 'jotai';
 import { Loader2, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
@@ -17,6 +19,8 @@ import { TaskCard } from './TaskCard';
 import { VoteResults } from './VoteResults';
 import { VotingCards } from './VotingCards';
 
+const SESSION_COMPLETE_REDIRECT_MS = 1800;
+
 interface PlanningPokerRoomProps {
 	sessionId: string;
 }
@@ -26,11 +30,13 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 	const { user } = useUser();
 	const userId = user?.id;
 	const setDialogState = useSetAtom(planningPokerDialogAtom);
+	const [storyRegionRef] = useAutoAnimate<HTMLDivElement>({ duration: 250 });
 	const {
 		session,
 		currentTask,
 		votes,
 		members,
+		realtimeStatus,
 		selectedValue,
 		allVoted,
 		showResults,
@@ -44,9 +50,21 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		currentTaskIndex,
 		totalTasks,
 		isLoading,
+		isTransitioning,
+		isSessionComplete,
 		isFinalizing,
 		isEnding
 	} = usePlanningPoker({ sessionId });
+
+	useEffect(() => {
+		if (!isSessionComplete || !session?.projectId) return;
+
+		const timeoutId = setTimeout(() => {
+			router.push(`/workspace/${session.projectId}`);
+		}, SESSION_COMPLETE_REDIRECT_MS);
+
+		return () => clearTimeout(timeoutId);
+	}, [isSessionComplete, session?.projectId, router]);
 
 	const handleEndSessionClick = () => {
 		setDialogState((prev) => ({
@@ -57,7 +75,6 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 
 	const handleEndSessionConfirm = () => {
 		handleEndSession();
-		router.push(`/workspace/${session?.projectId}`);
 	};
 
 	const handleFinalizeLastTaskClick = () => {
@@ -69,10 +86,30 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 
 	const handleFinalizeLastTaskConfirm = () => {
 		handleFinalizeTask();
-		// After finalizing, end the session
-		handleEndSession();
-		router.push(`/workspace/${session?.projectId}`);
 	};
+
+	if (isSessionComplete) {
+		return (
+			<div className="flex h-screen flex-col">
+				<div className="border-b bg-card p-4">
+					<div>
+						<h1 className="font-bold text-2xl">Planning Poker</h1>
+						{session?.project.title && (
+							<p className="text-muted-foreground text-sm">
+								{session.project.title}
+							</p>
+						)}
+					</div>
+				</div>
+				<div className="flex flex-1 flex-col items-center justify-center gap-2 p-6">
+					<h2 className="font-semibold text-2xl">Session complete</h2>
+					<p className="text-muted-foreground text-sm">
+						Returning to workspace…
+					</p>
+				</div>
+			</div>
+		);
+	}
 
 	if (isLoading) {
 		return (
@@ -85,12 +122,42 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		);
 	}
 
-	if (!session || !currentTask) {
+	if (!session || (!currentTask && !isTransitioning)) {
 		return (
 			<div className="flex h-screen items-center justify-center">
 				<div className="text-center">
 					<h2 className="mb-2 font-semibold text-xl">Session not found</h2>
 					<Button onClick={() => router.back()}>Go Back</Button>
+				</div>
+			</div>
+		);
+	}
+
+	if (!currentTask) {
+		return (
+			<div className="flex h-screen flex-col">
+				<div className="border-b bg-card p-4">
+					<div className="flex items-center justify-between">
+						<div>
+							<h1 className="font-bold text-2xl">Planning Poker</h1>
+							<p className="text-muted-foreground text-sm">
+								{session.project.title}
+							</p>
+						</div>
+					</div>
+				</div>
+				<div className="flex flex-1 overflow-hidden">
+					<div className="flex flex-1 items-center justify-center overflow-y-auto p-6">
+						{isTransitioning && (
+							<div className="flex items-center gap-2 text-muted-foreground text-sm">
+								<Loader2 className="h-4 w-4 animate-spin" />
+								<span>Moving to next story…</span>
+							</div>
+						)}
+					</div>
+					<div className="w-80 border-l bg-muted/30 p-4">
+						{userId && <MemberList members={members} currentUserId={userId} />}
+					</div>
 				</div>
 			</div>
 		);
@@ -114,7 +181,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 								variant="destructive"
 								size="sm"
 								onClick={handleEndSessionClick}
-								disabled={isEnding}
+								disabled={isEnding || isFinalizing}
 							>
 								{isEnding ? (
 									<>
@@ -137,98 +204,124 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 				{/* Main Content */}
 				<div className="flex-1 overflow-y-auto p-6">
 					<div className="mx-auto max-w-4xl space-y-6">
-						{/* Progress */}
-						<div className="text-center">
-							<p className="text-muted-foreground text-sm">
-								Task {currentTaskIndex + 1} of {totalTasks}
-							</p>
+						{isTransitioning && (
+							<div
+								className="flex items-center justify-center gap-2 text-muted-foreground text-sm"
+								aria-live="polite"
+							>
+								<Loader2 className="h-3.5 w-3.5 animate-spin" />
+								<span>Moving to next story…</span>
+							</div>
+						)}
+
+						<div ref={storyRegionRef}>
+							<div key={currentTask.id} className="space-y-6">
+								{/* Progress */}
+								<div className="text-center">
+									<p className="text-muted-foreground text-sm">
+										Task {currentTaskIndex + 1} of {totalTasks}
+									</p>
+								</div>
+
+								{/* Task Card */}
+								<TaskCard task={currentTask} />
+
+								{/* Voting Cards */}
+								{!showResults && (
+									<div className="space-y-4">
+										<h3 className="font-semibold text-lg">
+											Select your estimate:
+										</h3>
+										<VotingCards
+											selectedValue={selectedValue}
+											onSelect={handleVote}
+											disabled={allVoted || isTransitioning}
+										/>
+									</div>
+								)}
+
+								{/* Results */}
+								{showResults && votes && votes.length > 0 && (
+									<div className="space-y-4">
+										<VoteResults
+											votes={votes
+												.filter((vote) => vote.user) // Filter out votes without user data
+												.map((vote) => ({
+													userId: vote.userId,
+													userName: vote.user.name,
+													userEmail: vote.user.email, // email is required in User model, so it should always be present
+													storyPoints:
+														vote.storyPoints as PlanningPokerStoryPoint
+												}))}
+										/>
+
+										{/* Final Story Points Input (Admin only) */}
+										{/* biome-ignore lint/a11y/useValidAriaRole: <explanation> */}
+										<Protect role="org:admin">
+											{isCreator && (
+												<div className="space-y-4 rounded-lg border bg-card p-4">
+													<Label htmlFor="finalStoryPoints">
+														Final Story Points
+													</Label>
+													<Input
+														id="finalStoryPoints"
+														type="number"
+														min="1"
+														placeholder="1, 2, 3, 5, 8, 13, 21"
+														value={finalStoryPoints ?? ''}
+														disabled={isFinalizing}
+														onChange={(e) => {
+															const value = e.target.value;
+															setFinalStoryPoints(
+																value ? Number.parseInt(value, 10) : null
+															);
+														}}
+													/>
+													<p className="text-muted-foreground text-xs">
+														Must follow Fibonacci sequence: 1, 2, 3, 5, 8, 13,
+														21
+													</p>
+													<Button
+														onClick={() => {
+															if (isLastTask) {
+																handleFinalizeLastTaskClick();
+															} else {
+																handleFinalizeTask();
+															}
+														}}
+														disabled={isFinalizing}
+														className="w-full"
+													>
+														{isFinalizing ? (
+															<>
+																<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+																{isTransitioning
+																	? 'Moving to next story…'
+																	: 'Finalizing...'}
+															</>
+														) : isLastTask ? (
+															'Finalize Last Task & End Session'
+														) : (
+															'Finalize & Move to Next Task'
+														)}
+													</Button>
+												</div>
+											)}
+										</Protect>
+									</div>
+								)}
+							</div>
 						</div>
-
-						{/* Task Card */}
-						<TaskCard task={currentTask} />
-
-						{/* Voting Cards */}
-						{!showResults && currentTask && (
-							<div className="space-y-4">
-								<h3 className="font-semibold text-lg">Select your estimate:</h3>
-								<VotingCards
-									selectedValue={selectedValue}
-									onSelect={handleVote}
-									disabled={allVoted}
-								/>
-							</div>
-						)}
-
-						{/* Results */}
-						{showResults && votes && votes.length > 0 && (
-							<div className="space-y-4">
-								<VoteResults
-									votes={votes
-										.filter((vote) => vote.user) // Filter out votes without user data
-										.map((vote) => ({
-											userId: vote.userId,
-											userName: vote.user.name,
-											userEmail: vote.user.email, // email is required in User model, so it should always be present
-											storyPoints: vote.storyPoints as PlanningPokerStoryPoint
-										}))}
-								/>
-
-								{/* Final Story Points Input (Admin only) */}
-								{/* biome-ignore lint/a11y/useValidAriaRole: <explanation> */}
-								<Protect role="org:admin">
-									{isCreator && (
-										<div className="space-y-4 rounded-lg border bg-card p-4">
-											<Label htmlFor="finalStoryPoints">
-												Final Story Points
-											</Label>
-											<Input
-												id="finalStoryPoints"
-												type="number"
-												min="1"
-												placeholder="1, 2, 3, 5, 8, 13, 21"
-												value={finalStoryPoints ?? ''}
-												onChange={(e) => {
-													const value = e.target.value;
-													setFinalStoryPoints(
-														value ? Number.parseInt(value, 10) : null
-													);
-												}}
-											/>
-											<p className="text-muted-foreground text-xs">
-												Must follow Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21
-											</p>
-											<Button
-												onClick={() => {
-													if (isLastTask) {
-														handleFinalizeLastTaskClick();
-													} else {
-														handleFinalizeTask();
-													}
-												}}
-												disabled={isFinalizing}
-												className="w-full"
-											>
-												{isFinalizing ? (
-													<>
-														<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-														Finalizing...
-													</>
-												) : isLastTask ? (
-													'Finalize Last Task & End Session'
-												) : (
-													'Finalize & Move to Next Task'
-												)}
-											</Button>
-										</div>
-									)}
-								</Protect>
-							</div>
-						)}
 					</div>
 				</div>
 
 				{/* Sidebar */}
 				<div className="w-80 border-l bg-muted/30 p-4">
+					{realtimeStatus !== 'connected' && (
+						<div className="mb-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-muted-foreground text-xs">
+							Realtime {realtimeStatus}. Votes still save, online members may be stale.
+						</div>
+					)}
 					{userId && <MemberList members={members} currentUserId={userId} />}
 				</div>
 			</div>

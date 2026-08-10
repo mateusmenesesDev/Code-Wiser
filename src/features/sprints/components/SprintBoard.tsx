@@ -3,7 +3,7 @@
 import { SprintStatusEnum, type TaskStatusEnum } from '@prisma/client';
 import dayjs from 'dayjs';
 import { CheckCircle2, Clock, LayoutGrid, List, Play, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
@@ -14,6 +14,10 @@ import {
 	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
+import {
+	bucketTasksByStatus,
+	toKanbanOrderUpdates
+} from '~/common/utils/kanbanReorder';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 import { columns } from '~/features/kanban/constants';
 import { cn } from '~/lib/utils';
@@ -26,6 +30,7 @@ type SprintData = SprintsApiOutput[number];
 interface SprintBoardProps {
 	sprint: SprintData;
 	projectId: string;
+	allTasks: KanbanItemProps[];
 }
 
 const statusBadgeVariant: Record<SprintStatusEnum, string> = {
@@ -114,7 +119,11 @@ const QuickAddRow = ({
 	);
 };
 
-export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
+export default function SprintBoard({
+	sprint,
+	projectId,
+	allTasks
+}: SprintBoardProps) {
 	const [boardView, setBoardView] = useState<'kanban' | 'list'>('kanban');
 	const utils = api.useUtils();
 
@@ -122,19 +131,21 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 		projectId,
 		filters: { sprintId: sprint.id }
 	});
+	const tasksByStatus = useMemo(() => bucketTasksByStatus(tasks), [tasks]);
 
 	const updateTaskOrders = api.task.updateTaskOrders.useMutation({
 		onSettled: () => {
 			utils.kanban.getKanbanData.invalidate({ projectId });
+			utils.kanban.getKanbanData.invalidate({
+				projectId,
+				filters: { sprintId: sprint.id }
+			});
 		}
 	});
 
 	const handleDataChange = (data: KanbanItemProps[]) => {
-		const updates = data.map((task, index) => ({
-			id: task.id,
-			order: index,
-			status: task.status as TaskStatusEnum
-		}));
+		const updates = toKanbanOrderUpdates(allTasks, data);
+		if (updates.length === 0) return;
 		updateTaskOrders.mutate({ updates });
 	};
 
@@ -234,7 +245,7 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 						onDataChange={handleDataChange}
 					>
 						{(column) => {
-							const columnTasks = tasks.filter((t) => t.status === column.id);
+							const columnTasks = tasksByStatus.get(column.id) ?? [];
 							return (
 								<KanbanBoard
 									id={column.id}

@@ -1,8 +1,9 @@
-import { TaskPriorityEnum } from '@prisma/client';
+import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import { MoreVertical, Trash2 } from 'lucide-react';
 import { useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
+import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
 	DropdownMenu,
@@ -13,7 +14,9 @@ import {
 import { TableCell, TableRow } from '~/common/components/ui/table';
 import type { SprintsApiOutput } from '~/features/sprints/types/Sprint.type';
 import { useTask } from '~/features/task/hooks/useTask';
+import { getStatusLabel } from '~/features/task/utils';
 import type { TasksApiOutput } from '~/features/workspace/types/Task.type';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { cn } from '~/lib/utils';
 import { EpicCell } from './EpicCell';
 import { PriorityCell } from './PriorityCell';
@@ -92,6 +95,10 @@ export function DraggableTaskRow({
 	});
 
 	drag(drop(ref));
+	const publicTaskId = formatPublicTaskId(
+		task.project?.publicCode ?? task.projectTemplate?.publicCode,
+		task.publicNumber
+	);
 
 	return (
 		<TableRow
@@ -103,7 +110,7 @@ export function DraggableTaskRow({
 			aria-label={`Task: ${task.title}. Drag to reorder.`}
 		>
 			<TableCell className="text-center font-mono text-muted-foreground text-sm">
-				{task.order ?? 0}
+				{publicTaskId ?? task.order ?? 0}
 			</TableCell>
 			<TableCell
 				className="cursor-pointer transition-colors duration-150 hover:bg-muted/80"
@@ -118,6 +125,11 @@ export function DraggableTaskRow({
 					projectId={projectId}
 					isTemplate={true}
 				/>
+			</TableCell>
+			<TableCell>
+				<Badge variant="secondary" className="whitespace-nowrap">
+					{getStatusLabel(task.status ?? TaskStatusEnum.BACKLOG)}
+				</Badge>
 			</TableCell>
 			<TableCell>
 				<EpicCell

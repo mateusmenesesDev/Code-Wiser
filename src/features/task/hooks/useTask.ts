@@ -1,7 +1,7 @@
-import { TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import { toast } from 'sonner';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { normalizeDate } from '~/common/utils/convertion';
+import { applyTaskOrderUpdates } from '~/common/utils/kanbanReorder';
 import { api } from '~/trpc/react';
 import type {
 	CreateTaskInput,
@@ -51,15 +51,15 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 
 			return context;
 		},
-	onError: (error, _newTask, ctx) => {
-		rollbackOptimisticData({
-			utils,
-			context: ctx,
-			projectId: projectId as string,
-			isTemplate
-		});
-		toast.error(error.message || 'Failed to create task');
-	},
+		onError: (error, _newTask, ctx) => {
+			rollbackOptimisticData({
+				utils,
+				context: ctx,
+				projectId: projectId as string,
+				isTemplate
+			});
+			toast.error(error.message || 'Failed to create task');
+		},
 		onSettled: () => {
 			invalidateKanbanData();
 			invalidateBacklogData();
@@ -92,7 +92,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 
 			return context;
 		},
-		onError: (_error, _taskUpdate, ctx) => {
+		onError: (error, _taskUpdate, ctx) => {
 			rollbackOptimisticData({
 				utils,
 				context: ctx,
@@ -100,7 +100,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 				isTemplate,
 				taskId: _taskUpdate.id
 			});
-			toast.error('Failed to update task');
+			toast.error(error.message || 'Failed to update task');
 		},
 		onSettled: (taskUpdate) => {
 			invalidateBacklogData();
@@ -195,57 +195,18 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 			});
 
 			if (previousProjectData) {
-				const optimisticTasks = [...previousProjectData.tasks];
-				for (const { id: taskId, order } of updates) {
-					const taskIndex = optimisticTasks.findIndex((t) => t.id === taskId);
-					if (taskIndex !== -1) {
-						const existingTask = optimisticTasks[taskIndex];
-						if (existingTask) {
-							optimisticTasks[taskIndex] = {
-								...existingTask,
-								id: existingTask.id,
-								order,
-								type: existingTask.type || TaskTypeEnum.TASK,
-								status: existingTask.status || TaskStatusEnum.BACKLOG,
-								createdAt: existingTask.createdAt || new Date(),
-								updatedAt: existingTask.updatedAt || new Date(),
-								title: existingTask.title,
-								description: existingTask.description || null,
-								priority: existingTask.priority || null,
-								tags: existingTask.tags,
-								epicId: existingTask.epicId || null,
-								sprintId: existingTask.sprintId || null
-							};
-						}
-					}
-				}
-
 				utils.projectTemplate.getById.setData(queryKey, {
 					...previousProjectData,
-					tasks: optimisticTasks
+					tasks: applyTaskOrderUpdates(previousProjectData.tasks, updates, {
+						sort: false
+					})
 				});
 			}
 
 			if (previousTaskData) {
-				const optimisticTaskData = [...previousTaskData];
-				for (const { id: taskId, order } of updates) {
-					const taskIndex = optimisticTaskData.findIndex(
-						(t) => t.id === taskId
-					);
-					if (taskIndex !== -1) {
-						const existingTask = optimisticTaskData[taskIndex];
-						if (existingTask) {
-							optimisticTaskData[taskIndex] = {
-								...existingTask,
-								order
-							};
-						}
-					}
-				}
-
 				utils.task.getAllByProjectId.setData(
 					{ projectId, isTemplate },
-					optimisticTaskData
+					applyTaskOrderUpdates(previousTaskData, updates, { sort: false })
 				);
 			}
 
@@ -306,6 +267,9 @@ export function useTask({ projectId }: UseTaskProps) {
 	const createTask = (createTaskInput: CreateTaskInput) =>
 		createTaskMutation.mutate(createTaskInput);
 
+	const createTaskAsync = (createTaskInput: CreateTaskInput) =>
+		createTaskMutation.mutateAsync(createTaskInput);
+
 	const getAllTasksByProjectId = (projectId: string) =>
 		api.task.getAllByProjectId.useSuspenseQuery({
 			projectId,
@@ -315,7 +279,13 @@ export function useTask({ projectId }: UseTaskProps) {
 	const updateTask = (updateTaskInput: UpdateTaskInput) =>
 		updateTaskMutation.mutate(updateTaskInput);
 
+	const updateTaskAsync = (updateTaskInput: UpdateTaskInput) =>
+		updateTaskMutation.mutateAsync(updateTaskInput);
+
 	const deleteTask = (taskId: string) => deleteTaskMutation.mutate({ taskId });
+
+	const deleteTaskAsync = (taskId: string) =>
+		deleteTaskMutation.mutateAsync({ taskId });
 	const bulkDeleteTasks = (taskIds: string[]) =>
 		bulkDeleteTasksMutation.mutate({ taskIds });
 
@@ -345,12 +315,16 @@ export function useTask({ projectId }: UseTaskProps) {
 
 	return {
 		createTask,
+		createTaskAsync,
 		updateTask,
+		updateTaskAsync,
 		getAllTasksByProjectId,
 		deleteTask,
+		deleteTaskAsync,
 		bulkDeleteTasks,
 		updateTaskOrders,
 		generateTaskDescription,
-		isGeneratingDescription: generateTaskDescriptionMutation.isPending
+		isGeneratingDescription: generateTaskDescriptionMutation.isPending,
+		isCreatingTask: createTaskMutation.isPending
 	};
 }

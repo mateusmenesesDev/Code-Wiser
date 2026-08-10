@@ -1,6 +1,7 @@
 import type { TaskStatusEnum } from '@prisma/client';
 import { useCallback, useMemo, useState } from 'react';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
+import { bucketTasksByStatus } from '~/common/utils/kanbanReorder';
 import { api } from '~/trpc/react';
 import type { TasksApiOutput } from '../types/Task.type';
 import {
@@ -61,26 +62,22 @@ export function useKanbanData(
 			const taskToMove = currentTasks.find((task) => task.id === taskId);
 			if (!taskToMove) return;
 
-			const newOptimisticTasks = currentTasks.map((task) => ({ ...task }));
-
-			const movedTaskIndex = newOptimisticTasks.findIndex(
-				(task) => task.id === taskId
+			const newOptimisticTasks = currentTasks.map((task) =>
+				task.id === taskId ? { ...task, status: newStatus } : { ...task }
 			);
-			if (movedTaskIndex !== -1) {
-				const task = newOptimisticTasks[movedTaskIndex];
-				if (task) {
-					task.status = newStatus;
-				}
-			}
+			const tasksById = new Map(
+				newOptimisticTasks.map((task) => [task.id, task])
+			);
+			const tasksByStatus = bucketTasksByStatus(newOptimisticTasks);
 
 			const queryKey = { id: projectId };
-
-			const updates: Array<{ id: string; order: number; status?: string }> = [];
+			const updates: Array<{ id: string; order: number; status?: string }> =
+				[];
 
 			if (fromColumnId === toColumnId) {
-				const columnTasks = newOptimisticTasks
-					.filter((task) => task.status === newStatus)
-					.sort(sortTasksByOrder);
+				const columnTasks = [...(tasksByStatus.get(newStatus) ?? [])].sort(
+					sortTasksByOrder
+				);
 
 				const taskIndex = columnTasks.findIndex((task) => task.id === taskId);
 				if (taskIndex !== -1) {
@@ -91,36 +88,38 @@ export function useKanbanData(
 				}
 
 				columnTasks.forEach((task, index) => {
-					const taskInArray = newOptimisticTasks.find((t) => t.id === task.id);
+					const taskInArray = tasksById.get(task.id);
 					if (taskInArray) {
 						taskInArray.order = index;
 					}
 					updates.push({ id: task.id, order: index });
 				});
 			} else {
-				const sourceColumnTasks = newOptimisticTasks
-					.filter((task) => task.status === fromColumnId)
-					.sort(sortTasksByOrder);
+				const sourceColumnTasks = [
+					...(tasksByStatus.get(fromColumnId) ?? [])
+				].sort(sortTasksByOrder);
 
 				sourceColumnTasks.forEach((task, index) => {
-					const taskInArray = newOptimisticTasks.find((t) => t.id === task.id);
+					const taskInArray = tasksById.get(task.id);
 					if (taskInArray) {
 						taskInArray.order = index;
 					}
 					updates.push({ id: task.id, order: index });
 				});
 
-				const targetColumnTasks = newOptimisticTasks
-					.filter((task) => task.status === newStatus && task.id !== taskId)
+				const targetColumnTasks = [
+					...(tasksByStatus.get(newStatus) ?? [])
+				]
+					.filter((task) => task.id !== taskId)
 					.sort(sortTasksByOrder);
 
-				const movedTask = newOptimisticTasks.find((task) => task.id === taskId);
+				const movedTask = tasksById.get(taskId);
 				if (movedTask) {
 					targetColumnTasks.splice(toIndex, 0, movedTask);
 				}
 
 				targetColumnTasks.forEach((task, index) => {
-					const taskInArray = newOptimisticTasks.find((t) => t.id === task.id);
+					const taskInArray = tasksById.get(task.id);
 					if (taskInArray) {
 						taskInArray.order = index;
 					}
@@ -140,15 +139,12 @@ export function useKanbanData(
 						tasks: newOptimisticTasks
 					};
 				});
-			} else {
-				utils.project.getById.setData(queryKey, (oldData) => {
-					if (!oldData) return oldData;
-					return {
-						...oldData,
-						tasks: newOptimisticTasks
-					};
-				});
 			}
+
+			utils.task.getAllByProjectId.setData(
+				{ projectId, isTemplate: actualIsTemplate },
+				newOptimisticTasks
+			);
 
 			setOptimisticTasks(newOptimisticTasks);
 

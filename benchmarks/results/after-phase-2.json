@@ -1,0 +1,101 @@
+{
+  "phase": "phase-2",
+  "label": "after-phase-2",
+  "createdAt": "2026-07-29T23:37:13.851Z",
+  "scale": {
+    "templates": 20,
+    "tasksPerTemplate": 150,
+    "enrolledProjects": 12,
+    "boardTasks": 400,
+    "sprintsPerTemplate": 4,
+    "epicsPerTemplate": 3
+  },
+  "client": {
+    "scale": {
+      "boardTasks": 400
+    },
+    "iterations": 15,
+    "benches": {
+      "reorderKanban": {
+        "count": 15,
+        "minMs": 0.02131899999999831,
+        "maxMs": 0.49012000000000455,
+        "meanMs": 0.06679513333333299,
+        "p50Ms": 0.03083000000000169,
+        "p95Ms": 0.49012000000000455
+      },
+      "toKanbanOrderUpdates": {
+        "count": 15,
+        "minMs": 0.09665900000000249,
+        "maxMs": 0.7779150000000001,
+        "meanMs": 0.1806638666666667,
+        "p50Ms": 0.11639900000000125,
+        "p95Ms": 0.7779150000000001
+      },
+      "groupBySprint": {
+        "count": 15,
+        "minMs": 0.015199000000002627,
+        "maxMs": 0.1295429999999982,
+        "meanMs": 0.03832526666666638,
+        "p50Ms": 0.028846999999998957,
+        "p95Ms": 0.1295429999999982
+      }
+    }
+  },
+  "server": {
+    "available": true,
+    "catalog": {
+      "latency": {
+        "count": 3,
+        "minMs": 552.6839100000002,
+        "maxMs": 2684.577046,
+        "meanMs": 1270.537479,
+        "p50Ms": 574.3514810000001,
+        "p95Ms": 2684.577046
+      },
+      "payloadBytes": 14662,
+      "templateCount": 20,
+      "taskCount": 3000
+    },
+    "myProjects": {
+      "enrolledProjects": 12,
+      "roundTrips": 25,
+      "latency": {
+        "count": 3,
+        "minMs": 680.9569770000007,
+        "maxMs": 2129.044033,
+        "meanMs": 1175.3750163333334,
+        "p50Ms": 716.1240389999994,
+        "p95Ms": 2129.044033
+      }
+    },
+    "clone": {
+      "sourceTaskCount": 150,
+      "loadGraph": {
+        "count": 3,
+        "minMs": 555.0663780000014,
+        "maxMs": 689.9672099999989,
+        "meanMs": 601.9874256666668,
+        "p50Ms": 560.9286890000003,
+        "p95Ms": 689.9672099999989
+      },
+      "loadPayloadBytes": 79977,
+      "inMemoryRemap": {
+        "count": 3,
+        "minMs": 0.044013999999151565,
+        "maxMs": 0.268567000000985,
+        "meanMs": 0.12488666666649806,
+        "p50Ms": 0.06207899999935762,
+        "p95Ms": 0.268567000000985
+      },
+      "bulkInsertClone": {
+        "count": 3,
+        "minMs": 1506.5405630000005,
+        "maxMs": 3314.826465,
+        "meanMs": 2110.959005333334,
+        "p50Ms": 1511.5099880000016,
+        "p95Ms": 3314.826465
+      }
+    }
+  }
+}

@@ -4,7 +4,12 @@ import { protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
 
 const epicInclude = {
-	tasks: true
+	tasks: {
+		include: {
+			project: { select: { publicCode: true } },
+			projectTemplate: { select: { publicCode: true } }
+		}
+	}
 };
 
 export const epicQueries = {

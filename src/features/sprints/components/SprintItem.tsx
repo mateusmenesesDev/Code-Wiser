@@ -22,6 +22,7 @@ import {
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Progress } from '~/common/components/ui/progress';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { cn } from '~/lib/utils';
 import type { SprintApiOutput } from '../types/Sprint.type';
 
@@ -258,7 +259,16 @@ export default function SprintItem({
 										) : (
 											<Clock className="h-4 w-4 text-info" />
 										)}
-										<span className="font-medium">{task.title}</span>
+										<div className="space-y-1">
+											<div className="font-mono text-muted-foreground text-xs">
+												{formatPublicTaskId(
+													task.project?.publicCode ??
+														task.projectTemplate?.publicCode,
+													task.publicNumber
+												) ?? String(task.order ?? 0)}
+											</div>
+											<span className="font-medium">{task.title}</span>
+										</div>
 									</div>
 									{task.status === 'DONE' && (
 										<Badge variant="success" className="rounded-md">

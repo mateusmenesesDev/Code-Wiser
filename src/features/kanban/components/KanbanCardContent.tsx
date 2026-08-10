@@ -1,5 +1,4 @@
 import type { TaskPriorityEnum } from '@prisma/client';
-import Image from 'next/image';
 import { useQueryState } from 'nuqs';
 import { Badge } from '~/common/components/ui/badge';
 import {
@@ -7,22 +6,24 @@ import {
 	type KanbanItemProps
 } from '~/common/components/ui/kanban';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
-import { api } from '~/trpc/react';
+import { AssigneeAvatars } from '~/features/task/components/AssigneeAvatars';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 
 export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 	const [, setTaskId] = useQueryState('taskId');
-	const { data: assigneeImage } = api.task.getAssigneeImage.useQuery(
-		{
-			assigneeId: task.assignee?.id as string
-		},
-		{
-			enabled: !!task.assignee?.id
-		}
+	const publicTaskId = formatPublicTaskId(
+		task.project?.publicCode,
+		task.publicNumber
 	);
 
 	return (
 		<KanbanCard {...task} onTaskClick={() => setTaskId(task.id)}>
 			<div className="flex flex-col gap-3">
+				{publicTaskId && (
+					<span className="font-mono text-muted-foreground text-xs">
+						{publicTaskId}
+					</span>
+				)}
 				{task.sprint && (
 					<Badge
 						variant="default"
@@ -43,23 +44,7 @@ export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 						{task.priority}
 					</Badge>
 
-					{task.assignee && (
-						<div className="flex items-center gap-1.5">
-							{assigneeImage ? (
-								<Image
-									src={assigneeImage}
-									alt={task.assignee.name ?? 'Assignee'}
-									className="rounded-full"
-									width={20}
-									height={20}
-								/>
-							) : (
-								<div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 font-medium text-[10px] text-primary">
-									{task.assignee.name?.charAt(0).toUpperCase()}
-								</div>
-							)}
-						</div>
-					)}
+					<AssigneeAvatars assignees={task.assignees ?? []} />
 				</div>
 			</div>{' '}
 		</KanbanCard>

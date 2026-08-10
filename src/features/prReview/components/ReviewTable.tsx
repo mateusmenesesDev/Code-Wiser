@@ -21,6 +21,7 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import type { PRReviewApiOutput } from '~/features/prReview/types/prReview.type';
+import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { cn } from '~/lib/utils';
 import { ReviewActions } from './ReviewActions';
 
@@ -150,13 +151,19 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 					<TableBody>
 						{reviews.map((review) => {
 							const statusBadge = getStatusBadge(review.status);
-							const student = review.task.assignee;
+							const students = review.task.assignees ?? [];
 							const project = review.task.project;
 
 							return (
 								<TableRow key={review.id}>
 									<TableCell className="font-medium">
-										{review.task.title}
+										<div className="font-mono text-muted-foreground text-xs">
+											{formatPublicTaskId(
+												review.task.project?.publicCode,
+												review.task.publicNumber
+											) ?? '—'}
+										</div>
+										<div>{review.task.title}</div>
 									</TableCell>
 									<TableCell>
 										{project ? (
@@ -168,9 +175,11 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 										)}
 									</TableCell>
 									<TableCell>
-										{student ? (
+										{students.length > 0 ? (
 											<span className="text-muted-foreground text-sm">
-												{student.name || student.email}
+												{students
+													.map((student) => student.name || student.email)
+													.join(', ')}
 											</span>
 										) : (
 											<span className="text-muted-foreground text-sm">N/A</span>

@@ -1,126 +1,54 @@
-## Query and Mutation Patterns
+# Query and mutation patterns
 
-This doc explains how to fetch, cache, prefetch/hydrate, and mutate data using tRPC + React Query.
+tRPC + React Query is the server-state layer. Keep server state here; keep UI state local/Jotai/URL.
 
-### Libraries
+## Setup
 
-- tRPC v11 + @trpc/react-query
-- React Query v5 for caching, batching, and hydration
-- SuperJSON for serialization
+- `src/server/api/root.ts`: composes domain routers into `appRouter`.
+- `src/server/api/trpc.ts`: context, procedures, SuperJSON transformer, Zod error formatter.
+- `src/app/api/trpc/[trpc]/route.ts`: HTTP handler for Client Components.
+- `src/trpc/react.tsx`: `api` hooks, `TRPCReactProvider`, browser QueryClient singleton, `httpBatchStreamLink`, logger.
+- `src/trpc/server.ts`: RSC caller and hydration helpers.
+- `src/trpc/query-client.ts`: React Query defaults, SuperJSON hydration/dehydration, `staleTime: 30s`.
 
-### Client Setup
+## Queries
 
-- `src/trpc/react.tsx` creates a singleton QueryClient in the browser, with `httpBatchStreamLink` and `loggerLink`.
-- `src/trpc/query-client.ts` configures SuperJSON dehydration/serialization and default stale times.
-- App layout wraps children with `TRPCReactProvider` to expose `api.*` hooks.
+- Client Components use `api.<router>.<procedure>.useQuery(input, options)`.
+- Server Components use `api.<router>.<procedure>(input)` from `src/trpc/server.ts` and pass/hydrate data into Client Components when needed.
+- Use stable input objects that match procedure input shape.
+- Derive filtered/sorted/enriched views with `useMemo`; do not create extra client state for derived server data.
+- Use `api.useQueries` only when a batch of independent per-item queries is clearer than changing the server API. If every screen needs the joined data, add a server query instead.
 
-### Queries
+## Mutations
 
-#### Basic query
+- Client Components use `api.<router>.<procedure>.useMutation`.
+- On success, invalidate the narrowest affected queries through `api.useUtils()`.
+- Prefer invalidation over manual cache writes unless immediate UX matters.
+- Optimistic updates must cancel affected queries, snapshot previous data, write the optimistic shape, rollback on error, and invalidate on settle.
+- Navigation/toasts/dialog resets belong in mutation callbacks or thin feature hooks.
 
-```ts
-import { api } from "~/trpc/react";
+## Server procedures
 
-const { data, isLoading, error } = api.projectTemplate.getApproved.useQuery();
-```
+- Use `publicProcedure`, `protectedProcedure`, `adminProcedure`, or `mentorshipProcedure` deliberately.
+- Validate input with Zod via `.input(...)` at the procedure boundary.
+- Keep DB access in routers/actions/services, not in feature Client Components.
+- Return shapes designed for the screen/domain. Avoid making clients stitch together many queries when a single cohesive server query is simpler.
 
-#### Query with initial data and disabled refetches
+## Cache and hydration
 
-```ts
-const { data, isLoading } = api.projectTemplate.getApproved.useQuery(
-  undefined,
-  {
-    initialData: initialProjectsData,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-  }
-);
-```
+- Default query stale time is already set in `src/trpc/query-client.ts`; avoid per-query overrides unless behavior needs it.
+- Server-prefetched data should not immediately refetch on the client without reason.
+- Invalidate list and detail queries that can be stale after a mutation; do not blanket-invalidate unrelated routers.
 
-#### Parallel queries per item
+## Error handling
 
-```ts
-const progressQueries = api.useQueries((t) =>
-  projects.map((p) => t.project.getProjectProgress({ projectId: p.id }))
-);
-```
+- tRPC formats Zod errors under `error.data.zodError`.
+- Use field errors for forms when actionable; otherwise show a concise toast/message.
+- Non-tRPC route handlers should return explicit status codes with `NextResponse`/`Response`.
 
-#### Derived state with useMemo
+## Where to look
 
-Use `useMemo` to compute filtered or enriched datasets from query results.
-
-### Mutations
-
-#### Basic mutation with success side effects
-
-```ts
-const utils = api.useUtils();
-const { mutate: createProject } = api.project.createProject.useMutation({
-  onSuccess: (id) => {
-    router.push(`/workspace/${id}`);
-    utils.project.getEnrolled.invalidate();
-    utils.projectTemplate.getApproved.invalidate();
-    utils.user.getCredits.invalidate();
-  },
-});
-```
-
-#### Optimistic updates with rollback
-
-```ts
-const utils = api.useUtils();
-const updateTaskOrders = api.task.updateTaskOrders.useMutation({
-  onMutate: async ({ updates }) => {
-    const queryKey = { id: projectId };
-    await utils.project.getById.cancel(queryKey);
-    const previous = utils.project.getById.getData(queryKey);
-
-    const current = previous?.tasks ?? [];
-    const byId = new Map(updates.map((u) => [u.id, u]));
-    const optimisticTasks = current.map((t) => {
-      const u = byId.get(t.id);
-      if (!u) return t;
-      return {
-        ...t,
-        order: u.order,
-        ...(u.status ? { status: u.status } : {}),
-      };
-    });
-
-    utils.project.getById.setData(queryKey, (old) =>
-      old ? { ...old, tasks: optimisticTasks } : old
-    );
-
-    return { previous };
-  },
-  onError: (_err, _vars, ctx) => {
-    const queryKey = { id: projectId };
-    if (ctx?.previous) utils.project.getById.setData(queryKey, ctx.previous);
-  },
-  onSettled: () => {
-    const queryKey = { id: projectId };
-    utils.project.getById.invalidate(queryKey);
-  },
-});
-```
-
-### RSC and Prefetching
-
-- Server components can call tRPC via `src/trpc/server.ts` to fetch data with the user’s headers.
-- Example: Home page fetches approved templates and user-enrolled projects server-side, then hydrates on the client via `TRPCReactProvider`.
-
-### URL State and Filters
-
-- Use `nuqs` `useQueryState` for URL-driven filters (e.g., project catalog filters), then apply in `useMemo` to query results.
-
-### Error Handling
-
-- tRPC formatter exposes Zod errors; inspect `error` in hooks for user-facing messages.
-- Route handlers use `NextResponse.json` with status codes for non-tRPC endpoints.
-
-### Tips
-
-- Keep query keys stable (objects that match input params), as used in `utils.project.getById`.
-- Prefer invalidation over manual cache updates unless you need immediate UX (optimistic updates).
-- Disable unnecessary refetches when you hydrate from server to avoid waterfalls.
+- Project/template/task mutation examples: `src/features/*/hooks`, `src/server/api/routers/project`, `template`, `task`.
+- Optimistic task helpers: `src/features/task/utils/optimisticData*.ts`.
+- Kanban data flow: `src/features/kanban/hooks/*`, `src/server/api/routers/kanban`.
+- RSC hydration examples: pages under `src/app/(system)` plus `src/trpc/server.ts`.

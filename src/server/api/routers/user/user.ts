@@ -26,7 +26,6 @@ export const userRouter = createTRPCRouter({
 	}),
 
 	getById: publicProcedure.input(z.string()).query(async ({ input, ctx }) => {
-		const clerkUser = await clerkClient.users.getUser(input);
 		const user = await ctx.db.user.findUnique({
 			where: {
 				id: input
@@ -40,19 +39,24 @@ export const userRouter = createTRPCRouter({
 			});
 		}
 
-		if (!clerkUser) {
-			throw new TRPCError({
-				code: 'NOT_FOUND',
-				message: 'Clerk user not found'
-			});
+		if (user.imageUrl) {
+			return user;
 		}
 
-		const userWithImageUrl = {
-			...user,
-			imageUrl: clerkUser.imageUrl
-		};
+		try {
+			const clerkUser = await clerkClient.users.getUser(input);
+			if (clerkUser.imageUrl) {
+				await ctx.db.user.update({
+					where: { id: input },
+					data: { imageUrl: clerkUser.imageUrl }
+				});
+				return { ...user, imageUrl: clerkUser.imageUrl };
+			}
+		} catch {
+			// Fall through with null image when Clerk is unavailable.
+		}
 
-		return userWithImageUrl;
+		return user;
 	}),
 
 	delete: adminProcedure.input(z.string()).mutation(async ({ input, ctx }) => {
@@ -138,9 +142,28 @@ export const userRouter = createTRPCRouter({
 				userId: z.string()
 			})
 		)
-		.query(async ({ input }) => {
-			const clerkUser = await clerkClient.users.getUser(input.userId);
-			return clerkUser.imageUrl;
+		.query(async ({ ctx, input }) => {
+			const user = await ctx.db.user.findUnique({
+				where: { id: input.userId },
+				select: { imageUrl: true }
+			});
+
+			if (user?.imageUrl) {
+				return user.imageUrl;
+			}
+
+			try {
+				const clerkUser = await clerkClient.users.getUser(input.userId);
+				if (clerkUser.imageUrl) {
+					await ctx.db.user.update({
+						where: { id: input.userId },
+						data: { imageUrl: clerkUser.imageUrl }
+					});
+				}
+				return clerkUser.imageUrl;
+			} catch {
+				return null;
+			}
 		}),
 
 	listAll: adminProcedure
@@ -155,35 +178,13 @@ export const userRouter = createTRPCRouter({
 				.optional()
 		)
 		.query(async ({ input }) => {
-			const result = await getAllUsers({
+			// Avatars come from User.imageUrl (Clerk webhook projection) — no per-row Clerk fan-out.
+			return getAllUsers({
 				search: input?.search,
 				mentorshipStatus: input?.mentorshipStatus,
 				skip: input?.skip,
 				take: input?.take
 			});
-
-			// Fetch Clerk user data for avatars
-			const usersWithAvatars = await Promise.all(
-				result.users.map(async (user) => {
-					try {
-						const clerkUser = await clerkClient.users.getUser(user.id);
-						return {
-							...user,
-							imageUrl: clerkUser.imageUrl
-						};
-					} catch {
-						return {
-							...user,
-							imageUrl: null
-						};
-					}
-				})
-			);
-
-			return {
-				users: usersWithAvatars,
-				total: result.total
-			};
 		}),
 
 	update: adminProcedure
