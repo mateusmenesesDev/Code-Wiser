@@ -46,7 +46,8 @@ model User {
   projects                     Project[]
   comments                     Comment[]
   taskAttachments              TaskAttachment[]
-  prReviews                    PullRequestReview[]
+  prReviewsRequested           PullRequestReview[] @relation("PullRequestReviewRequester")
+  prReviewsReviewed            PullRequestReview[] @relation("PullRequestReviewReviewer")
   createdPlanningPokerSessions PlanningPokerSession[] @relation("PlanningPokerSessionCreator")
   planningPokerVotes           PlanningPokerVote[]
   notifications                Notification[]

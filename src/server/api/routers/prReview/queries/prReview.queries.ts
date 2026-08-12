@@ -1,4 +1,3 @@
-import type { PullRequestReviewStatusEnum } from '@prisma/client';
 import { z } from 'zod';
 import { filterPRReviewsSchema } from '~/features/prReview/schemas/prReview.schema';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
@@ -8,32 +7,22 @@ export const prReviewQueries = {
 	getAll: adminProcedure
 		.input(filterPRReviewsSchema.optional())
 		.query(async ({ ctx, input }) => {
-			const where: {
-				status?: PullRequestReviewStatusEnum;
-				task?: {
-					assignees?: { some: { id: string } };
-					projectId?: { not: null };
-				};
-			} = {};
-
-			where.task = {
-				projectId: { not: null }
+			const where = {
+				task: { projectId: { not: null } },
+				...(input?.status && { status: input.status }),
+				...(input?.userId && { requestedById: input.userId })
 			};
-
-			if (input?.status) {
-				where.status = input.status;
-			}
-
-			if (input?.userId) {
-				where.task = {
-					...where.task,
-					assignees: { some: { id: input.userId } }
-				};
-			}
 
 			const reviews = await ctx.db.pullRequestReview.findMany({
 				where,
 				include: {
+					requestedBy: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					},
 					reviewedBy: {
 						select: {
 							id: true,
@@ -46,13 +35,7 @@ export const prReviewQueries = {
 							id: true,
 							title: true,
 							publicNumber: true,
-							assignees: {
-								select: {
-									id: true,
-									name: true,
-									email: true
-								}
-							},
+							priority: true,
 							project: {
 								select: {
 									id: true,
@@ -63,9 +46,12 @@ export const prReviewQueries = {
 						}
 					}
 				},
-				orderBy: {
-					createdAt: 'desc'
-				}
+				orderBy: [
+					{ isActive: 'desc' },
+					{ status: 'desc' },
+					{ task: { priority: 'desc' } },
+					{ createdAt: 'asc' }
+				]
 			});
 
 			return reviews;
@@ -81,6 +67,13 @@ export const prReviewQueries = {
 					taskId: input.taskId
 				},
 				include: {
+					requestedBy: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					},
 					reviewedBy: {
 						select: {
 							id: true,
@@ -89,9 +82,7 @@ export const prReviewQueries = {
 						}
 					}
 				},
-				orderBy: {
-					createdAt: 'desc'
-				}
+				orderBy: { createdAt: 'desc' }
 			});
 
 			return reviews;
@@ -108,6 +99,13 @@ export const prReviewQueries = {
 					isActive: true
 				},
 				include: {
+					requestedBy: {
+						select: {
+							id: true,
+							name: true,
+							email: true
+						}
+					},
 					reviewedBy: {
 						select: {
 							id: true,

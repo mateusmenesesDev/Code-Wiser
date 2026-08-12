@@ -30,7 +30,7 @@ export const prReviewMutations = {
 					isActive: true
 				},
 				include: {
-					reviewedBy: {
+					requestedBy: {
 						select: {
 							id: true,
 							name: true,
@@ -58,16 +58,33 @@ export const prReviewMutations = {
 					message: 'No active PR review found for this task.'
 				});
 			}
+			if (activeReview.status !== PullRequestReviewStatusEnum.PENDING) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'This review has already been decided'
+				});
+			}
 			if (activeReview.task.project?.id) {
 				await assertProjectIsActive(ctx.db, activeReview.task.project.id);
 			}
 
-			await ctx.db.pullRequestReview.update({
-				where: { id: activeReview.id },
+			const decision = await ctx.db.pullRequestReview.updateMany({
+				where: {
+					id: activeReview.id,
+					status: PullRequestReviewStatusEnum.PENDING
+				},
 				data: {
-					status: PullRequestReviewStatusEnum.APPROVED
+					status: PullRequestReviewStatusEnum.APPROVED,
+					reviewedById: ctx.session.userId,
+					reviewedAt: new Date()
 				}
 			});
+			if (decision.count !== 1) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'This review has already been decided'
+				});
+			}
 
 			const mentor = await ctx.db.user.findUnique({
 				where: { id: ctx.session.userId as string },
@@ -78,9 +95,9 @@ export const prReviewMutations = {
 
 			await notifyPRResponse({
 				db: ctx.db,
-				memberId: activeReview.reviewedById,
-				memberName: activeReview.reviewedBy.name,
-				memberEmail: activeReview.reviewedBy.email,
+				memberId: activeReview.requestedById,
+				memberName: activeReview.requestedBy.name,
+				memberEmail: activeReview.requestedBy.email,
 				mentorName,
 				projectId: activeReview.task.project?.id ?? '',
 				projectName: activeReview.task.project?.title ?? '',
@@ -105,7 +122,7 @@ export const prReviewMutations = {
 					isActive: true
 				},
 				include: {
-					reviewedBy: {
+					requestedBy: {
 						select: {
 							id: true,
 							name: true,
@@ -133,17 +150,34 @@ export const prReviewMutations = {
 					message: 'No active PR review found for this task.'
 				});
 			}
+			if (activeReview.status !== PullRequestReviewStatusEnum.PENDING) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'This review has already been decided'
+				});
+			}
 			if (activeReview.task.project?.id) {
 				await assertProjectIsActive(ctx.db, activeReview.task.project.id);
 			}
 
-			await ctx.db.pullRequestReview.update({
-				where: { id: activeReview.id },
+			const decision = await ctx.db.pullRequestReview.updateMany({
+				where: {
+					id: activeReview.id,
+					status: PullRequestReviewStatusEnum.PENDING
+				},
 				data: {
 					status: PullRequestReviewStatusEnum.CHANGES_REQUESTED,
-					comment: comment || null
+					comment: comment || null,
+					reviewedById: ctx.session.userId,
+					reviewedAt: new Date()
 				}
 			});
+			if (decision.count !== 1) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'This review has already been decided'
+				});
+			}
 
 			const mentor = await ctx.db.user.findUnique({
 				where: { id: ctx.session.userId as string },
@@ -154,9 +188,9 @@ export const prReviewMutations = {
 
 			await notifyPRResponse({
 				db: ctx.db,
-				memberId: activeReview.reviewedById,
-				memberName: activeReview.reviewedBy.name,
-				memberEmail: activeReview.reviewedBy.email,
+				memberId: activeReview.requestedById,
+				memberName: activeReview.requestedBy.name,
+				memberEmail: activeReview.requestedBy.email,
 				mentorName,
 				projectId: activeReview.task.project?.id ?? '',
 				projectName: activeReview.task.project?.title ?? '',
@@ -175,7 +209,7 @@ export const prReviewMutations = {
 		.input(createPRReviewSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { taskId, prUrl } = input;
-			const reviewerId = ctx.session.userId;
+			const requesterId = ctx.session.userId;
 			const requestIdempotencyKey = input.idempotencyKey;
 
 			const task = await ctx.db.task.findUnique({
@@ -203,7 +237,7 @@ export const prReviewMutations = {
 			await assertProjectIsActive(ctx.db, task.project.id);
 
 			const user = await ctx.db.user.findUnique({
-				where: { id: reviewerId },
+				where: { id: requesterId },
 				select: {
 					id: true,
 					name: true,
@@ -221,12 +255,12 @@ export const prReviewMutations = {
 
 			const existingReview = await ctx.db.pullRequestReview.findUnique({
 				where: { requestIdempotencyKey },
-				select: { taskId: true, reviewedById: true, prUrl: true }
+				select: { taskId: true, requestedById: true, prUrl: true }
 			});
 			if (existingReview) {
 				if (
 					existingReview.taskId !== taskId ||
-					existingReview.reviewedById !== reviewerId ||
+					existingReview.requestedById !== requesterId ||
 					existingReview.prUrl !== prUrl
 				) {
 					throw new TRPCError({
@@ -244,9 +278,34 @@ export const prReviewMutations = {
 			const isMentorshipActive = user.mentorshipStatus === 'ACTIVE';
 
 			await ctx.db.$transaction(async (tx) => {
+				const activeReview = await tx.pullRequestReview.findFirst({
+					where: { taskId, isActive: true },
+					select: { id: true, status: true }
+				});
+
+				if (activeReview?.status === PullRequestReviewStatusEnum.PENDING) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'A code review is already awaiting review for this task'
+					});
+				}
+				if (activeReview?.status === PullRequestReviewStatusEnum.APPROVED) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'This task already has an approved code review'
+					});
+				}
+
+				if (activeReview) {
+					await tx.pullRequestReview.update({
+						where: { id: activeReview.id },
+						data: { isActive: false }
+					});
+				}
+
 				if (!isMentorshipActive) {
 					await applyCreditTransaction(tx, {
-						userId: reviewerId,
+						userId: requesterId,
 						type: 'CONSUMPTION',
 						value: -CODE_REVIEW_COST,
 						source: 'PR_REVIEW_REQUEST',
@@ -261,7 +320,7 @@ export const prReviewMutations = {
 						prUrl,
 						requestIdempotencyKey,
 						status: PullRequestReviewStatusEnum.PENDING,
-						reviewedById: reviewerId,
+						requestedById: requesterId,
 						isActive: true
 					}
 				});
@@ -291,6 +350,7 @@ export const prReviewMutations = {
 				where: { id: reviewId },
 				select: {
 					taskId: true,
+					requestedById: true,
 					task: { select: { projectId: true } }
 				}
 			});
@@ -298,6 +358,12 @@ export const prReviewMutations = {
 				throw new TRPCError({
 					code: 'NOT_FOUND',
 					message: 'PR review not found'
+				});
+			}
+			if (review.requestedById !== ctx.session.userId && !ctx.isAdmin) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Only the requester or an admin can update this PR review'
 				});
 			}
 

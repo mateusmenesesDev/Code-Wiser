@@ -151,7 +151,6 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 					<TableBody>
 						{reviews.map((review) => {
 							const statusBadge = getStatusBadge(review.status);
-							const students = review.task.assignees ?? [];
 							const project = review.task.project;
 
 							return (
@@ -175,15 +174,9 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 										)}
 									</TableCell>
 									<TableCell>
-										{students.length > 0 ? (
-											<span className="text-muted-foreground text-sm">
-												{students
-													.map((student) => student.name || student.email)
-													.join(', ')}
-											</span>
-										) : (
-											<span className="text-muted-foreground text-sm">N/A</span>
-										)}
+										<span className="text-muted-foreground text-sm">
+											{review.requestedBy.name || review.requestedBy.email}
+										</span>
 									</TableCell>
 									<TableCell>
 										{statusBadge && (
@@ -232,7 +225,9 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 									</TableCell>
 									<TableCell>
 										<span className="text-muted-foreground text-sm">
-											{review.reviewedBy.name || review.reviewedBy.email}
+											{review.reviewedBy
+												? review.reviewedBy.name || review.reviewedBy.email
+												: '—'}
 										</span>
 									</TableCell>
 									<TableCell className="text-right">
@@ -250,12 +245,14 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 													View Task
 												</Button>
 											)}
-											{review.isActive && (
-												<ReviewActions
-													taskId={review.taskId}
-													status={review.status}
-												/>
-											)}
+											{review.isActive &&
+												review.status ===
+													PullRequestReviewStatusEnum.PENDING && (
+													<ReviewActions
+														taskId={review.taskId}
+														status={review.status}
+													/>
+												)}
 										</div>
 									</TableCell>
 								</TableRow>

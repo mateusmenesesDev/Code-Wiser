@@ -6,16 +6,11 @@ import type {
 import type { RouterOutputs } from '~/trpc/react';
 
 export type PRReviewWithRelations = PullRequestReview & {
-	reviewedBy: Pick<User, 'id' | 'name' | 'email'>;
+	requestedBy: Pick<User, 'id' | 'name' | 'email'>;
+	reviewedBy: Pick<User, 'id' | 'name' | 'email'> | null;
 	task: {
 		id: string;
 		title: string;
-		prUrl: string | null;
-		assignees: {
-			id: string;
-			name: string | null;
-			email: string;
-		}[];
 		project: {
 			id: string;
 			title: string;

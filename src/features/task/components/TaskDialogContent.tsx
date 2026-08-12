@@ -1,6 +1,10 @@
 import { Protect } from '@clerk/nextjs';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
+import {
+	PullRequestReviewStatusEnum,
+	TaskPriorityEnum,
+	TaskStatusEnum
+} from '@prisma/client';
 import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { FieldErrors } from 'react-hook-form';
@@ -436,49 +440,57 @@ export function TaskDialogContent({
 									)}
 
 									{/* Request Code Review Button */}
-									{isEditing && taskId && prUrl?.trim() && !activeReview && (
-										<div>
-											<Button
-												type="button"
-												onClick={() => {
-													const trimmedPrUrl = prUrl.trim();
-													if (trimmedPrUrl && taskId) {
-														reviewRequestKeyRef.current ??= crypto.randomUUID();
-														requestCodeReview({
-															taskId,
-															prUrl: trimmedPrUrl,
-															idempotencyKey: reviewRequestKeyRef.current
-														});
+									{isEditing &&
+										taskId &&
+										prUrl?.trim() &&
+										(!activeReview ||
+											activeReview.status ===
+												PullRequestReviewStatusEnum.CHANGES_REQUESTED) && (
+											<div>
+												<Button
+													type="button"
+													onClick={() => {
+														const trimmedPrUrl = prUrl.trim();
+														if (trimmedPrUrl && taskId) {
+															reviewRequestKeyRef.current ??=
+																crypto.randomUUID();
+															requestCodeReview({
+																taskId,
+																prUrl: trimmedPrUrl,
+																idempotencyKey: reviewRequestKeyRef.current
+															});
+														}
+													}}
+													disabled={
+														isRequestingCodeReview ||
+														!prUrl?.trim() ||
+														(!userHasMentorship && userCredits < 5)
 													}
-												}}
-												disabled={
-													isRequestingCodeReview ||
-													!prUrl?.trim() ||
-													(!userHasMentorship && userCredits < 5)
-												}
-												className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
-												size="sm"
-											>
-												{isRequestingCodeReview ? (
-													<>
-														<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-														Requesting...
-													</>
-												) : (
-													<>
-														{userHasMentorship
-															? 'Request Code Review'
-															: `Request Code Review (${userCredits >= 5 ? '5 credits' : 'Insufficient credits'})`}
-													</>
+													className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+													size="sm"
+												>
+													{isRequestingCodeReview ? (
+														<>
+															<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+															Requesting...
+														</>
+													) : (
+														<>
+															{activeReview
+																? 'Submit New Review'
+																: userHasMentorship
+																	? 'Request Code Review'
+																	: `Request Code Review (${userCredits >= 5 ? '5 credits' : 'Insufficient credits'})`}
+														</>
+													)}
+												</Button>
+												{!userHasMentorship && userCredits < 5 && (
+													<p className="mt-2 text-destructive text-xs">
+														You need at least 5 credits to request a code review
+													</p>
 												)}
-											</Button>
-											{!userHasMentorship && userCredits < 5 && (
-												<p className="mt-2 text-destructive text-xs">
-													You need at least 5 credits to request a code review
-												</p>
-											)}
-										</div>
-									)}
+											</div>
+										)}
 
 									{/* PR Review Status */}
 									<PullRequest

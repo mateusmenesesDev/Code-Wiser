@@ -143,14 +143,18 @@ model PullRequestReview {
   prUrl                 String
   requestIdempotencyKey String? @unique
 
-  status  PullRequestReviewStatusEnum @default(PENDING)
-  comment String?
+  status     PullRequestReviewStatusEnum @default(PENDING)
+  comment    String?
+  reviewedAt DateTime?
 
   taskId String
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  reviewedById String
-  reviewedBy   User   @relation(fields: [reviewedById], references: [id], onDelete: Cascade)
+  requestedById String
+  requestedBy   User   @relation("PullRequestReviewRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  reviewedById String?
+  reviewedBy   User?  @relation("PullRequestReviewReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   isActive Boolean @default(true)
 

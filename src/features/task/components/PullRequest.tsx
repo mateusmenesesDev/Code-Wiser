@@ -115,11 +115,13 @@ export function PullRequest({ taskId, prUrl, isEditing }: PullRequestProps) {
 										your PR
 									</p>
 								)}
-								<p className="text-muted-foreground text-xs">
-									Reviewed by:{' '}
-									{activeReview.reviewedBy.name ||
-										activeReview.reviewedBy.email}
-								</p>
+								{activeReview.reviewedBy && (
+									<p className="text-muted-foreground text-xs">
+										Reviewed by:{' '}
+										{activeReview.reviewedBy.name ||
+											activeReview.reviewedBy.email}
+									</p>
+								)}
 							</div>
 						)}
 
@@ -128,11 +130,13 @@ export function PullRequest({ taskId, prUrl, isEditing }: PullRequestProps) {
 								<p className="text-muted-foreground text-sm">
 									Your pull request has been approved!
 								</p>
-								<p className="text-muted-foreground text-xs">
-									Approved by:{' '}
-									{activeReview.reviewedBy.name ||
-										activeReview.reviewedBy.email}
-								</p>
+								{activeReview.reviewedBy && (
+									<p className="text-muted-foreground text-xs">
+										Approved by:{' '}
+										{activeReview.reviewedBy.name ||
+											activeReview.reviewedBy.email}
+									</p>
+								)}
 							</div>
 						)}
 					</div>
