@@ -1,8 +1,13 @@
 import { Protect } from '@clerk/nextjs';
-import { ProjectMethodologyEnum, TaskPriorityEnum, type TaskStatusEnum } from '@prisma/client';
-import { Figma, Filter, Play, Plus, Settings, X } from 'lucide-react';
+import {
+	ProjectMethodologyEnum,
+	TaskPriorityEnum,
+	type TaskStatusEnum
+} from '@prisma/client';
+import { Figma, Filter, Play, Plus, Search, Settings, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '~/common/components/ui/button';
+import { Input } from '~/common/components/ui/input';
 import {
 	Select,
 	SelectContent,
@@ -44,21 +49,25 @@ export default function ProjectHeader({
 		sprintFilter,
 		priorityFilter,
 		assigneeFilter,
+		searchFilter,
 		setSprintFilter,
 		setPriorityFilter,
 		setAssigneeFilter,
+		setSearchFilter,
 		clearFilters,
 		hasActiveFilters
 	} = useKanbanFilters();
 
 	return (
 		<div className="rounded-lg border-border/40 border-b bg-card p-4">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div className="space-y-0.5">
 					<div className="flex items-center gap-2">
 						<h1 className="font-bold text-2xl">{projectTitle}</h1>
 						<span className="rounded-full border px-2 py-0.5 text-muted-foreground text-xs">
-							{methodology === ProjectMethodologyEnum.SCRUM ? 'Scrum' : 'Kanban'}
+							{methodology === ProjectMethodologyEnum.SCRUM
+								? 'Scrum'
+								: 'Kanban'}
 						</span>
 						<Button
 							variant="ghost"
@@ -103,9 +112,19 @@ export default function ProjectHeader({
 						</Protect>
 					</div>
 				</div>
-				<div className="flex flex-col">
+				<div className="flex min-w-0 flex-col items-end gap-3">
 					<ProjectStatsCards tasks={stats ?? []} />
-					<div className="flex items-center gap-2">
+					<div className="flex flex-wrap items-center justify-end gap-2">
+						<div className="relative w-full sm:w-[220px]">
+							<Search className="absolute top-2 left-2.5 h-4 w-4 text-muted-foreground" />
+							<Input
+								aria-label="Search tasks"
+								placeholder="Search tasks..."
+								value={searchFilter}
+								onChange={(event) => setSearchFilter(event.target.value)}
+								className="h-8 pl-8"
+							/>
+						</div>
 						<Filter className="h-4 w-4 text-muted-foreground" />
 						<span className="text-muted-foreground text-sm">Filters:</span>
 						<Select
@@ -144,26 +163,26 @@ export default function ProjectHeader({
 								)}
 							</SelectContent>
 						</Select>
-					{methodology !== ProjectMethodologyEnum.SCRUM && (
-						<Select
-							value={sprintFilter ?? 'all'}
-							onValueChange={(value) => setSprintFilter(value)}
-						>
-							<SelectTrigger className="h-8 w-[180px]">
-								<SelectValue placeholder="Sprint" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">All Sprints</SelectItem>
-								{sprints
-									?.sort((a, b) => a.title.localeCompare(b.title))
-									.map((sprint) => (
-										<SelectItem key={sprint.id} value={sprint.id}>
-											{sprint.title}
-										</SelectItem>
-									))}
-							</SelectContent>
-						</Select>
-					)}
+						{methodology !== ProjectMethodologyEnum.SCRUM && (
+							<Select
+								value={sprintFilter ?? 'all'}
+								onValueChange={(value) => setSprintFilter(value)}
+							>
+								<SelectTrigger className="h-8 w-[180px]">
+									<SelectValue placeholder="Sprint" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">All Sprints</SelectItem>
+									{sprints
+										?.sort((a, b) => a.title.localeCompare(b.title))
+										.map((sprint) => (
+											<SelectItem key={sprint.id} value={sprint.id}>
+												{sprint.title}
+											</SelectItem>
+										))}
+								</SelectContent>
+							</Select>
+						)}
 						{hasActiveFilters && (
 							<Button
 								variant="ghost"

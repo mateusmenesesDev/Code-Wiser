@@ -2,12 +2,14 @@ import type { TaskPriorityEnum } from '@prisma/client';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
 import type { KanbanDataOutput } from '~/server/api/routers/kanban/types';
+import { filterKanbanTasks } from '../utils/filterKanbanTasks';
 
 export const useKanbanFilters = () => {
 	const [kanbanFilters, setKanbanFilters] = useQueryStates({
 		sprint: parseAsString.withDefault('all'),
 		priority: parseAsString.withDefault('all'),
-		assignee: parseAsString.withDefault('all')
+		assignee: parseAsString.withDefault('all'),
+		search: parseAsString.withDefault('')
 	});
 
 	const sprint = kanbanFilters.sprint;
@@ -16,30 +18,22 @@ export const useKanbanFilters = () => {
 			? undefined
 			: (kanbanFilters.priority as TaskPriorityEnum);
 	const assignee = kanbanFilters.assignee;
+	const search = kanbanFilters.search;
 
 	const hasActiveFilters = useMemo(() => {
-		return sprint !== 'all' || priority !== undefined || assignee !== 'all';
-	}, [sprint, priority, assignee]);
-
-	const filterTasks = (tasks: KanbanDataOutput | undefined) => {
-		if (!tasks) return [];
-		return tasks.filter((task) => {
-			if (sprint !== 'all' && task.sprint?.id !== sprint) return false;
-			if (priority && task.priority !== priority) return false;
-			if (
-				assignee !== 'all' &&
-				!(task.assignees ?? []).some((a) => a.id === assignee)
-			) {
-				return false;
-			}
-			return true;
-		});
-	};
+		return (
+			sprint !== 'all' ||
+			priority !== undefined ||
+			assignee !== 'all' ||
+			search.trim() !== ''
+		);
+	}, [sprint, priority, assignee, search]);
 
 	return {
 		sprintFilter: sprint,
 		priorityFilter: priority,
 		assigneeFilter: assignee,
+		searchFilter: search,
 		setSprintFilter: (sprint: string) => {
 			setKanbanFilters({
 				...kanbanFilters,
@@ -58,14 +52,27 @@ export const useKanbanFilters = () => {
 				assignee: assignee
 			});
 		},
+		setSearchFilter: (search: string) => {
+			setKanbanFilters({
+				...kanbanFilters,
+				search
+			});
+		},
 		clearFilters: () => {
 			setKanbanFilters({
 				sprint: 'all',
 				priority: 'all',
-				assignee: 'all'
+				assignee: 'all',
+				search: ''
 			});
 		},
 		hasActiveFilters,
-		filterTasks
+		filterTasks: (tasks: KanbanDataOutput | undefined) =>
+			filterKanbanTasks(tasks, {
+				sprint,
+				priority,
+				assignee,
+				search
+			})
 	};
 };
