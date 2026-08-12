@@ -2,10 +2,10 @@ import { Protect } from '@clerk/nextjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
 import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { useEffect, useRef, useState } from 'react';
 import type { FieldErrors } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import type { z } from 'zod';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Button } from '~/common/components/ui/button';
@@ -22,8 +22,8 @@ import { Switch } from '~/common/components/ui/switch';
 import { Textarea } from '~/common/components/ui/textarea';
 import { useTask } from '~/features/task/hooks/useTask';
 import {
-	createTaskSchema,
 	FIBONACCI_STORY_POINTS,
+	createTaskSchema,
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { cn } from '~/lib/utils';
@@ -94,6 +94,7 @@ export function TaskDialogContent({
 		{ enabled: !!taskId }
 	);
 	const [prUrl, setPrUrl] = useState<string>('');
+	const reviewRequestKeyRef = useRef<string | null>(null);
 
 	const { data: task } = api.task.getById.useQuery(
 		{ id: taskId || '' },
@@ -173,6 +174,7 @@ export function TaskDialogContent({
 	useEffect(() => {
 		if (activeReview?.prUrl) {
 			setPrUrl(activeReview.prUrl);
+			reviewRequestKeyRef.current = null;
 		}
 	}, [activeReview]);
 
@@ -441,9 +443,11 @@ export function TaskDialogContent({
 												onClick={() => {
 													const trimmedPrUrl = prUrl.trim();
 													if (trimmedPrUrl && taskId) {
+														reviewRequestKeyRef.current ??= crypto.randomUUID();
 														requestCodeReview({
 															taskId,
-															prUrl: trimmedPrUrl
+															prUrl: trimmedPrUrl,
+															idempotencyKey: reviewRequestKeyRef.current
 														});
 													}
 												}}
@@ -578,7 +582,10 @@ export function TaskDialogContent({
 								type="date"
 								value={(() => {
 									const dueDate = form.watch('dueDate');
-									if (dueDate instanceof Date && !Number.isNaN(dueDate.getTime())) {
+									if (
+										dueDate instanceof Date &&
+										!Number.isNaN(dueDate.getTime())
+									) {
 										return dueDate.toISOString().slice(0, 10);
 									}
 									return typeof dueDate === 'string' ? dueDate : '';

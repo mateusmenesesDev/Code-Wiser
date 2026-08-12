@@ -8,9 +8,9 @@ import {
 } from '~/features/projects/schemas/projects.schema';
 import { generatePublicCode } from '~/lib/publicTaskId';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
+import { applyCreditTransaction } from '~/server/services/creditLedger';
 import { createNotification } from '~/server/services/notification/base';
 import { userHasAccessToProject } from '~/server/utils/auth';
-import { userHasAccess } from '../utils/userHasAccess';
 
 const canceledProjectError = () =>
 	new TRPCError({
@@ -48,6 +48,21 @@ export const projectMutations = {
 		.mutation(async ({ ctx, input }) => {
 			try {
 				const { userId } = ctx.session;
+				const creationIdempotencyKey = input.idempotencyKey;
+
+				const existingProject = await ctx.db.project.findUnique({
+					where: { creationIdempotencyKey },
+					select: { id: true, members: { select: { id: true } } }
+				});
+				if (existingProject) {
+					if (existingProject.members.some((member) => member.id === userId)) {
+						return existingProject.id;
+					}
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'Project creation key belongs to another user'
+					});
+				}
 
 				const [user, projectTemplate] = await Promise.all([
 					ctx.db.user.findUnique({
@@ -79,7 +94,10 @@ export const projectMutations = {
 					});
 				}
 
-				if (!userHasAccess(user, projectTemplate)) {
+				if (
+					projectTemplate.accessType === 'MENTORSHIP' &&
+					user.mentorshipStatus !== 'ACTIVE'
+				) {
 					throw new TRPCError({
 						code: 'FORBIDDEN',
 						message: 'User does not have access to this project template'
@@ -119,6 +137,7 @@ export const projectMutations = {
 								accessType: projectTemplate.accessType,
 								difficulty: projectTemplate.difficulty,
 								creditCost: projectTemplate.credits,
+								creationIdempotencyKey,
 								figmaProjectUrl: projectTemplate.figmaProjectUrl,
 								publicCode: await makeUniqueProjectPublicCode(
 									prisma,
@@ -207,23 +226,31 @@ export const projectMutations = {
 						}
 
 						if (
-							user.mentorshipStatus !== 'ACTIVE' &&
-							projectTemplate.accessType === 'CREDITS'
+							projectTemplate.accessType === 'CREDITS' &&
+							user.mentorshipStatus !== 'ACTIVE'
 						) {
 							const credits = projectTemplate.credits ?? 0;
-							await prisma.user.update({
-								where: { id: user.id },
-								data: { credits: { decrement: credits } }
-							});
 							if (credits > 0) {
-								await prisma.projectCreditPaymentEvidence.create({
-									data: {
-										projectId: newProject.id,
-										userId: user.id,
-										credits,
-										source: 'PROJECT_CREATION'
-									}
+								const transaction = await applyCreditTransaction(prisma, {
+									userId: user.id,
+									type: 'CONSUMPTION',
+									value: -credits,
+									source: 'PROJECT_CREATION',
+									externalReference: newProject.id,
+									idempotencyKey: `project:create:${creationIdempotencyKey}`
 								});
+
+								if (transaction.applied) {
+									await prisma.projectCreditPaymentEvidence.create({
+										data: {
+											projectId: newProject.id,
+											userId: user.id,
+											credits,
+											source: 'PROJECT_CREATION',
+											creditTransactionId: transaction.transactionId
+										}
+									});
+								}
 							}
 						}
 
@@ -310,7 +337,12 @@ export const projectMutations = {
 									credits: { gt: 0 },
 									memberRemovalAudit: null
 								},
-								select: { id: true, userId: true, credits: true }
+								select: {
+									id: true,
+									userId: true,
+									credits: true,
+									creditTransactionId: true
+								}
 							}),
 							prisma.projectInvitation.findMany({
 								where: {
@@ -342,10 +374,27 @@ export const projectMutations = {
 				}
 
 				let refundedCredits = 0;
-				for (const [userId, credits] of refundsByUserId) {
-					await prisma.user.update({
-						where: { id: userId },
-						data: { credits: { increment: credits } }
+				for (const evidence of paymentEvidences) {
+					await applyCreditTransaction(prisma, {
+						userId: evidence.userId,
+						type: 'REFUND',
+						value: evidence.credits,
+						source: 'PROJECT_CANCELLATION',
+						externalReference: evidence.id,
+						idempotencyKey: `refund:project-cancellation:evidence:${evidence.id}`,
+						reversalOfId: evidence.creditTransactionId ?? undefined
+					});
+					refundedCredits += evidence.credits;
+				}
+				for (const invitation of legacyPaymentEvidences) {
+					const credits = invitation.creditCostSnapshot ?? 0;
+					await applyCreditTransaction(prisma, {
+						userId: invitation.userId,
+						type: 'REFUND',
+						value: credits,
+						source: 'PROJECT_CANCELLATION',
+						externalReference: invitation.id,
+						idempotencyKey: `refund:project-cancellation:invitation:${invitation.id}`
 					});
 					refundedCredits += credits;
 				}
@@ -614,7 +663,7 @@ export const projectMutations = {
 							credits: { gt: 0 },
 							memberRemovalAudit: null
 						},
-						select: { id: true, credits: true },
+						select: { id: true, credits: true, creditTransactionId: true },
 						orderBy: { createdAt: 'desc' }
 					});
 
@@ -633,11 +682,14 @@ export const projectMutations = {
 							orderBy: { respondedAt: 'desc' }
 						});
 
+				const refundReference =
+					paymentEvidence?.id ?? legacyPaymentEvidence?.id ?? null;
 				const refundableCredits =
 					paymentEvidence?.credits ??
 					legacyPaymentEvidence?.creditCostSnapshot ??
 					0;
-				const refundEligible = refundableCredits > 0;
+				const refundEligible =
+					refundableCredits > 0 && refundReference !== null;
 
 				if (input.refundCredits && !refundEligible) {
 					throw new TRPCError({
@@ -673,9 +725,20 @@ export const projectMutations = {
 				});
 
 				if (input.refundCredits) {
-					await prisma.user.update({
-						where: { id: member.id },
-						data: { credits: { increment: refundableCredits } }
+					if (!refundReference) {
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: 'No refundable credit payment evidence for this member'
+						});
+					}
+					await applyCreditTransaction(prisma, {
+						userId: member.id,
+						type: 'REFUND',
+						value: refundableCredits,
+						source: 'PROJECT_MEMBER_REMOVAL',
+						externalReference: refundReference,
+						idempotencyKey: `refund:member-removal:${refundReference}`,
+						reversalOfId: paymentEvidence?.creditTransactionId ?? undefined
 					});
 				}
 
@@ -771,11 +834,11 @@ export const projectMutations = {
 				const invitation = await prisma.projectInvitation.findFirst({
 					where: {
 						id: input.invitationId,
-						userId: ctx.session.userId,
-						status: 'PENDING'
+						userId: ctx.session.userId
 					},
 					select: {
 						id: true,
+						status: true,
 						creditCostSnapshot: true,
 						projectId: true,
 						project: {
@@ -789,7 +852,14 @@ export const projectMutations = {
 					}
 				});
 
-				if (!invitation) {
+				if (!invitation || invitation.status !== 'PENDING') {
+					if (invitation?.status === 'ACCEPTED') {
+						return {
+							accepted: true as const,
+							projectId: invitation.projectId,
+							projectTitle: invitation.project.title
+						};
+					}
 					throw new TRPCError({
 						code: 'NOT_FOUND',
 						message: 'Pending invitation not found'
@@ -801,28 +871,28 @@ export const projectMutations = {
 				}
 
 				const creditCost = invitation.creditCostSnapshot ?? 0;
-				const creditUpdate = await prisma.user.updateMany({
-					where: { id: ctx.session.userId, credits: { gte: creditCost } },
-					data: { credits: { decrement: creditCost } }
-				});
-
-				if (creditUpdate.count !== 1) {
-					return {
-						accepted: false as const,
-						projectTitle: invitation.project.title
-					};
-				}
-
 				if (creditCost > 0) {
-					await prisma.projectCreditPaymentEvidence.create({
-						data: {
-							projectId: invitation.projectId,
-							userId: ctx.session.userId,
-							credits: creditCost,
-							source: 'PROJECT_INVITATION_ACCEPTANCE',
-							projectInvitationId: invitation.id
-						}
+					const transaction = await applyCreditTransaction(prisma, {
+						userId: ctx.session.userId,
+						type: 'CONSUMPTION',
+						value: -creditCost,
+						source: 'PROJECT_INVITATION_ACCEPTANCE',
+						externalReference: invitation.id,
+						idempotencyKey: `project:invitation:${invitation.id}`
 					});
+
+					if (transaction.applied) {
+						await prisma.projectCreditPaymentEvidence.create({
+							data: {
+								projectId: invitation.projectId,
+								userId: ctx.session.userId,
+								credits: creditCost,
+								source: 'PROJECT_INVITATION_ACCEPTANCE',
+								projectInvitationId: invitation.id,
+								creditTransactionId: transaction.transactionId
+							}
+						});
+					}
 				}
 
 				if (

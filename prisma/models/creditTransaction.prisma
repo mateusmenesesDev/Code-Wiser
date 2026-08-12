@@ -1,0 +1,50 @@
+enum CreditTransactionType {
+  PURCHASE
+  CONSUMPTION
+  REFUND
+  ADJUSTMENT
+
+  @@schema("public")
+}
+
+enum CreditTransactionSource {
+  STRIPE_CHECKOUT
+  PROJECT_CREATION
+  PROJECT_INVITATION_ACCEPTANCE
+  PR_REVIEW_REQUEST
+  PROJECT_MEMBER_REMOVAL
+  PROJECT_CANCELLATION
+  ADMIN
+  MIGRATION
+
+  @@schema("public")
+}
+
+model CreditTransaction {
+  id                String                  @id @default(cuid())
+  createdAt         DateTime                @default(now())
+  userId            String
+  type              CreditTransactionType
+  value             Int
+  source            CreditTransactionSource
+  externalReference String
+  idempotencyKey    String                  @unique
+  reversalOfId      String?                 @unique
+  actorUserId       String?
+  note              String?
+
+  @@index([userId, createdAt])
+  @@index([source, externalReference])
+  @@schema("public")
+}
+
+model StripeWebhookEvent {
+  id               String    @id
+  type             String
+  externalObjectId String
+  stripeCreatedAt  DateTime?
+  processedAt      DateTime  @default(now())
+
+  @@index([externalObjectId])
+  @@schema("public")
+}

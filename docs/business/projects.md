@@ -316,8 +316,8 @@ model ProjectTemplate {
 1. User selects credit package
 2. Stripe session creation with metadata
 3. Redirect to Stripe checkout
-4. Webhook processes successful payment
-5. Credits added to user account
+4. Webhook records the processed Stripe event
+5. The credit ledger and user balance are updated atomically
 
 **Credit Packages** (environment variables):
 
@@ -331,7 +331,7 @@ model ProjectTemplate {
 
 **Events Handled**:
 
-- `checkout.session.completed`: Add purchased credits
+- `checkout.session.completed`: Record the purchase in the credit ledger
 - `customer.subscription.updated`: Update mentorship status
 - `customer.subscription.deleted`: Deactivate mentorship
 
@@ -460,7 +460,6 @@ PENDING → APPROVED (public) / REJECTED / REQUESTED_CHANGES
 #### Core Business Logic
 
 - `src/server/api/routers/project/mutations/projectMutations.ts`
-- `src/server/api/routers/project/utils/userHasAccess.ts`
 - `src/server/api/routers/template/queries/project/projectTemplateQueries.ts`
 
 #### Data Models

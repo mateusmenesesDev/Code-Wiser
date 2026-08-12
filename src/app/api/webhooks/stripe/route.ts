@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { env } from '~/env';
 import {
-	addUserCredits,
 	handleSubscriptionDeleted,
 	updateUserMentorshipFromSubscription
 } from '~/server/api/routers/user/actions';
+import { db } from '~/server/db';
+import { fulfillCreditCheckout } from '~/server/services/stripeCreditCheckout';
 import { stripe } from '~/services/stripe';
 
 const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
@@ -42,31 +43,50 @@ export async function POST(req: Request) {
 	if (relevantEvents.has(event.type)) {
 		try {
 			switch (event.type) {
-				case 'checkout.session.completed': {
-					const session = event.data.object as Stripe.Checkout.Session;
-					if (session.metadata?.mode === 'credits') {
-						await handleCheckoutSessionCompleted(session);
-					}
-					break;
-				}
-
+				case 'checkout.session.completed':
 				case 'checkout.session.async_payment_succeeded': {
 					const session = event.data.object as Stripe.Checkout.Session;
 					if (session.metadata?.mode === 'credits') {
-						await handleCheckoutSessionCompleted(session);
+						await fulfillCreditCheckout(session, event);
 					}
 					break;
 				}
 
 				case 'customer.subscription.updated': {
 					const subscription = event.data.object as Stripe.Subscription;
-					await updateUserMentorshipFromSubscription(subscription);
+					await db.$transaction(async (tx) => {
+						const eventResult = await tx.stripeWebhookEvent.createMany({
+							data: {
+								id: event.id,
+								type: event.type,
+								externalObjectId: subscription.id,
+								stripeCreatedAt: new Date(event.created * 1000)
+							},
+							skipDuplicates: true
+						});
+						if (eventResult.count > 0) {
+							await updateUserMentorshipFromSubscription(subscription, tx);
+						}
+					});
 					break;
 				}
 
 				case 'customer.subscription.deleted': {
 					const subscription = event.data.object as Stripe.Subscription;
-					await handleSubscriptionDeleted(subscription);
+					await db.$transaction(async (tx) => {
+						const eventResult = await tx.stripeWebhookEvent.createMany({
+							data: {
+								id: event.id,
+								type: event.type,
+								externalObjectId: subscription.id,
+								stripeCreatedAt: new Date(event.created * 1000)
+							},
+							skipDuplicates: true
+						});
+						if (eventResult.count > 0) {
+							await handleSubscriptionDeleted(subscription, tx);
+						}
+					});
 					break;
 				}
 			}
@@ -80,31 +100,4 @@ export async function POST(req: Request) {
 	}
 
 	return NextResponse.json({ received: true }, { status: 200 });
-}
-
-/**
- * Deal with one-time payments (purchase of credits)
- */
-async function handleCheckoutSessionCompleted(
-	session: Stripe.Checkout.Session
-) {
-	const customerId =
-		typeof session.customer === 'string'
-			? session.customer
-			: session.customer?.id;
-
-	if (!customerId) {
-		return NextResponse.json({ error: 'User not found' }, { status: 404 });
-	}
-	const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-		expand: ['data.price.product']
-	});
-
-	for (const item of lineItems.data) {
-		const credits = Number.parseInt(item.price?.metadata?.credits ?? '0', 10);
-		if (credits > 0) {
-			await addUserCredits(customerId, credits);
-			console.log(`User purchased ${credits} credits`);
-		}
-	}
 }

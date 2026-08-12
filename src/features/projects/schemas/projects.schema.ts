@@ -2,7 +2,8 @@ import { ProjectMethodologyEnum } from '@prisma/client';
 import { z } from 'zod';
 
 export const createProjectSchema = z.object({
-	projectTemplateId: z.string()
+	projectTemplateId: z.string(),
+	idempotencyKey: z.string().uuid()
 });
 
 export const updateProjectSchema = z.object({

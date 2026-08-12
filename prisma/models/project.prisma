@@ -1,18 +1,19 @@
 model Project {
-  id              String                 @id @default(cuid())
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  title           String
-  description     String
-  methodology     ProjectMethodologyEnum @default(SCRUM)
-  minParticipants Int
-  maxParticipants Int
-  accessType      ProjectAccessTypeEnum
-  difficulty      ProjectDifficultyEnum
-  creditCost      Int?
-  figmaProjectUrl String?
-  publicCode      String?                @unique
-  nextTaskNumber  Int                    @default(1)
+  id                     String                 @id @default(cuid())
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  title                  String
+  description            String
+  methodology            ProjectMethodologyEnum @default(SCRUM)
+  minParticipants        Int
+  maxParticipants        Int
+  accessType             ProjectAccessTypeEnum
+  difficulty             ProjectDifficultyEnum
+  creditCost             Int?
+  figmaProjectUrl        String?
+  publicCode             String?                @unique
+  creationIdempotencyKey String?                @unique
+  nextTaskNumber         Int                    @default(1)
 
   canceledAt                    DateTime?
   canceledById                  String?

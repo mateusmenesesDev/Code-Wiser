@@ -1,6 +1,7 @@
 'use client';
 
 import { Sparkles } from 'lucide-react';
+import { useRef } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -25,11 +26,18 @@ interface BuyCreditsButtonProps {
 }
 
 export function BuyCreditsButton({ creditId }: BuyCreditsButtonProps) {
+	const checkoutRequestKey = useRef<string | null>(null);
+
 	const handleClick = async () => {
 		try {
 			toast.info('Payment Processing');
+			checkoutRequestKey.current ??= crypto.randomUUID();
 			const response = await fetch('/api/checkout_sessions', {
 				method: 'POST',
+				headers: {
+					'content-type': 'application/json',
+					'idempotency-key': checkoutRequestKey.current
+				},
 				body: JSON.stringify({
 					credit: creditId as CheckoutInput['credit'],
 					mode: 'payment'
@@ -49,8 +57,8 @@ export function BuyCreditsButton({ creditId }: BuyCreditsButtonProps) {
 	};
 
 	return (
-		<Button onClick={handleClick} variant="primary" disabled>
-			Buy Now (Coming Soon)
+		<Button onClick={handleClick} variant="primary">
+			Buy Now
 		</Button>
 	);
 }

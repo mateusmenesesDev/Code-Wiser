@@ -29,6 +29,14 @@ export async function POST(request: Request) {
 		);
 	}
 
+	const idempotencyKey = request.headers.get('idempotency-key');
+	if (!idempotencyKey) {
+		return NextResponse.json(
+			{ error: 'Missing idempotency-key header' },
+			{ status: 400 }
+		);
+	}
+
 	try {
 		const user = await db.user.findUnique({
 			where: { id: session.userId }
@@ -51,21 +59,26 @@ export async function POST(request: Request) {
 		const headersList = headers();
 		const origin = headersList.get('origin');
 
-		const checkoutSession = await stripe.checkout.sessions.create({
-			customer: stripeCustomerId,
-			line_items: [
-				{
-					price: priceId,
-					quantity: 1
+		const checkoutSession = await stripe.checkout.sessions.create(
+			{
+				customer: stripeCustomerId,
+				line_items: [
+					{
+						price: priceId,
+						quantity: 1
+					}
+				],
+				mode,
+				success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+				cancel_url: `${origin}/canceled?canceled=true`,
+				metadata: {
+					mode: mode === 'payment' ? 'credits' : 'subscription'
 				}
-			],
-			mode,
-			success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${origin}/canceled?canceled=true`,
-			metadata: {
-				mode: mode === 'payment' ? 'credits' : 'subscription'
+			},
+			{
+				idempotencyKey
 			}
-		});
+		);
 		if (!checkoutSession.url) {
 			throw new Error('No session URL');
 		}

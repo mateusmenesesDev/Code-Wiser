@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 export const createPRReviewSchema = z.object({
 	taskId: z.string(),
-	prUrl: z.string()
+	prUrl: z.string(),
+	idempotencyKey: z.string().uuid()
 });
 
 export const approvePRSchema = z.object({

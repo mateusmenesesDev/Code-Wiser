@@ -13,6 +13,7 @@ export type UpdatePRReviewUrlInput = z.infer<typeof updatePRReviewUrlSchema>;
 export interface RequestCodeReviewInput {
 	taskId: string;
 	prUrl: string;
+	idempotencyKey: string;
 }
 
 export function usePRReview() {

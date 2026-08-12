@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -33,6 +33,7 @@ import { api } from '~/trpc/react';
 
 const editUserSchema = z.object({
 	credits: z.number().int().min(0).optional(),
+	creditAdjustmentReason: z.string().trim().max(500).optional(),
 	mentorshipStatus: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 	mentorshipType: z
 		.enum(['MONTHLY', 'QUARTERLY', 'SEMIANNUAL'])
@@ -63,19 +64,9 @@ export function EditUserDialog({
 		enabled: open && !!userId
 	});
 
-	const updateUserMutation = api.user.update.useMutation({
-		onSuccess: async () => {
-			toast.success('User updated successfully');
-			// Invalidate queries to refresh the UI
-			await utils.user.listAll.invalidate();
-			await utils.user.getById.invalidate(userId);
-			onUserUpdated();
-			onOpenChange(false);
-		},
-		onError: (error) => {
-			toast.error(`Failed to update user: ${error.message}`);
-		}
-	});
+	const updateUserMutation = api.user.update.useMutation();
+	const adjustCreditsMutation = api.user.adjustCredits.useMutation();
+	const creditAdjustmentKey = useRef<string | null>(null);
 
 	const resetSessionsMutation = api.user.resetUserWeeklySessions.useMutation({
 		onSuccess: async () => {
@@ -94,6 +85,7 @@ export function EditUserDialog({
 		resolver: zodResolver(editUserSchema),
 		defaultValues: {
 			credits: undefined,
+			creditAdjustmentReason: '',
 			mentorshipStatus: undefined,
 			mentorshipType: null,
 			mentorshipStartDate: null,
@@ -106,6 +98,7 @@ export function EditUserDialog({
 		if (user) {
 			form.reset({
 				credits: user.credits,
+				creditAdjustmentReason: '',
 				mentorshipStatus: user.mentorshipStatus,
 				mentorshipType: user.mentorshipType ?? null,
 				mentorshipStartDate: user.mentorshipStartDate
@@ -119,20 +112,49 @@ export function EditUserDialog({
 		}
 	}, [user, form]);
 
-	const onSubmit = (data: EditUserFormData) => {
-		updateUserMutation.mutate({
-			id: userId,
-			credits: data.credits,
-			mentorshipStatus: data.mentorshipStatus,
-			mentorshipType: data.mentorshipType ?? undefined,
-			mentorshipStartDate: data.mentorshipStartDate
-				? new Date(data.mentorshipStartDate)
-				: null,
-			mentorshipEndDate: data.mentorshipEndDate
-				? new Date(data.mentorshipEndDate)
-				: null,
-			weeklyMentorshipSessions: data.weeklyMentorshipSessions
-		});
+	const onSubmit = async (data: EditUserFormData) => {
+		const currentCredits = user?.credits ?? 0;
+		const creditDelta = (data.credits ?? currentCredits) - currentCredits;
+		if (creditDelta !== 0 && !data.creditAdjustmentReason) {
+			toast.error('A reason is required for credit adjustments');
+			return;
+		}
+
+		try {
+			await updateUserMutation.mutateAsync({
+				id: userId,
+				mentorshipStatus: data.mentorshipStatus,
+				mentorshipType: data.mentorshipType ?? undefined,
+				mentorshipStartDate: data.mentorshipStartDate
+					? new Date(data.mentorshipStartDate)
+					: null,
+				mentorshipEndDate: data.mentorshipEndDate
+					? new Date(data.mentorshipEndDate)
+					: null,
+				weeklyMentorshipSessions: data.weeklyMentorshipSessions
+			});
+
+			if (creditDelta !== 0) {
+				creditAdjustmentKey.current ??= crypto.randomUUID();
+				await adjustCreditsMutation.mutateAsync({
+					userId,
+					delta: creditDelta,
+					reason: data.creditAdjustmentReason ?? '',
+					idempotencyKey: creditAdjustmentKey.current
+				});
+			}
+
+			creditAdjustmentKey.current = null;
+			toast.success('User updated successfully');
+			await utils.user.listAll.invalidate();
+			await utils.user.getById.invalidate(userId);
+			onUserUpdated();
+			onOpenChange(false);
+		} catch (error) {
+			toast.error(
+				`Failed to update user: ${error instanceof Error ? error.message : 'Unknown error'}`
+			);
+		}
 	};
 
 	if (isLoading) {
@@ -162,7 +184,7 @@ export function EditUserDialog({
 								name="credits"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Credits</FormLabel>
+										<FormLabel>Target Credits</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
@@ -175,6 +197,23 @@ export function EditUserDialog({
 															: undefined
 													)
 												}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={form.control}
+								name="creditAdjustmentReason"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Credit Adjustment Reason</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="Required when target credits change"
+												{...field}
 											/>
 										</FormControl>
 										<FormMessage />
@@ -308,8 +347,17 @@ export function EditUserDialog({
 								>
 									Cancel
 								</Button>
-								<Button type="submit" disabled={updateUserMutation.isPending}>
-									{updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
+								<Button
+									type="submit"
+									disabled={
+										updateUserMutation.isPending ||
+										adjustCreditsMutation.isPending
+									}
+								>
+									{updateUserMutation.isPending ||
+									adjustCreditsMutation.isPending
+										? 'Saving...'
+										: 'Save Changes'}
 								</Button>
 							</div>
 						</DialogFooter>

@@ -3,6 +3,7 @@
 import { ProjectAccessTypeEnum } from '@prisma/client';
 import { Check, ExternalLink, Loader2, Play, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -40,6 +41,7 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 	const isEnrolledId = isEnrolledProject(project.title);
 
 	const { createProject, isCreateProjectPending } = useProjectMutations();
+	const creationIdempotencyKey = useRef<string | null>(null);
 
 	const { userCredits, userHasMentorship, isUserMentorshipLoading } = useUser();
 	const hasInsufficientCredits = Boolean(
@@ -69,7 +71,11 @@ export function ProjectDetailSidebar({ project }: ProjectDetailSidebarProps) {
 			return toast.error('You need more credits to start this project');
 		}
 
-		createProject({ projectTemplateId: project.id });
+		creationIdempotencyKey.current ??= crypto.randomUUID();
+		createProject({
+			projectTemplateId: project.id,
+			idempotencyKey: creationIdempotencyKey.current
+		});
 	};
 
 	const isStartProjectDisabled =

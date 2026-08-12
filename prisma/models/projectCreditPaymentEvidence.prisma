@@ -2,10 +2,11 @@ model ProjectCreditPaymentEvidence {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  projectId String
-  userId    String
-  credits   Int
-  source    ProjectCreditPaymentEvidenceSource
+  projectId           String
+  userId              String
+  credits             Int
+  source              ProjectCreditPaymentEvidenceSource
+  creditTransactionId String?                            @unique
 
   projectInvitationId String?            @unique
   projectInvitation   ProjectInvitation? @relation(fields: [projectInvitationId], references: [id], onDelete: SetNull)

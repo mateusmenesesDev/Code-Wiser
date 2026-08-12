@@ -1,22 +1,16 @@
+import type { Prisma, PrismaClient } from '@prisma/client';
 import dayjs from 'dayjs';
 import type Stripe from 'stripe';
 import { db } from '~/server/db';
 
-export const addUserCredits = async (
-	stripeCustomerId: string,
-	credits: number
-) => {
-	return await db.user.update({
-		where: { stripeCustomerId },
-		data: { credits: { increment: credits } }
-	});
-};
+type UserDatabase = PrismaClient | Prisma.TransactionClient;
 
 export const updateUserMentorshipFromSubscription = async (
-	subscription: Stripe.Subscription
+	subscription: Stripe.Subscription,
+	database: UserDatabase = db
 ) => {
 	const customerId = subscription.customer as string;
-	const user = await db.user.findUnique({
+	const user = await database.user.findUnique({
 		where: { stripeCustomerId: customerId }
 	});
 	if (!user) {
@@ -53,7 +47,7 @@ export const updateUserMentorshipFromSubscription = async (
 				| 'SEMIANNUAL')
 		: 'MONTHLY';
 
-	await db.user.update({
+	await database.user.update({
 		where: { stripeCustomerId: customerId },
 		data: {
 			stripeSubscriptionId: subscription.id,
@@ -70,11 +64,12 @@ export const updateUserMentorshipFromSubscription = async (
 };
 
 export const handleSubscriptionDeleted = async (
-	subscription: Stripe.Subscription
+	subscription: Stripe.Subscription,
+	database: UserDatabase = db
 ) => {
 	const customerId = subscription.customer as string;
 
-	await db.user.update({
+	await database.user.update({
 		where: { stripeCustomerId: customerId },
 		data: {
 			mentorshipStatus: 'INACTIVE',

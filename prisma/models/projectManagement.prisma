@@ -140,7 +140,8 @@ model PullRequestReview {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  prUrl String
+  prUrl                 String
+  requestIdempotencyKey String? @unique
 
   status  PullRequestReviewStatusEnum @default(PENDING)
   comment String?

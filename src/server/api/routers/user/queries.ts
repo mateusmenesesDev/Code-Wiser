@@ -82,7 +82,6 @@ export async function getAllUsers(options?: {
 export async function updateUserAdmin(
 	id: string,
 	data: Partial<{
-		credits: number;
 		mentorshipStatus: MentorshipStatus;
 		mentorshipType: MentorshipType;
 		mentorshipStartDate: Date | null;

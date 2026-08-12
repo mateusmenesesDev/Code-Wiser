@@ -7,6 +7,7 @@ import {
 	updatePRReviewUrlSchema
 } from '~/features/prReview/schemas/prReview.schema';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
+import { applyCreditTransaction } from '~/server/services/creditLedger';
 import {
 	notifyPRRequested,
 	notifyPRResponse
@@ -175,6 +176,7 @@ export const prReviewMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { taskId, prUrl } = input;
 			const reviewerId = ctx.session.userId;
+			const requestIdempotencyKey = input.idempotencyKey;
 
 			const task = await ctx.db.task.findUnique({
 				where: { id: taskId },
@@ -206,8 +208,7 @@ export const prReviewMutations = {
 					id: true,
 					name: true,
 					email: true,
-					mentorshipStatus: true,
-					credits: true
+					mentorshipStatus: true
 				}
 			});
 
@@ -218,21 +219,39 @@ export const prReviewMutations = {
 				});
 			}
 
+			const existingReview = await ctx.db.pullRequestReview.findUnique({
+				where: { requestIdempotencyKey },
+				select: { taskId: true, reviewedById: true, prUrl: true }
+			});
+			if (existingReview) {
+				if (
+					existingReview.taskId !== taskId ||
+					existingReview.reviewedById !== reviewerId ||
+					existingReview.prUrl !== prUrl
+				) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'Review request key was already used for another review'
+					});
+				}
+				return {
+					success: true,
+					message: 'Code review requested successfully'
+				};
+			}
+
 			const CODE_REVIEW_COST = 5;
 			const isMentorshipActive = user.mentorshipStatus === 'ACTIVE';
 
-			if (!isMentorshipActive && user.credits < CODE_REVIEW_COST) {
-				throw new TRPCError({
-					code: 'BAD_REQUEST',
-					message: `Insufficient credits. Code review costs ${CODE_REVIEW_COST} credits.`
-				});
-			}
-
 			await ctx.db.$transaction(async (tx) => {
 				if (!isMentorshipActive) {
-					await tx.user.update({
-						where: { id: reviewerId },
-						data: { credits: { decrement: CODE_REVIEW_COST } }
+					await applyCreditTransaction(tx, {
+						userId: reviewerId,
+						type: 'CONSUMPTION',
+						value: -CODE_REVIEW_COST,
+						source: 'PR_REVIEW_REQUEST',
+						externalReference: taskId,
+						idempotencyKey: `pr-review:${requestIdempotencyKey}`
 					});
 				}
 
@@ -240,6 +259,7 @@ export const prReviewMutations = {
 					data: {
 						taskId,
 						prUrl,
+						requestIdempotencyKey,
 						status: PullRequestReviewStatusEnum.PENDING,
 						reviewedById: reviewerId,
 						isActive: true

@@ -1,6 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+import { applyCreditTransaction } from '~/server/services/creditLedger';
 import { adminResetUserSessions } from '~/server/services/mentorship/mentorshipService';
 import {
 	adminProcedure,
@@ -114,6 +115,85 @@ export const userRouter = createTRPCRouter({
 		});
 	}),
 
+	getCreditTransactions: protectedProcedure
+		.input(
+			z.object({
+				skip: z.number().int().min(0).default(0),
+				take: z.number().int().min(1).max(100).default(50)
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const [transactions, total, balance, ledger] = await Promise.all([
+				ctx.db.creditTransaction.findMany({
+					where: { userId: ctx.session.userId },
+					skip: input.skip,
+					take: input.take,
+					orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]
+				}),
+				ctx.db.creditTransaction.count({
+					where: { userId: ctx.session.userId }
+				}),
+				ctx.db.user.findUnique({
+					where: { id: ctx.session.userId },
+					select: { credits: true }
+				}),
+				ctx.db.creditTransaction.aggregate({
+					where: { userId: ctx.session.userId },
+					_sum: { value: true }
+				})
+			]);
+
+			return {
+				transactions,
+				total,
+				storedBalance: balance?.credits ?? 0,
+				ledgerBalance: ledger._sum.value ?? 0,
+				difference: (balance?.credits ?? 0) - (ledger._sum.value ?? 0)
+			};
+		}),
+
+	getCreditTransactionsForUser: adminProcedure
+		.input(
+			z.object({
+				userId: z.string(),
+				skip: z.number().int().min(0).default(0),
+				take: z.number().int().min(1).max(100).default(50)
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const [transactions, total, balance, ledger] = await Promise.all([
+				ctx.db.creditTransaction.findMany({
+					where: { userId: input.userId },
+					skip: input.skip,
+					take: input.take,
+					orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]
+				}),
+				ctx.db.creditTransaction.count({
+					where: { userId: input.userId }
+				}),
+				ctx.db.user.findUnique({
+					where: { id: input.userId },
+					select: { credits: true }
+				}),
+				ctx.db.creditTransaction.aggregate({
+					where: { userId: input.userId },
+					_sum: { value: true }
+				})
+			]);
+
+			if (!balance) {
+				throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+			}
+
+			return {
+				transactions,
+				total,
+				storedBalance: balance.credits,
+				ledgerBalance: ledger._sum.value ?? 0,
+				difference: balance.credits - (ledger._sum.value ?? 0)
+			};
+		}),
+
 	getMentorshipStatus: protectedProcedure.query(async ({ ctx }) => {
 		return ctx.db.user.findUnique({
 			where: { id: ctx.session.userId },
@@ -176,7 +256,6 @@ export const userRouter = createTRPCRouter({
 		.input(
 			z.object({
 				id: z.string(),
-				credits: z.number().int().optional(),
 				mentorshipStatus: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 				mentorshipType: z
 					.enum(['MONTHLY', 'QUARTERLY', 'SEMIANNUAL'])
@@ -189,6 +268,35 @@ export const userRouter = createTRPCRouter({
 		.mutation(async ({ input }) => {
 			const { id, ...data } = input;
 			return await updateUserAdmin(id, data);
+		}),
+
+	adjustCredits: adminProcedure
+		.input(
+			z.object({
+				userId: z.string(),
+				delta: z
+					.number()
+					.int()
+					.refine((value) => value !== 0),
+				reason: z.string().trim().min(1).max(500),
+				idempotencyKey: z.string().uuid()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const transaction = await ctx.db.$transaction((tx) =>
+				applyCreditTransaction(tx, {
+					userId: input.userId,
+					type: 'ADJUSTMENT',
+					value: input.delta,
+					source: 'ADMIN',
+					externalReference: input.userId,
+					idempotencyKey: `admin-adjustment:${input.idempotencyKey}`,
+					actorUserId: ctx.session.userId,
+					note: input.reason
+				})
+			);
+
+			return transaction;
 		}),
 
 	resetUserWeeklySessions: adminProcedure

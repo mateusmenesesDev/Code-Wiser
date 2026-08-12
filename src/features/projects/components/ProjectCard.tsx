@@ -14,6 +14,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -58,6 +59,7 @@ export function ProjectCard({
 	const { user } = useAuth();
 	const { openDialog } = useDialog('signIn');
 	const { createProjectAsync, isCreateProjectPending } = useProjectMutations();
+	const creationIdempotencyKey = useRef<string | null>(null);
 
 	const handleContinue = () => {
 		router.push(`/workspace/${projectId}`);
@@ -91,9 +93,11 @@ export function ProjectCard({
 			});
 		}
 
+		creationIdempotencyKey.current ??= crypto.randomUUID();
 		toast.promise(
 			createProjectAsync({
-				projectTemplateId: projectTemplate.id
+				projectTemplateId: projectTemplate.id,
+				idempotencyKey: creationIdempotencyKey.current
 			}),
 			{
 				loading: 'Creating project...',

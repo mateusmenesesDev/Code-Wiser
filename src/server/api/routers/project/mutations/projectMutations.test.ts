@@ -26,6 +26,14 @@ vi.mock('~/server/realtime', () => ({
 	getRealtimeService: () => ({})
 }));
 
+beforeEach(() => {
+	mockDb.creditTransaction.createMany.mockResolvedValue({ count: 1 });
+	mockDb.creditTransaction.findUnique.mockResolvedValue({
+		id: 'credit-transaction-id'
+	} as never);
+	mockDb.user.updateMany.mockResolvedValue({ count: 1 });
+});
+
 describe('project.createProject', () => {
 	const createCaller = createCallerFactory(projectRouter);
 
@@ -89,7 +97,8 @@ describe('project.createProject', () => {
 		mockDb.user.update.mockResolvedValue({} as never);
 
 		const result = await caller.createProject({
-			projectTemplateId: 'template-id'
+			projectTemplateId: 'template-id',
+			idempotencyKey: '33333333-3333-4333-8333-333333333333'
 		});
 
 		expect(result).toBe('project-id');
@@ -171,6 +180,49 @@ describe('project.createProject', () => {
 			timeout: 20_000
 		});
 	});
+
+	it('rolls back a paid project when the ledger rejects an insufficient balance', async () => {
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		mockDb.user.findUnique.mockResolvedValue({
+			id: 'admin-user-id',
+			credits: 5,
+			mentorshipStatus: 'INACTIVE'
+		} as never);
+		mockDb.projectTemplate.findUnique.mockResolvedValue({
+			id: 'template-id',
+			title: 'Paid project',
+			description: 'Template description',
+			methodology: 'SCRUM',
+			minParticipants: 1,
+			maxParticipants: 4,
+			accessType: 'CREDITS',
+			difficulty: 'BEGINNER',
+			credits: 10,
+			figmaProjectUrl: null,
+			publicCode: 'PAIDPROJECT',
+			nextTaskNumber: 1,
+			categoryId: null,
+			sprints: [],
+			epics: [],
+			tasks: []
+		} as never);
+		mockDb.project.findUnique.mockResolvedValue(null);
+		mockDb.project.findFirst.mockResolvedValue(null);
+		mockDb.project.create.mockResolvedValue({ id: 'project-id' } as never);
+		mockDb.creditTransaction.createMany.mockResolvedValue({ count: 1 });
+		mockDb.user.updateMany.mockResolvedValue({ count: 0 });
+
+		await expect(
+			caller.createProject({
+				projectTemplateId: 'template-id',
+				idempotencyKey: '22222222-2222-4222-8222-222222222222'
+			})
+		).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+		expect(mockDb.projectCreditPaymentEvidence.create).not.toHaveBeenCalled();
+	});
 });
 
 describe('project.cancelProject', () => {
@@ -222,13 +274,15 @@ describe('project.cancelProject', () => {
 			where: { projectId: 'project-id', status: 'PENDING' },
 			data: { status: 'CANCELED', canceledAt: expect.any(Date) }
 		});
-		expect(mockDb.user.update).toHaveBeenCalledWith({
-			where: { id: 'member-1' },
-			data: { credits: { increment: 10 } }
-		});
-		expect(mockDb.user.update).toHaveBeenCalledWith({
-			where: { id: 'member-2' },
-			data: { credits: { increment: 5 } }
+		expect(mockDb.creditTransaction.createMany).toHaveBeenCalledTimes(2);
+		expect(mockDb.creditTransaction.createMany).toHaveBeenCalledWith({
+			data: expect.objectContaining({
+				userId: 'member-1',
+				value: 10,
+				type: 'REFUND',
+				source: 'PROJECT_CANCELLATION'
+			}),
+			skipDuplicates: true
 		});
 		expect(mockDb.project.update).toHaveBeenCalledWith({
 			where: { id: 'project-id' },
@@ -333,9 +387,14 @@ describe('project.removeProjectMember', () => {
 				}
 			}
 		});
-		expect(mockDb.user.update).toHaveBeenCalledWith({
-			where: { id: 'removed-user-id' },
-			data: { credits: { increment: 10 } }
+		expect(mockDb.creditTransaction.createMany).toHaveBeenCalledWith({
+			data: expect.objectContaining({
+				userId: 'removed-user-id',
+				value: 10,
+				type: 'REFUND',
+				source: 'PROJECT_MEMBER_REMOVAL'
+			}),
+			skipDuplicates: true
 		});
 		expect(mockDb.projectMemberRemovalAudit.create).toHaveBeenCalledWith(
 			expect.objectContaining({
