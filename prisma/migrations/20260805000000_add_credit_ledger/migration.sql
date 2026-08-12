@@ -1,6 +1,6 @@
-CREATE TYPE "CreditTransactionType" AS ENUM ('PURCHASE', 'CONSUMPTION', 'REFUND', 'ADJUSTMENT');
+CREATE TYPE IF NOT EXISTS "CreditTransactionType" AS ENUM ('PURCHASE', 'CONSUMPTION', 'REFUND', 'ADJUSTMENT');
 
-CREATE TYPE "CreditTransactionSource" AS ENUM (
+CREATE TYPE IF NOT EXISTS "CreditTransactionSource" AS ENUM (
   'STRIPE_CHECKOUT',
   'PROJECT_CREATION',
   'PROJECT_INVITATION_ACCEPTANCE',
@@ -11,7 +11,7 @@ CREATE TYPE "CreditTransactionSource" AS ENUM (
   'MIGRATION'
 );
 
-CREATE TABLE "CreditTransaction" (
+CREATE TABLE IF NOT EXISTS "CreditTransaction" (
   "id" STRING NOT NULL,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "userId" STRING NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE "CreditTransaction" (
   )
 );
 
-CREATE TABLE "StripeWebhookEvent" (
+CREATE TABLE IF NOT EXISTS "StripeWebhookEvent" (
   "id" STRING NOT NULL,
   "type" STRING NOT NULL,
   "externalObjectId" STRING NOT NULL,
@@ -42,18 +42,30 @@ CREATE TABLE "StripeWebhookEvent" (
   CONSTRAINT "StripeWebhookEvent_pkey" PRIMARY KEY ("id")
 );
 
-ALTER TABLE "Project" ADD COLUMN "creationIdempotencyKey" STRING;
-ALTER TABLE "PullRequestReview" ADD COLUMN "requestIdempotencyKey" STRING;
-ALTER TABLE "ProjectCreditPaymentEvidence" ADD COLUMN "creditTransactionId" STRING;
+ALTER TABLE "Project" SET (schema_locked = false);
+ALTER TABLE "PullRequestReview" SET (schema_locked = false);
+ALTER TABLE "ProjectCreditPaymentEvidence" SET (schema_locked = false);
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "creationIdempotencyKey" STRING;
+ALTER TABLE "PullRequestReview" ADD COLUMN IF NOT EXISTS "requestIdempotencyKey" STRING;
+ALTER TABLE "ProjectCreditPaymentEvidence" ADD COLUMN IF NOT EXISTS "creditTransactionId" STRING;
 
-CREATE UNIQUE INDEX "CreditTransaction_idempotencyKey_key" ON "CreditTransaction"("idempotencyKey");
-CREATE UNIQUE INDEX "CreditTransaction_reversalOfId_key" ON "CreditTransaction"("reversalOfId");
-CREATE INDEX "CreditTransaction_userId_createdAt_idx" ON "CreditTransaction"("userId", "createdAt");
-CREATE INDEX "CreditTransaction_source_externalReference_idx" ON "CreditTransaction"("source", "externalReference");
-CREATE INDEX "StripeWebhookEvent_externalObjectId_idx" ON "StripeWebhookEvent"("externalObjectId");
-CREATE UNIQUE INDEX "Project_creationIdempotencyKey_key" ON "Project"("creationIdempotencyKey");
-CREATE UNIQUE INDEX "PullRequestReview_requestIdempotencyKey_key" ON "PullRequestReview"("requestIdempotencyKey");
-CREATE UNIQUE INDEX "ProjectCreditPaymentEvidence_creditTransactionId_key" ON "ProjectCreditPaymentEvidence"("creditTransactionId");
+ALTER TABLE "CreditTransaction" SET (schema_locked = false);
+ALTER TABLE "StripeWebhookEvent" SET (schema_locked = false);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "CreditTransaction_idempotencyKey_key" ON "CreditTransaction"("idempotencyKey");
+CREATE UNIQUE INDEX IF NOT EXISTS "CreditTransaction_reversalOfId_key" ON "CreditTransaction"("reversalOfId");
+CREATE INDEX IF NOT EXISTS "CreditTransaction_userId_createdAt_idx" ON "CreditTransaction"("userId", "createdAt");
+CREATE INDEX IF NOT EXISTS "CreditTransaction_source_externalReference_idx" ON "CreditTransaction"("source", "externalReference");
+CREATE INDEX IF NOT EXISTS "StripeWebhookEvent_externalObjectId_idx" ON "StripeWebhookEvent"("externalObjectId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Project_creationIdempotencyKey_key" ON "Project"("creationIdempotencyKey");
+CREATE UNIQUE INDEX IF NOT EXISTS "PullRequestReview_requestIdempotencyKey_key" ON "PullRequestReview"("requestIdempotencyKey");
+CREATE UNIQUE INDEX IF NOT EXISTS "ProjectCreditPaymentEvidence_creditTransactionId_key" ON "ProjectCreditPaymentEvidence"("creditTransactionId");
+
+ALTER TABLE "CreditTransaction" SET (schema_locked = true);
+ALTER TABLE "StripeWebhookEvent" SET (schema_locked = true);
+ALTER TABLE "Project" SET (schema_locked = true);
+ALTER TABLE "PullRequestReview" SET (schema_locked = true);
+ALTER TABLE "ProjectCreditPaymentEvidence" SET (schema_locked = true);
 
 INSERT INTO "CreditTransaction" (
   "id",
@@ -75,4 +87,5 @@ SELECT
   concat('migration:p0.2:opening:', "id"),
   'Opening balance captured when the credit ledger was introduced'
 FROM "User"
-WHERE "credits" <> 0;
+WHERE "credits" <> 0
+ON CONFLICT ("idempotencyKey") DO NOTHING;
