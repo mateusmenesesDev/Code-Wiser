@@ -13,6 +13,7 @@ import type { Metadata } from 'next';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Toaster } from 'sonner';
 import Header from '~/common/components/layout/Header';
+import NavigationSidebar from '~/common/components/layout/NavigationSidebar';
 import { SyncActiveOrganization } from '~/features/auth/components/SyncActiveOrganizations';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { TRPCReactProvider } from '~/trpc/react';
@@ -70,7 +71,10 @@ export default async function RootLayout({
 								>
 									<HydrateClient>
 										<Header />
-										<main className="p-6">{children}</main>
+										<div className="min-h-[calc(100vh-4.5rem)] md:flex">
+											<NavigationSidebar />
+											<main className="min-w-0 flex-1 p-6">{children}</main>
+										</div>
 									</HydrateClient>
 									<Toaster richColors />
 								</ThemeProvider>

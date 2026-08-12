@@ -1,113 +1,50 @@
-import type { LucideIcon } from 'lucide-react';
-import {
-	Calendar,
-	ChevronDown,
-	CreditCard,
-	FolderOpen,
-	LogIn,
-	MessageSquare,
-	User
-} from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
+import { ChevronDown, LogIn, User } from 'lucide-react';
 import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage
 } from '~/common/components/ui/avatar';
+import { Button } from '~/common/components/ui/button';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger
 } from '~/common/components/ui/dropdown-menu';
-
-import { Protect } from '@clerk/nextjs';
-import { Button } from '~/common/components/ui/button';
-import { MENU_ITEMS_WITH_PERMISSION } from '~/common/constants/menuItem';
 import { useAuth } from '~/features/auth/hooks/useAuth';
-import { FeedbackDialog } from '~/features/feedback/FeedbackDialog';
-import { api } from '~/trpc/react';
 
 export default function HeaderAvatarMenu() {
 	const { user, signOut } = useAuth();
-	const [feedbackOpen, setFeedbackOpen] = useState(false);
-	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery();
 
 	return (
-		<>
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" className="flex items-center gap-2 p-2">
-						<Avatar className="h-8 w-8">
-							<AvatarImage src={user?.imageUrl} alt={user?.fullName ?? ''} />
-							<AvatarFallback>
-								<User className="h-4 w-4" />
-							</AvatarFallback>
-						</Avatar>
-						<span className="hidden font-medium text-sm sm:block">
-							{user?.fullName}
-						</span>
-						<ChevronDown className="h-4 w-4" />
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="w-48 border bg-background">
-					<DropdownMenuItem asChild className="cursor-pointer">
-						<Link href="/my-projects" className="flex items-center gap-2">
-							<FolderOpen className="h-4 w-4" />
-							My Projects
-						</Link>
-					</DropdownMenuItem>
-					{mentorshipStatus?.mentorshipStatus === 'ACTIVE' && (
-						<DropdownMenuItem asChild className="cursor-pointer">
-							<Link href="/mentorship" className="flex items-center gap-2">
-								<Calendar className="h-4 w-4" />
-								Mentorship
-							</Link>
-						</DropdownMenuItem>
-					)}
-					<DropdownMenuItem asChild className="cursor-pointer">
-						<Link href="/pricing" className="flex items-center gap-2">
-							<CreditCard className="h-4 w-4" />
-							Upgrade
-						</Link>
-					</DropdownMenuItem>
-					{MENU_ITEMS_WITH_PERMISSION.map((Item) => {
-						const Icon = Item.Icon as LucideIcon;
-						return (
-							Item.orgPermission && (
-								<Protect key={Item.href} role={Item.orgPermission.role}>
-									<DropdownMenuItem
-										asChild
-										disabled={Item.disabled}
-										className="cursor-pointer"
-									>
-										<Link href={Item.href} className="flex items-center gap-2">
-											<Icon className="h-4 w-4" />
-											{Item.label}
-										</Link>
-									</DropdownMenuItem>
-								</Protect>
-							)
-						);
-					})}
-					<DropdownMenuItem
-						onSelect={() => setFeedbackOpen(true)}
-						className="flex cursor-pointer items-center gap-2"
-					>
-						<MessageSquare className="h-4 w-4" />
-						Send Feedback
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						onClick={signOut}
-						className="flex items-center gap-2 text-destructive"
-					>
-						<LogIn className="h-4 w-4 rotate-180" />
-						Sign Out
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
-			<FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
-		</>
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button variant="ghost" className="flex items-center gap-2 p-2">
+					<Avatar className="h-8 w-8">
+						<AvatarImage src={user?.imageUrl} alt={user?.fullName ?? ''} />
+						<AvatarFallback>
+							<User className="h-4 w-4" aria-hidden="true" />
+						</AvatarFallback>
+					</Avatar>
+					<span className="hidden font-medium text-sm sm:block">
+						{user?.fullName}
+					</span>
+					<ChevronDown className="h-4 w-4" aria-hidden="true" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-48 border bg-background">
+				<DropdownMenuLabel>{user?.fullName ?? 'Account'}</DropdownMenuLabel>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem
+					onClick={signOut}
+					className="flex cursor-pointer items-center gap-2 text-destructive"
+				>
+					<LogIn className="h-4 w-4 rotate-180" aria-hidden="true" />
+					Sign Out
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

@@ -528,8 +528,7 @@ function MentorDashboardContent() {
 
 export default function MentorDashboardPage() {
 	return (
-		// biome-ignore lint/a11y/useValidAriaRole: <explanation>
-		<Protect role="org:admin">
+		<Protect permission="org:project:create">
 			<MentorDashboardContent />
 		</Protect>
 	);

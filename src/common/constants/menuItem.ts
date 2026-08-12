@@ -1,26 +1,31 @@
+import type { LucideIcon } from 'lucide-react';
 import {
 	BookOpen,
 	Calendar,
 	ClipboardCheck,
 	FolderOpen,
 	GitPullRequest,
+	LayoutDashboard,
 	MessageSquare,
-	UserCog,
-	Users
+	UserCog
 } from 'lucide-react';
 
-type MenuItem = {
+export type NavigationItem = {
 	href: string;
-	Icon: React.ComponentType<{ className?: string }>;
+	Icon: LucideIcon;
 	label: string;
 	loginRequired?: boolean;
-	comingSoon?: boolean;
-	orgPermission?: ClerkAuthorization;
-	disabled?: boolean;
 	requiresMentorship?: boolean;
+	permission?: ClerkAuthorization['permission'];
 };
 
-export const MENU_ITEMS: MenuItem[] = [
+export type NavigationGroup = {
+	label: string;
+	Icon: LucideIcon;
+	items: NavigationItem[];
+};
+
+export const WORK_NAV_ITEMS: NavigationItem[] = [
 	{
 		href: '/exercises',
 		Icon: BookOpen,
@@ -41,68 +46,89 @@ export const MENU_ITEMS: MenuItem[] = [
 	}
 ];
 
-export const MENU_ITEMS_WITH_PERMISSION: MenuItem[] = [
+export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
-		href: '/admin',
-		Icon: Users,
-		label: 'Mentor Dashboard',
-		orgPermission: {
-			permission: 'org:project:create',
-			role: 'org:admin'
-		}
-	},
-	{
-		href: '/admin/templates',
-		Icon: FolderOpen,
-		label: 'Admin Templates',
-		orgPermission: {
-			permission: 'org:project:edit_template',
-			role: 'org:admin'
-		}
-	},
-	{
-		href: '/admin/exercises',
-		Icon: BookOpen,
-		label: 'Admin Exercises',
-		orgPermission: {
-			permission: 'org:project:create',
-			role: 'org:admin'
-		}
-	},
-	{
-		href: '/admin/users',
+		label: 'People',
 		Icon: UserCog,
-		label: 'User Management',
-		orgPermission: {
-			permission: 'org:project:create',
-			role: 'org:admin'
-		}
+		items: [
+			{
+				href: '/admin/users',
+				Icon: UserCog,
+				label: 'People',
+				permission: 'org:project:create'
+			}
+		]
 	},
 	{
-		href: '/admin/pr-reviews',
-		Icon: GitPullRequest,
-		label: 'PR Reviews',
-		orgPermission: {
-			permission: 'org:project:create',
-			role: 'org:admin'
-		}
+		label: 'Content',
+		Icon: FolderOpen,
+		items: [
+			{
+				href: '/admin/templates',
+				Icon: FolderOpen,
+				label: 'Templates',
+				permission: 'org:project:edit_template'
+			},
+			{
+				href: '/admin/exercises',
+				Icon: BookOpen,
+				label: 'Exercise Management',
+				permission: 'org:project:create'
+			}
+		]
 	},
 	{
-		href: '/admin/exercise-reviews',
+		label: 'Reviews',
 		Icon: ClipboardCheck,
-		label: 'Exercise Reviews',
-		orgPermission: {
-			permission: 'org:project:create',
-			role: 'org:admin'
-		}
+		items: [
+			{
+				href: '/admin/pr-reviews',
+				Icon: GitPullRequest,
+				label: 'PR Reviews',
+				permission: 'org:project:create'
+			},
+			{
+				href: '/admin/exercise-reviews',
+				Icon: ClipboardCheck,
+				label: 'Exercise Reviews',
+				permission: 'org:project:create'
+			}
+		]
 	},
 	{
-		href: '/admin/feedback',
+		label: 'Feedback',
 		Icon: MessageSquare,
-		label: 'Feedback Inbox',
-		orgPermission: {
-			permission: 'org:project:create',
-			role: 'org:admin'
-		}
+		items: [
+			{
+				href: '/admin/feedback',
+				Icon: MessageSquare,
+				label: 'Feedback Inbox',
+				permission: 'org:project:create'
+			}
+		]
 	}
 ];
+
+export const ADMIN_DASHBOARD: NavigationItem = {
+	href: '/admin',
+	Icon: LayoutDashboard,
+	label: 'Dashboard',
+	permission: 'org:project:create'
+};
+
+export const isNavigationItemVisible = (
+	item: NavigationItem,
+	{
+		isSignedIn,
+		hasMentorship,
+		hasPermission
+	}: {
+		isSignedIn: boolean;
+		hasMentorship: boolean;
+		hasPermission: (permission: ClerkAuthorization['permission']) => boolean;
+	}
+) => {
+	if (item.loginRequired && !isSignedIn) return false;
+	if (item.requiresMentorship && !hasMentorship) return false;
+	return !item.permission || hasPermission(item.permission);
+};

@@ -118,8 +118,7 @@ function PRReviewsContent() {
 
 export default function PRReviewsPage() {
 	return (
-		// biome-ignore lint/a11y/useValidAriaRole: Clerk Protect component uses role prop for authorization
-		<Protect role="org:admin">
+		<Protect permission="org:project:create">
 			<PRReviewsContent />
 		</Protect>
 	);

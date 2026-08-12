@@ -25,7 +25,7 @@ export const onboardingTours: Record<OnboardingFlow, DriveStep[]> = {
 			popover: {
 				title: 'Open My Projects',
 				description:
-					'After joining a project, use the account menu or header navigation to continue from My Projects.'
+					'After joining a project, use the Work section in the sidebar to continue from My Projects.'
 			}
 		}
 	],

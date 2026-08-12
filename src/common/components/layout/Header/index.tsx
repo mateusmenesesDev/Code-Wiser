@@ -9,10 +9,6 @@ import { Button } from '~/common/components/ui/button';
 
 import { Calendar, LogIn, Moon, Sparkles, Sun } from 'lucide-react';
 import { Switch } from '~/common/components/ui/switch';
-import {
-	MENU_ITEMS,
-	MENU_ITEMS_WITH_PERMISSION
-} from '~/common/constants/menuItem';
 import { useDialog } from '~/common/hooks/useDialog';
 import SignInDialog from '~/features/auth/components/Signin/SigninDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
@@ -20,17 +16,16 @@ import { NotificationBell } from '~/features/notifications/components/Notificati
 import { api } from '~/trpc/react';
 import CodeWiseIcon from '../../icons/CodeWiseIcon';
 import HeaderAvatarMenu from './HeaderAvatarMenu';
-import { MenuItem, ProtectedMenuItem } from './HeaderItem';
 
 const Header = () => {
 	const { openDialog } = useDialog('signIn');
 	const { theme, setTheme } = useTheme();
 	const [mounted, setMounted] = useState(false);
 
-	// Avoid hydration mismatch by only rendering theme-dependent UI after mount
 	useEffect(() => {
 		setMounted(true);
 	}, []);
+
 	const { user } = useAuth();
 	const isLoggedIn = !!user;
 	const {
@@ -49,25 +44,6 @@ const Header = () => {
 		enabled: shouldShowCreditsBadge
 	});
 
-	// Filter menu items based on mentorship status
-	const filteredMenuItems = MENU_ITEMS.filter((item) => {
-		if (item.requiresMentorship) {
-			return hasActiveMentorship;
-		}
-		return true;
-	});
-
-	const publicMenuItems = filteredMenuItems.filter(
-		(item) => !item.loginRequired
-	);
-	const privateMenuItems = filteredMenuItems.filter(
-		(item) => item.loginRequired
-	);
-	const loggedInMenuItems = [
-		...privateMenuItems,
-		...MENU_ITEMS_WITH_PERMISSION
-	];
-
 	return (
 		<header className="border-b bg-background/80 backdrop-blur-md">
 			<div className="w-full px-4 py-2 sm:px-6 lg:px-8">
@@ -76,65 +52,49 @@ const Header = () => {
 						<CodeWiseIcon />
 					</Link>
 
-					{/* Navigation */}
-					<nav className="hidden flex-1 items-center justify-center gap-4 md:flex lg:gap-6 xl:gap-8">
-						{publicMenuItems.map((item) => (
-							<MenuItem key={item.href} item={item} />
-						))}
-						{isLoggedIn &&
-							loggedInMenuItems.map((item) =>
-								!item.orgPermission ? (
-									<MenuItem key={item.href} item={item} />
-								) : (
-									<ProtectedMenuItem key={item.href} item={item} />
-								)
-							)}
-					</nav>
-
-					{/* Right Section */}
 					<div className="flex shrink-0 items-center gap-4">
 						<div className="flex items-center gap-2">
-							<Sun className="h-4 w-4" />
+							<Sun className="h-4 w-4" aria-hidden="true" />
 							{mounted ? (
 								<Switch
 									checked={theme === 'dark'}
+									aria-label="Toggle dark mode"
 									onCheckedChange={() =>
 										setTheme(theme === 'dark' ? 'light' : 'dark')
 									}
 								/>
 							) : (
-								<Switch checked={false} disabled />
+								<Switch checked={false} disabled aria-label="Toggle dark mode" />
 							)}
-							<Moon className="h-4 w-4" />
+							<Moon className="h-4 w-4" aria-hidden="true" />
 						</div>
 
 						{isLoggedIn ? (
 							<>
 								{hasActiveMentorship ? (
-									<Link href="/mentorship">
-										<Badge variant="success" className="whitespace-nowrap">
-											<Calendar className="mr-1 h-3 w-3" />
-											Mentorship Active
+									<Badge variant="success" className="whitespace-nowrap">
+										<Calendar className="mr-1 h-3 w-3" aria-hidden="true" />
+										Mentorship Active
+									</Badge>
+								) : shouldShowCreditsBadge && !mentorshipStatusLoading ? (
+									<Link
+										href="/pricing"
+										aria-label="View pricing and upgrade"
+									>
+										<Badge
+											variant="purple-gradient"
+											className="whitespace-nowrap"
+											data-onboarding="user-credits"
+										>
+											<Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
+											{userCredits?.credits ?? 0} credits
 										</Badge>
 									</Link>
-								) : shouldShowCreditsBadge && !mentorshipStatusLoading ? (
-									<Badge
-										variant="purple-gradient"
-										className="whitespace-nowrap"
-										data-onboarding="user-credits"
-									>
-										<Sparkles className="mr-1 h-3 w-3" />
-										{userCredits?.credits ?? 0} credits
-									</Badge>
 								) : null}
 
-								{/* Notifications */}
 								<NotificationBell />
 
-								{/* User Menu */}
-								<span data-onboarding="my-projects-access">
-									<HeaderAvatarMenu />
-								</span>
+								<HeaderAvatarMenu />
 							</>
 						) : (
 							<div className="flex items-center gap-3">
@@ -143,7 +103,7 @@ const Header = () => {
 									size="sm"
 									onClick={() => openDialog('signIn')}
 								>
-									<LogIn className="mr-2 h-4 w-4" />
+									<LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
 									Sign In
 								</Button>
 								<Button
