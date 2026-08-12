@@ -29,7 +29,7 @@ import type { EpicApiOutput, EpicInput } from '../types/Epic.type';
 
 interface EpicDialogProps {
 	projectId: string;
-	epic?: EpicApiOutput;
+	epic?: EpicApiOutput | null;
 	isTemplate?: boolean;
 }
 
