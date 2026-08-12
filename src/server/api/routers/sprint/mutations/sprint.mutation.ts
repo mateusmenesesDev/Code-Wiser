@@ -9,7 +9,9 @@ import {
 import { protectedProcedure } from '~/server/api/trpc';
 import {
 	assertProjectIsActive,
-	userHasAccessToProject
+	assertProjectResourceAccess,
+	userHasAccessToProject,
+	userHasAccessToProjectTemplate
 } from '~/server/utils/auth';
 
 export const sprintMutations = {
@@ -19,9 +21,10 @@ export const sprintMutations = {
 			const { title, description, startDate, endDate, projectId, isTemplate } =
 				input;
 
-			const hasAccess = await userHasAccessToProject(ctx, projectId);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			if (isTemplate) {
+				await userHasAccessToProjectTemplate(ctx, projectId);
+			} else {
+				await userHasAccessToProject(ctx, projectId);
 			}
 			if (!isTemplate) {
 				await assertProjectIsActive(ctx.db, projectId);
@@ -81,13 +84,7 @@ export const sprintMutations = {
 				});
 			}
 
-			const hasAccess = await userHasAccessToProject(
-				ctx,
-				existingSprint.projectId ?? ''
-			);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
-			}
+			await assertProjectResourceAccess(ctx, existingSprint);
 			if (existingSprint.projectId) {
 				await assertProjectIsActive(ctx.db, existingSprint.projectId);
 			}
@@ -132,15 +129,8 @@ export const sprintMutations = {
 				});
 			}
 
-			// Only verify access for non-template projects
+			await assertProjectResourceAccess(ctx, existingSprint);
 			if (existingSprint.projectId) {
-				const hasAccess = await userHasAccessToProject(
-					ctx,
-					existingSprint.projectId
-				);
-				if (!hasAccess) {
-					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
-				}
 				await assertProjectIsActive(ctx.db, existingSprint.projectId);
 			}
 
@@ -162,21 +152,19 @@ export const sprintMutations = {
 
 			const sprints = await ctx.db.sprint.findMany({
 				where: { id: { in: items.map((item) => item.id) } },
-				select: { projectId: true }
+				select: { projectId: true, projectTemplateId: true }
 			});
-			const projectIds = [
-				...new Set(
-					sprints
-						.map((sprint) => sprint.projectId)
-						.filter((id): id is string => id !== null)
-				)
-			];
-			for (const projectId of projectIds) {
-				const hasAccess = await userHasAccessToProject(ctx, projectId);
-				if (!hasAccess) {
-					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			if (sprints.length !== items.length) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'One or more sprints were not found'
+				});
+			}
+			for (const sprint of sprints) {
+				await assertProjectResourceAccess(ctx, sprint);
+				if (sprint.projectId) {
+					await assertProjectIsActive(ctx.db, sprint.projectId);
 				}
-				await assertProjectIsActive(ctx.db, projectId);
 			}
 
 			await ctx.db.$transaction(
@@ -203,13 +191,7 @@ export const sprintMutations = {
 				throw new TRPCError({ code: 'NOT_FOUND', message: 'Sprint not found' });
 			}
 
-			const hasAccess = await userHasAccessToProject(
-				ctx,
-				sprint.projectId ?? ''
-			);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
-			}
+			await assertProjectResourceAccess(ctx, sprint);
 			if (sprint.projectId) {
 				await assertProjectIsActive(ctx.db, sprint.projectId);
 			}
@@ -248,13 +230,7 @@ export const sprintMutations = {
 				throw new TRPCError({ code: 'NOT_FOUND', message: 'Sprint not found' });
 			}
 
-			const hasAccess = await userHasAccessToProject(
-				ctx,
-				sprint.projectId ?? ''
-			);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
-			}
+			await assertProjectResourceAccess(ctx, sprint);
 			if (sprint.projectId) {
 				await assertProjectIsActive(ctx.db, sprint.projectId);
 			}

@@ -53,9 +53,27 @@ If user fields or onboarding state change, update the Prisma user model and this
 
 `CLERK_WEBHOOK_SECRET` is validated in `src/env.js` and required by the Clerk webhook route. Clerk publishable/secret keys are deployment configuration, not code-level setup guidance.
 
+## Resource access matrix
+
+Server procedures must authorize the resource they receive, not trust a project ID supplied by the client.
+
+| Resource | Learner | Mentor | Admin |
+| --- | --- | --- | --- |
+| Own profile and credits | Own credits/status only | Own profile/status only | User administration through `adminProcedure` |
+| Approved template catalog | Public approved content | Public approved content | All template content and mutations |
+| Instantiated project | Project member only | Project member only | All projects |
+| Project task, sprint, epic, comment, attachment, planning poker and PR review | Member of the owning project | Member of the owning project | All project resources |
+| Template task, sprint, epic and attachment | No access | No access | Admin only |
+| Project invitation | Recipient for read/accept/decline | Recipient for read/accept/decline | Project administration |
+| Notifications | Own notifications only | Own notifications only | No cross-user notification access by default |
+
+A resource with both `projectId` and `projectTemplateId` is invalid and must not silently fall through to the project path. Procedures that accept `isTemplate` must verify that the referenced resource belongs to the selected project or template.
+
 ## Review checklist
 
 - Is every server mutation protected by the right tRPC procedure or `auth()` check?
 - Is ownership checked after authentication, not inferred from UI state?
 - Are admin-only pages backed by `adminProcedure`?
+- Are task, sprint, epic, comment, attachment and review lookups scoped to their owning project?
+- Are template resources restricted to admins?
 - Are webhook handlers signature-verified before side effects?

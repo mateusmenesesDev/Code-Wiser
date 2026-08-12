@@ -1,4 +1,3 @@
-import type { PrismaClient } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { UTApi } from 'uploadthing/server';
 import {
@@ -6,52 +5,16 @@ import {
 	getFileExtension,
 	isAllowedAttachmentExtension
 } from '~/features/task/schemas/taskAttachment.schema';
-
-type AccessContext = {
-	db: PrismaClient;
-	session: { userId: string };
-	isAdmin: boolean;
-};
+import {
+	type ResourceAccessContext,
+	assertTaskAccess
+} from '~/server/utils/auth';
 
 export async function assertCanAccessTaskAttachments(
-	ctx: AccessContext,
+	ctx: ResourceAccessContext,
 	taskId: string
 ) {
-	const task = await ctx.db.task.findUnique({
-		where: { id: taskId },
-		include: {
-			project: {
-				include: {
-					members: {
-						select: { id: true }
-					}
-				}
-			}
-		}
-	});
-
-	if (!task) {
-		throw new TRPCError({
-			code: 'NOT_FOUND',
-			message: 'Task not found'
-		});
-	}
-
-	const hasAccess =
-		ctx.isAdmin ||
-		Boolean(task.projectTemplateId) ||
-		Boolean(
-			task.project?.members.some((member) => member.id === ctx.session.userId)
-		);
-
-	if (!hasAccess) {
-		throw new TRPCError({
-			code: 'FORBIDDEN',
-			message: 'You do not have access to this task'
-		});
-	}
-
-	return task;
+	return assertTaskAccess(ctx, taskId);
 }
 
 export { getFileExtension };

@@ -1,31 +1,16 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { userDbSchema } from '~/features/schemas/auth.schema';
 import { adminResetUserSessions } from '~/server/services/mentorship/mentorshipService';
 import {
 	adminProcedure,
 	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure
+	protectedProcedure
 } from '../../trpc';
-import {
-	createUser,
-	deleteUser,
-	getAllUsers,
-	updateUserAdmin
-} from './queries';
+import { deleteUser, getAllUsers, updateUserAdmin } from './queries';
 
 export const userRouter = createTRPCRouter({
-	create: publicProcedure.input(userDbSchema).mutation(async ({ input }) => {
-		return await createUser({
-			email: input.email,
-			id: input.id,
-			name: input.name
-		});
-	}),
-
-	getById: publicProcedure.input(z.string()).query(async ({ input, ctx }) => {
+	getById: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {
 		const user = await ctx.db.user.findUnique({
 			where: {
 				id: input
@@ -136,7 +121,7 @@ export const userRouter = createTRPCRouter({
 		});
 	}),
 
-	getAvatar: protectedProcedure
+	getAvatar: adminProcedure
 		.input(
 			z.object({
 				userId: z.string()

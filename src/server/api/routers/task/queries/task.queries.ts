@@ -1,13 +1,18 @@
 import { clerkClient } from '@clerk/nextjs/server';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertTaskAccess,
+	userHasAccessToProject,
+	userHasAccessToProjectTemplate
+} from '~/server/utils/auth';
 
 export const taskQueries = {
 	getById: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
+			await assertTaskAccess(ctx, input.id);
+
 			const task = await ctx.db.task.findUnique({
 				where: { id: input.id },
 				include: {
@@ -43,20 +48,16 @@ export const taskQueries = {
 			})
 		)
 		.query(async ({ ctx, input }) => {
-			const hasAccess = await userHasAccessToProject(ctx, input.projectId);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			if (input.isTemplate) {
+				await userHasAccessToProjectTemplate(ctx, input.projectId);
+			} else {
+				await userHasAccessToProject(ctx, input.projectId);
 			}
 
 			const tasks = await ctx.db.task.findMany({
-				where: {
-					project: {
-						id: input.isTemplate ? undefined : input.projectId
-					},
-					projectTemplate: {
-						id: input.isTemplate ? input.projectId : undefined
-					}
-				},
+				where: input.isTemplate
+					? { projectTemplateId: input.projectId }
+					: { projectId: input.projectId },
 				include: {
 					project: { select: { publicCode: true } },
 					projectTemplate: { select: { publicCode: true } },

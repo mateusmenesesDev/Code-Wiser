@@ -12,8 +12,11 @@ import {
 	notifyTaskStatusChanged
 } from '~/server/services/notification/notificationService';
 import {
+	type ResourceAccessContext,
 	assertProjectIsActive,
-	userHasAccessToProject
+	assertProjectResourceAccess,
+	userHasAccessToProject,
+	userHasAccessToProjectTemplate
 } from '~/server/utils/auth';
 import { deleteUploadThingFiles } from '../attachments/taskAttachment.utils';
 import {
@@ -32,6 +35,44 @@ const createRelationshipUpdate = (
 	return id ? { connect: { id } } : { disconnect: true };
 };
 
+const assertTaskRelationsBelongToResource = async (
+	ctx: ResourceAccessContext,
+	projectId: string,
+	isTemplate: boolean,
+	epicId: string | null | undefined,
+	sprintId: string | null | undefined
+) => {
+	if (epicId) {
+		const epic = await ctx.db.epic.findFirst({
+			where: isTemplate
+				? { id: epicId, projectTemplateId: projectId }
+				: { id: epicId, projectId },
+			select: { id: true }
+		});
+		if (!epic) {
+			throw new TRPCError({
+				code: 'BAD_REQUEST',
+				message: 'Epic does not belong to this project'
+			});
+		}
+	}
+
+	if (sprintId) {
+		const sprint = await ctx.db.sprint.findFirst({
+			where: isTemplate
+				? { id: sprintId, projectTemplateId: projectId }
+				: { id: sprintId, projectId },
+			select: { id: true }
+		});
+		if (!sprint) {
+			throw new TRPCError({
+				code: 'BAD_REQUEST',
+				message: 'Sprint does not belong to this project'
+			});
+		}
+	}
+};
+
 export const taskMutations = {
 	create: protectedProcedure
 		.input(createTaskSchema)
@@ -39,10 +80,36 @@ export const taskMutations = {
 			const { isTemplate, projectId, epicId, sprintId, assigneeIds, ...rest } =
 				input;
 
-			const hasAccess = await userHasAccessToProject(ctx, projectId);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			if (isTemplate) {
+				await userHasAccessToProjectTemplate(ctx, projectId);
+			} else {
+				await userHasAccessToProject(ctx, projectId);
 			}
+
+			await assertTaskRelationsBelongToResource(
+				ctx,
+				projectId,
+				isTemplate,
+				epicId,
+				sprintId
+			);
+
+			if (!isTemplate && assigneeIds?.length) {
+				const members = await ctx.db.user.findMany({
+					where: {
+						id: { in: assigneeIds },
+						projects: { some: { id: projectId } }
+					},
+					select: { id: true }
+				});
+				if (members.length !== new Set(assigneeIds).size) {
+					throw new TRPCError({
+						code: 'FORBIDDEN',
+						message: 'Tasks can only be assigned to project members'
+					});
+				}
+			}
+
 			if (!isTemplate) {
 				await assertProjectIsActive(ctx.db, projectId);
 			}
@@ -127,6 +194,7 @@ export const taskMutations = {
 				select: {
 					id: true,
 					projectId: true,
+					projectTemplateId: true,
 					status: true,
 					blocked: true,
 					title: true,
@@ -157,16 +225,55 @@ export const taskMutations = {
 				});
 			}
 
-			// Only verify access for non-template projects
-			const hasAccess = await userHasAccessToProject(
-				ctx,
-				existingTask.projectId ?? ''
-			);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			await assertProjectResourceAccess(ctx, existingTask);
+			if (Boolean(existingTask.projectTemplateId) !== isTemplate) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Task resource type does not match the request'
+				});
+			}
+			if (
+				projectId &&
+				(existingTask.projectId ?? existingTask.projectTemplateId) !== projectId
+			) {
+				if (isTemplate) {
+					await userHasAccessToProjectTemplate(ctx, projectId);
+				} else {
+					await userHasAccessToProject(ctx, projectId);
+					await assertProjectIsActive(ctx.db, projectId);
+				}
 			}
 			if (existingTask.projectId && !isTemplate) {
 				await assertProjectIsActive(ctx.db, existingTask.projectId);
+			}
+
+			const resourceId =
+				projectId ?? existingTask.projectId ?? existingTask.projectTemplateId;
+			if (!resourceId) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Task is not attached to a project resource'
+				});
+			}
+
+			await assertTaskRelationsBelongToResource(
+				ctx,
+				resourceId,
+				isTemplate,
+				epicId,
+				sprintId
+			);
+
+			if (assigneeIds && existingTask.project) {
+				const memberIds = new Set(
+					existingTask.project.members.map((member) => member.id)
+				);
+				if (assigneeIds.some((assigneeId) => !memberIds.has(assigneeId))) {
+					throw new TRPCError({
+						code: 'FORBIDDEN',
+						message: 'Tasks can only be assigned to project members'
+					});
+				}
 			}
 
 			const oldAssigneeIds = existingTask.assignees.map((a) => a.id);
@@ -318,7 +425,8 @@ export const taskMutations = {
 					id: true,
 					order: true,
 					status: true,
-					projectId: true
+					projectId: true,
+					projectTemplateId: true
 				}
 			});
 
@@ -329,19 +437,11 @@ export const taskMutations = {
 				});
 			}
 
-			const projectIds = [
-				...new Set(
-					tasks
-						.map((task) => task.projectId)
-						.filter((id): id is string => id !== null)
-				)
-			];
-			for (const projectId of projectIds) {
-				const hasAccess = await userHasAccessToProject(ctx, projectId);
-				if (!hasAccess) {
-					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			for (const task of tasks) {
+				await assertProjectResourceAccess(ctx, task);
+				if (task.projectId) {
+					await assertProjectIsActive(ctx.db, task.projectId);
 				}
-				await assertProjectIsActive(ctx.db, projectId);
 			}
 
 			const currentById = new Map(tasks.map((task) => [task.id, task]));
@@ -381,15 +481,8 @@ export const taskMutations = {
 				});
 			}
 
-			// Only verify access for non-template projects
+			await assertProjectResourceAccess(ctx, existingTask);
 			if (existingTask.projectId) {
-				const hasAccess = await userHasAccessToProject(
-					ctx,
-					existingTask.projectId
-				);
-				if (!hasAccess) {
-					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
-				}
 				await assertProjectIsActive(ctx.db, existingTask.projectId);
 			}
 
@@ -440,7 +533,8 @@ export const taskMutations = {
 					}
 				},
 				select: {
-					projectId: true
+					projectId: true,
+					projectTemplateId: true
 				}
 			});
 
@@ -451,22 +545,11 @@ export const taskMutations = {
 				});
 			}
 
-			// Get unique projectIds (only non-template)
-			const uniqueProjectIds = [
-				...new Set(
-					existingTasks
-						.map((task) => task.projectId)
-						.filter((id): id is string => id !== null)
-				)
-			];
-
-			// Verify access for all unique projects
-			for (const projectId of uniqueProjectIds) {
-				const hasAccess = await userHasAccessToProject(ctx, projectId);
-				if (!hasAccess) {
-					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			for (const task of existingTasks) {
+				await assertProjectResourceAccess(ctx, task);
+				if (task.projectId) {
+					await assertProjectIsActive(ctx.db, task.projectId);
 				}
-				await assertProjectIsActive(ctx.db, projectId);
 			}
 
 			const attachments = await ctx.db.taskAttachment.findMany({

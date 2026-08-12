@@ -35,6 +35,9 @@ describe('task.attachments', () => {
 			headers: new Headers()
 		});
 		caller = createCaller(ctx);
+		mockDb.project.findUnique.mockResolvedValue({
+			members: [{ id: 'user-1' }]
+		} as never);
 	});
 
 	const memberTask = {
@@ -133,6 +136,9 @@ describe('task.attachments', () => {
 			...memberTask,
 			project: { members: [{ id: 'other-user' }] }
 		} as never);
+		mockDb.project.findUnique.mockResolvedValue({
+			members: [{ id: 'other-user' }]
+		} as never);
 
 		await expect(
 			caller.task.attachments.create({
@@ -197,33 +203,25 @@ describe('task.attachments', () => {
 		});
 	});
 
-	it('allows attachments on template tasks for authenticated users', async () => {
-		const templateTask = {
+	it('rejects attachments on template tasks for non-admin users', async () => {
+		mockDb.task.findUnique.mockResolvedValue({
 			id: 'task-tpl',
 			projectId: null,
 			projectTemplateId: 'tpl-1',
 			project: null
-		};
-		mockDb.task.findUnique.mockResolvedValue(templateTask as never);
-		mockDb.taskAttachment.count.mockResolvedValue(0);
-		mockDb.taskAttachment.create.mockResolvedValue({
-			id: 'att-tpl',
-			taskId: 'task-tpl',
-			key: 'tpl-key',
-			uploader: { id: 'user-1', name: 'Mateus', email: 'm@example.com' }
 		} as never);
 
-		const result = await caller.task.attachments.create({
-			taskId: 'task-tpl',
-			url: 'https://utfs.io/f/tpl-key',
-			key: 'tpl-key',
-			originalFileName: 'notes.pdf',
-			displayName: 'notes.pdf',
-			contentType: 'application/pdf',
-			sizeBytes: 4000
-		});
-
-		expect(result.id).toBe('att-tpl');
+		await expect(
+			caller.task.attachments.create({
+				taskId: 'task-tpl',
+				url: 'https://utfs.io/f/tpl-key',
+				key: 'tpl-key',
+				originalFileName: 'notes.pdf',
+				displayName: 'notes.pdf',
+				contentType: 'application/pdf',
+				sizeBytes: 4000
+			})
+		).rejects.toMatchObject({ code: 'FORBIDDEN' });
 	});
 
 	it('renames only the display name without changing storage fields', async () => {

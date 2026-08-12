@@ -13,6 +13,7 @@ import {
 } from '~/server/services/notification/notificationService';
 import {
 	assertProjectIsActive,
+	assertTaskAccess,
 	userHasAccessToProject
 } from '~/server/utils/auth';
 
@@ -268,10 +269,20 @@ export const prReviewMutations = {
 
 			const review = await ctx.db.pullRequestReview.findUnique({
 				where: { id: reviewId },
-				select: { task: { select: { projectId: true } } }
+				select: {
+					taskId: true,
+					task: { select: { projectId: true } }
+				}
 			});
-			if (review?.task.projectId) {
-				await userHasAccessToProject(ctx, review.task.projectId);
+			if (!review) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'PR review not found'
+				});
+			}
+
+			await assertTaskAccess(ctx, review.taskId);
+			if (review.task.projectId) {
 				await assertProjectIsActive(ctx.db, review.task.projectId);
 			}
 

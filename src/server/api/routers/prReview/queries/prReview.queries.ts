@@ -1,10 +1,11 @@
 import type { PullRequestReviewStatusEnum } from '@prisma/client';
 import { z } from 'zod';
 import { filterPRReviewsSchema } from '~/features/prReview/schemas/prReview.schema';
-import { protectedProcedure } from '~/server/api/trpc';
+import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
+import { assertTaskAccess } from '~/server/utils/auth';
 
 export const prReviewQueries = {
-	getAll: protectedProcedure
+	getAll: adminProcedure
 		.input(filterPRReviewsSchema.optional())
 		.query(async ({ ctx, input }) => {
 			const where: {
@@ -73,6 +74,8 @@ export const prReviewQueries = {
 	getByTaskId: protectedProcedure
 		.input(z.object({ taskId: z.string() }))
 		.query(async ({ ctx, input }) => {
+			await assertTaskAccess(ctx, input.taskId);
+
 			const reviews = await ctx.db.pullRequestReview.findMany({
 				where: {
 					taskId: input.taskId
@@ -97,6 +100,8 @@ export const prReviewQueries = {
 	getActiveByTaskId: protectedProcedure
 		.input(z.object({ taskId: z.string() }))
 		.query(async ({ ctx, input }) => {
+			await assertTaskAccess(ctx, input.taskId);
+
 			const review = await ctx.db.pullRequestReview.findFirst({
 				where: {
 					taskId: input.taskId,

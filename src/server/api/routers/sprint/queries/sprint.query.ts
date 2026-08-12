@@ -1,7 +1,11 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectResourceAccess,
+	userHasAccessToProject,
+	userHasAccessToProjectTemplate
+} from '~/server/utils/auth';
 
 const sprintInclude = {
 	tasks: {
@@ -35,9 +39,10 @@ export const sprintQueries = {
 		.query(async ({ ctx, input }) => {
 			const { projectId, isTemplate = false } = input;
 
-			const hasAccess = await userHasAccessToProject(ctx, projectId);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			if (isTemplate) {
+				await userHasAccessToProjectTemplate(ctx, projectId);
+			} else {
+				await userHasAccessToProject(ctx, projectId);
 			}
 
 			const whereClause = isTemplate
@@ -73,7 +78,14 @@ export const sprintQueries = {
 				include: sprintInclude
 			});
 
-			if (!sprint) return null;
+			if (!sprint) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Sprint not found'
+				});
+			}
+
+			await assertProjectResourceAccess(ctx, sprint);
 
 			const taskCount = sprint.tasks.length;
 			const doneCount = sprint.tasks.filter((t) => t.status === 'DONE').length;

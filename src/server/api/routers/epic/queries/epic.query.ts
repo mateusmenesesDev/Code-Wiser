@@ -1,7 +1,11 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectResourceAccess,
+	userHasAccessToProject,
+	userHasAccessToProjectTemplate
+} from '~/server/utils/auth';
 
 const epicInclude = {
 	tasks: {
@@ -18,9 +22,10 @@ export const epicQueries = {
 		.query(async ({ ctx, input }) => {
 			const { projectId, isTemplate } = input;
 
-			const hasAccess = await userHasAccessToProject(ctx, projectId);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			if (isTemplate) {
+				await userHasAccessToProjectTemplate(ctx, projectId);
+			} else {
+				await userHasAccessToProject(ctx, projectId);
 			}
 
 			const epics = await ctx.db.epic.findMany({
@@ -44,6 +49,14 @@ export const epicQueries = {
 				include: epicInclude
 			});
 
+			if (!epic) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Epic not found'
+				});
+			}
+
+			await assertProjectResourceAccess(ctx, epic);
 			return epic;
 		})
 };

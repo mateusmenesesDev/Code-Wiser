@@ -1,7 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
+import { assertTaskAccess } from '~/server/utils/auth';
 
 export const getCommentsByTaskId = protectedProcedure
 	.input(
@@ -11,37 +11,7 @@ export const getCommentsByTaskId = protectedProcedure
 	)
 	.query(async ({ ctx, input }) => {
 		const { taskId } = input;
-		const userId = ctx.session.userId;
-
-		const task = await ctx.db.task.findUnique({
-			where: { id: taskId },
-			include: {
-				project: {
-					include: {
-						members: true
-					}
-				}
-			}
-		});
-
-		if (!task) {
-			throw new TRPCError({
-				code: 'NOT_FOUND',
-				message: 'Task not found'
-			});
-		}
-
-		const hasAccess =
-			ctx.isAdmin ||
-			task.projectTemplateId ||
-			task.project?.members.some((user: { id: string }) => user.id === userId);
-
-		if (!hasAccess) {
-			throw new TRPCError({
-				code: 'FORBIDDEN',
-				message: 'You do not have access to this task'
-			});
-		}
+		await assertTaskAccess(ctx, taskId);
 
 		const comments = await ctx.db.comment.findMany({
 			where: { taskId },

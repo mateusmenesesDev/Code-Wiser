@@ -7,7 +7,9 @@ import {
 import { protectedProcedure } from '~/server/api/trpc';
 import {
 	assertProjectIsActive,
-	userHasAccessToProject
+	assertProjectResourceAccess,
+	userHasAccessToProject,
+	userHasAccessToProjectTemplate
 } from '~/server/utils/auth';
 
 export const epicMutations = {
@@ -16,9 +18,10 @@ export const epicMutations = {
 		.mutation(async ({ ctx, input }) => {
 			const { title, description, projectId, isTemplate } = input;
 
-			const hasAccess = await userHasAccessToProject(ctx, projectId);
-			if (!hasAccess) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+			if (isTemplate) {
+				await userHasAccessToProjectTemplate(ctx, projectId);
+			} else {
+				await userHasAccessToProject(ctx, projectId);
 			}
 			if (!isTemplate) {
 				await assertProjectIsActive(ctx.db, projectId);
@@ -70,15 +73,8 @@ export const epicMutations = {
 				});
 			}
 
-			// Only verify access for non-template projects
+			await assertProjectResourceAccess(ctx, existingEpic);
 			if (existingEpic.projectId) {
-				const hasAccess = await userHasAccessToProject(
-					ctx,
-					existingEpic.projectId
-				);
-				if (!hasAccess) {
-					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
-				}
 				await assertProjectIsActive(ctx.db, existingEpic.projectId);
 			}
 
@@ -114,15 +110,8 @@ export const epicMutations = {
 				});
 			}
 
-			// Only verify access for non-template projects
+			await assertProjectResourceAccess(ctx, existingEpic);
 			if (existingEpic.projectId) {
-				const hasAccess = await userHasAccessToProject(
-					ctx,
-					existingEpic.projectId
-				);
-				if (!hasAccess) {
-					throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
-				}
 				await assertProjectIsActive(ctx.db, existingEpic.projectId);
 			}
 

@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { protectedProcedure } from '~/server/api/trpc';
+import { adminProcedure } from '~/server/api/trpc';
 
 export const sprintTemplateQueries = {
-	getAllSprints: protectedProcedure
+	getAllSprints: adminProcedure
 		.input(z.object({ projectTemplateId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const sprintTemplates = await ctx.db.sprint.findMany({
