@@ -26,7 +26,7 @@ export default function MyProjectsPage() {
 					</p>
 				</div>
 				<Button asChild>
-					<Link href="/">
+					<Link href="/projects">
 						<FolderOpen className="mr-2 h-4 w-4" />
 						Browse Projects
 					</Link>
@@ -81,7 +81,7 @@ export default function MyProjectsPage() {
 							Start your first project to begin your development journey
 						</p>
 						<Button asChild>
-							<Link href="/">Browse Available Projects</Link>
+							<Link href="/projects">Browse Available Projects</Link>
 						</Button>
 					</CardContent>
 				</Card>

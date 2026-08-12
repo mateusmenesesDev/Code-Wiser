@@ -27,6 +27,12 @@ export type NavigationGroup = {
 
 export const WORK_NAV_ITEMS: NavigationItem[] = [
 	{
+		href: '/',
+		Icon: LayoutDashboard,
+		label: 'Dashboard',
+		loginRequired: true
+	},
+	{
 		href: '/exercises',
 		Icon: BookOpen,
 		label: 'Exercises'
