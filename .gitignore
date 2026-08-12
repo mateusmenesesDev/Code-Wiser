@@ -7,6 +7,10 @@
 
 # testing
 /coverage
+/playwright/.auth
+/playwright/.artifacts
+/playwright/report
+/playwright/test-results
 
 # database
 /prisma/db.sqlite
@@ -15,6 +19,7 @@ db.sqlite
 
 # next.js
 /.next/
+/.next-e2e/
 /out/
 next-env.d.ts
 
@@ -26,6 +31,7 @@ next-env.d.ts
 *.pem
 
 # debug
+/test-results
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

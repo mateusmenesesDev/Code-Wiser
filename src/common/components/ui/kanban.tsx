@@ -136,6 +136,9 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
 
 	return (
 		<div
+			data-testid="task-card"
+			data-task-id={id}
+			data-task-title={title}
 			style={style}
 			{...listeners}
 			{...attributes}

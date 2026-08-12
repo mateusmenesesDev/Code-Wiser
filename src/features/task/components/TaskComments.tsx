@@ -203,13 +203,19 @@ function TaskCommentsContent({ taskId, isEditing }: TaskCommentsProps) {
 					{/* Add Comment */}
 					<div className="mt-6 space-y-2">
 						<Textarea
+							data-testid="new-comment-input"
 							placeholder="Add a comment... (Ctrl+Enter to submit)"
 							value={newComment}
 							onChange={(e) => setNewComment(e.target.value)}
 							onKeyDown={(e) => handleKeyDown(e)}
 							className="mb-2 min-h-[80px]"
 						/>
-						<Button onClick={handleAddComment} size="sm" type="button">
+						<Button
+							data-testid="add-comment-button"
+							onClick={handleAddComment}
+							size="sm"
+							type="button"
+						>
 							Add Comment
 						</Button>
 					</div>

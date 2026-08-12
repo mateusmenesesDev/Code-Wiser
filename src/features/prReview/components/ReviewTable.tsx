@@ -154,7 +154,11 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 							const project = review.task.project;
 
 							return (
-								<TableRow key={review.id}>
+								<TableRow
+									key={review.id}
+									data-testid="review-row"
+									data-task-id={review.taskId}
+								>
 									<TableCell className="font-medium">
 										<div className="font-mono text-muted-foreground text-xs">
 											{formatPublicTaskId(

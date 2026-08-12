@@ -131,7 +131,11 @@ export function ProjectCard({
 
 	return (
 		<>
-			<Card className="group hover:-translate-y-2 flex h-full flex-col overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl">
+			<Card
+				data-testid="project-card"
+				data-project-template-id={projectTemplate.id}
+				className="group hover:-translate-y-2 flex h-full flex-col overflow-hidden border-0 shadow-md transition-all duration-300 hover:shadow-xl"
+			>
 				{/* Thumbnail placeholder */}
 				{projectTemplate.images.length > 0 && (
 					<div className="relative h-48 w-full overflow-hidden">

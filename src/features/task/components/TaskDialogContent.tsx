@@ -292,6 +292,7 @@ export function TaskDialogContent({
 							</Label>
 							<Input
 								id="title"
+								data-testid="task-title-input"
 								{...form.register('title')}
 								placeholder="Task title"
 								className="w-full"
@@ -397,6 +398,7 @@ export function TaskDialogContent({
 											<div className="flex gap-2">
 												<Input
 													id="prUrl"
+													data-testid="pr-url-input"
 													type="url"
 													value={prUrl}
 													onChange={(e) => setPrUrl(e.target.value)}
@@ -448,6 +450,7 @@ export function TaskDialogContent({
 												PullRequestReviewStatusEnum.CHANGES_REQUESTED) && (
 											<div>
 												<Button
+													data-testid="request-code-review-button"
 													type="button"
 													onClick={() => {
 														const trimmedPrUrl = prUrl.trim();
@@ -531,7 +534,7 @@ export function TaskDialogContent({
 									form.setValue('status', next, { shouldDirty: true });
 								}}
 							>
-								<SelectTrigger>
+								<SelectTrigger aria-label="Task status">
 									<SelectValue placeholder="Select status" />
 								</SelectTrigger>
 								<SelectContent>
@@ -892,6 +895,7 @@ export function TaskDialogContent({
 							Cancel
 						</Button>
 						<Button
+							data-testid="save-task-button"
 							type="submit"
 							disabled={
 								form.formState.isSubmitting ||

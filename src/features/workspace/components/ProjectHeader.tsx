@@ -84,6 +84,7 @@ export default function ProjectHeader({
 					</p>
 					<div className="flex gap-2">
 						<Button
+							data-testid="create-task-button"
 							variant="outline"
 							size="sm"
 							className="gap-2"

@@ -127,14 +127,16 @@ export const isNavigationItemVisible = (
 	{
 		isSignedIn,
 		hasMentorship,
+		hasAdminRole,
 		hasPermission
 	}: {
 		isSignedIn: boolean;
 		hasMentorship: boolean;
+		hasAdminRole: () => boolean;
 		hasPermission: (permission: ClerkAuthorization['permission']) => boolean;
 	}
 ) => {
 	if (item.loginRequired && !isSignedIn) return false;
 	if (item.requiresMentorship && !hasMentorship) return false;
-	return !item.permission || hasPermission(item.permission);
+	return !item.permission || hasAdminRole() || hasPermission(item.permission);
 };

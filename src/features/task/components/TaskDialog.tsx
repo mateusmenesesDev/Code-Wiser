@@ -38,7 +38,10 @@ export function TaskDialog({ taskId, projectId, onClose }: TaskDialogProps) {
 	return (
 		<>
 			<Dialog open={isOpen} onOpenChange={(open) => !open && guardedClose()}>
-				<DialogContent className="max-h-[90vh] max-w-7xl overflow-y-auto">
+				<DialogContent
+					data-testid="task-dialog"
+					className="max-h-[90vh] max-w-7xl overflow-y-auto"
+				>
 					<DialogHeader>
 						<DialogTitle className="pr-8 font-semibold text-xl">
 							{actualTaskId ? 'Edit Task' : 'Create Task'}

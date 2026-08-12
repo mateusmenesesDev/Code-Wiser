@@ -239,6 +239,7 @@ export default function NavigationSidebar() {
 		() => ({
 			isSignedIn: !!isSignedIn,
 			hasMentorship: hasActiveMentorship,
+			hasAdminRole: () => isLoaded && has({ role: 'org:admin' }),
 			hasPermission: (permission: ClerkAuthorization['permission']) =>
 				isLoaded && has({ permission })
 		}),

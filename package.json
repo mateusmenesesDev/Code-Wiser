@@ -41,7 +41,9 @@
 		"bench:full": "infisical run -- bun scripts/benchmarks/run.ts",
 		"bench:seed": "infisical run -- bun scripts/benchmarks/seed-stress-fixture.ts",
 		"bench:seed:clean": "infisical run -- bun scripts/benchmarks/seed-stress-fixture.ts --clean",
-		"scan": "next dev & npx react-scan@latest localhost:3000"
+		"scan": "next dev & npx react-scan@latest localhost:3000",
+		"e2e": "playwright test",
+		"e2e:install": "playwright install chromium"
 	},
 	"dependencies": {
 		"@ai-sdk/groq": "^2.0.31",
@@ -130,7 +132,10 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.2",
+		"@clerk/backend": "^3.16.4",
+		"@clerk/testing": "^2.2.22",
 		"@faker-js/faker": "^9.9.0",
+		"@playwright/test": "^1.62.1",
 		"@types/node": "^20.14.10",
 		"@types/react": "^18.3.3",
 		"@types/react-dom": "^18.3.0",
