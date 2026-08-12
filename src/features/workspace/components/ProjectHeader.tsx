@@ -92,12 +92,18 @@ export default function ProjectHeader({
 							<Plus className="h-4 w-4" />
 							Create Task
 						</Button>
-						<a href={projectFigmaUrl} target="_blank" rel="noopener noreferrer">
-							<Button variant="primary" size="sm" className="gap-2">
-								<Figma className="h-4 w-4" />
-								Open in Figma
-							</Button>
-						</a>
+						{projectFigmaUrl && (
+							<a
+								href={projectFigmaUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<Button variant="primary" size="sm" className="gap-2">
+									<Figma className="h-4 w-4" />
+									Open in Figma
+								</Button>
+							</a>
+						)}
 						{/* biome-ignore lint/a11y/useValidAriaRole: <explanation> */}
 						<Protect role="org:admin">
 							<Button
