@@ -28,5 +28,8 @@ model ProjectTemplate {
   epics   Epic[]
   sprints Sprint[]
 
+  @@index([status, sortOrder, createdAt])
+  @@index([status, createdAt])
+  @@index([status, categoryId, sortOrder])
   @@schema("public")
 }

@@ -1,8 +1,10 @@
-import { api } from '~/trpc/react';
-
-import { type FilterConfig, createFilter } from '../utils/filterUtils';
-
+import {
+	ProjectAccessTypeEnum,
+	ProjectDifficultyEnum,
+	ProjectMethodologyEnum
+} from '@prisma/client';
 import { useMemo } from 'react';
+import { api } from '~/trpc/react';
 import type {
 	ApprovedProjectsApiOutput,
 	UserProjectApiResponse
@@ -18,21 +20,74 @@ export function useProject({
 }) {
 	const {
 		searchTerm,
-		setSearchTerm,
 		categoryFilter,
-		setCategoryFilter,
 		difficultyFilter,
-		setDifficultyFilter,
 		costFilter,
-		setCostFilter
+		technologiesFilter,
+		methodologyFilter,
+		sortFilter
 	} = useProjectFilter();
 
-	const projectsQuery = api.projectTemplate.getApproved.useQuery(undefined, {
-		initialData: initialProjectsData || undefined,
+	const catalogInput = useMemo(() => {
+		const difficulty = Object.values(ProjectDifficultyEnum).find(
+			(value) => value === difficultyFilter
+		);
+		const methodology = Object.values(ProjectMethodologyEnum).find(
+			(value) => value === methodologyFilter
+		);
+		const sort = ['relevance', 'newest', 'difficulty'].find(
+			(value) => value === sortFilter
+		) as 'relevance' | 'newest' | 'difficulty' | undefined;
+
+		return {
+			search: searchTerm || undefined,
+			category: categoryFilter === 'all' ? undefined : categoryFilter,
+			technologies:
+				technologiesFilter.length > 0 ? technologiesFilter : undefined,
+			difficulty,
+			methodology,
+			accessType:
+				costFilter === 'Free'
+					? ProjectAccessTypeEnum.FREE
+					: costFilter === 'Credits'
+						? ProjectAccessTypeEnum.CREDITS
+						: costFilter === 'Mentorship'
+							? ProjectAccessTypeEnum.MENTORSHIP
+							: undefined,
+			sort: sort ?? 'relevance'
+		};
+	}, [
+		categoryFilter,
+		costFilter,
+		difficultyFilter,
+		methodologyFilter,
+		searchTerm,
+		sortFilter,
+		technologiesFilter
+	]);
+
+	const hasCatalogFilters =
+		Boolean(catalogInput.search) ||
+		Boolean(catalogInput.category) ||
+		Boolean(catalogInput.technologies) ||
+		Boolean(catalogInput.difficulty) ||
+		Boolean(catalogInput.methodology) ||
+		Boolean(catalogInput.accessType) ||
+		catalogInput.sort !== 'relevance';
+
+	const projectsQuery = api.projectTemplate.getApproved.useQuery(catalogInput, {
+		initialData: hasCatalogFilters ? undefined : initialProjectsData,
 		refetchOnWindowFocus: false,
 		refetchOnMount: false,
 		refetchInterval: false
 	});
+	const filterOptionsQuery = api.projectTemplate.getFilterOptions.useQuery(
+		undefined,
+		{
+			staleTime: 5 * 60 * 1000,
+			refetchOnWindowFocus: false
+		}
+	);
 	const userProjectsQuery = api.project.getEnrolled.useQuery(undefined, {
 		initialData: initialUserProjectsData || undefined,
 		refetchOnWindowFocus: false,
@@ -40,64 +95,13 @@ export function useProject({
 		refetchInterval: false
 	});
 
-	const filteredProjects = useMemo(() => {
-		type CatalogProject = ApprovedProjectsApiOutput[number];
-		const filters: FilterConfig<CatalogProject>[] = [
-			{
-				value: searchTerm === '' ? null : searchTerm,
-				property: (project) => project.title,
-				customComparison: (project, value) =>
-					project.title.toLowerCase().includes(value.toLowerCase())
-			},
-			{
-				value: categoryFilter === 'all' ? null : categoryFilter,
-				property: (project) => project.category.name
-			},
-			{
-				value: difficultyFilter === 'all' ? null : difficultyFilter,
-				property: (project) => project.difficulty
-			},
-			{
-				value: costFilter === 'all' ? null : costFilter,
-				property: (project) => project.accessType,
-				customComparison: (project, value) => {
-					if (value === 'Free') {
-						return project.accessType === 'FREE';
-					}
-					if (value === 'Credits') {
-						return project.accessType === 'CREDITS';
-					}
-					if (value === 'Mentorship') {
-						return project.accessType === 'MENTORSHIP';
-					}
-					return true;
-				}
-			}
-		];
-		return (
-			projectsQuery.data?.filter((project) =>
-				filters.every((filterConfig) => createFilter(project, filterConfig))
-			) ?? []
-		);
-	}, [
-		projectsQuery.data,
-		searchTerm,
-		categoryFilter,
-		difficultyFilter,
-		costFilter
-	]);
-
 	return {
-		searchTerm,
-		setSearchTerm,
-		categoryFilter,
-		setCategoryFilter,
-		difficultyFilter,
-		setDifficultyFilter,
-		costFilter,
-		setCostFilter,
 		userProjects: userProjectsQuery.data,
-		filteredProjects,
+		filteredProjects: projectsQuery.data ?? [],
+		filterOptions: filterOptionsQuery.data,
+		isError: projectsQuery.isError || filterOptionsQuery.isError,
+		retry: () =>
+			Promise.all([projectsQuery.refetch(), filterOptionsQuery.refetch()]),
 		isLoading: projectsQuery.isLoading || userProjectsQuery.isLoading
 	};
 }

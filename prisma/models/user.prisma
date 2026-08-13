@@ -30,6 +30,8 @@ model User {
   /// Projection of Clerk org:admin membership for notification fan-out (synced via webhook).
   isOrgAdmin Boolean @default(false)
 
+  taskDeadlineRemindersEnabled Boolean @default(true)
+
   // Mentorship
   mentorshipStatus         MentorshipStatus @default(INACTIVE)
   mentorshipType           MentorshipType?  @default(MONTHLY)

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
 import { projectTemplateRouter } from '../../projectTemplate';
+import { sortApprovedCatalog } from './approvedCatalogQuery';
 
 vi.mock('@clerk/nextjs/server', () => ({
 	auth: () => ({
@@ -26,9 +27,7 @@ describe('projectTemplate.getApproved', () => {
 	let caller: ReturnType<typeof createCaller>;
 
 	beforeEach(async () => {
-		caller = createCaller(
-			await createTRPCContext({ headers: new Headers() })
-		);
+		caller = createCaller(await createTRPCContext({ headers: new Headers() }));
 	});
 
 	it('loads catalog cards with task counts instead of full task graphs', async () => {
@@ -83,5 +82,113 @@ describe('projectTemplate.getApproved', () => {
 		expect(call.include.sprints).toBeUndefined();
 		expect(call.include.learningOutcomes).toBeUndefined();
 		expect(call.include.milestones).toBeUndefined();
+	});
+
+	it('pushes catalog filters into the approved-template query', async () => {
+		mockDb.projectTemplate.findMany.mockResolvedValue([]);
+
+		await caller.getApproved({
+			search: 'react',
+			category: 'Frontend',
+			technologies: ['React', 'TypeScript'],
+			difficulty: 'INTERMEDIATE',
+			methodology: 'KANBAN',
+			accessType: 'FREE',
+			sort: 'newest'
+		});
+
+		expect(mockDb.projectTemplate.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: expect.objectContaining({
+					status: 'APPROVED',
+					OR: [
+						{ title: { contains: 'react', mode: 'insensitive' } },
+						{
+							description: {
+								contains: 'react',
+								mode: 'insensitive'
+							}
+						}
+					],
+					category: {
+						name: { equals: 'Frontend', mode: 'insensitive' }
+					},
+					technologies: {
+						some: {
+							OR: [
+								{ name: { equals: 'React', mode: 'insensitive' } },
+								{ name: { equals: 'TypeScript', mode: 'insensitive' } }
+							]
+						}
+					},
+					difficulty: 'INTERMEDIATE',
+					methodology: 'KANBAN',
+					accessType: 'FREE'
+				}),
+				orderBy: [{ createdAt: 'desc' }, { sortOrder: 'asc' }, { id: 'asc' }]
+			})
+		);
+	});
+
+	it('sorts by relevance, newest, and learner-friendly difficulty order', () => {
+		const projects = [
+			{
+				id: 'advanced',
+				title: 'React dashboard',
+				description: 'Build a dashboard',
+				difficulty: 'ADVANCED',
+				sortOrder: 0,
+				createdAt: new Date('2026-01-01')
+			},
+			{
+				id: 'beginner',
+				title: 'React',
+				description: 'Start here',
+				difficulty: 'BEGINNER',
+				sortOrder: 2,
+				createdAt: new Date('2026-03-01')
+			},
+			{
+				id: 'description-match',
+				title: 'TypeScript project',
+				description: 'A React project',
+				difficulty: 'INTERMEDIATE',
+				sortOrder: 1,
+				createdAt: new Date('2026-02-01')
+			}
+		] as never;
+
+		expect(
+			sortApprovedCatalog(projects, 'relevance', 'React').map(
+				(project) => project.id
+			)
+		).toEqual(['beginner', 'advanced', 'description-match']);
+		expect(
+			sortApprovedCatalog(projects, 'newest').map((project) => project.id)
+		).toEqual(['beginner', 'description-match', 'advanced']);
+		expect(
+			sortApprovedCatalog(projects, 'difficulty').map((project) => project.id)
+		).toEqual(['beginner', 'description-match', 'advanced']);
+	});
+
+	it('returns only filter options used by approved templates', async () => {
+		mockDb.category.findMany.mockResolvedValue([
+			{ name: 'Backend' },
+			{ name: 'Frontend' }
+		] as never);
+		mockDb.technology.findMany.mockResolvedValue([
+			{ name: 'React' },
+			{ name: 'TypeScript' }
+		] as never);
+
+		await expect(caller.getFilterOptions()).resolves.toEqual({
+			categories: ['Backend', 'Frontend'],
+			technologies: ['React', 'TypeScript']
+		});
+		expect(mockDb.category.findMany).toHaveBeenCalledWith({
+			where: { ProjectTemplate: { some: { status: 'APPROVED' } } },
+			orderBy: { name: 'asc' },
+			select: { name: true }
+		});
 	});
 });

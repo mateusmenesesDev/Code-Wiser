@@ -1,9 +1,16 @@
 'use client';
 
+import { ProjectMethodologyEnum } from '@prisma/client';
 import { Award, Code2, Search, Users } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '~/common/components/ui/button';
+import { Checkbox } from '~/common/components/ui/checkbox';
 import { Input } from '~/common/components/ui/input';
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger
+} from '~/common/components/ui/popover';
 import {
 	Select,
 	SelectContent,
@@ -39,11 +46,24 @@ export default function Projects({
 		difficultyFilter,
 		setDifficultyFilter,
 		costFilter,
-		setCostFilter
+		setCostFilter,
+		technologiesFilter,
+		setTechnologiesFilter,
+		methodologyFilter,
+		setMethodologyFilter,
+		sortFilter,
+		setSortFilter
 	} = useProjectFilter();
 
 	const { userCredits, userHasMentorship, isUserMentorshipLoading } = useUser();
-	const { filteredProjects, isLoading, userProjects } = useProject({
+	const {
+		filteredProjects,
+		filterOptions,
+		isError,
+		isLoading,
+		retry,
+		userProjects
+	} = useProject({
 		initialProjectsData,
 		initialUserProjectsData
 	});
@@ -53,13 +73,19 @@ export default function Projects({
 		setCategoryFilter('all');
 		setDifficultyFilter('all');
 		setCostFilter('all');
+		setTechnologiesFilter([]);
+		setMethodologyFilter('all');
+		setSortFilter('relevance');
 	};
 
 	const hasActiveFilters =
 		searchTerm !== '' ||
 		categoryFilter !== 'all' ||
 		difficultyFilter !== 'all' ||
-		costFilter !== 'all';
+		costFilter !== 'all' ||
+		technologiesFilter.length > 0 ||
+		methodologyFilter !== 'all' ||
+		sortFilter !== 'relevance';
 
 	return (
 		<div
@@ -98,35 +124,77 @@ export default function Projects({
 
 			{/* Search and Filters */}
 			<div className="mb-8 animate-slide-up rounded-2xl p-6 shadow-lg">
-				<div className="flex flex-col gap-4 lg:flex-row">
-					<div className="relative flex-1">
+				<div className="flex flex-col gap-4">
+					<div className="relative">
 						<Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
 						<Input
-							placeholder="Search projects, technologies, or keywords..."
+							placeholder="Search projects by title or description..."
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
 							className="h-12 pl-10 text-lg"
 						/>
 					</div>
 
-					<div className="flex gap-3">
+					<div className="flex flex-wrap gap-3">
 						<Select value={categoryFilter} onValueChange={setCategoryFilter}>
-							<SelectTrigger className="h-12 w-40">
+							<SelectTrigger className="h-10 w-40">
 								<SelectValue placeholder="Category" />
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="all">All Categories</SelectItem>
-								<SelectItem value="Fullstack">Full Stack</SelectItem>
-								<SelectItem value="Backend">Backend</SelectItem>
-								<SelectItem value="Frontend">Frontend</SelectItem>
+								{filterOptions?.categories.map((category) => (
+									<SelectItem key={category} value={category}>
+										{category}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
+
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button variant="outline" className="h-10 w-44 justify-between">
+									{technologiesFilter.length > 0
+										? `${technologiesFilter.length} technologies`
+										: 'Technologies'}
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								align="start"
+								className="max-h-72 overflow-y-auto"
+							>
+								<div className="space-y-3">
+									<p className="font-medium text-sm">Match any technology</p>
+									{filterOptions?.technologies.map((technology) => (
+										<label
+											key={technology}
+											htmlFor={`technology-${technology}`}
+											className="flex cursor-pointer items-center gap-2 text-sm"
+										>
+											<Checkbox
+												id={`technology-${technology}`}
+												checked={technologiesFilter.includes(technology)}
+												onCheckedChange={(checked) =>
+													setTechnologiesFilter(
+														checked
+															? [...technologiesFilter, technology]
+															: technologiesFilter.filter(
+																	(item) => item !== technology
+																)
+													)
+												}
+											/>
+											<span>{technology}</span>
+										</label>
+									))}
+								</div>
+							</PopoverContent>
+						</Popover>
 
 						<Select
 							value={difficultyFilter}
 							onValueChange={setDifficultyFilter}
 						>
-							<SelectTrigger className="h-12 w-40">
+							<SelectTrigger className="h-10 w-40">
 								<SelectValue placeholder="Difficulty" />
 							</SelectTrigger>
 							<SelectContent>
@@ -137,8 +205,26 @@ export default function Projects({
 							</SelectContent>
 						</Select>
 
+						<Select
+							value={methodologyFilter}
+							onValueChange={setMethodologyFilter}
+						>
+							<SelectTrigger className="h-10 w-40">
+								<SelectValue placeholder="Methodology" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All Methodologies</SelectItem>
+								<SelectItem value={ProjectMethodologyEnum.SCRUM}>
+									Scrum
+								</SelectItem>
+								<SelectItem value={ProjectMethodologyEnum.KANBAN}>
+									Kanban
+								</SelectItem>
+							</SelectContent>
+						</Select>
+
 						<Select value={costFilter} onValueChange={setCostFilter}>
-							<SelectTrigger className="h-12 w-40">
+							<SelectTrigger className="h-10 w-40">
 								<SelectValue placeholder="Access" />
 							</SelectTrigger>
 							<SelectContent>
@@ -146,6 +232,17 @@ export default function Projects({
 								<SelectItem value="Free">Free</SelectItem>
 								<SelectItem value="Credits">Credits</SelectItem>
 								<SelectItem value="Mentorship">Mentorship</SelectItem>
+							</SelectContent>
+						</Select>
+
+						<Select value={sortFilter} onValueChange={setSortFilter}>
+							<SelectTrigger className="h-10 w-40">
+								<SelectValue placeholder="Sort" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="relevance">Most relevant</SelectItem>
+								<SelectItem value="newest">Newest</SelectItem>
+								<SelectItem value="difficulty">Difficulty</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
@@ -169,7 +266,17 @@ export default function Projects({
 			</div>
 
 			{/* Projects Grid */}
-			{isLoading ? (
+			{isError ? (
+				<div className="py-16 text-center">
+					<h2 className="mb-2 font-semibold text-2xl">
+						Projects could not be loaded
+					</h2>
+					<p className="mb-6 text-muted-foreground">
+						Check your connection and try again.
+					</p>
+					<Button onClick={() => void retry()}>Try Again</Button>
+				</div>
+			) : isLoading ? (
 				<div
 					className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"
 					aria-live="polite"

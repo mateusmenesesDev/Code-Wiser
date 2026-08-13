@@ -3,17 +3,80 @@ import { z } from 'zod';
 import { adminProcedure, publicProcedure } from '~/server/api/trpc';
 import {
 	approvedCatalogInclude,
-	approvedCatalogOrderBy
+	approvedCatalogInputSchema,
+	getApprovedCatalogOrderBy,
+	sortApprovedCatalog
 } from './approvedCatalogQuery';
 
 export const projectTemplateQueries = {
-	getApproved: publicProcedure.query(({ ctx }) =>
-		ctx.db.projectTemplate.findMany({
-			where: { status: 'APPROVED' },
-			orderBy: approvedCatalogOrderBy,
-			include: approvedCatalogInclude
-		})
-	),
+	getApproved: publicProcedure
+		.input(approvedCatalogInputSchema)
+		.query(async ({ ctx, input }) => {
+			const sort = input?.sort ?? 'relevance';
+			const projects = await ctx.db.projectTemplate.findMany({
+				where: {
+					status: 'APPROVED',
+					...(input?.search
+						? {
+								OR: [
+									{ title: { contains: input.search, mode: 'insensitive' } },
+									{
+										description: {
+											contains: input.search,
+											mode: 'insensitive'
+										}
+									}
+								]
+							}
+						: {}),
+					...(input?.category
+						? {
+								category: {
+									name: { equals: input.category, mode: 'insensitive' }
+								}
+							}
+						: {}),
+					...(input?.technologies?.length
+						? {
+								technologies: {
+									some: {
+										OR: input.technologies.map((technology) => ({
+											name: { equals: technology, mode: 'insensitive' as const }
+										}))
+									}
+								}
+							}
+						: {}),
+					...(input?.difficulty ? { difficulty: input.difficulty } : {}),
+					...(input?.methodology ? { methodology: input.methodology } : {}),
+					...(input?.accessType ? { accessType: input.accessType } : {})
+				},
+				orderBy: getApprovedCatalogOrderBy(sort),
+				include: approvedCatalogInclude
+			});
+
+			return sortApprovedCatalog(projects, sort, input?.search);
+		}),
+
+	getFilterOptions: publicProcedure.query(async ({ ctx }) => {
+		const [categories, technologies] = await Promise.all([
+			ctx.db.category.findMany({
+				where: { ProjectTemplate: { some: { status: 'APPROVED' } } },
+				orderBy: { name: 'asc' },
+				select: { name: true }
+			}),
+			ctx.db.technology.findMany({
+				where: { ProjectTemplate: { some: { status: 'APPROVED' } } },
+				orderBy: { name: 'asc' },
+				select: { name: true }
+			})
+		]);
+
+		return {
+			categories: categories.map(({ name }) => name),
+			technologies: technologies.map(({ name }) => name)
+		};
+	}),
 
 	getInfoById: publicProcedure
 		.input(z.object({ id: z.string() }))
