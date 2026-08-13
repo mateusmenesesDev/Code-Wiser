@@ -367,7 +367,8 @@ export default function SprintSidebar({
 						currentView !== 'backlog' &&
 							currentView !== 'sprint' &&
 							currentView !== 'roadmap' &&
-							currentView !== 'versions'
+							currentView !== 'versions' &&
+							currentView !== 'list'
 							? 'bg-info-muted font-medium text-info-muted-foreground'
 							: 'hover:bg-muted/50'
 					)}

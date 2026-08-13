@@ -188,7 +188,9 @@ export const createOptimisticKanbanTask = (
 ): KanbanTask => {
 	return {
 		id: '-1',
+		createdAt: new Date(),
 		title: newTask.title,
+		type: newTask.type || null,
 		status: newTask.status || TaskStatusEnum.BACKLOG,
 		priority: newTask.priority || null,
 		order: null,

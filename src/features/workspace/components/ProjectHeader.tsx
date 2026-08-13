@@ -4,7 +4,17 @@ import {
 	TaskPriorityEnum,
 	type TaskStatusEnum
 } from '@prisma/client';
-import { Figma, Filter, Play, Plus, Search, Settings, X } from 'lucide-react';
+import {
+	Figma,
+	Filter,
+	LayoutGrid,
+	List as ListIcon,
+	Play,
+	Plus,
+	Search,
+	Settings,
+	X
+} from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
@@ -17,6 +27,7 @@ import {
 } from '~/common/components/ui/select';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { TaskSelectionDialog } from '~/features/planningPoker/components/TaskSelectionDialog';
+import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 import { ProjectStatsCards } from './ProjectStatsCards';
 
@@ -31,6 +42,9 @@ interface ProjectHeaderProps {
 	methodology: ProjectMethodologyEnum;
 	onCreateTask: () => void;
 	onOpenSettings: () => void;
+	mainView?: 'board' | 'list';
+	onMainViewChange?: (view: 'board' | 'list') => void;
+	showMainViewToggle?: boolean;
 }
 
 export default function ProjectHeader({
@@ -43,7 +57,10 @@ export default function ProjectHeader({
 	methodology,
 	epics,
 	onCreateTask,
-	onOpenSettings
+	onOpenSettings,
+	mainView,
+	onMainViewChange,
+	showMainViewToggle = false
 }: ProjectHeaderProps) {
 	const [isPlanningPokerDialogOpen, setIsPlanningPokerDialogOpen] =
 		useState(false);
@@ -73,6 +90,36 @@ export default function ProjectHeader({
 								? 'Scrum'
 								: 'Kanban'}
 						</span>
+						{showMainViewToggle && mainView && onMainViewChange && (
+							<div className="flex items-center rounded-lg border bg-muted p-0.5">
+								<Button
+									variant="ghost"
+									size="sm"
+									className={cn(
+										'h-7 gap-1.5 px-2',
+										mainView === 'board' && 'bg-background shadow-sm'
+									)}
+									onClick={() => onMainViewChange('board')}
+									aria-pressed={mainView === 'board'}
+								>
+									<LayoutGrid className="h-3.5 w-3.5" />
+									<span className="text-xs">Board</span>
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									className={cn(
+										'h-7 gap-1.5 px-2',
+										mainView === 'list' && 'bg-background shadow-sm'
+									)}
+									onClick={() => onMainViewChange('list')}
+									aria-pressed={mainView === 'list'}
+								>
+									<ListIcon className="h-3.5 w-3.5" />
+									<span className="text-xs">List</span>
+								</Button>
+							</div>
+						)}
 						<Button
 							variant="ghost"
 							size="icon"

@@ -18,6 +18,7 @@ import {
 } from '~/common/utils/kanbanReorder';
 import Backlog from '~/features/backlog/components/Backlog';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
+import ProjectListView from '~/features/kanban/components/ProjectListView';
 import { columns } from '~/features/kanban/constants';
 import { useKanbanData } from '~/features/kanban/hooks/useKanbanData';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
@@ -55,7 +56,12 @@ const Workspace = () => {
 		projectInfo?.canceledAt !== null && projectInfo?.canceledAt !== undefined;
 
 	useEffect(() => {
-		if (!isScrum && view !== 'roadmap' && view !== 'versions') {
+		if (
+			!isScrum &&
+			view !== 'roadmap' &&
+			view !== 'versions' &&
+			view !== 'list'
+		) {
 			setViewParams({ view: null, sprintId: null });
 		}
 	}, [isScrum, setViewParams, view]);
@@ -128,6 +134,14 @@ const Workspace = () => {
 				methodology={projectInfo?.methodology ?? ProjectMethodologyEnum.SCRUM}
 				onCreateTask={() => setTaskId('new')}
 				onOpenSettings={() => setIsSettingsOpen(true)}
+				mainView={view === 'list' ? 'list' : 'board'}
+				onMainViewChange={(nextView) =>
+					setViewParams({
+						view: nextView === 'list' ? 'list' : null,
+						sprintId: null
+					})
+				}
+				showMainViewToggle={view === null || view === 'list'}
 			/>
 			<div className="flex flex-1 overflow-hidden">
 				{(isScrum || view === 'roadmap' || view === 'versions') && (
@@ -183,6 +197,8 @@ const Workspace = () => {
 								<Backlog projectId={projectId} />
 							</div>
 						</Suspense>
+					) : view === 'list' ? (
+						<ProjectListView tasks={tasks} sprints={sprints ?? []} />
 					) : (
 						<KanbanProvider
 							columns={columns}
