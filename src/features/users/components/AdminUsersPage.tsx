@@ -1,7 +1,8 @@
 'use client';
 
 import { Protect } from '@clerk/nextjs';
-import { Edit, Search, Trash2 } from 'lucide-react';
+import { Edit, Eye, Search, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -260,6 +261,15 @@ export default function AdminUsersPage() {
 											</TableCell>
 											<TableCell className="text-right">
 												<div className="flex items-center justify-end gap-2">
+													<Button asChild variant="ghost" size="sm">
+														<Link
+															href={`/?userId=${encodeURIComponent(user.id)}`}
+															aria-label={`View ${user.name || user.email}'s dashboard`}
+															title="View dashboard"
+														>
+															<Eye className="h-4 w-4" />
+														</Link>
+													</Button>
 													<Button
 														variant="ghost"
 														size="sm"
