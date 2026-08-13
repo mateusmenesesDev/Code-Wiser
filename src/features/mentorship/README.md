@@ -53,7 +53,9 @@ This feature allows users with active mentorship subscriptions to schedule one-o
 
   - `getMyMentorshipStatus`: Get user's mentorship info
   - `getAvailableSlots`: Fetch Cal.com availability
-  - `getMyBookings`: List user's bookings
+  - `getMyBookings`: List the user's bounded, learner-safe session history, including shared notes and agreed actions
+  - `adminGetBooking`: Read the complete session record, including private mentor notes
+  - `updateSessionNotes`: Update objective, shared/private notes, action tracking, and session status
   - `bookSession`: Create new booking
   - `cancelBooking`: Cancel existing booking
 
@@ -138,6 +140,10 @@ The Mentorship menu item is conditionally displayed:
 - Only shown to users with `mentorshipStatus: ACTIVE`
 - Appears in both desktop navigation and mobile menu
 - Redirects to home if accessed without active mentorship
+
+## Session history
+
+`/mentorship/history` is a read-only history view available to authenticated users, including former mentees. It exposes objectives, shared session notes, agreed actions, deadlines, and action status, but never private mentor notes. The active mentorship page reuses the same history query while keeping booking, cancellation, and rescheduling mutations restricted to active mentorship.
 
 ## Future Enhancements
 

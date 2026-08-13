@@ -96,10 +96,6 @@ function ageInHours(createdAt: Date, now: Date) {
 	);
 }
 
-function isMissing(value: string | null) {
-	return !value?.trim();
-}
-
 export const mentorAttentionRouter = createTRPCRouter({
 	getQueue: adminProcedure
 		.input(getQueueSchema)
@@ -366,12 +362,7 @@ export const mentorAttentionRouter = createTRPCRouter({
 											)
 										})
 						},
-						OR: [
-							{ objective: null },
-							{ objective: '' },
-							{ followUp: null },
-							{ followUp: '' }
-						],
+						OR: [{ objective: null }, { objective: '' }],
 						...(search
 							? {
 									user: {
@@ -390,8 +381,6 @@ export const mentorAttentionRouter = createTRPCRouter({
 						id: true,
 						createdAt: true,
 						scheduledAt: true,
-						objective: true,
-						followUp: true,
 						bookingUrl: true,
 						user: { select: { id: true, name: true, email: true } }
 					}
@@ -458,8 +447,6 @@ export const mentorAttentionRouter = createTRPCRouter({
 					source: 'inactiveStudent' as const
 				})),
 				...sessions.map((session) => {
-					const missingObjective = isMissing(session.objective);
-					const missingFollowUp = isMissing(session.followUp);
 					return {
 						type: 'MENTORSHIP_SESSION' as const,
 						id: session.id,
@@ -473,12 +460,7 @@ export const mentorAttentionRouter = createTRPCRouter({
 								: ('MEDIUM' as const),
 						createdAt: session.createdAt,
 						ageInHours: ageInHours(session.createdAt, now),
-						nextAction:
-							missingObjective && missingFollowUp
-								? 'Add objective and follow-up'
-								: missingObjective
-									? 'Add session objective'
-									: 'Record session follow-up',
+						nextAction: 'Add session objective',
 						directUrl: `/admin/mentorship?bookingId=${session.id}`,
 						source: 'mentorshipSession' as const
 					};

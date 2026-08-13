@@ -347,7 +347,16 @@ export const mentorshipMutations = {
 			z.object({
 				bookingId: z.string().uuid(),
 				objective: z.string().trim().max(2000).nullable(),
-				followUp: z.string().trim().max(2000).nullable()
+				followUp: z.string().trim().max(2000).nullable(),
+				sessionNotes: z.string().trim().max(5000).nullable(),
+				mentorPrivateNote: z.string().trim().max(5000).nullable(),
+				actionDueAt: z.string().datetime().nullable(),
+				actionStatus: z
+					.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
+					.nullable(),
+				status: z
+					.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'MENTOR_CANCELLED'])
+					.optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -363,11 +372,29 @@ export const mentorshipMutations = {
 				});
 			}
 
+			const followUp = input.followUp || null;
+			if (!followUp && (input.actionDueAt || input.actionStatus)) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message:
+						'An agreed action is required before setting its deadline or status'
+				});
+			}
+
 			return ctx.db.mentorshipBooking.update({
 				where: { id: input.bookingId },
 				data: {
 					objective: input.objective || null,
-					followUp: input.followUp || null
+					followUp,
+					sessionNotes: input.sessionNotes || null,
+					mentorPrivateNote: input.mentorPrivateNote || null,
+					actionDueAt: followUp
+						? input.actionDueAt
+							? new Date(input.actionDueAt)
+							: null
+						: null,
+					actionStatus: followUp ? (input.actionStatus ?? 'PENDING') : null,
+					...(input.status ? { status: input.status } : {})
 				}
 			});
 		})

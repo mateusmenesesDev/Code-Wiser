@@ -119,7 +119,7 @@ Esses itens não são “features” de marketing, mas são pré-condições par
 | 🚧 Parcial | P1 | Checkout de créditos e histórico | Alto | M | Ledger pronto; histórico e recuperação ainda pendentes |
 | ✅ Concluído | P2 | Integração GitHub | Muito alto | G | GitHub App, consentimento e escopos |
 | — | P2 | Code review assistido por IA | Alto | G | Integração GitHub, fila assíncrona e controle de custo |
-| — | P2 | Objetivos e histórico de mentorship | Alto | M | Modelo de sessão e notas |
+| ✅ Concluído | P2 | Objetivos e histórico de mentorship | Alto | M | Modelo de sessão e notas |
 | — | P2 | Papéis e permissões explícitos | Alto | G | Modelo de membership próprio |
 | — | P2 | Localização PT-BR/EN | Médio | M/G | Estratégia de conteúdo traduzível |
 | — | P2 | Portfólio e demonstração de projetos | Médio | M | Roadmap, conclusão e privacidade |
@@ -362,13 +362,15 @@ Não usar `agent-browser` como integração principal de produção. Browser aut
 
 Esta feature depende diretamente da integração GitHub, de uma fila assíncrona e de política de retenção do código enviado ao modelo.
 
-### P2.3 — Objetivos e histórico de mentorship
+### ✅ P2.3 — Objetivos e histórico de mentorship
+
+**Status:** concluído nesta entrega. A sessão agora guarda objetivo, notas compartilhadas, nota privada do mentor, ação combinada, prazo e status; o aluno acessa o histórico mesmo depois do fim da assinatura, sem receber notas privadas.
 
 **Objetivo:** transformar reserva de horário em acompanhamento de aprendizagem.
 
-**Entidades:** objetivo, sessão, nota privada do mentor, ação combinada, prazo e status.
+**Implementado:** objetivo antes da sessão, registro administrativo durante/depois, ações visíveis ao aluno, prazo/status da ação, histórico limitado a 100 sessões e rota read-only para ex-mentorados. Dados privados do mentor ficam fora da projeção do aluno e só aparecem na consulta administrativa.
 
-**Fluxo:** objetivo antes da sessão, notas durante/depois e ações visíveis ao aluno. Dados privados do mentor devem ter permissão separada dos dados compartilhados.
+A fila de atenção pede objetivo antes da sessão. O follow-up é registrado depois, para não criar uma cobrança prematura sobre uma informação que ainda não existe.
 
 ### P2.4 — Papéis e permissões de projeto
 

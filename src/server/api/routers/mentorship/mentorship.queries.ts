@@ -69,10 +69,23 @@ export const mentorshipQueries = {
 			return getAvailableSlots(startDate, endDate);
 		}),
 
-	getMyBookings: mentorshipProcedure.query(async ({ ctx }) => {
+	getMyBookings: protectedProcedure.query(async ({ ctx }) => {
 		const bookings = await ctx.db.mentorshipBooking.findMany({
 			where: { userId: ctx.session.userId },
-			orderBy: { scheduledAt: 'desc' }
+			orderBy: [{ scheduledAt: 'desc' }, { id: 'desc' }],
+			take: 100,
+			select: {
+				id: true,
+				scheduledAt: true,
+				status: true,
+				bookingUrl: true,
+				meetingUrl: true,
+				objective: true,
+				followUp: true,
+				sessionNotes: true,
+				actionDueAt: true,
+				actionStatus: true
+			}
 		});
 
 		return bookings;
@@ -91,6 +104,10 @@ export const mentorshipQueries = {
 					meetingUrl: true,
 					objective: true,
 					followUp: true,
+					sessionNotes: true,
+					mentorPrivateNote: true,
+					actionDueAt: true,
+					actionStatus: true,
 					user: { select: { id: true, name: true, email: true } }
 				}
 			});
