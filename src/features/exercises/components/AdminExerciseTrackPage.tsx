@@ -2,7 +2,14 @@
 
 import { Protect } from '@clerk/nextjs';
 import type { ExerciseChallengeDifficulty } from '@prisma/client';
-import { ArrowDown, ArrowLeft, ArrowUp, Archive, Edit, Plus } from 'lucide-react';
+import {
+	ArrowDown,
+	ArrowLeft,
+	ArrowUp,
+	Archive,
+	Edit,
+	Plus
+} from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -24,6 +31,7 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import { api } from '~/trpc/react';
+import { GitHubRepositoryConnector } from '~/features/github/components/GitHubRepositoryConnector';
 import { DIFFICULTY_LABELS, difficultyBadgeVariant } from '../lib/difficulty';
 import { ChallengeFormDialog } from './ChallengeFormDialog';
 import { TrackFormDialog } from './TrackFormDialog';
@@ -181,6 +189,13 @@ export default function AdminExerciseTrackPage({
 									'not set (not cloneable)'
 								)}
 							</p>
+							<div className="mt-4">
+								<GitHubRepositoryConnector
+									trackId={track.id}
+									currentRepository={track.githubRepository}
+									returnTo={`/admin/exercises/${track.id}`}
+								/>
+							</div>
 						</div>
 						<div className="flex gap-2">
 							<Button variant="outline" onClick={() => setEditTrackOpen(true)}>
@@ -270,9 +285,7 @@ export default function AdminExerciseTrackPage({
 													<Button
 														size="sm"
 														variant="outline"
-														onClick={() =>
-															setEditingChallengeId(challenge.id)
-														}
+														onClick={() => setEditingChallengeId(challenge.id)}
 													>
 														<Edit className="h-4 w-4" />
 													</Button>

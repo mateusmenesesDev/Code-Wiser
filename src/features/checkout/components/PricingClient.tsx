@@ -1,7 +1,7 @@
 'use client';
 
 import { Sparkles } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -27,10 +27,11 @@ interface BuyCreditsButtonProps {
 
 export function BuyCreditsButton({ creditId }: BuyCreditsButtonProps) {
 	const checkoutRequestKey = useRef<string | null>(null);
+	const [isStarting, setIsStarting] = useState(false);
 
 	const handleClick = async () => {
+		setIsStarting(true);
 		try {
-			toast.info('Payment Processing');
 			checkoutRequestKey.current ??= crypto.randomUUID();
 			const response = await fetch('/api/checkout_sessions', {
 				method: 'POST',
@@ -43,22 +44,22 @@ export function BuyCreditsButton({ creditId }: BuyCreditsButtonProps) {
 					mode: 'payment'
 				})
 			});
+			const responseData = (await response.json()) as { url?: string; error?: string };
 
-			if (!response.ok) {
-				throw new Error('Failed to create checkout session');
+			if (!response.ok || !responseData.url) {
+				throw new Error(responseData.error ?? 'We could not start checkout. Try again.');
 			}
 
-			const responseData = await response.json();
 			window.location.href = responseData.url;
 		} catch (error) {
-			console.error(error);
-			toast.error('Payment Failed');
+			toast.error(error instanceof Error ? error.message : 'We could not start checkout. Try again.');
+			setIsStarting(false);
 		}
 	};
 
 	return (
-		<Button onClick={handleClick} variant="primary">
-			Buy Now
+		<Button onClick={handleClick} variant="primary" disabled={isStarting}>
+			{isStarting ? 'Starting checkout...' : 'Buy Now'}
 		</Button>
 	);
 }

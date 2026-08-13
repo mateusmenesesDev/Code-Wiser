@@ -92,6 +92,43 @@ enum PullRequestReviewStatusEnum {
   @@schema("public")
 }
 
+enum PRReviewAnalysisStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+
+  @@schema("public")
+}
+
+enum PRReviewFindingDecision {
+  PENDING
+  ACCEPTED
+  DISCARDED
+
+  @@schema("public")
+}
+
+enum PRReviewFindingSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@schema("public")
+}
+
+enum PRReviewFindingCategory {
+  CORRECTION
+  SECURITY
+  PERFORMANCE
+  DESIGN
+  TESTS
+  READABILITY
+
+  @@schema("public")
+}
+
 enum PlanningPokerSessionStatusEnum {
   ACTIVE
   COMPLETED

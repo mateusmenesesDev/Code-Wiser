@@ -25,16 +25,18 @@ enum ExerciseReviewDecisionStatus {
 }
 
 model ExerciseTrack {
-  id          String   @id @default(uuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  name        String
-  slug        String   @unique
-  description String
-  repoUrl     String   @default("")
-  isPublished Boolean  @default(false)
-  isArchived  Boolean  @default(false)
-  sortOrder   Int      @default(0)
+  id                 String            @id @default(uuid())
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  name               String
+  slug               String            @unique
+  description        String
+  repoUrl            String            @default("")
+  githubRepositoryId String?           @unique
+  githubRepository   GitHubRepository? @relation("ExerciseTrackGitHubRepository", fields: [githubRepositoryId], references: [id], onDelete: SetNull)
+  isPublished        Boolean           @default(false)
+  isArchived         Boolean           @default(false)
+  sortOrder          Int               @default(0)
 
   challenges  ExerciseChallenge[]
   submissions ExerciseReviewSubmission[]
@@ -86,12 +88,22 @@ model UserChallengeProgress {
 }
 
 model ExerciseReviewSubmission {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  prUrl     String
-  updateNote String?
-  needsAttention Boolean @default(true)
+  id                      String            @id @default(uuid())
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  prUrl                   String
+  updateNote              String?
+  githubPullRequestNumber Int?
+  githubTitle             String?
+  githubState             String?
+  githubAuthorLogin       String?
+  githubCommitCount       Int?
+  githubHeadSha           String?
+  githubChecksStatus      String?
+  githubLastSyncedAt      DateTime?
+  githubRepositoryId      String?
+  githubRepository        GitHubRepository? @relation(fields: [githubRepositoryId], references: [id], onDelete: SetNull)
+  needsAttention          Boolean           @default(true)
 
   trackId String
   track   ExerciseTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
@@ -104,6 +116,7 @@ model ExerciseReviewSubmission {
   @@index([needsAttention, createdAt])
   @@index([submittedById, createdAt])
   @@index([trackId, createdAt])
+  @@index([githubRepositoryId, githubPullRequestNumber])
   @@schema("public")
 }
 

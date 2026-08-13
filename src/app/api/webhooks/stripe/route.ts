@@ -7,7 +7,10 @@ import {
 	updateUserMentorshipFromSubscription
 } from '~/server/api/routers/user/actions';
 import { db } from '~/server/db';
-import { fulfillCreditCheckout } from '~/server/services/stripeCreditCheckout';
+import {
+	fulfillCreditCheckout,
+	markCreditCheckoutFailed
+} from '~/server/services/stripeCreditCheckout';
 import { stripe } from '~/services/stripe';
 
 const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
@@ -48,6 +51,14 @@ export async function POST(req: Request) {
 					const session = event.data.object as Stripe.Checkout.Session;
 					if (session.metadata?.mode === 'credits') {
 						await fulfillCreditCheckout(session, event);
+					}
+					break;
+				}
+
+				case 'checkout.session.async_payment_failed': {
+					const session = event.data.object as Stripe.Checkout.Session;
+					if (session.metadata?.mode === 'credits') {
+						await markCreditCheckoutFailed(session.id);
 					}
 					break;
 				}

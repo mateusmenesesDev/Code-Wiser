@@ -191,6 +191,100 @@ describe('PR review lifecycle', () => {
 		});
 	});
 
+	it('queues one AI analysis for the current linked pull request head', async () => {
+		mockDb.pullRequestReview.findUnique.mockResolvedValue({
+			id: 'review-1',
+			isActive: true,
+			status: 'PENDING',
+			githubHeadSha: 'head-1',
+			githubPullRequestNumber: 7,
+			githubRepositoryId: 'repository-1'
+		} as never);
+		mockDb.prReviewAnalysis.findUnique.mockResolvedValue(null);
+		mockDb.prReviewAnalysis.upsert.mockResolvedValue({
+			id: 'analysis-1',
+			status: 'QUEUED'
+		} as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.startAIAnalysis({ reviewId: 'review-1' });
+
+		expect(mockDb.prReviewAnalysis.upsert).toHaveBeenCalledWith({
+			where: {
+				reviewId_sourceHeadSha: {
+					reviewId: 'review-1',
+					sourceHeadSha: 'head-1'
+				}
+			},
+			create: {
+				reviewId: 'review-1',
+				requestedById: 'user-1',
+				sourceHeadSha: 'head-1',
+				promptVersion: 'p2.2-v1'
+			},
+			update: {},
+			select: { id: true, status: true }
+		});
+	});
+
+	it('does not queue an AI analysis without a linked GitHub pull request', async () => {
+		mockDb.pullRequestReview.findUnique.mockResolvedValue({
+			id: 'review-1',
+			isActive: true,
+			status: 'PENDING',
+			githubHeadSha: null,
+			githubPullRequestNumber: null,
+			githubRepositoryId: null
+		} as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.startAIAnalysis({ reviewId: 'review-1' })
+		).rejects.toMatchObject({
+			code: 'BAD_REQUEST'
+		});
+		expect(mockDb.prReviewAnalysis.create).not.toHaveBeenCalled();
+	});
+
+	it('lets the admin accept or discard a completed finding without deciding the review', async () => {
+		mockDb.prReviewFinding.findUnique.mockResolvedValue({
+			id: 'finding-1',
+			analysis: {
+				status: 'COMPLETED',
+				review: { status: 'PENDING', isActive: true }
+			}
+		} as never);
+		mockDb.prReviewFinding.update.mockResolvedValue({
+			id: 'finding-1'
+		} as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.reviewAIFinding({
+			findingId: 'finding-1',
+			decision: 'ACCEPTED',
+			problem: 'Edited problem',
+			suggestion: 'Edited suggestion'
+		});
+
+		expect(mockDb.prReviewFinding.update).toHaveBeenCalledWith({
+			where: { id: 'finding-1' },
+			data: {
+				decision: 'ACCEPTED',
+				editedProblem: 'Edited problem',
+				editedSuggestion: 'Edited suggestion',
+				decisionById: 'user-1',
+				decidedAt: expect.any(Date)
+			}
+		});
+		expect(mockDb.pullRequestReview.updateMany).not.toHaveBeenCalled();
+	});
+
 	it('returns an idempotent retry without creating or charging again', async () => {
 		mockDb.pullRequestReview.findUnique.mockResolvedValue({
 			taskId: 'task-1',

@@ -117,7 +117,7 @@ Esses itens não são “features” de marketing, mas são pré-condições par
 | ✅ Concluído | P1 | Roadmap de projeto e milestones | Alto | M | Relacionar milestones do template ao projeto |
 | — | P1 | Finalizar UI de sprints e epics | Médio | S/M | Aproveitar procedures existentes |
 | 🚧 Parcial | P1 | Checkout de créditos e histórico | Alto | M | Ledger pronto; histórico e recuperação ainda pendentes |
-| — | P2 | Integração GitHub | Muito alto | G | GitHub App, consentimento e escopos |
+| ✅ Concluído | P2 | Integração GitHub | Muito alto | G | GitHub App, consentimento e escopos |
 | — | P2 | Code review assistido por IA | Alto | G | Integração GitHub, fila assíncrona e controle de custo |
 | — | P2 | Objetivos e histórico de mentorship | Alto | M | Modelo de sessão e notas |
 | — | P2 | Papéis e permissões explícitos | Alto | G | Modelo de membership próprio |
@@ -317,7 +317,9 @@ Depois do ledger P0.2:
 
 ---
 
-### P2.1 — Integração GitHub
+### ✅ P2.1 — Integração GitHub
+
+**Status:** concluído nesta entrega. A integração usa GitHub App com estado assinado, tokens de instalação efêmeros, vínculo de repositórios, seleção/validação de PRs, snapshots e webhooks idempotentes. URLs manuais continuam disponíveis como fallback.
 
 **Objetivo:** eliminar o trabalho manual de copiar URLs e permitir que o sistema acompanhe o código real.
 

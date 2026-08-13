@@ -8,6 +8,7 @@ export type CheckoutReturnState =
 	| { kind: 'missing_session' }
 	| { kind: 'complete'; customerEmail?: string }
 	| { kind: 'recoverable' }
+	| { kind: 'processing' }
 	| { kind: 'unknown' }
 	| { kind: 'error' };
 
@@ -18,11 +19,15 @@ export function getCheckoutReturnState(
 	if (error) return { kind: 'error' };
 	if (!session) return { kind: 'missing_session' };
 
-	if (session.status === 'complete') {
+	if (session.status === 'complete' && session.payment_status === 'paid') {
 		return {
 			kind: 'complete',
 			customerEmail: session.customer_details?.email ?? undefined
 		};
+	}
+
+	if (session.status === 'complete') {
+		return { kind: 'processing' };
 	}
 
 	if (session.status === 'open') {

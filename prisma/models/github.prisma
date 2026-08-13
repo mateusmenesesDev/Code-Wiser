@@ -1,0 +1,46 @@
+model GitHubInstallation {
+  id                   String             @id @default(cuid())
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  githubInstallationId String             @unique
+  accountLogin         String
+  accountType          String
+  active               Boolean            @default(true)
+  userId               String
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repositories         GitHubRepository[]
+
+  @@index([userId, active])
+  @@schema("public")
+}
+
+model GitHubRepository {
+  id             String                     @id @default(cuid())
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  owner          String
+  name           String
+  fullName       String
+  htmlUrl        String
+  private        Boolean                    @default(false)
+  installationId String
+  installation   GitHubInstallation         @relation(fields: [installationId], references: [id], onDelete: Cascade)
+  project        Project?                   @relation("ProjectGitHubRepository")
+  exerciseTrack  ExerciseTrack?             @relation("ExerciseTrackGitHubRepository")
+  reviews        PullRequestReview[]
+  submissions    ExerciseReviewSubmission[]
+
+  @@unique([installationId, fullName])
+  @@index([fullName])
+  @@schema("public")
+}
+
+model GitHubWebhookEvent {
+  id                 String   @id
+  createdAt          DateTime @default(now())
+  event              String
+  action             String?
+  repositoryFullName String?
+
+  @@schema("public")
+}

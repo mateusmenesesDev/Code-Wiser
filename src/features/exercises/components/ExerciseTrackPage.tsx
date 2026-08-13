@@ -1,6 +1,12 @@
 'use client';
 
-import { ArrowLeft, Copy, GitPullRequest, ListChecks, Terminal } from 'lucide-react';
+import {
+	ArrowLeft,
+	Copy,
+	GitPullRequest,
+	ListChecks,
+	Terminal
+} from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -31,8 +37,11 @@ export default function ExerciseTrackPage({
 }: ExerciseTrackPageProps) {
 	const { user } = useAuth();
 	const [reviewOpen, setReviewOpen] = useState(false);
-	const { data: track, isLoading, error } =
-		api.exercise.getPublishedTrackBySlug.useQuery({ slug: trackSlug });
+	const {
+		data: track,
+		isLoading,
+		error
+	} = api.exercise.getPublishedTrackBySlug.useQuery({ slug: trackSlug });
 	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
 		undefined,
 		{ enabled: Boolean(user) }
@@ -183,8 +192,8 @@ export default function ExerciseTrackPage({
 										2. Start challenges
 									</CardTitle>
 									<CardDescription>
-										Open any challenge in the list and press Start challenge when
-										you begin. There is no required order.
+										Open any challenge in the list and press Start challenge
+										when you begin. There is no required order.
 									</CardDescription>
 								</CardHeader>
 							</Card>
@@ -281,6 +290,7 @@ export default function ExerciseTrackPage({
 					onOpenChange={setReviewOpen}
 					trackId={track.id}
 					trackSlug={track.slug}
+					repositoryId={track.githubRepository?.id}
 					challenges={track.challenges}
 				/>
 			)}

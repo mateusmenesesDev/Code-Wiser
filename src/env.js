@@ -31,7 +31,17 @@ export const env = createEnv({
 		/** Cal.com Platform: OAuth client secret (with NEXT_PUBLIC_CALCOM_CLIENT_ID). */
 		CALCOM_OAUTH_CLIENT_SECRET: z.string().trim().min(1).optional(),
 		// Cron job security
-		CRON_SECRET: z.string()
+		CRON_SECRET: z.string(),
+		// GitHub App integration. Optional until the app is configured.
+		GITHUB_APP_ID: z.string().trim().min(1).optional(),
+		GITHUB_APP_SLUG: z.string().trim().min(1).optional(),
+		GITHUB_APP_CLIENT_ID: z.string().trim().min(1).optional(),
+		GITHUB_APP_CLIENT_SECRET: z.string().trim().min(1).optional(),
+		GITHUB_APP_PRIVATE_KEY: z.string().trim().min(1).optional(),
+		GITHUB_WEBHOOK_SECRET: z.string().trim().min(1).optional(),
+		GITHUB_APP_STATE_SECRET: z.string().trim().min(1).optional(),
+		// AI-assisted PR review. Optional so the existing product remains usable without the feature configured.
+		GROQ_API_KEY: z.string().trim().min(1).optional()
 	},
 
 	/**
@@ -78,7 +88,16 @@ export const env = createEnv({
 		NEXT_PUBLIC_CALCOM_USERNAME: process.env.NEXT_PUBLIC_CALCOM_USERNAME,
 		NEXT_PUBLIC_CALCOM_CLIENT_ID: process.env.NEXT_PUBLIC_CALCOM_CLIENT_ID,
 		// Cron job security
-		CRON_SECRET: process.env.CRON_SECRET
+		CRON_SECRET: process.env.CRON_SECRET,
+		// GitHub App integration
+		GITHUB_APP_ID: process.env.GITHUB_APP_ID,
+		GITHUB_APP_SLUG: process.env.GITHUB_APP_SLUG,
+		GITHUB_APP_CLIENT_ID: process.env.GITHUB_APP_CLIENT_ID,
+		GITHUB_APP_CLIENT_SECRET: process.env.GITHUB_APP_CLIENT_SECRET,
+		GITHUB_APP_PRIVATE_KEY: process.env.GITHUB_APP_PRIVATE_KEY,
+		GITHUB_WEBHOOK_SECRET: process.env.GITHUB_WEBHOOK_SECRET,
+		GITHUB_APP_STATE_SECRET: process.env.GITHUB_APP_STATE_SECRET,
+		GROQ_API_KEY: process.env.GROQ_API_KEY
 	},
 	/**
 	 * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

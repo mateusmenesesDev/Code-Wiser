@@ -6,6 +6,7 @@ import { dashboard } from './routers/dashboard';
 import { epicRouter } from './routers/epic/epic.router';
 import { exerciseRouter } from './routers/exercise';
 import { feedbackRouter } from './routers/feedback';
+import { githubRouter } from './routers/github';
 import { kanbanRouter } from './routers/kanban';
 import { mentorshipRouter } from './routers/mentorship/mentorship';
 import { mentorAttentionRouter } from './routers/mentorAttention';
@@ -43,7 +44,8 @@ export const appRouter = createTRPCRouter({
 	mentorship: mentorshipRouter,
 	mentorAttention: mentorAttentionRouter,
 	exercise: exerciseRouter,
-	feedback: feedbackRouter
+	feedback: feedbackRouter,
+	github: githubRouter
 });
 
 // export type definition of API

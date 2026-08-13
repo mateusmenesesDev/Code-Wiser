@@ -35,6 +35,18 @@ export function usePRReview() {
 		}
 	});
 
+	const startAIAnalysisMutation = api.prReview.startAIAnalysis.useMutation({
+		onSuccess: (_, input) => {
+			void utils.prReview.getLatestAIAnalysis.invalidate({
+				reviewId: input.reviewId
+			});
+			toast.success('AI analysis queued');
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to start AI analysis');
+		}
+	});
+
 	const approvePRMutation = api.prReview.approve.useMutation({
 		onSuccess: () => {
 			toast.success('PR approved successfully');
@@ -89,6 +101,10 @@ export function usePRReview() {
 		createReviewMutation.mutate(input);
 	};
 
+	const startAIAnalysis = (input: { reviewId: string }) => {
+		startAIAnalysisMutation.mutate(input);
+	};
+
 	const approvePR = (input: ApprovePRInput) => {
 		approvePRMutation.mutate(input);
 	};
@@ -110,10 +126,12 @@ export function usePRReview() {
 		getByTaskId,
 		getActiveByTaskId,
 		createReview,
+		startAIAnalysis,
 		approvePR,
 		requestChanges,
 		requestCodeReview,
 		updatePRReviewUrl,
+		isStartingAIAnalysis: startAIAnalysisMutation.isPending,
 		isCreating: createReviewMutation.isPending,
 		isApproving: approvePRMutation.isPending,
 		isRequestingChanges: requestChangesMutation.isPending,

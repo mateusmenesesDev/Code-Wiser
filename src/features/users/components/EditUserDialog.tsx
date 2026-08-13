@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -29,10 +29,18 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '~/common/components/ui/select';
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow
+} from '~/common/components/ui/table';
 import { api } from '~/trpc/react';
 
 const editUserSchema = z.object({
-	credits: z.number().int().min(0).optional(),
+	creditDelta: z.number().int().optional(),
 	creditAdjustmentReason: z.string().trim().max(500).optional(),
 	mentorshipStatus: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 	mentorshipType: z
@@ -66,7 +74,14 @@ export function EditUserDialog({
 
 	const updateUserMutation = api.user.update.useMutation();
 	const adjustCreditsMutation = api.user.adjustCredits.useMutation();
+	const reconcileCheckoutMutation =
+		api.user.reconcileCreditCheckout.useMutation();
 	const creditAdjustmentKey = useRef<string | null>(null);
+	const [reconcileSessionId, setReconcileSessionId] = useState('');
+	const { data: creditData } = api.user.getCreditTransactionsForUser.useQuery(
+		{ userId, skip: 0, take: 10 },
+		{ enabled: open && !!userId }
+	);
 
 	const resetSessionsMutation = api.user.resetUserWeeklySessions.useMutation({
 		onSuccess: async () => {
@@ -84,7 +99,7 @@ export function EditUserDialog({
 	const form = useForm<EditUserFormData>({
 		resolver: zodResolver(editUserSchema),
 		defaultValues: {
-			credits: undefined,
+			creditDelta: undefined,
 			creditAdjustmentReason: '',
 			mentorshipStatus: undefined,
 			mentorshipType: null,
@@ -97,7 +112,7 @@ export function EditUserDialog({
 	useEffect(() => {
 		if (user) {
 			form.reset({
-				credits: user.credits,
+				creditDelta: undefined,
 				creditAdjustmentReason: '',
 				mentorshipStatus: user.mentorshipStatus,
 				mentorshipType: user.mentorshipType ?? null,
@@ -113,8 +128,7 @@ export function EditUserDialog({
 	}, [user, form]);
 
 	const onSubmit = async (data: EditUserFormData) => {
-		const currentCredits = user?.credits ?? 0;
-		const creditDelta = (data.credits ?? currentCredits) - currentCredits;
+		const creditDelta = data.creditDelta ?? 0;
 		if (creditDelta !== 0 && !data.creditAdjustmentReason) {
 			toast.error('A reason is required for credit adjustments');
 			return;
@@ -181,10 +195,10 @@ export function EditUserDialog({
 						<div className="grid grid-cols-2 gap-4">
 							<FormField
 								control={form.control}
-								name="credits"
+								name="creditDelta"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Target Credits</FormLabel>
+										<FormLabel>Manual Credit Change</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
@@ -326,6 +340,95 @@ export function EditUserDialog({
 									</FormItem>
 								)}
 							/>
+						</div>
+
+						<div className="space-y-3 rounded-lg border p-4">
+							<div>
+								<h3 className="font-medium">Credit reconciliation</h3>
+								<p className="text-muted-foreground text-sm">
+									Balance: {creditData?.storedBalance ?? '—'} · Ledger:{' '}
+									{creditData?.ledgerBalance ?? '—'}
+									{creditData && creditData.difference !== 0 ? (
+										<span className="text-destructive">
+											{' '}
+											· Difference: {creditData.difference}
+										</span>
+									) : null}
+								</p>
+							</div>
+							<div className="flex gap-2">
+								<Input
+									placeholder="Stripe checkout session ID"
+									value={reconcileSessionId}
+									onChange={(event) =>
+										setReconcileSessionId(event.target.value)
+									}
+								/>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={
+										!reconcileSessionId.trim() ||
+										reconcileCheckoutMutation.isPending
+									}
+									onClick={async () => {
+										try {
+											await reconcileCheckoutMutation.mutateAsync({
+												sessionId: reconcileSessionId.trim(),
+												userId
+											});
+											setReconcileSessionId('');
+											await Promise.all([
+												utils.user.getCreditTransactionsForUser.invalidate({
+													userId
+												}),
+												utils.user.getById.invalidate(userId),
+												utils.user.listAll.invalidate()
+											]);
+											toast.success('Checkout reconciled successfully');
+										} catch (error) {
+											toast.error(
+												error instanceof Error
+													? error.message
+													: 'Could not reconcile checkout'
+											);
+										}
+									}}
+								>
+									{reconcileCheckoutMutation.isPending
+										? 'Reconciling...'
+										: 'Reconcile'}
+								</Button>
+							</div>
+							{creditData?.transactions.length ? (
+								<div className="max-h-48 overflow-auto rounded border">
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead>Date</TableHead>
+												<TableHead>Event</TableHead>
+												<TableHead className="text-right">Credits</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{creditData.transactions.map((transaction) => (
+												<TableRow key={transaction.id}>
+													<TableCell>
+														{new Date(
+															transaction.createdAt
+														).toLocaleDateString()}
+													</TableCell>
+													<TableCell>{transaction.type}</TableCell>
+													<TableCell className="text-right">
+														{transaction.value > 0 ? '+' : ''}
+														{transaction.value}
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</div>
+							) : null}
 						</div>
 
 						<DialogFooter className="flex items-center justify-between">

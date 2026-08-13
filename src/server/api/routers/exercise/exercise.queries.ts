@@ -73,6 +73,9 @@ export const exerciseQueries = {
 					slug: true,
 					description: true,
 					repoUrl: true,
+					githubRepository: {
+						select: { id: true, fullName: true, htmlUrl: true }
+					},
 					sortOrder: true,
 					isPublished: true,
 					isArchived: true,
@@ -130,7 +133,8 @@ export const exerciseQueries = {
 			}
 
 			const visibleChallenges = track.challenges.filter((challenge) => {
-				if (!challenge.isArchived) return isPubliclyVisible || hasViewerProgress;
+				if (!challenge.isArchived)
+					return isPubliclyVisible || hasViewerProgress;
 				return progressByChallengeId.has(challenge.id);
 			});
 
@@ -147,6 +151,7 @@ export const exerciseQueries = {
 				isArchived: track.isArchived,
 				repoUrl: isLoggedIn && hasCloneableRepo ? track.repoUrl : null,
 				isCloneable: isLoggedIn && hasCloneableRepo,
+				githubRepository: isLoggedIn ? track.githubRepository : null,
 				challenges: sortedChallenges.map((challenge) => ({
 					id: challenge.id,
 					title: challenge.title,
@@ -187,6 +192,9 @@ export const exerciseQueries = {
 							name: true,
 							slug: true,
 							repoUrl: true,
+							githubRepository: {
+								select: { id: true, fullName: true, htmlUrl: true }
+							},
 							isPublished: true,
 							isArchived: true
 						}
@@ -309,7 +317,8 @@ export const exerciseQueries = {
 					isArchived: challenge.track.isArchived,
 					repoUrl:
 						isLoggedIn && hasCloneableRepo ? challenge.track.repoUrl : null,
-					isCloneable: isLoggedIn && hasCloneableRepo
+					isCloneable: isLoggedIn && hasCloneableRepo,
+					githubRepository: isLoggedIn ? challenge.track.githubRepository : null
 				},
 				...(isLoggedIn
 					? {
@@ -335,6 +344,9 @@ export const exerciseQueries = {
 							where: { isArchived: false }
 						}
 					}
+				},
+				githubRepository: {
+					select: { id: true, fullName: true, htmlUrl: true }
 				}
 			}
 		});
@@ -351,7 +363,10 @@ export const exerciseQueries = {
 			const track = await ctx.db.exerciseTrack.findUnique({
 				where: { id: input.id },
 				include: {
-					challenges: true
+					challenges: true,
+					githubRepository: {
+						select: { id: true, fullName: true, htmlUrl: true }
+					}
 				}
 			});
 

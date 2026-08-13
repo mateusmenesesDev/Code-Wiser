@@ -1,4 +1,5 @@
-import { CheckCircle2, HelpCircle, RefreshCcw } from 'lucide-react';
+import { auth } from '@clerk/nextjs/server';
+import { CheckCircle2, Clock3, HelpCircle, RefreshCcw } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -12,6 +13,7 @@ import {
 } from '~/common/components/ui/card';
 import { env } from '~/env';
 import { getCheckoutReturnState } from '~/features/checkout/utils/checkoutReturn';
+import { db } from '~/server/db';
 import { stripe } from '~/services/stripe';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +32,8 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
 		? searchParams?.session_id[0]
 		: searchParams?.session_id;
 
-	const state = await getReturnState(sessionId);
+	const session = await auth();
+	const state = await getReturnState(sessionId, session.userId);
 	const supportEmail = env.SUPPORT_EMAIL;
 
 	if (state.kind === 'complete') {
@@ -64,6 +67,35 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
 								<Link href="/pricing">View pricing</Link>
 							</Button>
 						</div>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	if (state.kind === 'processing') {
+		return (
+			<div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4 py-12">
+				<Card className="w-full max-w-xl border-info/30 shadow-lg">
+					<CardHeader className="text-center">
+						<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-info-muted">
+							<Clock3 className="h-7 w-7 text-info" />
+						</div>
+						<CardTitle level={1} className="text-3xl">
+							Payment is being confirmed
+						</CardTitle>
+						<CardDescription className="text-base">
+							Stripe received the checkout, but the payment is still processing. Your
+							credits will be added automatically after confirmation.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="flex flex-col justify-center gap-3 sm:flex-row">
+						<Button asChild variant="primary">
+							<Link href="/pricing">View checkout status</Link>
+						</Button>
+						<Button asChild variant="outline">
+							<Link href="/my-projects">Go to dashboard</Link>
+						</Button>
 					</CardContent>
 				</Card>
 			</div>
@@ -139,11 +171,26 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
 	);
 }
 
-async function getReturnState(sessionId: string | undefined) {
-	if (!sessionId) return getCheckoutReturnState(null);
+async function getReturnState(sessionId: string | undefined, userId: string | null) {
+	if (!sessionId || !userId) return getCheckoutReturnState(null);
 
 	try {
+		const checkout = await db.creditCheckout.findUnique({
+			where: { stripeSessionId: sessionId },
+			select: { userId: true, stripeCustomerId: true }
+		});
+		if (!checkout || checkout.userId !== userId) {
+			return getCheckoutReturnState(null, new Error('Checkout does not belong to user'));
+		}
+
 		const session = await stripe.checkout.sessions.retrieve(sessionId);
+		const customerId =
+			typeof session.customer === 'string'
+				? session.customer
+				: session.customer?.id;
+		if (customerId !== checkout.stripeCustomerId) {
+			return getCheckoutReturnState(null, new Error('Checkout customer mismatch'));
+		}
 		return getCheckoutReturnState(session);
 	} catch (error) {
 		return getCheckoutReturnState(null, error);

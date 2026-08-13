@@ -24,6 +24,10 @@ import {
 	notifyExerciseReviewRequested
 } from '~/server/services/notification/exerciseNotifications';
 import {
+	GitHubServiceError,
+	getPullRequestSnapshotForRepository
+} from '~/server/services/github/github';
+import {
 	adminProcedure,
 	mentorshipProcedure,
 	protectedProcedure
@@ -154,7 +158,21 @@ export const exerciseMutations = {
 					isPublished: true,
 					isArchived: false
 				},
-				select: { id: true, name: true, repoUrl: true }
+				select: {
+					id: true,
+					name: true,
+					repoUrl: true,
+					githubRepository: {
+						select: {
+							id: true,
+							owner: true,
+							name: true,
+							installation: {
+								select: { githubInstallationId: true, active: true }
+							}
+						}
+					}
+				}
 			});
 
 			if (!track) {
@@ -169,8 +187,7 @@ export const exerciseMutations = {
 			if (trackRepoPath && prRepoPath && trackRepoPath !== prRepoPath) {
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
-					message:
-						'PR URL must belong to this track repository'
+					message: 'PR URL must belong to this track repository'
 				});
 			}
 
@@ -219,15 +236,50 @@ export const exerciseMutations = {
 				});
 			}
 
+			let submissionUrl = input.prUrl;
+			let githubSnapshot: Awaited<
+				ReturnType<typeof getPullRequestSnapshotForRepository>
+			> | null = null;
+			if (track.githubRepository) {
+				try {
+					githubSnapshot = await getPullRequestSnapshotForRepository(
+						track.githubRepository,
+						input.prUrl
+					);
+					submissionUrl = githubSnapshot.htmlUrl;
+				} catch (error) {
+					if (error instanceof GitHubServiceError) {
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: error.message
+						});
+					}
+					throw error;
+				}
+			}
+
 			const now = new Date();
 
 			const submission = await ctx.db.$transaction(async (tx) => {
 				const created = await tx.exerciseReviewSubmission.create({
 					data: {
-						prUrl: input.prUrl,
+						prUrl: submissionUrl,
 						trackId: track.id,
 						submittedById: userId,
 						needsAttention: true,
+						...(githubSnapshot
+							? {
+									githubRepositoryId: track.githubRepository?.id,
+									githubPullRequestNumber: githubSnapshot.number,
+									githubTitle: githubSnapshot.title,
+									githubState: githubSnapshot.state,
+									githubAuthorLogin: githubSnapshot.authorLogin,
+									githubCommitCount: githubSnapshot.commitCount,
+									githubHeadSha: githubSnapshot.headSha,
+									githubChecksStatus: githubSnapshot.checksStatus,
+									githubLastSyncedAt: new Date()
+								}
+							: {}),
 						decisions: {
 							create: uniqueChallengeIds.map((challengeId) => ({
 								challengeId,
@@ -269,7 +321,7 @@ export const exerciseMutations = {
 				submissionId: submission.id,
 				trackName: track.name,
 				challengeTitles: challenges.map((challenge) => challenge.title),
-				prUrl: input.prUrl
+				prUrl: submissionUrl
 			}).catch((error) => {
 				console.error('Failed to send exercise review notification:', error);
 			});
@@ -319,8 +371,7 @@ export const exerciseMutations = {
 			if (changesRequested.length === 0) {
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
-					message:
-						'This submission has no challenges awaiting your PR update'
+					message: 'This submission has no challenges awaiting your PR update'
 				});
 			}
 

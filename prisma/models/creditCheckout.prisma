@@ -1,0 +1,33 @@
+enum CreditCheckoutStatus {
+  OPEN
+  PROCESSING
+  PAID
+  FULFILLED
+  FAILED
+  EXPIRED
+
+  @@schema("public")
+}
+
+model CreditCheckout {
+  id                    String               @id @default(cuid())
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  userId                String
+  requestIdempotencyKey String               @unique
+  stripeSessionId       String               @unique
+  stripeCustomerId      String
+  packageId             String
+  credits               Int
+  status                CreditCheckoutStatus @default(OPEN)
+  checkoutUrl           String?
+  expiresAt             DateTime?
+  failureReason         String?
+  transactionId         String?              @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@schema("public")
+}

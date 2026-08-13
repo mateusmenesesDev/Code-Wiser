@@ -1,9 +1,15 @@
-import { PullRequestReviewStatusEnum } from '@prisma/client';
+import {
+	PRReviewAnalysisStatus,
+	PRReviewFindingDecision,
+	PullRequestReviewStatusEnum
+} from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import {
 	approvePRSchema,
 	createPRReviewSchema,
 	requestChangesPRSchema,
+	reviewAIFindingSchema,
+	startAIAnalysisSchema,
 	updatePRReviewUrlSchema
 } from '~/features/prReview/schemas/prReview.schema';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
@@ -17,8 +23,165 @@ import {
 	assertTaskAccess,
 	userHasAccessToProject
 } from '~/server/utils/auth';
+import {
+	GitHubServiceError,
+	getPullRequestSnapshotForRepository,
+	githubPullRequestRefFromUrl
+} from '~/server/services/github/github';
+import { PR_REVIEW_ANALYSIS_PROMPT_VERSION } from '~/server/services/prReviewAnalysis';
 
 export const prReviewMutations = {
+	startAIAnalysis: adminProcedure
+		.input(startAIAnalysisSchema)
+		.mutation(async ({ ctx, input }) => {
+			const review = await ctx.db.pullRequestReview.findUnique({
+				where: { id: input.reviewId },
+				select: {
+					id: true,
+					isActive: true,
+					status: true,
+					githubHeadSha: true,
+					githubPullRequestNumber: true,
+					githubRepositoryId: true
+				}
+			});
+			if (!review) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'PR review not found'
+				});
+			}
+			if (
+				!review.isActive ||
+				review.status !== PullRequestReviewStatusEnum.PENDING
+			) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'Only an active pending review can be analyzed'
+				});
+			}
+			if (
+				!review.githubHeadSha ||
+				!review.githubRepositoryId ||
+				!review.githubPullRequestNumber
+			) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message:
+						'Link this review to a GitHub pull request before analyzing it'
+				});
+			}
+
+			const existing = await ctx.db.prReviewAnalysis.findUnique({
+				where: {
+					reviewId_sourceHeadSha: {
+						reviewId: review.id,
+						sourceHeadSha: review.githubHeadSha
+					}
+				},
+				select: { id: true, status: true, attempts: true }
+			});
+			if (existing) {
+				if (
+					existing.status === PRReviewAnalysisStatus.COMPLETED ||
+					existing.status === PRReviewAnalysisStatus.QUEUED ||
+					existing.status === PRReviewAnalysisStatus.RUNNING
+				) {
+					return { analysisId: existing.id, status: existing.status };
+				}
+				if (existing.attempts >= 2) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'This analysis reached its retry limit'
+					});
+				}
+				const retried = await ctx.db.prReviewAnalysis.update({
+					where: { id: existing.id },
+					data: {
+						status: PRReviewAnalysisStatus.QUEUED,
+						errorCode: null,
+						errorMessage: null,
+						completedAt: null
+					}
+				});
+				return { analysisId: retried.id, status: retried.status };
+			}
+
+			const analysis = await ctx.db.prReviewAnalysis.upsert({
+				where: {
+					reviewId_sourceHeadSha: {
+						reviewId: review.id,
+						sourceHeadSha: review.githubHeadSha
+					}
+				},
+				create: {
+					reviewId: review.id,
+					requestedById: ctx.session.userId,
+					sourceHeadSha: review.githubHeadSha,
+					promptVersion: PR_REVIEW_ANALYSIS_PROMPT_VERSION
+				},
+				update: {},
+				select: { id: true, status: true }
+			});
+			return { analysisId: analysis.id, status: analysis.status };
+		}),
+
+	reviewAIFinding: adminProcedure
+		.input(reviewAIFindingSchema)
+		.mutation(async ({ ctx, input }) => {
+			const finding = await ctx.db.prReviewFinding.findUnique({
+				where: { id: input.findingId },
+				select: {
+					id: true,
+					analysis: {
+						select: {
+							status: true,
+							review: { select: { status: true, isActive: true } }
+						}
+					}
+				}
+			});
+			if (!finding) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'AI finding not found'
+				});
+			}
+			if (
+				finding.analysis.status !== PRReviewAnalysisStatus.COMPLETED ||
+				!finding.analysis.review.isActive ||
+				finding.analysis.review.status !== PullRequestReviewStatusEnum.PENDING
+			) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'This AI finding is no longer editable'
+				});
+			}
+
+			const { findingId, decision, ...edits } = input;
+			return ctx.db.prReviewFinding.update({
+				where: { id: findingId },
+				data: {
+					...(decision
+						? { decision: decision as PRReviewFindingDecision }
+						: {}),
+					...(edits.severity ? { editedSeverity: edits.severity } : {}),
+					...(edits.category ? { editedCategory: edits.category } : {}),
+					...(edits.problem ? { editedProblem: edits.problem } : {}),
+					...(edits.justification
+						? { editedJustification: edits.justification }
+						: {}),
+					...(edits.suggestion ? { editedSuggestion: edits.suggestion } : {}),
+					...(edits.confidence !== undefined
+						? { editedConfidence: edits.confidence }
+						: {}),
+					...(decision
+						? { decisionById: ctx.session.userId, decidedAt: new Date() }
+						: {})
+				}
+			});
+		}),
+
 	approve: adminProcedure
 		.input(approvePRSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -114,7 +277,7 @@ export const prReviewMutations = {
 	requestChanges: adminProcedure
 		.input(requestChangesPRSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { taskId, comment } = input;
+			const { taskId, comment, analysisId } = input;
 
 			const activeReview = await ctx.db.pullRequestReview.findFirst({
 				where: {
@@ -160,6 +323,33 @@ export const prReviewMutations = {
 				await assertProjectIsActive(ctx.db, activeReview.task.project.id);
 			}
 
+			if (analysisId) {
+				const analysis = await ctx.db.prReviewAnalysis.findUnique({
+					where: { id: analysisId },
+					select: {
+						status: true,
+						reviewId: true,
+						sourceHeadSha: true,
+						findings: {
+							where: { decision: PRReviewFindingDecision.ACCEPTED },
+							select: { id: true }
+						}
+					}
+				});
+				if (
+					!analysis ||
+					analysis.reviewId !== activeReview.id ||
+					analysis.status !== PRReviewAnalysisStatus.COMPLETED ||
+					analysis.sourceHeadSha !== activeReview.githubHeadSha ||
+					analysis.findings.length === 0
+				) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'The selected AI findings are no longer current'
+					});
+				}
+			}
+
 			const decision = await ctx.db.pullRequestReview.updateMany({
 				where: {
 					id: activeReview.id,
@@ -168,6 +358,7 @@ export const prReviewMutations = {
 				data: {
 					status: PullRequestReviewStatusEnum.CHANGES_REQUESTED,
 					comment: comment || null,
+					feedbackAssistedByAi: Boolean(analysisId),
 					reviewedById: ctx.session.userId,
 					reviewedAt: new Date()
 				}
@@ -220,7 +411,17 @@ export const prReviewMutations = {
 					project: {
 						select: {
 							id: true,
-							title: true
+							title: true,
+							githubRepository: {
+								select: {
+									id: true,
+									owner: true,
+									name: true,
+									installation: {
+										select: { githubInstallationId: true, active: true }
+									}
+								}
+							}
 						}
 					}
 				}
@@ -274,6 +475,34 @@ export const prReviewMutations = {
 				};
 			}
 
+			let reviewUrl = prUrl;
+			let githubSnapshot: Awaited<
+				ReturnType<typeof getPullRequestSnapshotForRepository>
+			> | null = null;
+			if (task.project.githubRepository) {
+				if (!githubPullRequestRefFromUrl(prUrl)) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Enter a valid GitHub pull request URL'
+					});
+				}
+				try {
+					githubSnapshot = await getPullRequestSnapshotForRepository(
+						task.project.githubRepository,
+						prUrl
+					);
+					reviewUrl = githubSnapshot.htmlUrl;
+				} catch (error) {
+					if (error instanceof GitHubServiceError) {
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: error.message
+						});
+					}
+					throw error;
+				}
+			}
+
 			const CODE_REVIEW_COST = 5;
 			const isMentorshipActive = user.mentorshipStatus === 'ACTIVE';
 
@@ -317,11 +546,24 @@ export const prReviewMutations = {
 				await tx.pullRequestReview.create({
 					data: {
 						taskId,
-						prUrl,
+						prUrl: reviewUrl,
 						requestIdempotencyKey,
 						status: PullRequestReviewStatusEnum.PENDING,
 						requestedById: requesterId,
-						isActive: true
+						isActive: true,
+						...(githubSnapshot
+							? {
+									githubRepositoryId: task.project?.githubRepository?.id,
+									githubPullRequestNumber: githubSnapshot.number,
+									githubTitle: githubSnapshot.title,
+									githubState: githubSnapshot.state,
+									githubAuthorLogin: githubSnapshot.authorLogin,
+									githubCommitCount: githubSnapshot.commitCount,
+									githubHeadSha: githubSnapshot.headSha,
+									githubChecksStatus: githubSnapshot.checksStatus,
+									githubLastSyncedAt: new Date()
+								}
+							: {})
 					}
 				});
 			});
@@ -333,7 +575,7 @@ export const prReviewMutations = {
 				projectName: task.project.title,
 				taskId: task.id,
 				taskTitle: task.title,
-				prUrl
+				prUrl: reviewUrl
 			}).catch((error) => {
 				console.error('Failed to send notification:', error);
 			});
@@ -351,7 +593,28 @@ export const prReviewMutations = {
 				select: {
 					taskId: true,
 					requestedById: true,
-					task: { select: { projectId: true } }
+					task: {
+						select: {
+							projectId: true,
+							project: {
+								select: {
+									githubRepository: {
+										select: {
+											id: true,
+											owner: true,
+											name: true,
+											installation: {
+												select: {
+													githubInstallationId: true,
+													active: true
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			});
 			if (!review) {
@@ -372,9 +635,43 @@ export const prReviewMutations = {
 				await assertProjectIsActive(ctx.db, review.task.projectId);
 			}
 
+			let reviewUrl = prUrl;
+			let githubData: Awaited<
+				ReturnType<typeof getPullRequestSnapshotForRepository>
+			> | null = null;
+			const githubRepository = review.task.project?.githubRepository;
+			if (githubRepository) {
+				try {
+					githubData = await getPullRequestSnapshotForRepository(
+						githubRepository,
+						prUrl
+					);
+					reviewUrl = githubData.htmlUrl;
+				} catch (error) {
+					if (error instanceof GitHubServiceError) {
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: error.message
+						});
+					}
+					throw error;
+				}
+			}
+
 			await ctx.db.pullRequestReview.update({
 				where: { id: reviewId },
-				data: { prUrl }
+				data: {
+					prUrl: reviewUrl,
+					githubRepositoryId: githubData ? githubRepository?.id : null,
+					githubPullRequestNumber: githubData?.number ?? null,
+					githubTitle: githubData?.title ?? null,
+					githubState: githubData?.state ?? null,
+					githubAuthorLogin: githubData?.authorLogin ?? null,
+					githubCommitCount: githubData?.commitCount ?? null,
+					githubHeadSha: githubData?.headSha ?? null,
+					githubChecksStatus: githubData?.checksStatus ?? null,
+					githubLastSyncedAt: githubData ? new Date() : null
+				}
 			});
 
 			return { success: true, message: 'PR review URL updated successfully' };

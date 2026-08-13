@@ -147,8 +147,18 @@ model PullRequestReview {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  prUrl                 String
-  requestIdempotencyKey String? @unique
+  prUrl                   String
+  requestIdempotencyKey   String?           @unique
+  githubPullRequestNumber Int?
+  githubTitle             String?
+  githubState             String?
+  githubAuthorLogin       String?
+  githubCommitCount       Int?
+  githubHeadSha           String?
+  githubChecksStatus      String?
+  githubLastSyncedAt      DateTime?
+  githubRepositoryId      String?
+  githubRepository        GitHubRepository? @relation(fields: [githubRepositoryId], references: [id], onDelete: SetNull)
 
   status     PullRequestReviewStatusEnum @default(PENDING)
   comment    String?
@@ -163,10 +173,14 @@ model PullRequestReview {
   reviewedById String?
   reviewedBy   User?   @relation("PullRequestReviewReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
-  isActive Boolean @default(true)
+  isActive             Boolean @default(true)
+  feedbackAssistedByAi Boolean @default(false)
+
+  analyses PrReviewAnalysis[]
 
   @@index([taskId, isActive])
   @@index([reviewedById])
   @@index([isActive, status, createdAt])
+  @@index([githubRepositoryId, githubPullRequestNumber])
   @@schema("public")
 }

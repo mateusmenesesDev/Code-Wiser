@@ -13,6 +13,8 @@ model Project {
   figmaProjectUrl         String?
   sourceProjectTemplateId String?
   sourceProjectTemplate   ProjectTemplate?       @relation("ProjectSourceTemplate", fields: [sourceProjectTemplateId], references: [id], onDelete: SetNull)
+  githubRepositoryId      String?                @unique
+  githubRepository        GitHubRepository?      @relation("ProjectGitHubRepository", fields: [githubRepositoryId], references: [id], onDelete: SetNull)
   publicCode              String?                @unique
   creationIdempotencyKey  String?                @unique
   nextTaskNumber          Int                    @default(1)

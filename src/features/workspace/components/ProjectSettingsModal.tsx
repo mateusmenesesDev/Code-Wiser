@@ -32,6 +32,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger
 } from '~/common/components/ui/tooltip';
+import { GitHubRepositoryConnector } from '~/features/github/components/GitHubRepositoryConnector';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
@@ -332,6 +333,12 @@ export function ProjectSettingsModal({
 								</div>
 							</div>
 						</div>
+
+						<GitHubRepositoryConnector
+							projectId={projectId}
+							currentRepository={projectInfo?.githubRepository}
+							returnTo={`/workspace/${projectId}`}
+						/>
 
 						{canManageMembers && (
 							<div className="space-y-4 rounded-lg border p-4">

@@ -4,6 +4,7 @@ import type { UserChallengeProgressStatus } from '@prisma/client';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
+import { GitHubPullRequestPicker } from '~/features/github/components/GitHubPullRequestPicker';
 import { Button } from '~/common/components/ui/button';
 import { Checkbox } from '~/common/components/ui/checkbox';
 import {
@@ -36,6 +37,7 @@ type RequestExerciseReviewDialogProps = {
 	trackSlug: string;
 	challenges: SelectableChallenge[];
 	initialChallengeIds?: string[];
+	repositoryId?: string | null;
 };
 
 const ACTIVE_REVIEW_STATUSES = new Set<UserChallengeProgressStatus>([
@@ -49,7 +51,8 @@ export function RequestExerciseReviewDialog({
 	trackId,
 	trackSlug,
 	challenges,
-	initialChallengeIds = []
+	initialChallengeIds = [],
+	repositoryId
 }: RequestExerciseReviewDialogProps) {
 	const utils = api.useUtils();
 	const [prUrl, setPrUrl] = useState('');
@@ -113,6 +116,12 @@ export function RequestExerciseReviewDialog({
 							value={prUrl}
 							onChange={(event) => setPrUrl(event.target.value)}
 						/>
+						{repositoryId && (
+							<GitHubPullRequestPicker
+								repositoryId={repositoryId}
+								onSelect={setPrUrl}
+							/>
+						)}
 					</div>
 
 					<div className="space-y-2">

@@ -15,6 +15,9 @@ export const getProjectQueries = {
 					title: true,
 					description: true,
 					figmaProjectUrl: true,
+					githubRepository: {
+						select: { id: true, fullName: true, htmlUrl: true }
+					},
 					methodology: true,
 					accessType: true,
 					maxParticipants: true,

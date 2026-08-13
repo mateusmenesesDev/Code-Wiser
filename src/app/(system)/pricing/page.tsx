@@ -7,6 +7,7 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
+import { CreditHistory } from '~/features/checkout/components/CreditHistory';
 import {
 	BuyCreditsButton,
 	PricingClient
@@ -196,6 +197,8 @@ export default function PricingPage() {
 						</Card>
 					</div>
 				</div>
+
+				<CreditHistory />
 			</div>
 		</div>
 	);

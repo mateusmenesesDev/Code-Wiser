@@ -1,12 +1,6 @@
 'use client';
 
-import {
-	ArrowLeft,
-	Copy,
-	GitPullRequest,
-	Play,
-	RefreshCw
-} from 'lucide-react';
+import { ArrowLeft, Copy, GitPullRequest, Play, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -44,11 +38,14 @@ export default function ExerciseChallengePage({
 	const utils = api.useUtils();
 	const [reviewOpen, setReviewOpen] = useState(false);
 	const [prUpdatedOpen, setPrUpdatedOpen] = useState(false);
-	const { data: challenge, isLoading, error } =
-		api.exercise.getPublishedChallengeBySlug.useQuery({
-			trackSlug,
-			challengeSlug
-		});
+	const {
+		data: challenge,
+		isLoading,
+		error
+	} = api.exercise.getPublishedChallengeBySlug.useQuery({
+		trackSlug,
+		challengeSlug
+	});
 	const { data: track } = api.exercise.getPublishedTrackBySlug.useQuery(
 		{ slug: trackSlug },
 		{ enabled: Boolean(user) }
@@ -175,8 +172,7 @@ export default function ExerciseChallengePage({
 						)}
 						{canNotifyPrUpdate && hasActiveMentorship && (
 							<Button onClick={() => setPrUpdatedOpen(true)}>
-								<RefreshCw className="mr-2 h-4 w-4" />
-								I updated the PR
+								<RefreshCw className="mr-2 h-4 w-4" />I updated the PR
 							</Button>
 						)}
 					</div>
@@ -358,9 +354,7 @@ export default function ExerciseChallengePage({
 					</Card>
 				</div>
 			) : (
-				<p className="text-muted-foreground">
-					Challenge brief is unavailable.
-				</p>
+				<p className="text-muted-foreground">Challenge brief is unavailable.</p>
 			)}
 
 			{track && challenge && !isArchived && (
@@ -369,6 +363,7 @@ export default function ExerciseChallengePage({
 					onOpenChange={setReviewOpen}
 					trackId={track.id}
 					trackSlug={track.slug}
+					repositoryId={track.githubRepository?.id}
 					challenges={track.challenges}
 					initialChallengeIds={[challenge.id]}
 				/>

@@ -59,6 +59,24 @@ export const env = createEnv({
 - **UPLOADTHING_TOKEN**: Authentication token for UploadThing service
   - Used in `src/app/api/uploadthing/core.ts` for file upload handling
 
+#### GitHub App
+
+The GitHub integration is optional until a GitHub App is registered. When enabled, the app uses read-only installation access and verifies all webhook deliveries before changing review metadata.
+
+- **GITHUB_APP_ID**: GitHub App numeric ID
+- **GITHUB_APP_SLUG**: GitHub App slug used by the installation URL
+- **GITHUB_APP_CLIENT_ID**: GitHub App OAuth client ID
+- **GITHUB_APP_CLIENT_SECRET**: GitHub App OAuth client secret
+- **GITHUB_APP_PRIVATE_KEY**: GitHub App private key; escaped newlines are accepted
+- **GITHUB_APP_STATE_SECRET**: Secret used to sign short-lived installation state
+- **GITHUB_WEBHOOK_SECRET**: Secret used to verify `X-Hub-Signature-256`
+
+The App must request user authorization during installation, use the callback `/api/github/callback`, and send webhooks to `/api/webhooks/github`. Repository contents are not stored; only installation and pull-request metadata are persisted.
+
+#### AI-assisted PR review
+
+- **GROQ_API_KEY**: Optional API key for the bounded, mentor-reviewed PR analysis worker. Analyses remain unavailable until this is configured.
+
 #### Email
 
 - **RESEND_API_KEY**: Resend API key for outbound notifications
@@ -162,6 +180,15 @@ UPLOADTHING_TOKEN="sk_live_..."
 # Email
 RESEND_API_KEY="re_..."
 SUPPORT_EMAIL="support@example.com"
+
+# GitHub App (optional)
+GITHUB_APP_ID="123456"
+GITHUB_APP_SLUG="codewise"
+GITHUB_APP_CLIENT_ID="Iv1..."
+GITHUB_APP_CLIENT_SECRET="..."
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\\n...\\n-----END RSA PRIVATE KEY-----"
+GITHUB_APP_STATE_SECRET="generate-a-long-random-secret"
+GITHUB_WEBHOOK_SECRET="generate-a-different-random-secret"
 ```
 
 #### Prisma Configuration

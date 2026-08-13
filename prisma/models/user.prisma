@@ -50,7 +50,10 @@ model User {
   taskAttachments              TaskAttachment[]
   prReviewsRequested           PullRequestReview[]        @relation("PullRequestReviewRequester")
   prReviewsReviewed            PullRequestReview[]        @relation("PullRequestReviewReviewer")
+  prReviewAnalysesRequested    PrReviewAnalysis[]         @relation("PRReviewAnalysisRequester")
+  prReviewFindingDecisions     PrReviewFinding[]          @relation("PRReviewFindingDecisionMaker")
   milestonesReviewed           Milestone[]                @relation("MilestoneReviewer")
+  githubInstallations          GitHubInstallation[]
   createdPlanningPokerSessions PlanningPokerSession[]     @relation("PlanningPokerSessionCreator")
   planningPokerVotes           PlanningPokerVote[]
   notifications                Notification[]
@@ -61,6 +64,7 @@ model User {
   exerciseReviewSubmissions    ExerciseReviewSubmission[] @relation("ExerciseReviewSubmissions")
   exerciseReviewDecisions      ExerciseReviewDecision[]   @relation("ExerciseReviewDecisions")
   feedbackReports              FeedbackReport[]
+  creditCheckouts              CreditCheckout[]
 
   @@index([isOrgAdmin])
   @@index([updatedAt])

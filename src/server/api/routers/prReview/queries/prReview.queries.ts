@@ -57,6 +57,18 @@ export const prReviewQueries = {
 			return reviews;
 		}),
 
+	getLatestAIAnalysis: adminProcedure
+		.input(z.object({ reviewId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			return ctx.db.prReviewAnalysis.findFirst({
+				where: { reviewId: input.reviewId },
+				orderBy: { createdAt: 'desc' },
+				include: {
+					findings: { orderBy: { displayOrder: 'asc' } }
+				}
+			});
+		}),
+
 	getByTaskId: protectedProcedure
 		.input(z.object({ taskId: z.string() }))
 		.query(async ({ ctx, input }) => {

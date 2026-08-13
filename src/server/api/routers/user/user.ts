@@ -4,6 +4,10 @@ import { z } from 'zod';
 import { applyCreditTransaction } from '~/server/services/creditLedger';
 import { adminResetUserSessions } from '~/server/services/mentorship/mentorshipService';
 import {
+	reconcileCreditCheckout,
+	refreshCreditCheckout
+} from '~/server/services/stripeCreditCheckout';
+import {
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure
@@ -152,6 +156,35 @@ export const userRouter = createTRPCRouter({
 			};
 		}),
 
+	getCreditCheckouts: protectedProcedure
+		.input(z.object({ take: z.number().int().min(1).max(20).default(10) }))
+		.query(async ({ ctx, input }) =>
+			ctx.db.creditCheckout.findMany({
+				where: { userId: ctx.session.userId },
+				orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+				take: input.take,
+				select: {
+					id: true,
+					stripeSessionId: true,
+					packageId: true,
+					credits: true,
+					status: true,
+					checkoutUrl: true,
+					failureReason: true,
+					createdAt: true,
+					updatedAt: true,
+					expiresAt: true,
+					transactionId: true
+				}
+			})
+		),
+
+	refreshCreditCheckout: protectedProcedure
+		.input(z.object({ sessionId: z.string().min(1) }))
+		.mutation(async ({ ctx, input }) =>
+			refreshCreditCheckout(input.sessionId, ctx.session.userId)
+		),
+
 	getCreditTransactionsForUser: adminProcedure
 		.input(
 			z.object({
@@ -269,6 +302,14 @@ export const userRouter = createTRPCRouter({
 			const { id, ...data } = input;
 			return await updateUserAdmin(id, data);
 		}),
+
+	reconcileCreditCheckout: adminProcedure
+		.input(
+			z.object({ sessionId: z.string().min(1), userId: z.string().min(1) })
+		)
+		.mutation(async ({ input }) =>
+			reconcileCreditCheckout(input.sessionId, input.userId)
+		),
 
 	adjustCredits: adminProcedure
 		.input(

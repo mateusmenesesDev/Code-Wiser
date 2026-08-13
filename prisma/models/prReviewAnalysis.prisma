@@ -1,0 +1,70 @@
+model PrReviewAnalysis {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviewId      String
+  review        PullRequestReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  requestedById String
+  requestedBy   User              @relation("PRReviewAnalysisRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  status        PRReviewAnalysisStatus @default(QUEUED)
+  sourceHeadSha String
+  attempts      Int                    @default(0)
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  provider        String?
+  model           String?
+  promptVersion   String
+  inputSha256     String?
+  includedFiles   Int     @default(0)
+  excludedFiles   Int     @default(0)
+  inputCharacters Int     @default(0)
+  wasTruncated    Boolean @default(false)
+  inputTokens     Int?
+  outputTokens    Int?
+  totalTokens     Int?
+  errorCode       String?
+  errorMessage    String?
+
+  findings PrReviewFinding[]
+
+  @@unique([reviewId, sourceHeadSha])
+  @@index([status, createdAt])
+  @@index([reviewId, createdAt])
+  @@schema("public")
+}
+
+model PrReviewFinding {
+  id         String           @id @default(cuid())
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  analysisId String
+  analysis   PrReviewAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  filePath      String
+  line          Int?
+  severity      PRReviewFindingSeverity
+  category      PRReviewFindingCategory
+  problem       String
+  justification String
+  suggestion    String
+  confidence    Float
+
+  editedSeverity      PRReviewFindingSeverity?
+  editedCategory      PRReviewFindingCategory?
+  editedProblem       String?
+  editedJustification String?
+  editedSuggestion    String?
+  editedConfidence    Float?
+
+  decision     PRReviewFindingDecision @default(PENDING)
+  decisionById String?
+  decisionBy   User?                   @relation("PRReviewFindingDecisionMaker", fields: [decisionById], references: [id], onDelete: SetNull)
+  decidedAt    DateTime?
+  displayOrder Int
+
+  @@index([analysisId, decision, displayOrder])
+  @@schema("public")
+}

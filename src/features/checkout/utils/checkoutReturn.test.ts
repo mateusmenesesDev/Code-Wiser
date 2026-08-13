@@ -16,6 +16,16 @@ describe('getCheckoutReturnState', () => {
 		).toEqual({ kind: 'complete', customerEmail: 'buyer@example.com' });
 	});
 
+	it('keeps complete but unpaid sessions in processing', () => {
+		expect(
+			getCheckoutReturnState({
+				status: 'complete',
+				payment_status: 'unpaid',
+				customer_details: null
+			})
+		).toEqual({ kind: 'processing' });
+	});
+
 	it('sends open sessions to recovery', () => {
 		expect(
 			getCheckoutReturnState({

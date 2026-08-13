@@ -44,6 +44,7 @@ import {
 } from '~/common/components/ui/select';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useUser } from '~/common/hooks/useUser';
+import { GitHubPullRequestPicker } from '~/features/github/components/GitHubPullRequestPicker';
 import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 import type { CreateTaskInput } from '~/features/workspace/types/Task.type';
 import { formatPublicTaskId } from '~/lib/publicTaskId';
@@ -103,6 +104,10 @@ export function TaskDialogContent({
 	const { data: task } = api.task.getById.useQuery(
 		{ id: taskId || '' },
 		{ enabled: !!taskId }
+	);
+	const { data: projectInfo } = api.project.getWorkspaceInfo.useQuery(
+		{ id: projectId },
+		{ enabled: !isTemplate }
 	);
 	const publicTaskId = formatPublicTaskId(
 		task?.project?.publicCode ?? task?.projectTemplate?.publicCode,
@@ -433,6 +438,17 @@ export function TaskDialogContent({
 														</Button>
 													)}
 											</div>
+											{projectInfo?.githubRepository && (
+												<div className="mt-2">
+													<p className="mb-1 text-epic-muted-foreground text-xs">
+														Choose a pull request from the linked repository
+													</p>
+													<GitHubPullRequestPicker
+														repositoryId={projectInfo.githubRepository.id}
+														onSelect={setPrUrl}
+													/>
+												</div>
+											)}
 											{activeReview?.prUrl && (
 												<p className="mt-1 text-epic-muted-foreground text-xs">
 													You can update the PR URL at any time

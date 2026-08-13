@@ -253,6 +253,7 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 												review.status ===
 													PullRequestReviewStatusEnum.PENDING && (
 													<ReviewActions
+														reviewId={review.id}
 														taskId={review.taskId}
 														status={review.status}
 													/>

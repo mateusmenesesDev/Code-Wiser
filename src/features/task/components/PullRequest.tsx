@@ -56,6 +56,16 @@ export function PullRequest({ taskId, prUrl, isEditing }: PullRequestProps) {
 				</h3>
 				{prUrl ? (
 					<div className="space-y-2">
+						{activeReview?.githubTitle && (
+							<div className="rounded-md border bg-muted/20 p-3 text-sm">
+								<p className="font-medium">{activeReview.githubTitle}</p>
+								<p className="mt-1 text-muted-foreground text-xs">
+									{activeReview.githubState ?? 'Unknown'} ·{' '}
+									{activeReview.githubCommitCount ?? 0} commits · checks:{' '}
+									{activeReview.githubChecksStatus ?? 'Unknown'}
+								</p>
+							</div>
+						)}
 						<Button variant="outline" size="sm" className="w-full" asChild>
 							<a
 								href={prUrl}
@@ -103,11 +113,15 @@ export function PullRequest({ taskId, prUrl, isEditing }: PullRequestProps) {
 										<p className="font-medium text-muted-foreground text-xs">
 											Reviewer Feedback:
 										</p>
-										<div
-											className="prose prose-sm dark:prose-invert max-w-none text-sm"
-											// biome-ignore lint/security/noDangerouslySetInnerHtml: HTML content from trusted source (database)
-											dangerouslySetInnerHTML={{ __html: activeReview.comment }}
-										/>
+										<div className="whitespace-pre-wrap text-sm">
+											{activeReview.comment}
+										</div>
+										{activeReview.feedbackAssistedByAi && (
+											<p className="text-muted-foreground text-xs">
+												This feedback included suggestions from an AI analysis
+												reviewed by your mentor.
+											</p>
+										)}
 									</div>
 								) : (
 									<p className="text-muted-foreground text-sm italic">
