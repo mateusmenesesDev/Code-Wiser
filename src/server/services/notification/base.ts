@@ -8,7 +8,6 @@ interface CreateNotificationParams {
 	title: string;
 	message: string;
 	link?: string;
-	dedupeKey?: string;
 }
 
 /**
@@ -36,7 +35,7 @@ function ensureCompleteUrl(link: string | undefined): string | undefined {
 export async function createNotification(
 	params: CreateNotificationParams
 ): Promise<void> {
-	const { db, userId, type, title, message, link, dedupeKey } = params;
+	const { db, userId, type, title, message, link } = params;
 
 	await db.notification.create({
 		data: {
@@ -44,8 +43,7 @@ export async function createNotification(
 			type,
 			title,
 			message,
-			link: ensureCompleteUrl(link),
-			dedupeKey
+			link: ensureCompleteUrl(link)
 		}
 	});
 }

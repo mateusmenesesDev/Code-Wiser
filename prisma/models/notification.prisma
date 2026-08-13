@@ -7,7 +7,6 @@ model Notification {
     title   String
     message String
     link    String?
-    dedupeKey String? @unique
 
     read   Boolean   @default(false)
     readAt DateTime?
