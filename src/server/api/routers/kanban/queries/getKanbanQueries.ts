@@ -29,11 +29,13 @@ export const getKanbanQueries = {
 				select: {
 					id: true,
 					title: true,
+					type: true,
 					status: true,
 					order: true,
 					priority: true,
 					storyPoints: true,
 					publicNumber: true,
+					createdAt: true,
 					project: { select: { publicCode: true } },
 					assignees: {
 						select: {
@@ -44,7 +46,8 @@ export const getKanbanQueries = {
 					sprint: {
 						select: {
 							id: true,
-							title: true
+							title: true,
+							order: true
 						}
 					},
 					epic: {
