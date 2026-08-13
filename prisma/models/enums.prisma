@@ -92,6 +92,15 @@ enum SprintStatusEnum {
   @@schema("public")
 }
 
+enum ProductVersionStatusEnum {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+
+  @@schema("public")
+}
+
 enum PullRequestReviewStatusEnum {
   PENDING
   APPROVED

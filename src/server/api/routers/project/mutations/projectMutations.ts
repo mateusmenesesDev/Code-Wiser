@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { ProjectRoleEnum, type Prisma } from '@prisma/client';
+import { type Prisma, ProjectRoleEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
@@ -91,6 +91,7 @@ export const projectMutations = {
 							sprints: true,
 							epics: true,
 							tasks: true,
+							productVersions: true,
 							milestones: true,
 							learningOutcomes: true,
 							technologies: true
@@ -140,6 +141,7 @@ export const projectMutations = {
 				const templateSprints = projectTemplate.sprints;
 				const templateEpics = projectTemplate.epics;
 				const templateTasks = projectTemplate.tasks;
+				const templateProductVersions = projectTemplate.productVersions ?? [];
 				const templateMilestones = projectTemplate.milestones ?? [];
 				const templateLearningOutcomes = projectTemplate.learningOutcomes ?? [];
 				const templateTechnologies = projectTemplate.technologies ?? [];
@@ -174,6 +176,25 @@ export const projectMutations = {
 								}
 							}
 						});
+
+						const productVersionIdMap: Record<string, string> = {};
+						if (templateProductVersions.length > 0) {
+							await prisma.productVersion.createMany({
+								data: templateProductVersions.map((version) => {
+									const newId = randomUUID();
+									productVersionIdMap[version.id] = newId;
+									return {
+										id: newId,
+										name: version.name,
+										description: version.description,
+										order: version.order,
+										status: 'PLANNED',
+										projectId: newProject.id,
+										projectTemplateId: null
+									};
+								})
+							});
+						}
 
 						const milestoneIdMap: Record<string, string> = {};
 						if (templateMilestones.length > 0) {
@@ -268,6 +289,7 @@ export const projectMutations = {
 										epicId,
 										sprintId,
 										milestoneId,
+										productVersionId,
 										projectTemplateId,
 										...taskData
 									} = task;
@@ -282,6 +304,9 @@ export const projectMutations = {
 										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
 										milestoneId: milestoneId
 											? (milestoneIdMap[milestoneId] ?? null)
+											: null,
+										productVersionId: productVersionId
+											? (productVersionIdMap[productVersionId] ?? null)
 											: null,
 										projectTemplateId: null
 									};

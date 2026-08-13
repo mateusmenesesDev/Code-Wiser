@@ -16,6 +16,7 @@ model ProjectTemplate {
   nextTaskNumber   Int                    @default(1)
   sortOrder        Int                    @default(0)
   tasks            Task[]
+  productVersions  ProductVersion[]
   technologies     Technology[]
   learningOutcomes LearningOutcome[]
   milestones       Milestone[]

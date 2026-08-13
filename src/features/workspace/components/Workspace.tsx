@@ -22,6 +22,7 @@ import { columns } from '~/features/kanban/constants';
 import { useKanbanData } from '~/features/kanban/hooks/useKanbanData';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
+import ProductVersionList from '~/features/productVersions/components/ProductVersionList';
 import ProjectRoadmap from '~/features/roadmap/components/ProjectRoadmap';
 import SprintBoard from '~/features/sprints/components/SprintBoard';
 import SprintSidebar from '~/features/sprints/components/SprintSidebar';
@@ -54,7 +55,7 @@ const Workspace = () => {
 		projectInfo?.canceledAt !== null && projectInfo?.canceledAt !== undefined;
 
 	useEffect(() => {
-		if (!isScrum && view !== 'roadmap') {
+		if (!isScrum && view !== 'roadmap' && view !== 'versions') {
 			setViewParams({ view: null, sprintId: null });
 		}
 	}, [isScrum, setViewParams, view]);
@@ -129,7 +130,7 @@ const Workspace = () => {
 				onOpenSettings={() => setIsSettingsOpen(true)}
 			/>
 			<div className="flex flex-1 overflow-hidden">
-				{(isScrum || view === 'roadmap') && (
+				{(isScrum || view === 'roadmap' || view === 'versions') && (
 					<SprintSidebar
 						projectId={projectId}
 						sprints={sprints ?? []}
@@ -146,11 +147,24 @@ const Workspace = () => {
 						onSelectRoadmap={() =>
 							setViewParams({ view: 'roadmap', sprintId: null })
 						}
+						onSelectVersions={() =>
+							setViewParams({ view: 'versions', sprintId: null })
+						}
 					/>
 				)}
 				<div className="flex-1 overflow-hidden">
 					{view === 'roadmap' ? (
 						<ProjectRoadmap projectId={projectId} />
+					) : view === 'versions' ? (
+						<div className="h-full overflow-y-auto">
+							<ProductVersionList
+								projectId={projectId}
+								canManageVersions={
+									projectInfo?.permissions?.includes('MANAGE_VERSIONS') ?? false
+								}
+								readOnly={isCanceled}
+							/>
+						</div>
 					) : isScrum && view === 'sprint' && selectedSprint ? (
 						<SprintBoard
 							sprint={selectedSprint}

@@ -530,6 +530,7 @@ export const projectTemplateMutations = {
 						sprints: true,
 						epics: true,
 						tasks: true,
+						productVersions: true,
 						technologies: true,
 						learningOutcomes: true,
 						milestones: true,
@@ -559,6 +560,7 @@ export const projectTemplateMutations = {
 							sprints,
 							epics,
 							tasks,
+							productVersions: templateProductVersions = [],
 							technologies,
 							learningOutcomes,
 							milestones,
@@ -584,6 +586,25 @@ export const projectTemplateMutations = {
 								}
 							}
 						});
+
+						const productVersionIdMap: Record<string, string> = {};
+						if (templateProductVersions.length > 0) {
+							await prisma.productVersion.createMany({
+								data: templateProductVersions.map((version) => {
+									const id = randomUUID();
+									productVersionIdMap[version.id] = id;
+									return {
+										id,
+										name: version.name,
+										description: version.description,
+										order: version.order,
+										status: null,
+										projectTemplateId: newTemplate.id,
+										projectId: null
+									};
+								})
+							});
+						}
 
 						const milestoneIdMap: Record<string, string> = {};
 						if (learningOutcomes.length > 0) {
@@ -679,6 +700,7 @@ export const projectTemplateMutations = {
 										epicId,
 										sprintId,
 										milestoneId,
+										productVersionId,
 										projectTemplateId: _projectTemplateId,
 										projectId: _projectId,
 										createdAt: _taskCreatedAt,
@@ -693,6 +715,9 @@ export const projectTemplateMutations = {
 										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
 										milestoneId: milestoneId
 											? (milestoneIdMap[milestoneId] ?? null)
+											: null,
+										productVersionId: productVersionId
+											? (productVersionIdMap[productVersionId] ?? null)
 											: null,
 										projectId: null
 									};

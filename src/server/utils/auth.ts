@@ -1,4 +1,4 @@
-import { ProjectRoleEnum, type PrismaClient } from '@prisma/client';
+import { type PrismaClient, ProjectRoleEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 
 export interface ResourceAccessContext {
@@ -12,7 +12,8 @@ export type ProjectPermission =
 	| 'MANAGE_MEMBERS'
 	| 'MANAGE_GITHUB'
 	| 'MANAGE_PORTFOLIO'
-	| 'EVALUATE_PROJECT';
+	| 'EVALUATE_PROJECT'
+	| 'MANAGE_VERSIONS';
 
 const permissionsByRole: Record<ProjectRoleEnum, readonly ProjectPermission[]> =
 	{
@@ -20,12 +21,14 @@ const permissionsByRole: Record<ProjectRoleEnum, readonly ProjectPermission[]> =
 			'EDIT_SETTINGS',
 			'MANAGE_MEMBERS',
 			'MANAGE_GITHUB',
-			'MANAGE_PORTFOLIO'
+			'MANAGE_PORTFOLIO',
+			'MANAGE_VERSIONS'
 		],
 		[ProjectRoleEnum.MENTOR]: [
 			'EDIT_SETTINGS',
 			'MANAGE_GITHUB',
-			'EVALUATE_PROJECT'
+			'EVALUATE_PROJECT',
+			'MANAGE_VERSIONS'
 		],
 		[ProjectRoleEnum.LEARNER]: []
 	};

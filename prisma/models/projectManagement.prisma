@@ -12,6 +12,10 @@ model Task {
   status   TaskStatusEnum?   @default(BACKLOG)
   order    Int?              @default(0)
 
+  productVersionId    String?
+  productVersion      ProductVersion? @relation(fields: [productVersionId], references: [id], onDelete: SetNull)
+  productVersionOrder Int             @default(0)
+
   dueDate      DateTime?
   publicNumber Int?
 
@@ -45,6 +49,30 @@ model Task {
   @@unique([projectTemplateId, publicNumber])
   @@unique([projectId, publicNumber])
   @@index([blocked, updatedAt])
+  @@schema("public")
+}
+
+model ProductVersion {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  description String?
+  order       Int                       @default(0)
+  status      ProductVersionStatusEnum?
+
+  projectId         String?
+  project           Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectTemplateId String?
+  projectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id], onDelete: Cascade)
+
+  tasks Task[]
+
+  @@unique([projectId, name])
+  @@unique([projectTemplateId, name])
+  @@index([projectId, order])
+  @@index([projectTemplateId, order])
   @@schema("public")
 }
 

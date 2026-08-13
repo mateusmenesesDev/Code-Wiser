@@ -169,6 +169,7 @@ export const projectTemplateQueries = {
 						},
 						epics: true,
 						sprints: true,
+						productVersions: true,
 						images: {
 							orderBy: {
 								order: 'asc'

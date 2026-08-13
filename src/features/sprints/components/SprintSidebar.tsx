@@ -10,11 +10,12 @@ import {
 	ClipboardList,
 	Clock,
 	Kanban,
+	Layers,
 	Lightbulb,
 	Milestone as MilestoneIcon,
 	Pencil,
-	Plus,
 	Play,
+	Plus,
 	Trash2
 } from 'lucide-react';
 import { useState } from 'react';
@@ -24,10 +25,10 @@ import { Button } from '~/common/components/ui/button';
 import { Dialog } from '~/common/components/ui/dialog';
 import { Progress } from '~/common/components/ui/progress';
 import { useDialog } from '~/common/hooks/useDialog';
-import { cn } from '~/lib/utils';
+import EpicDialog from '~/features/epics/components/EpicDialog';
 import { useEpicMutations } from '~/features/epics/hooks/useEpicMutations';
 import type { EpicsApiOutput } from '~/features/epics/types/Epic.type';
-import EpicDialog from '~/features/epics/components/EpicDialog';
+import { cn } from '~/lib/utils';
 import { useSprintMutations } from '../hooks/useSprintMutations';
 import type { SprintsApiOutput } from '../types/Sprint.type';
 import SprintDialog from './SprintDialog';
@@ -44,6 +45,7 @@ interface SprintSidebarProps {
 	onSelectSprint: (id: string) => void;
 	onSelectBacklog: () => void;
 	onSelectRoadmap: () => void;
+	onSelectVersions: () => void;
 }
 
 const statusOrder: SprintStatusEnum[] = [
@@ -301,7 +303,8 @@ export default function SprintSidebar({
 	onSelectBoard,
 	onSelectSprint,
 	onSelectBacklog,
-	onSelectRoadmap
+	onSelectRoadmap,
+	onSelectVersions
 }: SprintSidebarProps) {
 	const [collapsed, setCollapsed] = useState(false);
 	const [selectedSprintForEdit, setSelectedSprintForEdit] =
@@ -363,7 +366,8 @@ export default function SprintSidebar({
 						'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all',
 						currentView !== 'backlog' &&
 							currentView !== 'sprint' &&
-							currentView !== 'roadmap'
+							currentView !== 'roadmap' &&
+							currentView !== 'versions'
 							? 'bg-info-muted font-medium text-info-muted-foreground'
 							: 'hover:bg-muted/50'
 					)}
@@ -398,6 +402,20 @@ export default function SprintSidebar({
 				>
 					<MilestoneIcon className="h-4 w-4 shrink-0" />
 					<span>Roadmap</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={onSelectVersions}
+					className={cn(
+						'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all',
+						currentView === 'versions'
+							? 'bg-info-muted font-medium text-info-muted-foreground'
+							: 'hover:bg-muted/50'
+					)}
+				>
+					<Layers className="h-4 w-4 shrink-0" />
+					<span>Versions</span>
 				</button>
 
 				{statusOrder.map((status) => {

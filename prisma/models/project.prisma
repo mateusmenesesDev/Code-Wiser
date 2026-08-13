@@ -35,9 +35,10 @@ model Project {
   refundCreditsOnCancellation   Boolean   @default(false)
   refundedCreditsOnCancellation Int       @default(0)
 
-  tasks      Task[]
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
+  tasks           Task[]
+  productVersions ProductVersion[]
+  categoryId      String
+  category        Category         @relation(fields: [categoryId], references: [id])
 
   epics                 Epic[]
   sprints               Sprint[]

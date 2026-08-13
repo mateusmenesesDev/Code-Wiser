@@ -14,6 +14,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Backlog from '~/features/backlog/components/Backlog';
 import EpicList from '~/features/epics/components/EpicList/EpicList';
+import ProductVersionList from '~/features/productVersions/components/ProductVersionList';
 import SprintList from '~/features/sprints/components/SprintList';
 import { CreateTasksSprintsEpicsFromJsonDialog } from '~/features/templates/components/CreateTasksSprintsEpicsFromJsonDialog';
 import EditTemplateBasicInfo from '~/features/templates/components/EditTemplate/EditTemplateBasicInfo';
@@ -83,8 +84,9 @@ const AdminProjectEdit = () => {
 			</div>
 
 			<Tabs defaultValue="backlog" className="space-y-6">
-				<TabsList className="grid w-full grid-cols-5">
+				<TabsList className="grid w-full grid-cols-6">
 					<TabsTrigger value="backlog">Backlog</TabsTrigger>
+					<TabsTrigger value="versions">Versions</TabsTrigger>
 					<TabsTrigger value="sprints">Sprints</TabsTrigger>
 					<TabsTrigger value="epics">Epics</TabsTrigger>
 					<TabsTrigger value="template-info">Template Info</TabsTrigger>
@@ -92,6 +94,9 @@ const AdminProjectEdit = () => {
 				</TabsList>
 				<TabsContent value="backlog">
 					<Backlog projectId={template.id} />
+				</TabsContent>
+				<TabsContent value="versions">
+					<ProductVersionList projectId={template.id} isTemplate />
 				</TabsContent>
 				<TabsContent value="epics">
 					<EpicList projectId={template.id} isTemplate />
