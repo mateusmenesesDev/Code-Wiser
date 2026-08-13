@@ -1,5 +1,7 @@
 'use client';
 
+import { EpicStatusEnum } from '@prisma/client';
+import dayjs from 'dayjs';
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -34,8 +36,10 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 	const totalTasks = epic.tasks?.length || 0;
 	const completedTasks =
 		epic.tasks?.filter((task) => task.status === 'DONE').length || 0;
-	const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-	const isCompleted = totalTasks > 0 && completedTasks === totalTasks;
+	const progress =
+		epic.progress ?? (totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0);
+	const isCompleted = progress === 100;
+	const status = epic.status ?? EpicStatusEnum.PLANNED;
 
 	return (
 		<AccordionItem
@@ -52,9 +56,32 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 			>
 				<div className="flex flex-1 items-center gap-4">
 					<Lightbulb className="h-5 w-5 text-epic" />
-					<div className="flex flex-1 items-center justify-between">
+					<div className="flex min-w-0 flex-1 items-center justify-between">
+						<div className="min-w-0">
+							<h3 className="truncate font-semibold">{epic.title}</h3>
+							{epic.startDate && epic.endDate && (
+								<p className="flex items-center gap-1 text-muted-foreground text-xs">
+									<Clock className="h-3 w-3" />
+									{dayjs(epic.startDate).format('MMM D')} –{' '}
+									{dayjs(epic.endDate).format('MMM D')}
+								</p>
+							)}
+						</div>
 						<div className="flex items-center gap-6">
 							<div className="flex items-center gap-4">
+								<Badge
+									variant={
+										status === EpicStatusEnum.COMPLETED
+											? 'success'
+											: 'secondary'
+									}
+								>
+									{status === EpicStatusEnum.IN_PROGRESS
+										? 'In progress'
+										: status === EpicStatusEnum.PLANNED
+											? 'Planned'
+											: 'Completed'}
+								</Badge>
 								<div className="flex items-center gap-2">
 									<Target className="h-4 w-4 text-muted-foreground" />
 									<span className="font-medium">{Math.round(progress)}%</span>

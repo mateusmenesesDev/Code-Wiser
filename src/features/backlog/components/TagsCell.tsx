@@ -15,19 +15,23 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
-import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useTask } from '~/features/task/hooks/useTask';
 
 interface TagsCellProps {
 	tags: string[];
 	taskId: string;
 	projectId: string;
+	isTemplate: boolean;
 }
 
-export function TagsCell({ tags, taskId, projectId }: TagsCellProps) {
+export function TagsCell({
+	tags,
+	taskId,
+	projectId,
+	isTemplate
+}: TagsCellProps) {
 	const [open, setOpen] = useState(false);
 	const [inputValue, setInputValue] = useState('');
-	const isTemplate = useIsTemplate();
 	const { updateTask } = useTask({ projectId });
 
 	const handleAddTag = async () => {

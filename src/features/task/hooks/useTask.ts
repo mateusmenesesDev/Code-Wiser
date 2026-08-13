@@ -27,6 +27,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		invalidateBacklogData,
 		invalidateKanbanData,
 		invalidateRoadmapData,
+		invalidatePlanningData,
 		invalidateTaskById
 	} = createInvalidateHelpers({ projectId, isTemplate, utils });
 
@@ -68,6 +69,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 			invalidateKanbanData();
 			invalidateBacklogData();
 			invalidateRoadmapData();
+			invalidatePlanningData();
 		}
 	});
 
@@ -111,6 +113,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 			invalidateBacklogData();
 			invalidateKanbanData();
 			invalidateRoadmapData();
+			invalidatePlanningData();
 			invalidateTaskById(taskUpdate?.id as string);
 		}
 	});
@@ -120,7 +123,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 			const config: OptimisticUpdateConfig = {
 				updateKanban: true,
 				updateGetById: true,
-				updateBacklog: false
+				updateBacklog: true
 			};
 
 			const context = updateOptimisticData({
@@ -146,7 +149,9 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		},
 		onSettled: (_data, _error, variables) => {
 			invalidateKanbanData();
+			invalidateBacklogData();
 			invalidateRoadmapData();
+			invalidatePlanningData();
 			invalidateTaskById(variables.taskId);
 		}
 	});
@@ -183,6 +188,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 			invalidateKanbanData();
 			invalidateBacklogData();
 			invalidateRoadmapData();
+			invalidatePlanningData();
 		}
 	});
 
@@ -239,6 +245,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		onSettled: () => {
 			const queryKey = { id: projectId };
 			invalidateRoadmapData();
+			invalidatePlanningData();
 			utils.projectTemplate.getById.invalidate(queryKey);
 			utils.task.getAllByProjectId.invalidate({
 				projectId,

@@ -17,10 +17,10 @@ const getPrismaFields = (
 		projectTemplateId: isTemplate ? projectId : null,
 		projectId: isTemplate ? null : projectId,
 		description: epic.description || null,
-		status: null,
-		progress: null,
-		startDate: null,
-		endDate: null,
+		status: epic.status ?? null,
+		progress: 'progress' in epic ? (epic.progress ?? 0) : 0,
+		startDate: epic.startDate ? new Date(epic.startDate) : null,
+		endDate: epic.endDate ? new Date(epic.endDate) : null,
 		milestoneId: null,
 		id: '',
 		tasks: []
@@ -88,11 +88,14 @@ export const useEpicMutations = ({ projectId }: { projectId: string }) => {
 
 			utils.epic.getAllByProjectId.setData({ projectId, isTemplate }, (old) => {
 				if (!old) return [];
-				return old.map((e) =>
-					e.id === updatedEpic.id
-						? { ...updatedEpicWithPrismaFields, id: updatedEpic.id || '' }
-						: e
-				);
+				return old.map((epic) => {
+					if (epic.id !== updatedEpic.id) return epic;
+					return {
+						...epic,
+						...updatedEpicWithPrismaFields,
+						id: epic.id
+					};
+				});
 			});
 
 			return { previousEpics };

@@ -10,6 +10,7 @@ import {
 	ClipboardList,
 	Clock,
 	Kanban,
+	Lightbulb,
 	Milestone as MilestoneIcon,
 	Pencil,
 	Plus,
@@ -24,6 +25,9 @@ import { Dialog } from '~/common/components/ui/dialog';
 import { Progress } from '~/common/components/ui/progress';
 import { useDialog } from '~/common/hooks/useDialog';
 import { cn } from '~/lib/utils';
+import { useEpicMutations } from '~/features/epics/hooks/useEpicMutations';
+import type { EpicsApiOutput } from '~/features/epics/types/Epic.type';
+import EpicDialog from '~/features/epics/components/EpicDialog';
 import { useSprintMutations } from '../hooks/useSprintMutations';
 import type { SprintsApiOutput } from '../types/Sprint.type';
 import SprintDialog from './SprintDialog';
@@ -33,6 +37,7 @@ type SprintWithStats = SprintsApiOutput[number];
 interface SprintSidebarProps {
 	projectId: string;
 	sprints: SprintsApiOutput;
+	epics: EpicsApiOutput;
 	selectedSprintId: string | null;
 	currentView: string | null;
 	onSelectBoard: () => void;
@@ -59,6 +64,83 @@ const StatusIcon = ({ status }: { status: SprintStatusEnum }) => {
 	if (status === SprintStatusEnum.COMPLETED)
 		return <CheckCircle2 className="h-3 w-3 text-muted-foreground" />;
 	return <Circle className="h-3 w-3 text-info" />;
+};
+
+const EpicEntry = ({
+	epic,
+	onEdit,
+	onDelete
+}: {
+	epic: EpicsApiOutput[number];
+	onEdit: () => void;
+	onDelete: () => void;
+}) => {
+	const progress = epic.progress ?? 0;
+	const status = epic.status ?? 'PLANNED';
+
+	return (
+		<div className="group rounded-lg border border-transparent px-3 py-2 hover:border-border hover:bg-muted/50">
+			<div className="flex items-start gap-2">
+				<Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-epic" />
+				<div className="min-w-0 flex-1">
+					<div className="flex items-center justify-between gap-2">
+						<span className="truncate font-medium text-sm">{epic.title}</span>
+						<Badge
+							variant={status === 'COMPLETED' ? 'success' : 'secondary'}
+							className="shrink-0 px-1.5 py-0 text-[10px]"
+						>
+							{status === 'IN_PROGRESS'
+								? 'In progress'
+								: status === 'PLANNED'
+									? 'Planned'
+									: 'Completed'}
+						</Badge>
+					</div>
+					{epic.startDate && epic.endDate && (
+						<div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+							<Clock className="h-3 w-3" />
+							{dayjs(epic.startDate).format('MMM D')} –{' '}
+							{dayjs(epic.endDate).format('MMM D')}
+						</div>
+					)}
+					<div className="mt-2 flex items-center gap-2">
+						<Progress
+							value={progress}
+							className="h-1 flex-1 bg-epic-muted [&>div]:bg-epic"
+						/>
+						<span className="text-[10px] text-muted-foreground">
+							{progress}%
+						</span>
+					</div>
+				</div>
+			</div>
+			<div className="mt-1 flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+				<Button
+					variant="ghost"
+					size="icon"
+					className="h-7 w-7"
+					onClick={onEdit}
+					aria-label={`Edit ${epic.title}`}
+				>
+					<Pencil className="h-3.5 w-3.5" />
+				</Button>
+				<ConfirmationDialog
+					title="Delete Epic"
+					description={`Delete "${epic.title}"? Its tasks will lose their epic assignment.`}
+					onConfirm={onDelete}
+				>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7 text-destructive hover:text-destructive"
+						aria-label={`Delete ${epic.title}`}
+					>
+						<Trash2 className="h-3.5 w-3.5" />
+					</Button>
+				</ConfirmationDialog>
+			</div>
+		</div>
+	);
 };
 
 const SprintEntry = ({
@@ -213,6 +295,7 @@ const SprintEntry = ({
 export default function SprintSidebar({
 	projectId,
 	sprints,
+	epics,
 	selectedSprintId,
 	currentView,
 	onSelectBoard,
@@ -224,9 +307,14 @@ export default function SprintSidebar({
 	const [selectedSprintForEdit, setSelectedSprintForEdit] =
 		useState<SprintWithStats | null>(null);
 	const { openDialog, closeDialog, isDialogOpen } = useDialog('sprint');
+	const { openDialog: openEpicDialog } = useDialog('epic');
 	const { startSprint, completeSprint, deleteSprint } = useSprintMutations({
 		projectId
 	});
+	const { deleteEpic } = useEpicMutations({ projectId });
+	const [selectedEpicForEdit, setSelectedEpicForEdit] = useState<
+		EpicsApiOutput[number] | null
+	>(null);
 
 	const grouped = statusOrder.reduce<
 		Record<SprintStatusEnum, SprintWithStats[]>
@@ -343,6 +431,45 @@ export default function SprintSidebar({
 						</div>
 					);
 				})}
+
+				<div className="pt-3">
+					<div className="mb-1 flex items-center justify-between px-3">
+						<p className="flex items-center gap-1 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+							<Lightbulb className="h-3 w-3 text-epic" />
+							Epics
+						</p>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-6 w-6"
+							aria-label="New epic"
+							onClick={() => {
+								setSelectedEpicForEdit(null);
+								openEpicDialog('epic');
+							}}
+						>
+							<Plus className="h-3.5 w-3.5" />
+						</Button>
+					</div>
+					<div className="space-y-0.5">
+						{epics.map((epic) => (
+							<EpicEntry
+								key={epic.id}
+								epic={epic}
+								onEdit={() => {
+									setSelectedEpicForEdit(epic);
+									openEpicDialog('epic');
+								}}
+								onDelete={() => deleteEpic.mutate({ id: epic.id })}
+							/>
+						))}
+						{epics.length === 0 && (
+							<p className="px-3 py-2 text-muted-foreground text-xs">
+								No epics yet
+							</p>
+						)}
+					</div>
+				</div>
 			</div>
 
 			<div className="border-t p-2">
@@ -367,6 +494,7 @@ export default function SprintSidebar({
 					onCancel={closeDialog}
 				/>
 			</Dialog>
+			<EpicDialog projectId={projectId} epic={selectedEpicForEdit} />
 		</div>
 	);
 }

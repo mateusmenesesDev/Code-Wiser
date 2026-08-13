@@ -12,6 +12,7 @@ export type InvalidateDataReturn = {
 	invalidateBacklogData: () => void;
 	invalidateKanbanData: () => void;
 	invalidateRoadmapData: () => void;
+	invalidatePlanningData: () => void;
 	invalidateTaskById: (taskId: string) => void;
 };
 
@@ -71,6 +72,10 @@ export const createInvalidateHelpers = ({
 			!isTemplate && projectId
 				? utils.project.getRoadmap.invalidate({ projectId })
 				: undefined,
+		invalidatePlanningData: () => {
+			utils.sprint.getAllByProjectId.invalidate({ projectId, isTemplate });
+			utils.epic.getAllByProjectId.invalidate({ projectId, isTemplate });
+		},
 		invalidateTaskById: (taskId: string) =>
 			utils.task.getById.invalidate({ id: taskId })
 	};

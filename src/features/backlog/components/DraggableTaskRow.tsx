@@ -27,6 +27,7 @@ interface DraggableTaskRowProps {
 	task: NonNullable<TasksApiOutput>[number];
 	index: number;
 	projectId: string;
+	isTemplate: boolean;
 	onTaskClick: (task: NonNullable<TasksApiOutput>[number]) => void;
 	moveTask: (dragIndex: number, hoverIndex: number) => void;
 	sprints?: SprintsApiOutput;
@@ -42,6 +43,7 @@ export function DraggableTaskRow({
 	task,
 	index,
 	projectId,
+	isTemplate,
 	onTaskClick,
 	moveTask,
 	sprints,
@@ -123,7 +125,7 @@ export function DraggableTaskRow({
 					priority={task.priority || TaskPriorityEnum.MEDIUM}
 					id={task.id}
 					projectId={projectId}
-					isTemplate={true}
+					isTemplate={isTemplate}
 				/>
 			</TableCell>
 			<TableCell>
@@ -137,6 +139,7 @@ export function DraggableTaskRow({
 					taskId={task.id}
 					projectId={projectId}
 					epics={epics || []}
+					isTemplate={isTemplate}
 				/>
 			</TableCell>
 			<TableCell>
@@ -145,10 +148,16 @@ export function DraggableTaskRow({
 					taskId={task.id}
 					projectId={projectId}
 					sprints={sprints || []}
+					isTemplate={isTemplate}
 				/>
 			</TableCell>
 			<TableCell>
-				<TagsCell tags={task.tags} taskId={task.id} projectId={projectId} />
+				<TagsCell
+					tags={task.tags}
+					taskId={task.id}
+					projectId={projectId}
+					isTemplate={isTemplate}
+				/>
 			</TableCell>
 			<TableCell>
 				<DropdownMenu>

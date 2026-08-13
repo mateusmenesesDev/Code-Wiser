@@ -1,6 +1,6 @@
 'use client';
 
-import { SprintStatusEnum, TaskStatusEnum } from '@prisma/client';
+import { SprintStatusEnum } from '@prisma/client';
 import dayjs from 'dayjs';
 import { Plus } from 'lucide-react';
 import { parseAsString, useQueryState } from 'nuqs';
@@ -58,9 +58,10 @@ export default function Backlog({ projectId }: { projectId: string }) {
 
 	const [tasks] = getAllTasksByProjectId(projectId);
 
-	const [projectData] = isTemplate
-		? api.projectTemplate.getById.useSuspenseQuery({ id: projectId })
-		: api.project.getById.useSuspenseQuery({ id: projectId });
+	const [epics] = api.epic.getAllByProjectId.useSuspenseQuery({
+		projectId,
+		isTemplate
+	});
 
 	const handleCreateTask = useCallback(() => {
 		setTaskId('new');
@@ -82,25 +83,33 @@ export default function Backlog({ projectId }: { projectId: string }) {
 
 			const groupIdSet =
 				groupTaskIds && groupTaskIds.length > 0 ? new Set(groupTaskIds) : null;
+			const firstVisibleTask = groupTaskIds?.[0]
+				? (tasks ?? []).find((task) => task.id === groupTaskIds[0])
+				: undefined;
+			const groupSprintId = firstVisibleTask?.sprintId ?? null;
 
 			const groupTasks = (tasks ?? [])
-				.filter((task) =>
-					groupIdSet
-						? groupIdSet.has(task.id)
-						: task.status === TaskStatusEnum.BACKLOG && !task.sprintId
-				)
+				.filter((task) => task.sprintId === groupSprintId)
 				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-			if (groupTasks.length === 0) return;
+			const visibleTaskIds = groupIdSet
+				? groupTasks
+						.filter((task) => groupIdSet.has(task.id))
+						.map((task) => task.id)
+				: groupTasks.map((task) => task.id);
+			if (visibleTaskIds.length === 0) return;
 
+			const reorderedVisibleTaskIds = [...visibleTaskIds];
+			const [draggedTaskId] = reorderedVisibleTaskIds.splice(dragIndex, 1);
+			if (!draggedTaskId) return;
+			reorderedVisibleTaskIds.splice(hoverIndex, 0, draggedTaskId);
+			const visibleTaskIdSet = new Set(visibleTaskIds);
+			let visibleIndex = 0;
 			const updates = groupTasks.map((task, index) => ({
-				id: task.id,
-				order:
-					index === dragIndex
-						? hoverIndex
-						: index === hoverIndex
-							? dragIndex
-							: index
+				id: visibleTaskIdSet.has(task.id)
+					? (reorderedVisibleTaskIds[visibleIndex++] ?? task.id)
+					: task.id,
+				order: index
 			}));
 
 			updateTaskOrders(updates);
@@ -108,15 +117,15 @@ export default function Backlog({ projectId }: { projectId: string }) {
 		[tasks, updateTaskOrders]
 	);
 
-	const backlogTasks = (tasksBySprint.get(null) ?? [])
-		.filter((task) => task.status === TaskStatusEnum.BACKLOG)
-		.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+	const backlogTasks = (tasksBySprint.get(null) ?? []).sort(
+		(a, b) => (a.order ?? 0) - (b.order ?? 0)
+	);
 
 	const sprintTaskMap = new Map(
 		(sprints ?? []).map((sprint) => {
-			const sprintTasks = (tasksBySprint.get(sprint.id) ?? [])
-				.filter((task) => task.status !== TaskStatusEnum.DONE)
-				.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+			const sprintTasks = (tasksBySprint.get(sprint.id) ?? []).sort(
+				(a, b) => (a.order ?? 0) - (b.order ?? 0)
+			);
 			return [sprint.id, sprintTasks] as const;
 		})
 	);
@@ -152,7 +161,11 @@ export default function Backlog({ projectId }: { projectId: string }) {
 												}
 												className="shrink-0 text-xs"
 											>
-												{sprint.status.toLowerCase()}
+												{sprint.status === SprintStatusEnum.ACTIVE
+													? 'Active'
+													: sprint.status === SprintStatusEnum.COMPLETED
+														? 'Completed'
+														: 'Planning'}
 											</Badge>
 										</div>
 										<div className="flex shrink-0 items-center gap-3 text-muted-foreground text-xs">
@@ -200,17 +213,16 @@ export default function Backlog({ projectId }: { projectId: string }) {
 													task={task}
 													index={index}
 													projectId={projectId}
+													isTemplate={isTemplate}
 													onTaskClick={handleTaskClick}
 													moveTask={(drag, hover) =>
 														moveTask(drag, hover, sprintTaskIds)
 													}
 													sprints={sprints}
-													epics={
-														projectData?.epics?.map((epic) => ({
-															id: epic.id,
-															title: epic.title
-														})) || []
-													}
+													epics={epics.map((epic) => ({
+														id: epic.id,
+														title: epic.title
+													}))}
 												/>
 											))}
 										</TableBody>
@@ -250,6 +262,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 											task={task}
 											index={index}
 											projectId={projectId}
+											isTemplate={isTemplate}
 											onTaskClick={handleTaskClick}
 											moveTask={(drag, hover) =>
 												moveTask(
@@ -259,12 +272,10 @@ export default function Backlog({ projectId }: { projectId: string }) {
 												)
 											}
 											sprints={sprints}
-											epics={
-												projectData?.epics?.map((epic) => ({
-													id: epic.id,
-													title: epic.title
-												})) || []
-											}
+											epics={epics.map((epic) => ({
+												id: epic.id,
+												title: epic.title
+											}))}
 										/>
 									))}
 								</TableBody>

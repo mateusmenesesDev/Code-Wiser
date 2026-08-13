@@ -174,26 +174,25 @@ export default function ProjectHeader({
 								)}
 							</SelectContent>
 						</Select>
-						{methodology !== ProjectMethodologyEnum.SCRUM && (
-							<Select
-								value={sprintFilter ?? 'all'}
-								onValueChange={(value) => setSprintFilter(value)}
-							>
-								<SelectTrigger className="h-8 w-[180px]">
-									<SelectValue placeholder="Sprint" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">All Sprints</SelectItem>
-									{sprints
-										?.sort((a, b) => a.title.localeCompare(b.title))
-										.map((sprint) => (
-											<SelectItem key={sprint.id} value={sprint.id}>
-												{sprint.title}
-											</SelectItem>
-										))}
-								</SelectContent>
-							</Select>
-						)}
+						<Select
+							value={sprintFilter ?? 'all'}
+							onValueChange={(value) => setSprintFilter(value)}
+						>
+							<SelectTrigger className="h-8 w-[180px]">
+								<SelectValue placeholder="Sprint" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All Sprints</SelectItem>
+								{sprints
+									.slice()
+									.sort((a, b) => a.title.localeCompare(b.title))
+									.map((sprint) => (
+										<SelectItem key={sprint.id} value={sprint.id}>
+											{sprint.title}
+										</SelectItem>
+									))}
+							</SelectContent>
+						</Select>
 						{epics.length > 0 && (
 							<Select
 								value={epicFilter ?? 'all'}

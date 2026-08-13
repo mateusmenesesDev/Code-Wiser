@@ -36,7 +36,20 @@ export const epicQueries = {
 				include: epicInclude
 			});
 
-			return epics;
+			return epics.map((epic) => {
+				const taskCount = epic.tasks.length;
+				const doneCount = epic.tasks.filter(
+					(task) => task.status === 'DONE'
+				).length;
+
+				return {
+					...epic,
+					taskCount,
+					doneCount,
+					progress:
+						taskCount > 0 ? Math.round((doneCount / taskCount) * 100) : 0
+				};
+			});
 		}),
 
 	getById: protectedProcedure
@@ -57,6 +70,16 @@ export const epicQueries = {
 			}
 
 			await assertProjectResourceAccess(ctx, epic);
-			return epic;
+			const taskCount = epic.tasks.length;
+			const doneCount = epic.tasks.filter(
+				(task) => task.status === 'DONE'
+			).length;
+
+			return {
+				...epic,
+				taskCount,
+				doneCount,
+				progress: taskCount > 0 ? Math.round((doneCount / taskCount) * 100) : 0
+			};
 		})
 };

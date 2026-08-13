@@ -133,6 +133,7 @@ const Workspace = () => {
 					<SprintSidebar
 						projectId={projectId}
 						sprints={sprints ?? []}
+						epics={epics ?? []}
 						selectedSprintId={sprintId}
 						currentView={view}
 						onSelectBoard={() => setViewParams({ view: null, sprintId: null })}

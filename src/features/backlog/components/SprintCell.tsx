@@ -14,7 +14,6 @@ import {
 	PopoverContent,
 	PopoverTrigger
 } from '~/common/components/ui/popover';
-import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { useTask } from '~/features/task/hooks/useTask';
 import { cn } from '~/lib/utils';
 
@@ -22,6 +21,7 @@ interface SprintCellProps {
 	sprintId: string | null;
 	taskId: string;
 	projectId: string;
+	isTemplate: boolean;
 	sprints: Array<{ id: string; title: string }> | undefined;
 }
 
@@ -29,10 +29,10 @@ export function SprintCell({
 	sprintId,
 	taskId,
 	projectId,
+	isTemplate,
 	sprints
 }: SprintCellProps) {
 	const [open, setOpen] = useState(false);
-	const isTemplate = useIsTemplate();
 	const { updateTask } = useTask({ projectId });
 
 	const availableSprints = sprints || [];

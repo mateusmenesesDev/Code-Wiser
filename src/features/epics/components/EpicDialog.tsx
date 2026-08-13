@@ -1,6 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { EpicStatusEnum } from '@prisma/client';
+import dayjs from 'dayjs';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '~/common/components/ui/button';
@@ -21,6 +23,13 @@ import {
 	FormMessage
 } from '~/common/components/ui/form';
 import { Input } from '~/common/components/ui/input';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from '~/common/components/ui/select';
 import { Textarea } from '~/common/components/ui/textarea';
 import { useDialog } from '~/common/hooks/useDialog';
 import { useEpicMutations } from '../hooks/useEpicMutations';
@@ -33,19 +42,31 @@ interface EpicDialogProps {
 	isTemplate?: boolean;
 }
 
+const epicStatusLabel = (status: EpicStatusEnum) =>
+	status === EpicStatusEnum.IN_PROGRESS
+		? 'In progress'
+		: status.charAt(0) + status.slice(1).toLowerCase();
+
 export default function EpicDialog({
 	projectId,
 	epic,
 	isTemplate = false
 }: EpicDialogProps) {
 	const form = useForm<EpicInput>({
-		resolver: zodResolver(newEpicSchema)
+		resolver: zodResolver(newEpicSchema),
+		defaultValues: {
+			title: '',
+			description: '',
+			status: EpicStatusEnum.PLANNED,
+			startDate: '',
+			endDate: '',
+			projectId,
+			isTemplate
+		}
 	});
 
 	const { createEpic, updateEpic } = useEpicMutations({ projectId });
-
 	const { closeDialog, isDialogOpen } = useDialog('epic');
-
 	const isEditing = !!epic;
 
 	useEffect(() => {
@@ -53,17 +74,26 @@ export default function EpicDialog({
 			form.reset({
 				title: epic.title,
 				description: epic.description || '',
-				projectId: projectId,
-				isTemplate: isTemplate
+				status: epic.status ?? EpicStatusEnum.PLANNED,
+				startDate: epic.startDate
+					? dayjs(epic.startDate).format('YYYY-MM-DD')
+					: '',
+				endDate: epic.endDate ? dayjs(epic.endDate).format('YYYY-MM-DD') : '',
+				projectId,
+				isTemplate
 			});
-		} else {
-			form.reset({
-				title: '',
-				description: '',
-				projectId: projectId,
-				isTemplate: isTemplate
-			});
+			return;
 		}
+
+		form.reset({
+			title: '',
+			description: '',
+			status: EpicStatusEnum.PLANNED,
+			startDate: '',
+			endDate: '',
+			projectId,
+			isTemplate
+		});
 	}, [epic, form, projectId, isTemplate]);
 
 	const onSubmit = (values: EpicInput) => {
@@ -71,15 +101,13 @@ export default function EpicDialog({
 			updateEpic.mutate({
 				id: epic.id,
 				title: values.title,
-				description: values.description
+				description: values.description,
+				status: values.status,
+				startDate: values.startDate,
+				endDate: values.endDate
 			});
 		} else {
-			createEpic.mutate({
-				title: values.title,
-				description: values.description,
-				projectId: projectId,
-				isTemplate: isTemplate
-			});
+			createEpic.mutate(values);
 		}
 
 		closeDialog();
@@ -108,7 +136,7 @@ export default function EpicDialog({
 							name="title"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel>Epic Title</FormLabel>
+									<FormLabel>Epic title</FormLabel>
 									<FormControl>
 										<Input
 											placeholder="e.g., User Authentication System"
@@ -136,6 +164,61 @@ export default function EpicDialog({
 								</FormItem>
 							)}
 						/>
+						<FormField
+							control={form.control}
+							name="status"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Status</FormLabel>
+									<Select
+										value={field.value ?? EpicStatusEnum.PLANNED}
+										onValueChange={field.onChange}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											{Object.values(EpicStatusEnum).map((status) => (
+												<SelectItem key={status} value={status}>
+													{epicStatusLabel(status)}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<div className="grid grid-cols-2 gap-4">
+							<FormField
+								control={form.control}
+								name="startDate"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Start date</FormLabel>
+										<FormControl>
+											<Input type="date" {...field} />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="endDate"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>End date</FormLabel>
+										<FormControl>
+											<Input type="date" {...field} />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={closeDialog}>
 								Cancel

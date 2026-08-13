@@ -1,3 +1,4 @@
+import { EpicStatusEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
@@ -16,7 +17,15 @@ export const epicMutations = {
 	create: protectedProcedure
 		.input(newEpicSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { title, description, projectId, isTemplate } = input;
+			const {
+				title,
+				description,
+				status,
+				startDate,
+				endDate,
+				projectId,
+				isTemplate
+			} = input;
 
 			if (isTemplate) {
 				await userHasAccessToProjectTemplate(ctx, projectId);
@@ -31,6 +40,9 @@ export const epicMutations = {
 				data: {
 					title,
 					description,
+					status: status ?? EpicStatusEnum.PLANNED,
+					startDate: startDate ? new Date(startDate) : undefined,
+					endDate: endDate ? new Date(endDate) : undefined,
 					project: !isTemplate
 						? {
 								connect: {
@@ -91,7 +103,7 @@ export const epicMutations = {
 	update: protectedProcedure
 		.input(updateEpicSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...data } = input;
+			const { id, startDate, endDate, ...data } = input;
 
 			// Verify access through existing epic
 			const existingEpic = await ctx.db.epic.findUnique({
@@ -115,9 +127,17 @@ export const epicMutations = {
 				await assertProjectIsActive(ctx.db, existingEpic.projectId);
 			}
 
-			await ctx.db.epic.update({
+			return ctx.db.epic.update({
 				where: { id },
-				data
+				data: {
+					...data,
+					...(startDate !== undefined && {
+						startDate: startDate ? new Date(startDate) : null
+					}),
+					...(endDate !== undefined && {
+						endDate: endDate ? new Date(endDate) : null
+					})
+				}
 			});
 		})
 };
