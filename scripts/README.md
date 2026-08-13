@@ -12,6 +12,18 @@ See [backfill-org-admins.md](./backfill-org-admins.md) for deploy order and repa
 
 ## Available Scripts
 
+### check-prod-schema.ts
+
+Read-only inspection of the production project membership tables and recent Prisma migrations.
+
+**How to run:**
+
+```bash
+bun run db:check-prod-schema
+```
+
+It uses Infisical's `prod` environment and does not modify the database.
+
 ### backfill-public-task-ids.ts
 
 Backfills display-only task IDs after `prisma db push` adds the nullable columns.

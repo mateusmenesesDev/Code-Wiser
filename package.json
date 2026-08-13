@@ -13,6 +13,7 @@
 		"db:migrate:dev": "infisical run -- prisma migrate dev",
 		"db:migrate": "infisical run -- prisma migrate deploy",
 		"db:migrate:prod": "infisical run --env=prod prisma migrate deploy",
+		"db:check-prod-schema": "infisical run --env=prod -- bun scripts/check-prod-schema.ts",
 		"db:push": "infisical run -- prisma db push",
 		"db:push:prod": "infisical run --env=prod prisma db push",
 		"db:studio": "infisical run -- prisma studio",
