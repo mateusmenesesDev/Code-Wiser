@@ -67,13 +67,16 @@ describe('resource access', () => {
 		).rejects.toMatchObject({ code: 'FORBIDDEN' });
 	});
 
-	it('allows owners and mentors to evaluate a project', async () => {
+	it('lets owners manage portfolios and mentors evaluate them', async () => {
 		mockDb.project.findUnique.mockResolvedValue({
 			memberships: [{ role: 'OWNER', status: 'ACTIVE', joinedAt: new Date() }]
 		} as never);
 		await expect(
 			assertProjectPermission(memberContext, 'project-1', 'MANAGE_PORTFOLIO')
 		).resolves.toBeUndefined();
+		await expect(
+			assertProjectPermission(memberContext, 'project-1', 'EVALUATE_PROJECT')
+		).rejects.toMatchObject({ code: 'FORBIDDEN' });
 
 		mockDb.project.findUnique.mockResolvedValue({
 			memberships: [{ role: 'MENTOR', status: 'ACTIVE', joinedAt: new Date() }]

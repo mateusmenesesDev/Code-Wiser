@@ -697,8 +697,7 @@ export const getProjectQueries = {
 										'EDIT_SETTINGS',
 										'MANAGE_MEMBERS',
 										'MANAGE_GITHUB',
-										'MANAGE_PORTFOLIO',
-										'EVALUATE_PROJECT'
+										'MANAGE_PORTFOLIO'
 									]
 								: role === 'MENTOR'
 									? ['EDIT_SETTINGS', 'MANAGE_GITHUB', 'EVALUATE_PROJECT']

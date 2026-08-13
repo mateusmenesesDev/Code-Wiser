@@ -122,7 +122,7 @@ Esses itens não são “features” de marketing, mas são pré-condições par
 | ✅ Concluído | P2 | Objetivos e histórico de mentorship | Alto | M | Modelo de sessão e notas |
 | — | P2 | Papéis e permissões explícitos | Alto | G | Modelo de membership próprio |
 | — | P2 | Localização PT-BR/EN | Médio | M/G | Estratégia de conteúdo traduzível |
-| — | P2 | Portfólio e demonstração de projetos | Médio | M | Roadmap, conclusão e privacidade |
+| ✅ Concluído | P2 | Portfólio e demonstração de projetos | Médio | M | Roadmap, conclusão e privacidade |
 | — | P3 | Analytics de aprendizagem e gamificação | Médio | G | Eventos imutáveis e definição de métricas |
 
 **S = pequeno, M = médio, G = grande.** A estimativa é relativa e deve ser refinada após o desenho do modelo de dados.
@@ -404,7 +404,9 @@ Não exigir que o usuário preencha título e descrição de tarefa em dois idio
 
 Essa decisão evita multiplicar campos `titlePtBr`, `titleEn`, `descriptionPtBr`, `descriptionEn` em todos os modelos e permite adicionar idiomas sem nova migração para cada coluna.
 
-### P2.6 — Portfólio e demonstração de projetos
+### ✅ P2.6 — Portfólio e demonstração de projetos
+
+**Status:** concluído nesta entrega. Projetos podem publicar uma página opcional com resumo, stack, milestones, tarefas selecionadas, links consentidos e avaliação do mentor; a conclusão é calculada por critérios explícitos.
 
 **Objetivo:** transformar trabalho concluído em evidência de aprendizagem.
 
@@ -486,7 +488,7 @@ A API interna já existe via tRPC. Se “API based” significa permitir cliente
 15. Code review assistido por IA.
 16. Papéis de projeto.
 17. Localização.
-18. Portfólio.
+18. ✅ Portfólio.
 
 ---
 

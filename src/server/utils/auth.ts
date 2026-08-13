@@ -20,8 +20,7 @@ const permissionsByRole: Record<ProjectRoleEnum, readonly ProjectPermission[]> =
 			'EDIT_SETTINGS',
 			'MANAGE_MEMBERS',
 			'MANAGE_GITHUB',
-			'MANAGE_PORTFOLIO',
-			'EVALUATE_PROJECT'
+			'MANAGE_PORTFOLIO'
 		],
 		[ProjectRoleEnum.MENTOR]: [
 			'EDIT_SETTINGS',

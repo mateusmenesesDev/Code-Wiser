@@ -36,7 +36,11 @@ export function ProjectPortfolioSettings({
 		setDemoUrl(portfolio.portfolioDemoUrl ?? '');
 		setPublished(portfolio.portfolioPublishedAt !== null);
 		setShowDemo(portfolio.portfolioShowDemo);
-		setShowRepository(portfolio.portfolioShowRepository);
+		setShowRepository(
+			portfolio.portfolioShowRepository &&
+			portfolio.githubRepository !== null &&
+			!portfolio.githubRepository.private
+		);
 		setRelevantTaskIds(
 			portfolio.tasks
 				.filter((task) => task.portfolioRelevant)
