@@ -151,7 +151,7 @@ export default function AdminUsersPage() {
 
 							{hasActiveFilters && (
 								<Button variant="outline" onClick={clearFilters}>
-									Clear Filters
+									Clear Filter
 								</Button>
 							)}
 						</div>
