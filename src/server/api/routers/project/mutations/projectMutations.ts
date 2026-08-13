@@ -10,7 +10,10 @@ import { generatePublicCode } from '~/lib/publicTaskId';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { applyCreditTransaction } from '~/server/services/creditLedger';
 import { createNotification } from '~/server/services/notification/base';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	assertProjectIsActive,
+	userHasAccessToProject
+} from '~/server/utils/auth';
 
 const canceledProjectError = () =>
 	new TRPCError({
@@ -75,7 +78,9 @@ export const projectMutations = {
 						include: {
 							sprints: true,
 							epics: true,
-							tasks: true
+							tasks: true,
+							milestones: true,
+							learningOutcomes: true
 						}
 					})
 				]);
@@ -124,6 +129,8 @@ export const projectMutations = {
 				const templateSprints = projectTemplate.sprints;
 				const templateEpics = projectTemplate.epics;
 				const templateTasks = projectTemplate.tasks;
+				const templateMilestones = projectTemplate.milestones ?? [];
+				const templateLearningOutcomes = projectTemplate.learningOutcomes ?? [];
 
 				const project = await ctx.db.$transaction(
 					async (prisma) => {
@@ -139,6 +146,7 @@ export const projectMutations = {
 								creditCost: projectTemplate.credits,
 								creationIdempotencyKey,
 								figmaProjectUrl: projectTemplate.figmaProjectUrl,
+								sourceProjectTemplateId: projectTemplate.id,
 								publicCode: await makeUniqueProjectPublicCode(
 									prisma,
 									projectTemplate.publicCode,
@@ -150,6 +158,38 @@ export const projectMutations = {
 							}
 						});
 
+						const milestoneIdMap: Record<string, string> = {};
+						if (templateMilestones.length > 0) {
+							await prisma.milestone.createMany({
+								data: templateMilestones.map((milestone) => {
+									const newId = randomUUID();
+									milestoneIdMap[milestone.id] = newId;
+
+									return {
+										id: newId,
+										title: milestone.title,
+										description: milestone.description,
+										order: milestone.order,
+										status: 'PENDING',
+										completed: false,
+										projectId: newProject.id,
+										projectTemplateId: null
+									};
+								})
+							});
+						}
+
+						if (templateLearningOutcomes.length > 0) {
+							await prisma.learningOutcome.createMany({
+								data: templateLearningOutcomes.map((outcome) => ({
+									id: randomUUID(),
+									value: outcome.value,
+									projectId: newProject.id,
+									projectTemplateId: null
+								}))
+							});
+						}
+
 						const sprintIdMap: Record<string, string> = {};
 						if (templateSprints.length > 0) {
 							await prisma.sprint.createMany({
@@ -157,6 +197,7 @@ export const projectMutations = {
 									const {
 										id: oldId,
 										projectTemplateId,
+										milestoneId,
 										...sprintData
 									} = sprint;
 									const newId = randomUUID();
@@ -166,7 +207,10 @@ export const projectMutations = {
 										...sprintData,
 										id: newId,
 										projectId: newProject.id,
-										projectTemplateId: null
+										projectTemplateId: null,
+										milestoneId: milestoneId
+											? (milestoneIdMap[milestoneId] ?? null)
+											: null
 									};
 								})
 							});
@@ -176,7 +220,12 @@ export const projectMutations = {
 						if (templateEpics.length > 0) {
 							await prisma.epic.createMany({
 								data: templateEpics.map((epic) => {
-									const { id: oldId, projectTemplateId, ...epicData } = epic;
+									const {
+										id: oldId,
+										projectTemplateId,
+										milestoneId,
+										...epicData
+									} = epic;
 									const newId = randomUUID();
 									epicIdMap[oldId] = newId;
 
@@ -184,7 +233,10 @@ export const projectMutations = {
 										...epicData,
 										id: newId,
 										projectId: newProject.id,
-										projectTemplateId: null
+										projectTemplateId: null,
+										milestoneId: milestoneId
+											? (milestoneIdMap[milestoneId] ?? null)
+											: null
 									};
 								})
 							});
@@ -198,6 +250,7 @@ export const projectMutations = {
 										id: _taskId,
 										epicId,
 										sprintId,
+										milestoneId,
 										projectTemplateId,
 										...taskData
 									} = task;
@@ -208,8 +261,11 @@ export const projectMutations = {
 										...taskData,
 										id: newId,
 										projectId: newProject.id,
-										epicId: epicId ? epicIdMap[epicId] : null,
-										sprintId: sprintId ? sprintIdMap[sprintId] : null,
+										epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
+										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
+										milestoneId: milestoneId
+											? (milestoneIdMap[milestoneId] ?? null)
+											: null,
 										projectTemplateId: null
 									};
 								})
@@ -264,6 +320,97 @@ export const projectMutations = {
 				console.error('Create project error:', error);
 				throw error;
 			}
+		}),
+
+	reorderMilestones: adminProcedure
+		.input(
+			z.object({
+				projectId: z.string(),
+				items: z
+					.array(
+						z.object({
+							id: z.string(),
+							order: z.number().int().min(0)
+						})
+					)
+					.min(1)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			await assertProjectIsActive(ctx.db, input.projectId);
+
+			const ids = input.items.map((item) => item.id);
+			if (
+				new Set(ids).size !== ids.length ||
+				!input.items.every((item, index) => item.order === index)
+			) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Milestone order must contain each position exactly once'
+				});
+			}
+
+			const milestones = await ctx.db.milestone.findMany({
+				where: { projectId: input.projectId },
+				select: { id: true }
+			});
+			if (
+				milestones.length !== input.items.length ||
+				!input.items.every((item) =>
+					milestones.some(({ id }) => id === item.id)
+				)
+			) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Milestones do not belong to this project'
+				});
+			}
+
+			await ctx.db.$transaction(
+				input.items.map((item) =>
+					ctx.db.milestone.update({
+						where: { id: item.id },
+						data: { order: item.order }
+					})
+				)
+			);
+
+			return { success: true as const };
+		}),
+
+	markMilestoneReviewed: adminProcedure
+		.input(
+			z.object({
+				milestoneId: z.string(),
+				reviewed: z.boolean()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const milestone = await ctx.db.milestone.findUnique({
+				where: { id: input.milestoneId },
+				select: { id: true, projectId: true }
+			});
+			if (!milestone?.projectId) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project milestone not found'
+				});
+			}
+
+			await assertProjectIsActive(ctx.db, milestone.projectId);
+
+			return ctx.db.milestone.update({
+				where: { id: milestone.id },
+				data: {
+					reviewedAt: input.reviewed ? new Date() : null,
+					reviewedById: input.reviewed ? ctx.session.userId : null
+				},
+				select: {
+					id: true,
+					reviewedAt: true,
+					reviewedBy: { select: { id: true, name: true } }
+				}
+			});
 		}),
 
 	updateProject: protectedProcedure

@@ -23,8 +23,12 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 
 	const isTemplate = useIsTemplate();
 
-	const { invalidateBacklogData, invalidateKanbanData, invalidateTaskById } =
-		createInvalidateHelpers({ projectId, isTemplate, utils });
+	const {
+		invalidateBacklogData,
+		invalidateKanbanData,
+		invalidateRoadmapData,
+		invalidateTaskById
+	} = createInvalidateHelpers({ projectId, isTemplate, utils });
 
 	const createTaskMutation = api.task.create.useMutation({
 		onMutate: (newTask) => {
@@ -63,6 +67,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		onSettled: () => {
 			invalidateKanbanData();
 			invalidateBacklogData();
+			invalidateRoadmapData();
 		}
 	});
 
@@ -105,6 +110,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		onSettled: (taskUpdate) => {
 			invalidateBacklogData();
 			invalidateKanbanData();
+			invalidateRoadmapData();
 			invalidateTaskById(taskUpdate?.id as string);
 		}
 	});
@@ -140,6 +146,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		},
 		onSettled: (_data, _error, variables) => {
 			invalidateKanbanData();
+			invalidateRoadmapData();
 			invalidateTaskById(variables.taskId);
 		}
 	});
@@ -175,6 +182,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		onSettled: () => {
 			invalidateKanbanData();
 			invalidateBacklogData();
+			invalidateRoadmapData();
 		}
 	});
 
@@ -230,6 +238,7 @@ const useTaskMutations = ({ projectId }: UseTaskProps) => {
 		},
 		onSettled: () => {
 			const queryKey = { id: projectId };
+			invalidateRoadmapData();
 			utils.projectTemplate.getById.invalidate(queryKey);
 			utils.task.getAllByProjectId.invalidate({
 				projectId,

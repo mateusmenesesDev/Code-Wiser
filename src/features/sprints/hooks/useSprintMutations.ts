@@ -20,6 +20,7 @@ const getPrismaFields = (
 		description: sprint.description || null,
 		startDate: sprint.startDate ? new Date(sprint.startDate) : null,
 		endDate: sprint.endDate ? new Date(sprint.endDate) : null,
+		milestoneId: null,
 		id: '',
 		order: 0,
 		status: SprintStatusEnum.PLANNING,
@@ -39,6 +40,13 @@ export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 			projectId,
 			isTemplate
 		});
+		utils.task.getAllByProjectId.invalidate({ projectId, isTemplate });
+		utils.kanban.getKanbanData.invalidate({ projectId });
+		if (isTemplate) {
+			utils.projectTemplate.getById.invalidate({ id: projectId });
+		} else {
+			utils.project.getById.invalidate({ id: projectId });
+		}
 	}, [projectId, isTemplate, utils]);
 
 	const createSprint = api.sprint.create.useMutation({
@@ -97,8 +105,11 @@ export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 
 			return { previousSprints };
 		},
-		onSuccess: () => {
+		onSettled: () => {
 			invalidateSprints();
+		},
+		onSuccess: () => {
+			toast.success('Sprint deleted successfully');
 		},
 		onError: (_err, _sprint, ctx) => {
 			toast.error('Failed to delete sprint');
@@ -116,19 +127,36 @@ export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 				isTemplate
 			});
 
-			const updatedSprintWithPrismaFields = getPrismaFields(
-				updatedSprint,
-				isTemplate,
-				projectId
-			);
-
 			utils.sprint.getAllByProjectId.setData(
 				{ projectId, isTemplate },
 				(old) => {
 					if (!old) return [];
-					return old.map((s) =>
-						s.id === updatedSprint.id ? updatedSprintWithPrismaFields : s
-					);
+					return old.map((sprint) => {
+						if (sprint.id !== updatedSprint.id) return sprint;
+						return {
+							...sprint,
+							title:
+								updatedSprint.title === undefined
+									? sprint.title
+									: updatedSprint.title,
+							description:
+								updatedSprint.description === undefined
+									? sprint.description
+									: updatedSprint.description || null,
+							startDate:
+								updatedSprint.startDate === undefined
+									? sprint.startDate
+									: updatedSprint.startDate
+										? new Date(updatedSprint.startDate)
+										: null,
+							endDate:
+								updatedSprint.endDate === undefined
+									? sprint.endDate
+									: updatedSprint.endDate
+										? new Date(updatedSprint.endDate)
+										: null
+						};
+					});
 				}
 			);
 

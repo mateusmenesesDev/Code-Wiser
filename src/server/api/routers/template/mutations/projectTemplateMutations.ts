@@ -360,14 +360,32 @@ export const projectTemplateMutations = {
 
 			return await ctx.db.$transaction(
 				async (prisma) => {
+					const milestones =
+						(await prisma.milestone.findMany({
+							where: { projectTemplateId },
+							select: { id: true, title: true }
+						})) ?? [];
+					const milestoneTitleToId = new Map(
+						milestones.map((milestone) => [milestone.title, milestone.id])
+					);
+					const warnings: string[] = [];
 					const epicTitleToId: Record<string, string> = {};
 					const epicRows = (data.epics || []).map((epicData) => {
 						const id = randomUUID();
 						epicTitleToId[epicData.title] = id;
+						const milestoneId = epicData.milestoneTitle
+							? (milestoneTitleToId.get(epicData.milestoneTitle) ?? null)
+							: null;
+						if (epicData.milestoneTitle && !milestoneId) {
+							warnings.push(
+								`Epic "${epicData.title}": Milestone "${epicData.milestoneTitle}" not found.`
+							);
+						}
 						return {
 							id,
 							title: epicData.title,
 							description: epicData.description,
+							milestoneId,
 							projectTemplateId
 						};
 					});
@@ -384,6 +402,14 @@ export const projectTemplateMutations = {
 					const sprintRows = (data.sprints || []).map((sprintData, i) => {
 						const id = randomUUID();
 						sprintTitleToId[sprintData.title] = id;
+						const milestoneId = sprintData.milestoneTitle
+							? (milestoneTitleToId.get(sprintData.milestoneTitle) ?? null)
+							: null;
+						if (sprintData.milestoneTitle && !milestoneId) {
+							warnings.push(
+								`Sprint "${sprintData.title}": Milestone "${sprintData.milestoneTitle}" not found.`
+							);
+						}
 						return {
 							id,
 							title: sprintData.title,
@@ -393,6 +419,7 @@ export const projectTemplateMutations = {
 								: null,
 							endDate: sprintData.endDate ? new Date(sprintData.endDate) : null,
 							order: sprintData.order ?? sprintCount + i,
+							milestoneId,
 							projectTemplateId
 						};
 					});
@@ -401,7 +428,6 @@ export const projectTemplateMutations = {
 						await prisma.sprint.createMany({ data: sprintRows });
 					}
 
-					const warnings: string[] = [];
 					const taskCount = data.tasks?.length ?? 0;
 					const publicNumberStart = taskCount
 						? (
@@ -428,6 +454,15 @@ export const projectTemplateMutations = {
 							);
 						}
 
+						const milestoneId = taskData.milestoneTitle
+							? (milestoneTitleToId.get(taskData.milestoneTitle) ?? null)
+							: null;
+						if (taskData.milestoneTitle && !milestoneId) {
+							warnings.push(
+								`Task "${taskData.title}": Milestone "${taskData.milestoneTitle}" not found. Task will be created without milestone.`
+							);
+						}
+
 						return {
 							title: taskData.title,
 							description: taskData.description,
@@ -447,7 +482,8 @@ export const projectTemplateMutations = {
 								: null,
 							sprintId: taskData.sprintTitle
 								? (sprintTitleToId[taskData.sprintTitle] ?? null)
-								: null
+								: null,
+							milestoneId
 						};
 					});
 
@@ -545,21 +581,39 @@ export const projectTemplateMutations = {
 								},
 								technologies: {
 									connect: technologies.map((tech) => ({ id: tech.id }))
-								},
-								learningOutcomes: {
-									create: learningOutcomes.map((outcome) => ({
-										value: outcome.value
-									}))
-								},
-								milestones: {
-									create: milestones.map((milestone) => ({
-										title: milestone.title,
-										description: milestone.description,
-										order: milestone.order
-									}))
 								}
 							}
 						});
+
+						const milestoneIdMap: Record<string, string> = {};
+						if (learningOutcomes.length > 0) {
+							await prisma.learningOutcome.createMany({
+								data: learningOutcomes.map((outcome) => ({
+									id: randomUUID(),
+									value: outcome.value,
+									projectTemplateId: newTemplate.id,
+									projectId: null
+								}))
+							});
+						}
+						if (milestones.length > 0) {
+							await prisma.milestone.createMany({
+								data: milestones.map((milestone) => {
+									const id = randomUUID();
+									milestoneIdMap[milestone.id] = id;
+									return {
+										id,
+										title: milestone.title,
+										description: milestone.description,
+										order: milestone.order,
+										status: milestone.status,
+										completed: milestone.completed,
+										projectTemplateId: newTemplate.id,
+										projectId: null
+									};
+								})
+							});
+						}
 
 						const sprintIdMap: Record<string, string> = {};
 						if (sprints.length > 0) {
@@ -569,6 +623,7 @@ export const projectTemplateMutations = {
 										id: oldId,
 										projectTemplateId: _projectTemplateId,
 										projectId: _projectId,
+										milestoneId,
 										createdAt: _sprintCreatedAt,
 										updatedAt: _sprintUpdatedAt,
 										...sprintData
@@ -579,7 +634,10 @@ export const projectTemplateMutations = {
 										...sprintData,
 										id: newId,
 										projectTemplateId: newTemplate.id,
-										projectId: null
+										projectId: null,
+										milestoneId: milestoneId
+											? (milestoneIdMap[milestoneId] ?? null)
+											: null
 									};
 								})
 							});
@@ -593,6 +651,7 @@ export const projectTemplateMutations = {
 										id: oldId,
 										projectTemplateId: _projectTemplateId,
 										projectId: _projectId,
+										milestoneId,
 										createdAt: _epicCreatedAt,
 										updatedAt: _epicUpdatedAt,
 										...epicData
@@ -603,7 +662,10 @@ export const projectTemplateMutations = {
 										...epicData,
 										id: newId,
 										projectTemplateId: newTemplate.id,
-										projectId: null
+										projectId: null,
+										milestoneId: milestoneId
+											? (milestoneIdMap[milestoneId] ?? null)
+											: null
 									};
 								})
 							});
@@ -616,6 +678,7 @@ export const projectTemplateMutations = {
 										id: _taskId,
 										epicId,
 										sprintId,
+										milestoneId,
 										projectTemplateId: _projectTemplateId,
 										projectId: _projectId,
 										createdAt: _taskCreatedAt,
@@ -628,6 +691,9 @@ export const projectTemplateMutations = {
 										projectTemplateId: newTemplate.id,
 										epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
 										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
+										milestoneId: milestoneId
+											? (milestoneIdMap[milestoneId] ?? null)
+											: null,
 										projectId: null
 									};
 								})

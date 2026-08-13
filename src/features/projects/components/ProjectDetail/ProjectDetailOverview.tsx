@@ -1,4 +1,10 @@
-import { BookOpen, Check, Code2, Target } from 'lucide-react';
+import {
+	BookOpen,
+	Check,
+	Code2,
+	Milestone as MilestoneIcon,
+	Target
+} from 'lucide-react';
 import { Badge } from '~/common/components/ui/badge';
 import {
 	Card,
@@ -60,6 +66,41 @@ export function ProjectDetailOverview({ project }: ProjectDetailOverviewProps) {
 									</div>
 								)}
 							</div>
+						</div>
+
+						<div>
+							<h3 className="mb-3 flex items-center gap-2 font-semibold text-lg">
+								<MilestoneIcon className="h-5 w-5 text-primary" />
+								Roadmap
+							</h3>
+							{project.milestones?.length ? (
+								<div className="space-y-3">
+									{[...project.milestones]
+										.sort((a, b) => a.order - b.order)
+										.map((milestone, index) => (
+											<div
+												key={milestone.id}
+												className="flex gap-3 rounded-lg border p-4"
+											>
+												<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-medium text-primary text-sm">
+													{index + 1}
+												</div>
+												<div>
+													<p className="font-medium">{milestone.title}</p>
+													{milestone.description && (
+														<p className="mt-1 text-muted-foreground text-sm">
+															{milestone.description}
+														</p>
+													)}
+												</div>
+											</div>
+										))}
+								</div>
+							) : (
+								<p className="text-muted-foreground text-sm">
+									Roadmap will be defined for this project.
+								</p>
+							)}
 						</div>
 
 						<div>

@@ -67,8 +67,29 @@ describe('project.createProject', () => {
 			publicCode: 'PROJECTALPHA',
 			nextTaskNumber: 3,
 			categoryId: null,
-			sprints: [{ id: 'template-sprint-id', title: 'Sprint 1' }],
-			epics: [{ id: 'template-epic-id', title: 'Epic 1' }],
+			milestones: [
+				{
+					id: 'template-milestone-id',
+					title: 'Milestone 1',
+					description: 'First delivery',
+					order: 0
+				}
+			],
+			learningOutcomes: [{ id: 'outcome-1', value: 'Ship a working feature' }],
+			sprints: [
+				{
+					id: 'template-sprint-id',
+					title: 'Sprint 1',
+					milestoneId: 'template-milestone-id'
+				}
+			],
+			epics: [
+				{
+					id: 'template-epic-id',
+					title: 'Epic 1',
+					milestoneId: 'template-milestone-id'
+				}
+			],
 			tasks: [
 				{
 					id: 'template-task-1',
@@ -76,6 +97,7 @@ describe('project.createProject', () => {
 					epicId: 'template-epic-id',
 					sprintId: 'template-sprint-id',
 					projectTemplateId: 'template-id',
+					milestoneId: 'template-milestone-id',
 					publicNumber: 1
 				},
 				{
@@ -91,6 +113,8 @@ describe('project.createProject', () => {
 		mockDb.project.findFirst.mockResolvedValue(null);
 		mockDb.project.findUnique.mockResolvedValue(null);
 		mockDb.project.create.mockResolvedValue({ id: 'project-id' } as never);
+		mockDb.milestone.createMany.mockResolvedValue({ count: 1 } as never);
+		mockDb.learningOutcome.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.sprint.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.epic.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.task.createMany.mockResolvedValue({ count: 2 } as never);
@@ -111,13 +135,33 @@ describe('project.createProject', () => {
 		expect(mockDb.sprint.create).not.toHaveBeenCalled();
 		expect(mockDb.epic.create).not.toHaveBeenCalled();
 		expect(mockDb.task.create).not.toHaveBeenCalled();
+		expect(mockDb.milestone.createMany).toHaveBeenCalledWith({
+			data: [
+				expect.objectContaining({
+					id: expect.any(String),
+					title: 'Milestone 1',
+					projectId: 'project-id',
+					projectTemplateId: null
+				})
+			]
+		});
+		expect(mockDb.learningOutcome.createMany).toHaveBeenCalledWith({
+			data: [
+				expect.objectContaining({
+					value: 'Ship a working feature',
+					projectId: 'project-id',
+					projectTemplateId: null
+				})
+			]
+		});
 		expect(mockDb.sprint.createMany).toHaveBeenCalledWith({
 			data: [
 				expect.objectContaining({
 					id: expect.any(String),
 					title: 'Sprint 1',
 					projectId: 'project-id',
-					projectTemplateId: null
+					projectTemplateId: null,
+					milestoneId: expect.any(String)
 				})
 			]
 		});
@@ -127,7 +171,8 @@ describe('project.createProject', () => {
 					id: expect.any(String),
 					title: 'Epic 1',
 					projectId: 'project-id',
-					projectTemplateId: null
+					projectTemplateId: null,
+					milestoneId: expect.any(String)
 				})
 			]
 		});
@@ -153,6 +198,7 @@ describe('project.createProject', () => {
 					projectId: 'project-id',
 					epicId,
 					sprintId,
+					milestoneId: expect.any(String),
 					projectTemplateId: null
 				}),
 				expect.objectContaining({

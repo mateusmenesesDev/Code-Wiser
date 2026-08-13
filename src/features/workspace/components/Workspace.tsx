@@ -22,6 +22,7 @@ import { columns } from '~/features/kanban/constants';
 import { useKanbanData } from '~/features/kanban/hooks/useKanbanData';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
+import ProjectRoadmap from '~/features/roadmap/components/ProjectRoadmap';
 import SprintBoard from '~/features/sprints/components/SprintBoard';
 import SprintSidebar from '~/features/sprints/components/SprintSidebar';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
@@ -38,7 +39,7 @@ const Workspace = () => {
 		sprintId: parseAsString
 	});
 
-	const { allTasks, members, sprints } = useKanbanData(projectId);
+	const { allTasks, members, sprints, epics } = useKanbanData(projectId);
 	const { data: projectInfo } = api.project.getWorkspaceInfo.useQuery({
 		id: projectId
 	});
@@ -53,10 +54,10 @@ const Workspace = () => {
 		projectInfo?.canceledAt !== null && projectInfo?.canceledAt !== undefined;
 
 	useEffect(() => {
-		if (!isScrum) {
+		if (!isScrum && view !== 'roadmap') {
 			setViewParams({ view: null, sprintId: null });
 		}
-	}, [isScrum, setViewParams]);
+	}, [isScrum, setViewParams, view]);
 
 	const selectedSprint =
 		view === 'sprint' && sprintId
@@ -111,25 +112,24 @@ const Workspace = () => {
 
 	return (
 		<div className="flex h-[calc(100vh-8rem)] flex-col">
-			{view !== 'backlog' && (
-				<ProjectHeader
-					projectId={projectId}
-					members={members ?? []}
-					sprints={sprints ?? []}
-					stats={
-						tasks?.map((task) => ({
-							status: task.status as TaskStatusEnum
-						})) ?? []
-					}
-					projectTitle={projectInfo?.title ?? ''}
-					projectFigmaUrl={projectInfo?.figmaProjectUrl ?? ''}
-					methodology={projectInfo?.methodology ?? ProjectMethodologyEnum.SCRUM}
-					onCreateTask={() => setTaskId('new')}
-					onOpenSettings={() => setIsSettingsOpen(true)}
-				/>
-			)}
+			<ProjectHeader
+				projectId={projectId}
+				members={members ?? []}
+				sprints={sprints ?? []}
+				epics={epics ?? []}
+				stats={
+					tasks?.map((task) => ({
+						status: task.status as TaskStatusEnum
+					})) ?? []
+				}
+				projectTitle={projectInfo?.title ?? ''}
+				projectFigmaUrl={projectInfo?.figmaProjectUrl ?? ''}
+				methodology={projectInfo?.methodology ?? ProjectMethodologyEnum.SCRUM}
+				onCreateTask={() => setTaskId('new')}
+				onOpenSettings={() => setIsSettingsOpen(true)}
+			/>
 			<div className="flex flex-1 overflow-hidden">
-				{isScrum && (
+				{(isScrum || view === 'roadmap') && (
 					<SprintSidebar
 						projectId={projectId}
 						sprints={sprints ?? []}
@@ -142,10 +142,15 @@ const Workspace = () => {
 						onSelectBacklog={() =>
 							setViewParams({ view: 'backlog', sprintId: null })
 						}
+						onSelectRoadmap={() =>
+							setViewParams({ view: 'roadmap', sprintId: null })
+						}
 					/>
 				)}
 				<div className="flex-1 overflow-hidden">
-					{isScrum && view === 'sprint' && selectedSprint ? (
+					{view === 'roadmap' ? (
+						<ProjectRoadmap projectId={projectId} />
+					) : isScrum && view === 'sprint' && selectedSprint ? (
 						<SprintBoard
 							sprint={selectedSprint}
 							projectId={projectId}

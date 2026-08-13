@@ -51,7 +51,9 @@ export const TASKS_SPRINTS_EPICS_JSON_EXAMPLE = {
 	epics: [
 		{
 			title: 'User Authentication',
-			description: 'Implement user registration, login, and authentication flow'
+			description:
+				'Implement user registration, login, and authentication flow',
+			milestoneTitle: 'User authentication and authorization'
 		},
 		{
 			title: 'Product Management',
@@ -62,6 +64,7 @@ export const TASKS_SPRINTS_EPICS_JSON_EXAMPLE = {
 		{
 			title: 'Sprint 1: Foundation',
 			description: 'Set up project structure and authentication',
+			milestoneTitle: 'User authentication and authorization',
 			startDate: '2024-01-01',
 			endDate: '2024-01-14',
 			order: 0
@@ -84,6 +87,7 @@ export const TASKS_SPRINTS_EPICS_JSON_EXAMPLE = {
 			epicTitle: 'User Authentication',
 			sprintTitle: 'Sprint 1: Foundation',
 			storyPoints: 5,
+			milestoneTitle: 'User authentication and authorization',
 			tags: ['backend', 'auth'],
 			order: 0
 		},

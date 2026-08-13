@@ -10,10 +10,14 @@ import {
 	ClipboardList,
 	Clock,
 	Kanban,
+	Milestone as MilestoneIcon,
+	Pencil,
 	Plus,
-	Play
+	Play,
+	Trash2
 } from 'lucide-react';
 import { useState } from 'react';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Dialog } from '~/common/components/ui/dialog';
@@ -34,6 +38,7 @@ interface SprintSidebarProps {
 	onSelectBoard: () => void;
 	onSelectSprint: (id: string) => void;
 	onSelectBacklog: () => void;
+	onSelectRoadmap: () => void;
 }
 
 const statusOrder: SprintStatusEnum[] = [
@@ -62,16 +67,22 @@ const SprintEntry = ({
 	onSelect,
 	onStart,
 	onComplete,
+	onEdit,
+	onDelete,
 	isStarting,
-	isCompleting
+	isCompleting,
+	isDeleting
 }: {
 	sprint: SprintWithStats;
 	isSelected: boolean;
 	onSelect: () => void;
 	onStart: () => void;
 	onComplete: () => void;
+	onEdit: () => void;
+	onDelete: () => void;
 	isStarting: boolean;
 	isCompleting: boolean;
+	isDeleting: boolean;
 }) => {
 	const progress =
 		sprint.taskCount > 0
@@ -80,9 +91,7 @@ const SprintEntry = ({
 	const hasDateRange = sprint.startDate && sprint.endDate;
 
 	return (
-		<button
-			type="button"
-			onClick={onSelect}
+		<div
 			className={cn(
 				'group w-full rounded-lg border px-3 py-2.5 text-left transition-all',
 				isSelected
@@ -92,47 +101,49 @@ const SprintEntry = ({
 					'border-success-border/50 bg-success-muted/20'
 			)}
 		>
-			<div className="flex items-start justify-between gap-2">
-				<div className="flex min-w-0 items-center gap-2">
-					<StatusIcon status={sprint.status} />
-					<span className="truncate font-medium text-sm">{sprint.title}</span>
+			<button type="button" onClick={onSelect} className="w-full text-left">
+				<div className="flex items-start justify-between gap-2">
+					<div className="flex min-w-0 items-center gap-2">
+						<StatusIcon status={sprint.status} />
+						<span className="truncate font-medium text-sm">{sprint.title}</span>
+					</div>
+					{sprint.totalPoints > 0 && (
+						<Badge
+							variant="secondary"
+							className="shrink-0 px-1.5 py-0 text-xs tabular-nums"
+						>
+							{sprint.totalPoints} pts
+						</Badge>
+					)}
 				</div>
-				{sprint.totalPoints > 0 && (
-					<Badge
-						variant="secondary"
-						className="shrink-0 px-1.5 py-0 text-xs tabular-nums"
-					>
-						{sprint.totalPoints} pts
-					</Badge>
+
+				{hasDateRange && (
+					<div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+						<Clock className="h-3 w-3" />
+						<span>
+							{dayjs(sprint.startDate).format('MMM D')} –{' '}
+							{dayjs(sprint.endDate).format('MMM D')}
+						</span>
+					</div>
 				)}
-			</div>
 
-			{hasDateRange && (
-				<div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
-					<Clock className="h-3 w-3" />
-					<span>
-						{dayjs(sprint.startDate).format('MMM D')} –{' '}
-						{dayjs(sprint.endDate).format('MMM D')}
-					</span>
-				</div>
-			)}
-
-			{sprint.taskCount > 0 && (
-				<div className="mt-2 space-y-1">
-					<Progress
-						value={progress}
-						className={cn(
-							'h-1',
-							sprint.status === SprintStatusEnum.ACTIVE
-								? 'bg-success-muted [&>div]:bg-success'
-								: 'bg-info-muted [&>div]:bg-info'
-						)}
-					/>
-					<span className="text-muted-foreground text-xs">
-						{sprint.doneCount}/{sprint.taskCount} done
-					</span>
-				</div>
-			)}
+				{sprint.taskCount > 0 && (
+					<div className="mt-2 space-y-1">
+						<Progress
+							value={progress}
+							className={cn(
+								'h-1',
+								sprint.status === SprintStatusEnum.ACTIVE
+									? 'bg-success-muted [&>div]:bg-success'
+									: 'bg-info-muted [&>div]:bg-info'
+							)}
+						/>
+						<span className="text-muted-foreground text-xs">
+							{sprint.doneCount}/{sprint.taskCount} done
+						</span>
+					</div>
+				)}
+			</button>
 
 			{sprint.status === SprintStatusEnum.PLANNING && (
 				<div className="mt-2 hidden group-hover:block">
@@ -167,7 +178,35 @@ const SprintEntry = ({
 					</Button>
 				</div>
 			)}
-		</button>
+			<div className="mt-1 flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+				<Button
+					variant="ghost"
+					size="icon"
+					className="h-7 w-7"
+					onClick={onEdit}
+					aria-label={`Edit ${sprint.title}`}
+				>
+					<Pencil className="h-3.5 w-3.5" />
+				</Button>
+				{sprint.status !== SprintStatusEnum.ACTIVE && (
+					<ConfirmationDialog
+						title="Delete Sprint"
+						description={`Delete "${sprint.title}"? Its tasks will lose their sprint assignment.`}
+						onConfirm={onDelete}
+					>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7 text-destructive hover:text-destructive"
+							disabled={isDeleting}
+							aria-label={`Delete ${sprint.title}`}
+						>
+							<Trash2 className="h-3.5 w-3.5" />
+						</Button>
+					</ConfirmationDialog>
+				)}
+			</div>
+		</div>
 	);
 };
 
@@ -178,15 +217,20 @@ export default function SprintSidebar({
 	currentView,
 	onSelectBoard,
 	onSelectSprint,
-	onSelectBacklog
+	onSelectBacklog,
+	onSelectRoadmap
 }: SprintSidebarProps) {
 	const [collapsed, setCollapsed] = useState(false);
 	const [selectedSprintForEdit, setSelectedSprintForEdit] =
 		useState<SprintWithStats | null>(null);
 	const { openDialog, closeDialog, isDialogOpen } = useDialog('sprint');
-	const { startSprint, completeSprint } = useSprintMutations({ projectId });
+	const { startSprint, completeSprint, deleteSprint } = useSprintMutations({
+		projectId
+	});
 
-	const grouped = statusOrder.reduce<Record<SprintStatusEnum, SprintWithStats[]>>(
+	const grouped = statusOrder.reduce<
+		Record<SprintStatusEnum, SprintWithStats[]>
+	>(
 		(acc, status) => {
 			acc[status] = sprints.filter((s) => s.status === status);
 			return acc;
@@ -229,7 +273,9 @@ export default function SprintSidebar({
 					onClick={onSelectBoard}
 					className={cn(
 						'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all',
-						currentView !== 'backlog' && currentView !== 'sprint'
+						currentView !== 'backlog' &&
+							currentView !== 'sprint' &&
+							currentView !== 'roadmap'
 							? 'bg-info-muted font-medium text-info-muted-foreground'
 							: 'hover:bg-muted/50'
 					)}
@@ -252,6 +298,20 @@ export default function SprintSidebar({
 					<span>Backlog</span>
 				</button>
 
+				<button
+					type="button"
+					onClick={onSelectRoadmap}
+					className={cn(
+						'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all',
+						currentView === 'roadmap'
+							? 'bg-info-muted font-medium text-info-muted-foreground'
+							: 'hover:bg-muted/50'
+					)}
+				>
+					<MilestoneIcon className="h-4 w-4 shrink-0" />
+					<span>Roadmap</span>
+				</button>
+
 				{statusOrder.map((status) => {
 					const group = grouped[status];
 					if (group.length === 0) return null;
@@ -269,8 +329,14 @@ export default function SprintSidebar({
 										onSelect={() => onSelectSprint(sprint.id)}
 										onStart={() => startSprint.mutate({ id: sprint.id })}
 										onComplete={() => completeSprint.mutate({ id: sprint.id })}
+										onEdit={() => {
+											setSelectedSprintForEdit(sprint);
+											openDialog('sprint');
+										}}
+										onDelete={() => deleteSprint.mutate({ id: sprint.id })}
 										isStarting={startSprint.isPending}
 										isCompleting={completeSprint.isPending}
+										isDeleting={deleteSprint.isPending}
 									/>
 								))}
 							</div>

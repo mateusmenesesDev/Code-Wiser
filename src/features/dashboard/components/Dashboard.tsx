@@ -314,8 +314,9 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 								</div>
 								<Progress value={project.progress} className="h-2" />
 								<p className="text-muted-foreground text-xs">
-									{project.completedTasks} of {project.totalTasks} tasks
-									complete
+									{project.usesRoadmap
+										? `${project.completedMilestones} of ${project.totalMilestones} milestones complete`
+										: `${project.completedTasks} of ${project.totalTasks} tasks complete`}
 								</p>
 							</div>
 						))}
@@ -369,11 +370,16 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 }
 
 export default function Dashboard({
-	initialData
-}: { initialData?: DashboardOverview }) {
-	const { data, isLoading } = api.dashboard.getOverview.useQuery(undefined, {
-		initialData
-	});
+	initialData,
+	userId
+}: {
+	initialData?: DashboardOverview;
+	userId?: string;
+}) {
+	const { data, isLoading } = api.dashboard.getOverview.useQuery(
+		userId ? { userId } : undefined,
+		{ initialData }
+	);
 	if (isLoading && !data) return <DashboardSkeleton />;
 	if (!data)
 		return (

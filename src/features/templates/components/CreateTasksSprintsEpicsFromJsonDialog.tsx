@@ -181,9 +181,8 @@ export function CreateTasksSprintsEpicsFromJsonDialog({
 							className="min-h-[400px] font-mono text-sm"
 						/>
 						<p className="text-muted-foreground text-xs">
-							Paste your JSON here. Tasks can reference epics and sprints by
-							their title using <code>epicTitle</code> and{' '}
-							<code>sprintTitle</code> fields.
+							Paste your JSON here. Tasks, sprints, and epics can reference a
+							milestone by title using <code>milestoneTitle</code>.
 						</p>
 					</div>
 

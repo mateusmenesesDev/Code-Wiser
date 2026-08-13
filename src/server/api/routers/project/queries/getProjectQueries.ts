@@ -101,8 +101,7 @@ export const getProjectQueries = {
 			})
 		]);
 
-		const lastActivityByProjectId: Record<string, Date | null | undefined> =
-			{};
+		const lastActivityByProjectId: Record<string, Date | null | undefined> = {};
 		for (const row of lastActivityGroups) {
 			if (row.projectId) {
 				lastActivityByProjectId[row.projectId] = row._max.updatedAt;
@@ -262,6 +261,116 @@ export const getProjectQueries = {
 				: null;
 
 			return result;
+		}),
+
+	getRoadmap: protectedProcedure
+		.input(z.object({ projectId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			await userHasAccessToProject(ctx, input.projectId);
+
+			const project = await ctx.db.project.findUnique({
+				where: { id: input.projectId },
+				select: {
+					id: true,
+					title: true,
+					canceledAt: true,
+					learningOutcomes: {
+						orderBy: { createdAt: 'asc' },
+						select: { id: true, value: true }
+					},
+					milestones: {
+						orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+						select: {
+							id: true,
+							title: true,
+							description: true,
+							order: true,
+							reviewedAt: true,
+							reviewedBy: { select: { id: true, name: true } },
+							tasks: {
+								select: {
+									id: true,
+									title: true,
+									status: true,
+									blocked: true
+								}
+							},
+							epics: {
+								select: {
+									id: true,
+									title: true,
+									tasks: {
+										select: {
+											id: true,
+											title: true,
+											status: true,
+											blocked: true
+										}
+									}
+								}
+							},
+							sprints: {
+								select: {
+									id: true,
+									title: true,
+									tasks: {
+										select: {
+											id: true,
+											title: true,
+											status: true,
+											blocked: true
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			});
+
+			if (!project) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project not found'
+				});
+			}
+
+			return {
+				...project,
+				milestones: project.milestones.map((milestone) => {
+					const tasks = [
+						...milestone.tasks,
+						...milestone.epics.flatMap((epic) => epic.tasks),
+						...milestone.sprints.flatMap((sprint) => sprint.tasks)
+					];
+					const uniqueTasks = [
+						...new Map(tasks.map((task) => [task.id, task])).values()
+					];
+					const doneCount = uniqueTasks.filter(
+						(task) => task.status === 'DONE'
+					).length;
+
+					return {
+						id: milestone.id,
+						title: milestone.title,
+						description: milestone.description,
+						order: milestone.order,
+						reviewedAt: milestone.reviewedAt,
+						reviewedBy: milestone.reviewedBy,
+						taskCount: uniqueTasks.length,
+						doneCount,
+						progress: uniqueTasks.length
+							? Math.round((doneCount / uniqueTasks.length) * 100)
+							: 0,
+						blockedTaskCount: uniqueTasks.filter((task) => task.blocked).length,
+						tasks: uniqueTasks,
+						epics: milestone.epics.map(({ tasks: _tasks, ...epic }) => epic),
+						sprints: milestone.sprints.map(
+							({ tasks: _tasks, ...sprint }) => sprint
+						)
+					};
+				})
+			};
 		}),
 
 	getProjectProgress: protectedProcedure

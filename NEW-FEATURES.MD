@@ -114,7 +114,7 @@ Esses itens não são “features” de marketing, mas são pré-condições par
 | ✅ Concluído | P1 | Agenda de tarefas e lembretes | Alto | M | Datas, notificações e preferências |
 | ✅ Concluído | P1 | Fila única do mentor | Alto | M | Paginação, status e ordenação por urgência |
 | — | P1 | Busca e filtros reais do catálogo | Médio | S | Índices e filtros por categoria/tecnologia |
-| — | P1 | Roadmap de projeto e milestones | Alto | M | Relacionar milestones do template ao projeto |
+| ✅ Concluído | P1 | Roadmap de projeto e milestones | Alto | M | Relacionar milestones do template ao projeto |
 | — | P1 | Finalizar UI de sprints e epics | Médio | S/M | Aproveitar procedures existentes |
 | 🚧 Parcial | P1 | Checkout de créditos e histórico | Alto | M | Ledger pronto; histórico e recuperação ainda pendentes |
 | — | P2 | Integração GitHub | Muito alto | G | GitHub App, consentimento e escopos |
@@ -277,7 +277,9 @@ Cada item deve ter idade, prioridade, aluno, projeto/trilha, próxima ação e l
 
 Começar com consultas Prisma e índices adequados. Busca dedicada só é necessária quando houver evidência de volume.
 
-### P1.5 — Roadmap e milestones
+### ✅ P1.5 — Roadmap e milestones
+
+**Status:** concluído. Milestones e outcomes agora são clonados como snapshots do projeto; o workspace exibe progresso, bloqueios e outcomes, e admins podem reordenar milestones e marcar entregas como revisadas.
 
 **Objetivo:** conectar o template comprado ao resultado de aprendizagem.
 
@@ -462,7 +464,7 @@ A API interna já existe via tRPC. Se “API based” significa permitir cliente
 5. ✅ Dashboard de próxima ação.
 6. ✅ Agenda e lembretes.
 7. ✅ Fila única do mentor.
-8. Roadmap com milestones.
+8. ✅ Roadmap com milestones.
 9. Busca real do catálogo.
 
 ### Marco 3 — monetização e colaboração completa

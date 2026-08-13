@@ -1,9 +1,41 @@
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
 import { buildEnrolledProjectStats } from '../project/queries/enrolledProjectStats';
 
+const dashboardOverviewProcedure = protectedProcedure.input(
+	z.object({ userId: z.string().min(1) }).optional()
+);
+
 export const dashboardRouter = {
-	getOverview: protectedProcedure.query(async ({ ctx }) => {
-		const userId = ctx.session.userId;
+	getOverview: dashboardOverviewProcedure.query(async ({ ctx, input }) => {
+		const requestedUserId = input?.userId;
+		const isViewingAnotherUser = Boolean(
+			requestedUserId && requestedUserId !== ctx.session.userId
+		);
+
+		if (isViewingAnotherUser && !ctx.isAdmin) {
+			throw new TRPCError({
+				code: 'FORBIDDEN',
+				message: 'Only administrators can view another user dashboard'
+			});
+		}
+
+		const userId = requestedUserId ?? ctx.session.userId;
+		const viewedUser = isViewingAnotherUser
+			? await ctx.db.user.findUnique({
+					where: { id: userId },
+					select: { name: true, email: true }
+				})
+			: null;
+
+		if (isViewingAnotherUser && !viewedUser) {
+			throw new TRPCError({
+				code: 'NOT_FOUND',
+				message: 'User not found'
+			});
+		}
+
 		const now = new Date();
 
 		const [
@@ -45,7 +77,26 @@ export const dashboardRouter = {
 				},
 				orderBy: { updatedAt: 'desc' },
 				take: 6,
-				select: { id: true, title: true }
+				select: {
+					id: true,
+					title: true,
+					milestones: {
+						select: {
+							id: true,
+							tasks: { select: { id: true, status: true } },
+							epics: {
+								select: {
+									tasks: { select: { id: true, status: true } }
+								}
+							},
+							sprints: {
+								select: {
+									tasks: { select: { id: true, status: true } }
+								}
+							}
+						}
+					}
+				}
 			}),
 			ctx.db.userChallengeProgress.findFirst({
 				where: {
@@ -169,11 +220,63 @@ export const dashboardRouter = {
 		});
 
 		return {
+			...(viewedUser ? { viewedUser } : {}),
 			urgentTask,
-			projects: projects.map((project) => ({
-				...project,
-				...stats[project.id]
-			})),
+			projects: projects.map((project) => {
+				const milestones = project.milestones ?? [];
+				const milestoneStats = milestones.map((milestone) => {
+					const tasks = [
+						...milestone.tasks,
+						...milestone.epics.flatMap((epic) => epic.tasks),
+						...milestone.sprints.flatMap((sprint) => sprint.tasks)
+					];
+					const uniqueTasks = [
+						...new Map(tasks.map((task) => [task.id, task])).values()
+					];
+					const completedTasks = uniqueTasks.filter(
+						(task) => task.status === 'DONE'
+					).length;
+					return {
+						taskCount: uniqueTasks.length,
+						completedTasks,
+						completed:
+							uniqueTasks.length > 0 && completedTasks === uniqueTasks.length
+					};
+				});
+				const roadmapTaskCount = milestoneStats.reduce(
+					(total, milestone) => total + milestone.taskCount,
+					0
+				);
+				const roadmapCompletedTasks = milestoneStats.reduce(
+					(total, milestone) => total + milestone.completedTasks,
+					0
+				);
+				const hasRoadmap = milestones.length > 0;
+
+				return {
+					id: project.id,
+					title: project.title,
+					...(hasRoadmap
+						? {
+								progress: roadmapTaskCount
+									? Math.round((roadmapCompletedTasks / roadmapTaskCount) * 100)
+									: 0,
+								totalTasks: roadmapTaskCount,
+								completedTasks: roadmapCompletedTasks,
+								completedMilestones: milestoneStats.filter(
+									(milestone) => milestone.completed
+								).length,
+								totalMilestones: milestones.length,
+								usesRoadmap: true as const
+							}
+						: {
+								...stats[project.id],
+								usesRoadmap: false as const,
+								completedMilestones: 0,
+								totalMilestones: 0
+							})
+				};
+			}),
 			exercise,
 			activeReview,
 			latestDecision,

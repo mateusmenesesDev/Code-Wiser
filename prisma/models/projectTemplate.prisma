@@ -25,8 +25,9 @@ model ProjectTemplate {
   categoryId       String
   category         Category               @relation(fields: [categoryId], references: [id])
 
-  epics   Epic[]
-  sprints Sprint[]
+  epics           Epic[]
+  sprints         Sprint[]
+  startedProjects Project[] @relation("ProjectSourceTemplate")
 
   @@index([status, sortOrder, createdAt])
   @@index([status, createdAt])

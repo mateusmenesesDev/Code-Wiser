@@ -29,6 +29,9 @@ export const useKanbanMutations = (projectId: string) => {
 					context.previousTasks
 				);
 			}
+		},
+		onSettled: () => {
+			utils.project.getRoadmap.invalidate({ projectId });
 		}
 	});
 

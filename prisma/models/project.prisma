@@ -1,19 +1,21 @@
 model Project {
-  id                     String                 @id @default(cuid())
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  title                  String
-  description            String
-  methodology            ProjectMethodologyEnum @default(SCRUM)
-  minParticipants        Int
-  maxParticipants        Int
-  accessType             ProjectAccessTypeEnum
-  difficulty             ProjectDifficultyEnum
-  creditCost             Int?
-  figmaProjectUrl        String?
-  publicCode             String?                @unique
-  creationIdempotencyKey String?                @unique
-  nextTaskNumber         Int                    @default(1)
+  id                      String                 @id @default(cuid())
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  title                   String
+  description             String
+  methodology             ProjectMethodologyEnum @default(SCRUM)
+  minParticipants         Int
+  maxParticipants         Int
+  accessType              ProjectAccessTypeEnum
+  difficulty              ProjectDifficultyEnum
+  creditCost              Int?
+  figmaProjectUrl         String?
+  sourceProjectTemplateId String?
+  sourceProjectTemplate   ProjectTemplate?       @relation("ProjectSourceTemplate", fields: [sourceProjectTemplateId], references: [id], onDelete: SetNull)
+  publicCode              String?                @unique
+  creationIdempotencyKey  String?                @unique
+  nextTaskNumber          Int                    @default(1)
 
   canceledAt                    DateTime?
   canceledById                  String?
@@ -27,10 +29,13 @@ model Project {
 
   epics                 Epic[]
   sprints               Sprint[]
+  milestones            Milestone[]
+  learningOutcomes      LearningOutcome[]
   members               User[]
   planningPokerSessions PlanningPokerSession[]
   invitations           ProjectInvitation[]
 
   @@index([canceledAt])
+  @@index([sourceProjectTemplateId])
   @@schema("public")
 }

@@ -19,7 +19,10 @@ model LearningOutcome {
   updatedAt         DateTime         @updatedAt
   ProjectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
   projectTemplateId String?
+  project           Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId         String?
 
+  @@index([projectId])
   @@schema("public")
 }
 
@@ -51,10 +54,20 @@ model Milestone {
   order             Int              @default(0)
   status            String?          @default("PENDING")
   completed         Boolean          @default(false)
+  reviewedAt        DateTime?
+  reviewedById      String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   ProjectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
   projectTemplateId String?
+  project           Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId         String?
+  reviewedBy        User?            @relation("MilestoneReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  tasks             Task[]
+  epics             Epic[]
+  sprints           Sprint[]
 
+  @@index([projectId, order])
+  @@index([reviewedById])
   @@schema("public")
 }

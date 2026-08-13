@@ -11,6 +11,7 @@ type Utils = ReturnType<typeof api.useUtils>;
 export type InvalidateDataReturn = {
 	invalidateBacklogData: () => void;
 	invalidateKanbanData: () => void;
+	invalidateRoadmapData: () => void;
 	invalidateTaskById: (taskId: string) => void;
 };
 
@@ -66,6 +67,10 @@ export const createInvalidateHelpers = ({
 			utils.task.getAllByProjectId.invalidate({ projectId, isTemplate }),
 		invalidateKanbanData: () =>
 			utils.kanban.getKanbanData.invalidate({ projectId }),
+		invalidateRoadmapData: () =>
+			!isTemplate && projectId
+				? utils.project.getRoadmap.invalidate({ projectId })
+				: undefined,
 		invalidateTaskById: (taskId: string) =>
 			utils.task.getById.invalidate({ id: taskId })
 	};
@@ -224,6 +229,7 @@ export const createOptimisticBacklogTask = (
 		storyPoints: newTask.storyPoints || null,
 		publicNumber: null,
 		epicId: newTask.epicId || null,
-		sprintId: newTask.sprintId || null
+		sprintId: newTask.sprintId || null,
+		milestoneId: null
 	} as BacklogTask;
 };

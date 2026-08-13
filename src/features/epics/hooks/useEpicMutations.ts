@@ -21,6 +21,7 @@ const getPrismaFields = (
 		progress: null,
 		startDate: null,
 		endDate: null,
+		milestoneId: null,
 		id: '',
 		tasks: []
 	};
