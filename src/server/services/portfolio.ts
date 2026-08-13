@@ -24,7 +24,10 @@ export async function getPublicPortfolioByCode(
 			portfolioEvaluatedBy: { select: { name: true } },
 			updatedAt: true,
 			category: { select: { name: true } },
-			technologies: { select: { id: true, name: true }, orderBy: { name: 'asc' } },
+			technologies: {
+				select: { id: true, name: true },
+				orderBy: { name: 'asc' }
+			},
 			githubRepository: { select: { htmlUrl: true, private: true } },
 			tasks: {
 				select: {
@@ -50,7 +53,7 @@ export async function getPublicPortfolioByCode(
 					reviewedAt: true,
 					reviewedBy: { select: { name: true } }
 				}
-			},
+			}
 		}
 	});
 
@@ -66,9 +69,9 @@ export async function getPublicPortfolioByCode(
 		unreviewedMilestoneCount: project.milestones.filter(
 			(milestone) => milestone.reviewedAt === null
 		).length,
-		pendingReviewCount: project.tasks.flatMap((task) => task.reviews).filter(
-			(review) => review.status === 'PENDING'
-		).length,
+		pendingReviewCount: project.tasks
+			.flatMap((task) => task.reviews)
+			.filter((review) => review.status === 'PENDING').length,
 		hasMentorEvaluation: Boolean(
 			project.portfolioFeedback?.trim() && project.portfolioEvaluatedAt
 		)
@@ -91,26 +94,25 @@ export async function getPublicPortfolioByCode(
 			!project.githubRepository.private
 				? project.githubRepository.htmlUrl
 				: null,
-			milestones: project.milestones.map((milestone) => ({
-				id: milestone.id,
-				title: milestone.title,
-				description: milestone.description,
-				reviewedAt: milestone.reviewedAt,
-				reviewedBy: milestone.reviewedBy?.name ?? null,
-				tasks: project.tasks
-					.filter(
-						(task) =>
-							task.portfolioRelevant && task.milestoneId === milestone.id
-					)
-					.map(
-						({
-							portfolioRelevant: _portfolioRelevant,
-							milestoneId: _milestoneId,
-							reviews: _reviews,
-							...task
-						}) => task
-					)
-			})),
+		milestones: project.milestones.map((milestone) => ({
+			id: milestone.id,
+			title: milestone.title,
+			description: milestone.description,
+			reviewedAt: milestone.reviewedAt,
+			reviewedBy: milestone.reviewedBy?.name ?? null,
+			tasks: project.tasks
+				.filter(
+					(task) => task.portfolioRelevant && task.milestoneId === milestone.id
+				)
+				.map(
+					({
+						portfolioRelevant: _portfolioRelevant,
+						milestoneId: _milestoneId,
+						reviews: _reviews,
+						...task
+					}) => task
+				)
+		})),
 		relevantTasks: project.tasks
 			.filter((task) => task.portfolioRelevant)
 			.map(

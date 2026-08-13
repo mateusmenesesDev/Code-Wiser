@@ -43,8 +43,9 @@ export function getPortfolioCompletion(
 		{ key: 'mentorEvaluation' as const, complete: input.hasMentorEvaluation }
 	];
 
-	const completedCriteria = criteria.filter((criterion) => criterion.complete)
-		.length;
+	const completedCriteria = criteria.filter(
+		(criterion) => criterion.complete
+	).length;
 
 	return {
 		isComplete: completedCriteria === criteria.length,

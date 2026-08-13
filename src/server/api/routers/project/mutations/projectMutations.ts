@@ -464,10 +464,14 @@ export const projectMutations = {
 					message: 'Add a demo URL before showing it on the portfolio'
 				});
 			}
-			if (input.showRepository && (!project.githubRepository || project.githubRepository.private)) {
+			if (
+				input.showRepository &&
+				(!project.githubRepository || project.githubRepository.private)
+			) {
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
-					message: 'Only a linked public repository can be shown on the portfolio'
+					message:
+						'Only a linked public repository can be shown on the portfolio'
 				});
 			}
 

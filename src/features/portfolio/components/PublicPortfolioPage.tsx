@@ -146,7 +146,11 @@ export default function PublicPortfolioPage({
 									) : (
 										<Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
 									)}
-									<span className={criterion.complete ? '' : 'text-muted-foreground'}>
+									<span
+										className={
+											criterion.complete ? '' : 'text-muted-foreground'
+										}
+									>
 										{criterionLabels[criterion.key]}
 									</span>
 								</li>
@@ -173,14 +177,18 @@ export default function PublicPortfolioPage({
 								<CardHeader className="pb-3">
 									<div className="flex items-start justify-between gap-3">
 										<div>
-											<CardTitle className="text-lg">{milestone.title}</CardTitle>
+											<CardTitle className="text-lg">
+												{milestone.title}
+											</CardTitle>
 											{milestone.description && (
 												<CardDescription className="mt-1">
 													{milestone.description}
 												</CardDescription>
 											)}
 										</div>
-										<Badge variant={milestone.reviewedAt ? 'success' : 'outline'}>
+										<Badge
+											variant={milestone.reviewedAt ? 'success' : 'outline'}
+										>
 											{milestone.reviewedAt ? 'Reviewed' : 'In progress'}
 										</Badge>
 									</div>
@@ -211,7 +219,10 @@ export default function PublicPortfolioPage({
 			</section>
 
 			{portfolio.relevantTasks.some(
-				(task) => !portfolio.milestones.some((milestone) => milestone.tasks.some(({ id }) => id === task.id))
+				(task) =>
+					!portfolio.milestones.some((milestone) =>
+						milestone.tasks.some(({ id }) => id === task.id)
+					)
 			) && (
 				<section className="space-y-3">
 					<h2 className="font-semibold text-2xl">Selected work</h2>

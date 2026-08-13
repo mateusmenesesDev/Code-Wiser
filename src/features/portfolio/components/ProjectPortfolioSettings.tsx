@@ -20,10 +20,8 @@ export function ProjectPortfolioSettings({
 	open: boolean;
 }) {
 	const utils = api.useUtils();
-	const { data: portfolio, isLoading } = api.project.getPortfolioSettings.useQuery(
-		{ projectId },
-		{ enabled: open }
-	);
+	const { data: portfolio, isLoading } =
+		api.project.getPortfolioSettings.useQuery({ projectId }, { enabled: open });
 	const [summary, setSummary] = useState('');
 	const [demoUrl, setDemoUrl] = useState('');
 	const [published, setPublished] = useState(false);
@@ -184,9 +182,11 @@ export function ProjectPortfolioSettings({
 								portfolio.tasks.map((task) => (
 									<label
 										key={task.id}
+										htmlFor={`portfolio-task-${task.id}`}
 										className="flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
 									>
 										<Checkbox
+											id={`portfolio-task-${task.id}`}
 											checked={relevantTaskIds.includes(task.id)}
 											onCheckedChange={() => toggleRelevantTask(task.id)}
 										/>
@@ -199,7 +199,9 @@ export function ProjectPortfolioSettings({
 									</label>
 								))
 							) : (
-								<p className="p-2 text-muted-foreground text-xs">No tasks yet.</p>
+								<p className="p-2 text-muted-foreground text-xs">
+									No tasks yet.
+								</p>
 							)}
 						</div>
 					</div>

@@ -376,11 +376,14 @@ export const getProjectQueries = {
 	getPublicPortfolio: publicProcedure
 		.input(z.object({ publicCode: z.string().min(1).max(40) }))
 		.query(async ({ ctx, input }) => {
-			const portfolio = await getPublicPortfolioByCode(ctx.db, input.publicCode);
+			const portfolio = await getPublicPortfolioByCode(
+				ctx.db,
+				input.publicCode
+			);
 			if (!portfolio) {
 				throw new TRPCError({
 					code: 'NOT_FOUND',
-						message: 'Portfolio not found'
+					message: 'Portfolio not found'
 				});
 			}
 			return portfolio;
