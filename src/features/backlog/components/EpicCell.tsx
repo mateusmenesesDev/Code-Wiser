@@ -34,7 +34,7 @@ export function EpicCell({ epicId, taskId, projectId, epics }: EpicCellProps) {
 	const availableEpics = epics || [];
 	const selectedEpic = availableEpics.find((epic) => epic.id === epicId);
 
-	const handleEpicSelect = async (epicId: string | undefined) => {
+	const handleEpicSelect = (epicId: string | null) => {
 		updateTask({
 			id: taskId,
 			epicId,
@@ -63,7 +63,7 @@ export function EpicCell({ epicId, taskId, projectId, epics }: EpicCellProps) {
 						<CommandEmpty>No epic found.</CommandEmpty>
 						<CommandGroup>
 							<CommandItem
-								onSelect={() => handleEpicSelect(undefined)}
+								onSelect={() => handleEpicSelect(null)}
 								className="cursor-pointer"
 							>
 								<Check

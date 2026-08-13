@@ -1,18 +1,22 @@
 import type { TaskPriorityEnum } from '@prisma/client';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
-import type { KanbanDataOutput } from '~/server/api/routers/kanban/types';
-import { filterKanbanTasks } from '../utils/filterKanbanTasks';
+import {
+	filterKanbanTasks,
+	type FilterableKanbanTask
+} from '../utils/filterKanbanTasks';
 
 export const useKanbanFilters = () => {
 	const [kanbanFilters, setKanbanFilters] = useQueryStates({
 		sprint: parseAsString.withDefault('all'),
+		epic: parseAsString.withDefault('all'),
 		priority: parseAsString.withDefault('all'),
 		assignee: parseAsString.withDefault('all'),
 		search: parseAsString.withDefault('')
 	});
 
 	const sprint = kanbanFilters.sprint;
+	const epic = kanbanFilters.epic;
 	const priority =
 		kanbanFilters.priority === 'all'
 			? undefined
@@ -23,14 +27,16 @@ export const useKanbanFilters = () => {
 	const hasActiveFilters = useMemo(() => {
 		return (
 			sprint !== 'all' ||
+			epic !== 'all' ||
 			priority !== undefined ||
 			assignee !== 'all' ||
 			search.trim() !== ''
 		);
-	}, [sprint, priority, assignee, search]);
+	}, [sprint, epic, priority, assignee, search]);
 
 	return {
 		sprintFilter: sprint,
+		epicFilter: epic,
 		priorityFilter: priority,
 		assigneeFilter: assignee,
 		searchFilter: search,
@@ -38,6 +44,12 @@ export const useKanbanFilters = () => {
 			setKanbanFilters({
 				...kanbanFilters,
 				sprint: sprint
+			});
+		},
+		setEpicFilter: (epic: string) => {
+			setKanbanFilters({
+				...kanbanFilters,
+				epic
 			});
 		},
 		setPriorityFilter: (priority: TaskPriorityEnum | 'all') => {
@@ -61,15 +73,17 @@ export const useKanbanFilters = () => {
 		clearFilters: () => {
 			setKanbanFilters({
 				sprint: 'all',
+				epic: 'all',
 				priority: 'all',
 				assignee: 'all',
 				search: ''
 			});
 		},
 		hasActiveFilters,
-		filterTasks: (tasks: KanbanDataOutput | undefined) =>
+		filterTasks: <T extends FilterableKanbanTask>(tasks: T[] | undefined) =>
 			filterKanbanTasks(tasks, {
 				sprint,
+				epic,
 				priority,
 				assignee,
 				search

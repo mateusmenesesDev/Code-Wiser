@@ -7,7 +7,6 @@ import {
 	Lightbulb,
 	ListTodo,
 	Pencil,
-	Plus,
 	Target,
 	Trash2
 } from 'lucide-react';
@@ -176,14 +175,6 @@ export default function EpicItem({ epic, onEdit, onDelete }: EpicItemProps) {
 								No tasks in this epic
 							</p>
 						</div>
-						<Button
-							variant="outline"
-							onClick={onEdit}
-							className="border-epic-border bg-epic-muted/50 text-epic-muted-foreground hover:bg-epic-muted"
-						>
-							<Plus className="mr-2 h-4 w-4" />
-							Add Task
-						</Button>
 					</div>
 				)}
 			</AccordionContent>

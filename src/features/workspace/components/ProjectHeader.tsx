@@ -24,6 +24,7 @@ interface ProjectHeaderProps {
 	projectId: string;
 	members: RouterOutputs['project']['getMembers'];
 	sprints: { id: string; title: string }[];
+	epics: { id: string; title: string }[];
 	stats: { status: TaskStatusEnum }[];
 	projectTitle: string;
 	projectFigmaUrl: string;
@@ -40,6 +41,7 @@ export default function ProjectHeader({
 	projectTitle,
 	projectFigmaUrl,
 	methodology,
+	epics,
 	onCreateTask,
 	onOpenSettings
 }: ProjectHeaderProps) {
@@ -47,10 +49,12 @@ export default function ProjectHeader({
 		useState(false);
 	const {
 		sprintFilter,
+		epicFilter,
 		priorityFilter,
 		assigneeFilter,
 		searchFilter,
 		setSprintFilter,
+		setEpicFilter,
 		setPriorityFilter,
 		setAssigneeFilter,
 		setSearchFilter,
@@ -185,6 +189,27 @@ export default function ProjectHeader({
 										.map((sprint) => (
 											<SelectItem key={sprint.id} value={sprint.id}>
 												{sprint.title}
+											</SelectItem>
+										))}
+								</SelectContent>
+							</Select>
+						)}
+						{epics.length > 0 && (
+							<Select
+								value={epicFilter ?? 'all'}
+								onValueChange={(value) => setEpicFilter(value)}
+							>
+								<SelectTrigger className="h-8 w-[180px]">
+									<SelectValue placeholder="Epic" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">All Epics</SelectItem>
+									{epics
+										.slice()
+										.sort((a, b) => a.title.localeCompare(b.title))
+										.map((epic) => (
+											<SelectItem key={epic.id} value={epic.id}>
+												{epic.title}
 											</SelectItem>
 										))}
 								</SelectContent>

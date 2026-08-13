@@ -685,7 +685,7 @@ export function TaskDialogContent({
 											key={`epic-select-${task?.id || 'new'}-${epics?.length || 0}-${selectValue}`}
 											value={selectValue}
 											onValueChange={(value) =>
-												field.onChange(value === 'none' ? undefined : value)
+												field.onChange(value === 'none' ? null : value)
 											}
 											disabled={epics?.length === 0}
 										>
@@ -734,7 +734,7 @@ export function TaskDialogContent({
 											key={`sprint-select-${task?.id || 'new'}-${sprints?.length || 0}-${selectValue}`}
 											value={selectValue}
 											onValueChange={(value) =>
-												field.onChange(value === 'none' ? undefined : value)
+												field.onChange(value === 'none' ? null : value)
 											}
 											disabled={sprints?.length === 0}
 										>

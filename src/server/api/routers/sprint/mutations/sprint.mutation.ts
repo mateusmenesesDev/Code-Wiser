@@ -139,8 +139,12 @@ export const sprintMutations = {
 				where: { id },
 				data: {
 					...rest,
-					startDate: startDate ? new Date(startDate) : undefined,
-					endDate: endDate ? new Date(endDate) : undefined
+					...(startDate !== undefined && {
+						startDate: startDate ? new Date(startDate) : null
+					}),
+					...(endDate !== undefined && {
+						endDate: endDate ? new Date(endDate) : null
+					})
 				}
 			});
 		}),
@@ -195,6 +199,12 @@ export const sprintMutations = {
 			if (sprint.projectId) {
 				await assertProjectIsActive(ctx.db, sprint.projectId);
 			}
+			if (sprint.status !== SprintStatusEnum.PLANNING) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Only a planning sprint can be started'
+				});
+			}
 
 			const activeSprint = await ctx.db.sprint.findFirst({
 				where: {
@@ -233,6 +243,12 @@ export const sprintMutations = {
 			await assertProjectResourceAccess(ctx, sprint);
 			if (sprint.projectId) {
 				await assertProjectIsActive(ctx.db, sprint.projectId);
+			}
+			if (sprint.status !== SprintStatusEnum.ACTIVE) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Only an active sprint can be completed'
+				});
 			}
 
 			await ctx.db.$transaction(async (tx) => {

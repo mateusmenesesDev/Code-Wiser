@@ -1,6 +1,7 @@
 'use client';
 
-import { TaskStatusEnum } from '@prisma/client';
+import { SprintStatusEnum, TaskStatusEnum } from '@prisma/client';
+import dayjs from 'dayjs';
 import { Plus } from 'lucide-react';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useCallback } from 'react';
@@ -12,7 +13,9 @@ import {
 	AccordionItem,
 	AccordionTrigger
 } from '~/common/components/ui/accordion';
+import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
+import { Progress } from '~/common/components/ui/progress';
 import {
 	Table,
 	TableBody,
@@ -22,6 +25,7 @@ import {
 } from '~/common/components/ui/table';
 import { useIsTemplate } from '~/common/hooks/useIsTemplate';
 import { groupTasksBySprintId } from '~/common/utils/kanbanReorder';
+import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { useSprintQueries } from '~/features/sprints/hooks/useSprintQueries';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import { useTask } from '~/features/task/hooks/useTask';
@@ -48,6 +52,7 @@ export default function Backlog({ projectId }: { projectId: string }) {
 
 	const { getAllSprints } = useSprintQueries();
 	const { updateTaskOrders, getAllTasksByProjectId } = useTask({ projectId });
+	const { filterTasks } = useKanbanFilters();
 
 	const [sprints] = getAllSprints();
 
@@ -68,16 +73,15 @@ export default function Backlog({ projectId }: { projectId: string }) {
 		[setTaskId]
 	);
 
-	const tasksBySprint = groupTasksBySprintId(tasks ?? []);
+	const visibleTasks = filterTasks(tasks ?? []);
+	const tasksBySprint = groupTasksBySprintId(visibleTasks);
 
 	const moveTask = useCallback(
 		(dragIndex: number, hoverIndex: number, groupTaskIds?: string[]) => {
 			if (dragIndex === hoverIndex) return;
 
 			const groupIdSet =
-				groupTaskIds && groupTaskIds.length > 0
-					? new Set(groupTaskIds)
-					: null;
+				groupTaskIds && groupTaskIds.length > 0 ? new Set(groupTaskIds) : null;
 
 			const groupTasks = (tasks ?? [])
 				.filter((task) =>
@@ -135,12 +139,45 @@ export default function Backlog({ projectId }: { projectId: string }) {
 						return (
 							<AccordionItem key={sprint.id} value={sprint.id}>
 								<AccordionTrigger>
-									<span className="flex items-center gap-2">
-										{sprint.title}
-										<span className="text-muted-foreground">
-											({sprintTasks.length})
-										</span>
-									</span>
+									<div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-2">
+										<div className="flex min-w-0 items-center gap-2">
+											<span className="truncate">{sprint.title}</span>
+											<Badge
+												variant={
+													sprint.status === SprintStatusEnum.ACTIVE
+														? 'success'
+														: sprint.status === SprintStatusEnum.COMPLETED
+															? 'outline'
+															: 'secondary'
+												}
+												className="shrink-0 text-xs"
+											>
+												{sprint.status.toLowerCase()}
+											</Badge>
+										</div>
+										<div className="flex shrink-0 items-center gap-3 text-muted-foreground text-xs">
+											{sprint.startDate && sprint.endDate && (
+												<span>
+													{dayjs(sprint.startDate).format('MMM D')} –{' '}
+													{dayjs(sprint.endDate).format('MMM D')}
+												</span>
+											)}
+											<div className="flex items-center gap-2">
+												<Progress
+													value={
+														sprint.taskCount > 0
+															? (sprint.doneCount / sprint.taskCount) * 100
+															: 0
+													}
+													className="h-1.5 w-16"
+												/>
+												<span>
+													{sprint.doneCount}/{sprint.taskCount} done
+												</span>
+											</div>
+											<span>({sprintTasks.length})</span>
+										</div>
+									</div>
 								</AccordionTrigger>
 								<AccordionContent>
 									<Table className="border">
@@ -214,7 +251,13 @@ export default function Backlog({ projectId }: { projectId: string }) {
 											index={index}
 											projectId={projectId}
 											onTaskClick={handleTaskClick}
-											moveTask={(drag, hover) => moveTask(drag, hover)}
+											moveTask={(drag, hover) =>
+												moveTask(
+													drag,
+													hover,
+													backlogTasks.map((task) => task.id)
+												)
+											}
 											sprints={sprints}
 											epics={
 												projectData?.epics?.map((epic) => ({

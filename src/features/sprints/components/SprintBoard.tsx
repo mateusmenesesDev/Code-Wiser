@@ -6,6 +6,7 @@ import { CheckCircle2, Clock, LayoutGrid, List, Play, Zap } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
+import { Progress } from '~/common/components/ui/progress';
 import { Input } from '~/common/components/ui/input';
 import {
 	KanbanBoard,
@@ -161,6 +162,8 @@ export default function SprintBoard({
 		(sum, t) => sum + ((t as { storyPoints?: number | null }).storyPoints ?? 0),
 		0
 	);
+	const completedTasks = tasks.filter((task) => task.status === 'DONE').length;
+	const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
 
 	const hasDateRange = sprint.startDate && sprint.endDate;
 
@@ -200,6 +203,12 @@ export default function SprintBoard({
 					</div>
 				</div>
 				<div className="flex items-center gap-3">
+					<div className="flex items-center gap-2 text-muted-foreground text-xs">
+						<Progress value={progress} className="h-1.5 w-16" />
+						<span>
+							{completedTasks}/{tasks.length} done
+						</span>
+					</div>
 					{totalPoints > 0 && (
 						<div className="flex items-center gap-1 text-muted-foreground text-sm">
 							<Zap className="h-4 w-4 text-amber-500" />

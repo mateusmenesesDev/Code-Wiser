@@ -6,7 +6,6 @@ import {
 	GripVertical,
 	ListTodo,
 	Pencil,
-	Plus,
 	Target,
 	Timer,
 	Trash2
@@ -286,14 +285,6 @@ export default function SprintItem({
 									No tasks in this sprint
 								</p>
 							</div>
-							<Button
-								variant="outline"
-								onClick={onEdit}
-								className="border-info-border bg-info-muted/50 text-info-muted-foreground hover:bg-info-muted"
-							>
-								<Plus className="mr-2 h-4 w-4" />
-								Add Task
-							</Button>
 						</div>
 					)}
 				</AccordionContent>

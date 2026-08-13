@@ -11,10 +11,15 @@ export const useKanbanData = (projectId: string) => {
 		projectId,
 		isTemplate: false
 	});
+	const { data: epics } = api.epic.getAllByProjectId.useQuery({
+		projectId,
+		isTemplate: false
+	});
 
 	return {
 		allTasks,
 		members,
-		sprints
+		sprints,
+		epics
 	};
 };

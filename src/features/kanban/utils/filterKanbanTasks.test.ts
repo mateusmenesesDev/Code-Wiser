@@ -7,11 +7,13 @@ const tasks = [
 		title: 'Build task search',
 		sprint: { id: 'sprint-1' },
 		priority: TaskPriorityEnum.HIGH,
+		epic: { id: 'epic-1' },
 		assignees: [{ id: 'user-1' }]
 	},
 	{
 		title: 'Update documentation',
 		sprint: { id: 'sprint-2' },
+		epic: { id: 'epic-2' },
 		priority: TaskPriorityEnum.LOW,
 		assignees: [{ id: 'user-2' }]
 	}
@@ -22,6 +24,7 @@ describe('filterKanbanTasks', () => {
 		expect(
 			filterKanbanTasks(tasks, {
 				sprint: 'all',
+				epic: 'all',
 				priority: undefined,
 				assignee: 'all',
 				search: '  SEARCH '
@@ -33,6 +36,7 @@ describe('filterKanbanTasks', () => {
 		expect(
 			filterKanbanTasks(tasks, {
 				sprint: 'sprint-1',
+				epic: 'epic-1',
 				priority: TaskPriorityEnum.HIGH,
 				assignee: 'user-1',
 				search: 'task'
@@ -42,10 +46,23 @@ describe('filterKanbanTasks', () => {
 		expect(
 			filterKanbanTasks(tasks, {
 				sprint: 'sprint-1',
+				epic: 'all',
 				priority: undefined,
 				assignee: 'all',
 				search: 'documentation'
 			})
 		).toEqual([]);
+	});
+
+	it('filters by epic together with the other task filters', () => {
+		expect(
+			filterKanbanTasks(tasks, {
+				sprint: 'all',
+				epic: 'epic-2',
+				priority: undefined,
+				assignee: 'all',
+				search: ''
+			})
+		).toEqual([tasks[1]]);
 	});
 });
