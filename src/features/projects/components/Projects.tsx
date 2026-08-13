@@ -128,6 +128,7 @@ export default function Projects({
 					<div className="relative">
 						<Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
 						<Input
+							maxLength={100}
 							placeholder="Search projects by title or description..."
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}

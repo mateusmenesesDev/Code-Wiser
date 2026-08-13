@@ -88,7 +88,7 @@ describe('projectTemplate.getApproved', () => {
 		mockDb.projectTemplate.findMany.mockResolvedValue([]);
 
 		await caller.getApproved({
-			search: 'react',
+			search: '  react  ',
 			category: 'Frontend',
 			technologies: ['React', 'TypeScript'],
 			difficulty: 'INTERMEDIATE',

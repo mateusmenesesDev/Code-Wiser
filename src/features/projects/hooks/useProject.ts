@@ -39,8 +39,10 @@ export function useProject({
 			(value) => value === sortFilter
 		) as 'relevance' | 'newest' | 'difficulty' | undefined;
 
+		const search = searchTerm.trim().slice(0, 100);
+
 		return {
-			search: searchTerm || undefined,
+			search: search || undefined,
 			category: categoryFilter === 'all' ? undefined : categoryFilter,
 			technologies:
 				technologiesFilter.length > 0 ? technologiesFilter : undefined,
