@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS "ProjectMembership" (
   CONSTRAINT "ProjectMembership_pkey" PRIMARY KEY ("id")
 );
 
+ALTER TABLE "ProjectMembership" SET (schema_locked = false);
+
 CREATE UNIQUE INDEX IF NOT EXISTS "ProjectMembership_projectId_userId_key"
   ON "ProjectMembership"("projectId", "userId");
 

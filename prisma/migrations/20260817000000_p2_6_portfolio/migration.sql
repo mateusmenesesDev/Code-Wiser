@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS "_ProjectToTechnology" (
   "B" STRING NOT NULL
 );
 
+ALTER TABLE "_ProjectToTechnology" SET (schema_locked = false);
+
 CREATE UNIQUE INDEX IF NOT EXISTS "_ProjectToTechnology_AB_unique"
   ON "_ProjectToTechnology"("A", "B");
 CREATE INDEX IF NOT EXISTS "_ProjectToTechnology_B_index"
