@@ -285,6 +285,48 @@ describe('PR review lifecycle', () => {
 		expect(mockDb.pullRequestReview.updateMany).not.toHaveBeenCalled();
 	});
 
+	it('marks feedback as AI-assisted only after accepted current findings are selected', async () => {
+		mockDb.pullRequestReview.findFirst.mockResolvedValue({
+			id: 'review-1',
+			status: 'PENDING',
+			githubHeadSha: 'head-1',
+			requestedById: 'user-1',
+			requestedBy: {
+				id: 'user-1',
+				name: 'Student',
+				email: 'student@example.com'
+			},
+			task: {
+				id: 'task-1',
+				title: 'Build feature',
+				project: { id: 'project-1', title: 'Project' }
+			}
+		} as never);
+		mockDb.prReviewAnalysis.findUnique.mockResolvedValue({
+			status: 'COMPLETED',
+			reviewId: 'review-1',
+			sourceHeadSha: 'head-1',
+			findings: [{ id: 'finding-1' }]
+		} as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.requestChanges({
+			taskId: 'task-1',
+			comment: 'Please address the accepted finding.',
+			analysisId: 'analysis-1'
+		});
+
+		expect(mockDb.pullRequestReview.updateMany).toHaveBeenCalledWith({
+			where: { id: 'review-1', status: 'PENDING' },
+			data: expect.objectContaining({
+				status: 'CHANGES_REQUESTED',
+				feedbackAssistedByAi: true
+			})
+		});
+	});
+
 	it('returns an idempotent retry without creating or charging again', async () => {
 		mockDb.pullRequestReview.findUnique.mockResolvedValue({
 			taskId: 'task-1',

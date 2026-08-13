@@ -11,7 +11,7 @@ P2.2 is a bounded assistant for project pull-request reviews. It never changes t
 - At most 20 findings are persisted.
 - Binary files, generated/build directories, dependency directories, and likely secret files/lines are excluded or redacted.
 
-The queue is claimed with a conditional database update, so overlapping cron invocations cannot process the same analysis concurrently.
+The queue is claimed with a conditional database update, so overlapping cron invocations cannot process the same analysis concurrently. A ten-minute worker lease requeues or permanently fails abandoned running jobs, so an interrupted worker does not leave a review stuck forever.
 
 ## Data and retention
 

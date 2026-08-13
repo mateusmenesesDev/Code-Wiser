@@ -25,6 +25,7 @@ const MAX_FILE_PATCH_CHARACTERS = 10_000;
 const MAX_INPUT_CHARACTERS = 50_000;
 const MAX_FINDINGS = 20;
 const MODEL_TIMEOUT_MS = 30_000;
+const RUNNING_LEASE_MS = 10 * 60 * 1000;
 const MAX_TEXT_CHARACTERS = 4_000;
 
 const generatedFindingSchema = z.object({
@@ -399,6 +400,34 @@ async function processAnalysis(
 }
 
 export async function processQueuedPRReviewAnalyses(db: AnalysisDatabase) {
+	const staleBefore = new Date(Date.now() - RUNNING_LEASE_MS);
+	await db.prReviewAnalysis.updateMany({
+		where: {
+			status: PRReviewAnalysisStatus.RUNNING,
+			startedAt: { lt: staleBefore },
+			attempts: { lt: MAX_ATTEMPTS }
+		},
+		data: {
+			status: PRReviewAnalysisStatus.QUEUED,
+			errorCode: 'WORKER_LEASE_EXPIRED',
+			errorMessage:
+				'The previous worker stopped before completing the analysis.'
+		}
+	});
+	await db.prReviewAnalysis.updateMany({
+		where: {
+			status: PRReviewAnalysisStatus.RUNNING,
+			startedAt: { lt: staleBefore },
+			attempts: { gte: MAX_ATTEMPTS }
+		},
+		data: {
+			status: PRReviewAnalysisStatus.FAILED,
+			completedAt: new Date(),
+			errorCode: 'WORKER_LEASE_EXPIRED',
+			errorMessage: 'The analysis worker stopped after the retry limit.'
+		}
+	});
+
 	let processed = 0;
 	let completed = 0;
 	let failed = 0;

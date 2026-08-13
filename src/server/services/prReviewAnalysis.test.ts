@@ -20,7 +20,10 @@ describe('PR review analysis worker', () => {
 				sourceHeadSha: 'head-1'
 			} as never)
 			.mockResolvedValue(null);
-		mockDb.prReviewAnalysis.updateMany.mockResolvedValue({ count: 1 });
+		mockDb.prReviewAnalysis.updateMany
+			.mockResolvedValueOnce({ count: 0 })
+			.mockResolvedValueOnce({ count: 0 })
+			.mockResolvedValueOnce({ count: 1 });
 		mockDb.prReviewAnalysis.findUnique.mockResolvedValue({
 			id: 'analysis-1',
 			reviewId: 'review-1',
@@ -34,7 +37,7 @@ describe('PR review analysis worker', () => {
 			completed: 0,
 			failed: 1
 		});
-		expect(mockDb.prReviewAnalysis.updateMany).toHaveBeenCalledTimes(1);
+		expect(mockDb.prReviewAnalysis.updateMany).toHaveBeenCalledTimes(3);
 		expect(mockDb.prReviewAnalysis.update).toHaveBeenCalledWith({
 			where: { id: 'analysis-1' },
 			data: expect.objectContaining({
