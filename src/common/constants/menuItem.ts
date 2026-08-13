@@ -3,6 +3,7 @@ import {
 	BookOpen,
 	Calendar,
 	ClipboardCheck,
+	Clock3,
 	FolderOpen,
 	GitPullRequest,
 	LayoutDashboard,
@@ -100,6 +101,12 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 		Icon: ClipboardCheck,
 		items: [
 			{
+				href: '/admin/attention',
+				Icon: Clock3,
+				label: 'Attention Queue',
+				permission: 'org:project:create'
+			},
+			{
 				href: '/admin/pr-reviews',
 				Icon: GitPullRequest,
 				label: 'PR Reviews',
@@ -109,6 +116,12 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 				href: '/admin/exercise-reviews',
 				Icon: ClipboardCheck,
 				label: 'Exercise Reviews',
+				permission: 'org:project:create'
+			},
+			{
+				href: '/admin/mentorship',
+				Icon: Calendar,
+				label: 'Mentorship Sessions',
 				permission: 'org:project:create'
 			}
 		]

@@ -24,6 +24,7 @@ import {
 } from '~/common/components/ui/dialog';
 import { ScrollArea } from '~/common/components/ui/scroll-area';
 import { Skeleton } from '~/common/components/ui/skeleton';
+import { Textarea } from '~/common/components/ui/textarea';
 import { Switch } from '~/common/components/ui/switch';
 import { env } from '~/env';
 import { useAuth } from '~/features/auth/hooks/useAuth';
@@ -153,6 +154,7 @@ export function MentorshipCalendar() {
 	const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 	const [selectedSlot, setSelectedSlot] = useState<SlotOption | undefined>();
 	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [objective, setObjective] = useState('');
 	const [use24Hour, setUse24Hour] = useState(false);
 
 	const bookMutation = api.mentorship.bookSession.useMutation({
@@ -160,6 +162,7 @@ export function MentorshipCalendar() {
 			toast.success('Session booked! Check your email for the meeting link.');
 			setSelectedDate(undefined);
 			setSelectedSlot(undefined);
+			setObjective('');
 			await utils.mentorship.getAvailableSlots.invalidate();
 			await utils.mentorship.getMyMentorshipWeekInfo.invalidate();
 			await utils.mentorship.getMyBookings.invalidate();
@@ -238,7 +241,8 @@ export function MentorshipCalendar() {
 			start: selectedSlot.start,
 			timeZone,
 			attendeeName: userName,
-			attendeeEmail: userEmail
+			attendeeEmail: userEmail,
+			objective: objective.trim() || undefined
 		});
 		setConfirmOpen(false);
 	};
@@ -451,6 +455,19 @@ export function MentorshipCalendar() {
 							)}
 						</DialogDescription>
 					</DialogHeader>
+					<div className="space-y-2">
+						<label htmlFor="mentorship-objective" className="font-medium text-sm">
+							What do you want to work on?
+						</label>
+						<Textarea
+							id="mentorship-objective"
+							value={objective}
+							onChange={(event) => setObjective(event.target.value)}
+							placeholder="Share the topic or outcome you want from this session"
+							maxLength={2000}
+							rows={4}
+						/>
+					</div>
 					<DialogFooter>
 						<Button
 							variant="outline"

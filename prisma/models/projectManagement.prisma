@@ -41,6 +41,7 @@ model Task {
   @@unique([projectId, title])
   @@unique([projectTemplateId, publicNumber])
   @@unique([projectId, publicNumber])
+  @@index([blocked, updatedAt])
   @@schema("public")
 }
 
@@ -160,5 +161,6 @@ model PullRequestReview {
 
   @@index([taskId, isActive])
   @@index([reviewedById])
+  @@index([isActive, status, createdAt])
   @@schema("public")
 }

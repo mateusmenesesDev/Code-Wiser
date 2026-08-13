@@ -16,6 +16,8 @@ model MentorshipBooking {
   status       MentorshipBookingStatus @default(SCHEDULED)
   bookingUrl   String? // Cal.com booking management URL
   meetingUrl   String?
+  objective    String?
+  followUp     String?
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
 

@@ -2,7 +2,8 @@
 
 import { Protect } from '@clerk/nextjs';
 import { Edit, Search, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import {
@@ -39,11 +40,17 @@ import { EditUserDialog } from './EditUserDialog';
 
 export default function AdminUsersPage() {
 	const utils = api.useUtils();
+	const searchParams = useSearchParams();
+	const requestedUserId = searchParams.get('userId');
 	const [searchTerm, setSearchTerm] = useState('');
 	const [mentorshipStatusFilter, setMentorshipStatusFilter] = useState<
 		'all' | 'ACTIVE' | 'INACTIVE'
 	>('all');
 	const [editingUser, setEditingUser] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (requestedUserId) setEditingUser(requestedUserId);
+	}, [requestedUserId]);
 
 	const { data, isLoading, refetch } = api.user.listAll.useQuery({
 		search: searchTerm || undefined,

@@ -12,7 +12,7 @@ import {
 	isDateInCurrentWeek,
 	getWeekBoundaries
 } from '~/server/services/mentorship/mentorshipService';
-import { mentorshipProcedure } from '../../trpc';
+import { adminProcedure, mentorshipProcedure } from '../../trpc';
 
 export const mentorshipMutations = {
 	bookSession: mentorshipProcedure
@@ -21,7 +21,8 @@ export const mentorshipMutations = {
 				start: z.string().datetime(),
 				timeZone: z.string().default('UTC'),
 				attendeeName: z.string(),
-				attendeeEmail: z.string().email()
+				attendeeEmail: z.string().email(),
+				objective: z.string().trim().max(2000).optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -63,13 +64,15 @@ export const mentorshipMutations = {
 						scheduledAt: scheduledDate,
 						status: 'SCHEDULED',
 						bookingUrl,
-						meetingUrl
+						meetingUrl,
+						objective: input.objective || null
 					},
 					update: {
 						scheduledAt: scheduledDate,
 						status: 'SCHEDULED',
 						bookingUrl,
-						meetingUrl
+						meetingUrl,
+						objective: input.objective || null
 					}
 				});
 
@@ -337,5 +340,35 @@ export const mentorshipMutations = {
 							: 'Failed to reschedule booking'
 				});
 			}
+		}),
+
+	updateSessionNotes: adminProcedure
+		.input(
+			z.object({
+				bookingId: z.string().uuid(),
+				objective: z.string().trim().max(2000).nullable(),
+				followUp: z.string().trim().max(2000).nullable()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const booking = await ctx.db.mentorshipBooking.findUnique({
+				where: { id: input.bookingId },
+				select: { id: true }
+			});
+
+			if (!booking) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Mentorship booking not found'
+				});
+			}
+
+			return ctx.db.mentorshipBooking.update({
+				where: { id: input.bookingId },
+				data: {
+					objective: input.objective || null,
+					followUp: input.followUp || null
+				}
+			});
 		})
 };

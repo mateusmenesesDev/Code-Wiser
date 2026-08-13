@@ -1,6 +1,21 @@
 # Mapa de evolução do CodeWise
 
 > Documento de análise do sistema atual e priorização de novas features. A prioridade considera valor para o aluno/mentor, reaproveitamento do que já existe, risco e esforço de implementação.
+>
+> **Status atualizado em 12/08/2026.** Itens marcados como ✅ já foram implementados na branch `main`; itens 🚧 têm uma primeira versão, mas ainda possuem escopo pendente; itens sem marcação continuam planejados.
+
+### Entregas concluídas
+
+- ✅ **P0.1 — Autorização por recurso:** procedures de usuário, tarefas, comentários, anexos, sprints, epics e reviews passaram a validar autenticação, membership e papel administrativo; testes positivos e negativos foram adicionados.
+- ✅ **P0.2 — Ledger de créditos e pagamentos confiáveis:** transações append-only, idempotência para Stripe e operações de projeto, débitos atômicos, reconciliação e histórico de créditos.
+- ✅ **P0.3 — Ciclo de vida de PR review:** `requestedBy` e `reviewedBy` separados, histórico de decisões, `reviewedAt` e uma única review ativa por tarefa.
+- 🚧 **P0.4 — E2E da jornada principal:** cenário Playwright implementado para catálogo → projeto → tarefa → comentário → PR review → decisão do admin. Ainda falta incorporar a execução ao CI.
+- ✅ **P1.1 — Dashboard do aluno e próxima ação:** dashboard autenticado em `/`, consulta agregada server-side com tarefas urgentes, projetos, exercícios, reviews, mentorship e notificações.
+- ✅ **P1.2 — Agenda, atrasos e lembretes:** agenda em `/agenda` com faixas de prazo, filtros e lembretes de tarefas próximos do vencimento ou atrasados.
+- ✅ **P1.3 — Fila única de atenção do mentor:** fila administrativa paginada com reviews, tarefas bloqueadas, alunos inativos e sessões de mentorship sem contexto, com filtros e links diretos.
+- ✅ **Navegação do produto:** shell com navegação consciente de papel; o catálogo de projetos está disponível em `/projects` e tem entrada permanente no menu lateral.
+
+O dashboard é uma primeira versão deliberadamente baseada nas consultas atuais. Ele mostra progresso por tarefas; milestones clonados para o projeto ainda pertencem ao escopo de P1.5.
 
 ## 1. Resumo executivo
 
@@ -20,11 +35,11 @@ A recomendação é **não começar por uma reescrita para “API based”**. O 
 
 ### Ordem recomendada
 
-1. **Confiabilidade e segurança**: autorização por projeto, idempotência financeira e ciclo de vida de reviews.
-2. **Retenção do aluno**: dashboard unificado, agenda de tarefas, marcos e próxima ação.
-3. **Operação do mentor**: fila única de atenção, histórico e métricas.
-4. **Integrações de crescimento**: GitHub de verdade e code review assistido por IA.
-5. **Expansão**: localização, papéis de equipe, portfólio e analytics.
+1. ✅ **Confiabilidade e segurança:** autorização por projeto, idempotência financeira e ciclo de vida de reviews.
+2. 🚧 **Retenção do aluno:** dashboard, agenda e lembretes entregues; roadmap ainda pendente.
+3. 🚧 **Operação do mentor:** fila única de atenção entregue; histórico e métricas ainda pendentes.
+4. **Integrações de crescimento:** GitHub de verdade e code review assistido por IA.
+5. **Expansão:** localização, papéis de equipe, portfólio e analytics.
 
 ---
 
@@ -34,7 +49,7 @@ A recomendação é **não começar por uma reescrita para “API based”**. O 
 
 | Jornada | Estado atual | Evidências |
 | --- | --- | --- |
-| Descobrir um projeto | Catálogo público com filtros, detalhes, dificuldade, categoria, tecnologias, outcomes e pré-requisitos | `src/app/(system)/page.tsx`, `src/features/projects/` |
+| Descobrir um projeto | Catálogo público em `/projects`, também acessível pelo menu lateral, com filtros, detalhes, dificuldade, categoria, tecnologias, outcomes e pré-requisitos | `src/app/(system)/projects/page.tsx`, `src/features/projects/` |
 | Iniciar um projeto | Criação do projeto a partir de template, clonagem de tarefas/sprints/epics e controle de créditos | `src/server/api/routers/project/`, `prisma/models/project*.prisma` |
 | Trabalhar no projeto | Workspace com Kanban, backlog, sprints, filtros, ordenação, tags, prioridades, pontos e responsáveis | `src/features/workspace/`, `src/features/kanban/`, `src/features/backlog/` |
 | Colaborar | Comentários, anexos, convites, membros e notificações | `src/features/task/`, `src/server/services/notification/` |
@@ -57,7 +72,7 @@ O admin já consegue gerenciar templates, exercícios, usuários, feedbacks, PR 
 - **Estado do servidor**: React Query através dos bindings tRPC.
 - **Estado de interface**: estado local, Jotai e parâmetros de URL.
 
-Conclusão: a separação por feature e router já existe. O problema atual não é falta de uma API interna; é a ausência de contratos externos, testes de jornada e algumas garantias de segurança e consistência.
+Conclusão: a separação por feature e router já existe. A autorização, o ledger, o ciclo de reviews e a primeira jornada E2E já foram tratados. O que permanece é evoluir as experiências de produto, integrar o E2E ao CI e, quando houver consumidor concreto, definir contratos externos.
 
 ---
 
@@ -67,23 +82,20 @@ Estes pontos devem influenciar a ordem do roadmap.
 
 ### Produto
 
-- O dashboard do aluno ainda não reúne projetos, exercícios, reviews, tarefas e próximas sessões em uma única prioridade.
+- O dashboard do aluno já reúne projetos, exercícios, reviews, tarefas, mentorship e notificações; ainda não exibe um roadmap baseado em milestones do projeto iniciado.
 - O aluno pode ter tarefas com `dueDate`, mas não existe agenda, visão de atrasos ou lembrete específico.
 - Milestones existem no template, mas ainda não formam um roadmap de execução do projeto iniciado.
 - Sprints e epics têm suporte de backend, mas a experiência de gerenciamento no workspace está incompleta.
-- O catálogo promete descoberta por tecnologias/palavras-chave, mas a busca atual é limitada principalmente ao título.
-- O botão de compra de créditos está desabilitado, apesar de já existir checkout e webhook Stripe.
+- O catálogo está acessível em `/projects`, mas a busca atual é limitada principalmente ao título e ainda não cobre todos os filtros prometidos.
+- O checkout de créditos já está habilitado e protegido por idempotência; ainda falta a experiência completa de histórico e recuperação de checkout interrompido.
 - PRs são informados por URL manual; não há vínculo com repositório, usuário GitHub, checks ou webhooks.
 - A navegação e o workspace precisam de uma revisão para uso em telas pequenas.
 
 ### Técnica e operação
 
-- A leitura de usuário e criação de usuário estão expostas como `publicProcedure` em `src/server/api/routers/user/user.ts`; isso merece restrição.
-- Algumas consultas por ID de tarefa, sprint, epic e review precisam comprovar que o usuário pertence ao projeto ou tem papel administrativo.
-- O saldo de créditos é um campo mutável, sem ledger completo de lançamentos.
-- Webhooks Stripe precisam ser idempotentes antes de habilitar pagamentos: o mesmo evento ou eventos equivalentes não podem creditar duas vezes.
-- `PullRequestReview` mistura o usuário solicitante com o campo `reviewedById` e permite mais de uma review ativa por tarefa.
-- Não há suíte E2E de navegador; os testes existentes são principalmente de routers, serviços e funções puras.
+- A matriz de autorização por recurso está implementada; novas procedures devem continuar usando `protectedProcedure`/`adminProcedure` e validando membership no servidor.
+- O ledger de créditos, as transações atômicas e a idempotência de Stripe, criação de projeto, convites e reviews estão implementados; a reconciliação ainda precisa de operação e UI completas.
+- Existe uma suíte E2E Playwright para a jornada principal, com banco e autenticação controlados; falta executar esse cenário automaticamente no CI.
 - Notificações são persistidas, mas a interface consulta periodicamente e não oferece paginação completa.
 
 Esses itens não são “features” de marketing, mas são pré-condições para que as próximas features não acumulem dívida e comportamento inseguro.
@@ -92,26 +104,26 @@ Esses itens não são “features” de marketing, mas são pré-condições par
 
 ## 4. Backlog priorizado
 
-| Prioridade | Feature | Valor | Esforço | Dependências principais |
-| --- | --- | --- | --- | --- |
-| P0 | Matriz de autorização e testes de acesso | Muito alto | M | Definir papéis e escopo por projeto |
-| P0 | Ledger de créditos e idempotência de pagamentos | Muito alto | M | Migração Prisma e reconciliação de saldo |
-| P0 | Ciclo de vida correto de PR review | Alto | M | Ajuste de modelo e dados existentes |
-| P0 | E2E do fluxo principal | Alto | M | Ambiente de teste, seed e autenticação de teste |
-| P1 | Dashboard do aluno com “próxima ação” | Muito alto | M | Consultas agregadas e eventos básicos |
-| P1 | Agenda de tarefas e lembretes | Alto | M | Datas, notificações e preferências |
-| P1 | Fila única do mentor | Alto | M | Paginação, status e ordenação por urgência |
-| P1 | Busca e filtros reais do catálogo | Médio | S | Índices e filtros por categoria/tecnologia |
-| P1 | Roadmap de projeto e milestones | Alto | M | Relacionar milestones do template ao projeto |
-| P1 | Finalizar UI de sprints e epics | Médio | S/M | Aproveitar procedures existentes |
-| P1 | Checkout de créditos e histórico | Alto | M | Ledger e webhooks idempotentes |
-| P2 | Integração GitHub | Muito alto | G | GitHub App, consentimento e escopos |
-| P2 | Code review assistido por IA | Alto | G | Integração GitHub, fila assíncrona e controle de custo |
-| P2 | Objetivos e histórico de mentorship | Alto | M | Modelo de sessão e notas |
-| P2 | Papéis e permissões explícitos | Alto | G | Modelo de membership próprio |
-| P2 | Localização PT-BR/EN | Médio | M/G | Estratégia de conteúdo traduzível |
-| P2 | Portfólio e demonstração de projetos | Médio | M | Roadmap, conclusão e privacidade |
-| P3 | Analytics de aprendizagem e gamificação | Médio | G | Eventos imutáveis e definição de métricas |
+| Status | Prioridade | Feature | Valor | Esforço | Dependências principais |
+| --- | --- | --- | --- | --- | --- |
+| ✅ Concluído | P0 | Matriz de autorização e testes de acesso | Muito alto | M | Definir papéis e escopo por projeto |
+| ✅ Concluído | P0 | Ledger de créditos e idempotência de pagamentos | Muito alto | M | Migração Prisma e reconciliação de saldo |
+| ✅ Concluído | P0 | Ciclo de vida correto de PR review | Alto | M | Ajuste de modelo e dados existentes |
+| 🚧 Primeira versão | P0 | E2E do fluxo principal | Alto | M | Integrar execução ao CI |
+| ✅ Concluído | P1 | Dashboard do aluno com “próxima ação” | Muito alto | M | Consultas agregadas e eventos básicos |
+| ✅ Concluído | P1 | Agenda de tarefas e lembretes | Alto | M | Datas, notificações e preferências |
+| ✅ Concluído | P1 | Fila única do mentor | Alto | M | Paginação, status e ordenação por urgência |
+| — | P1 | Busca e filtros reais do catálogo | Médio | S | Índices e filtros por categoria/tecnologia |
+| — | P1 | Roadmap de projeto e milestones | Alto | M | Relacionar milestones do template ao projeto |
+| — | P1 | Finalizar UI de sprints e epics | Médio | S/M | Aproveitar procedures existentes |
+| 🚧 Parcial | P1 | Checkout de créditos e histórico | Alto | M | Ledger pronto; histórico e recuperação ainda pendentes |
+| — | P2 | Integração GitHub | Muito alto | G | GitHub App, consentimento e escopos |
+| — | P2 | Code review assistido por IA | Alto | G | Integração GitHub, fila assíncrona e controle de custo |
+| — | P2 | Objetivos e histórico de mentorship | Alto | M | Modelo de sessão e notas |
+| — | P2 | Papéis e permissões explícitos | Alto | G | Modelo de membership próprio |
+| — | P2 | Localização PT-BR/EN | Médio | M/G | Estratégia de conteúdo traduzível |
+| — | P2 | Portfólio e demonstração de projetos | Médio | M | Roadmap, conclusão e privacidade |
+| — | P3 | Analytics de aprendizagem e gamificação | Médio | G | Eventos imutáveis e definição de métricas |
 
 **S = pequeno, M = médio, G = grande.** A estimativa é relativa e deve ser refinada após o desenho do modelo de dados.
 
@@ -119,7 +131,9 @@ Esses itens não são “features” de marketing, mas são pré-condições par
 
 ## 5. Definição das features
 
-### P0.1 — Autorização por recurso
+### ✅ P0.1 — Autorização por recurso
+
+**Status:** concluído. Implementado em `75c12bf` com cobertura de router e utilitários de autorização.
 
 **Objetivo:** garantir que um usuário só veja ou altere recursos dos projetos aos quais tem acesso.
 
@@ -133,7 +147,9 @@ Esses itens não são “features” de marketing, mas são pré-condições par
 
 **Critério de aceite:** um usuário autenticado não consegue acessar dados de outro projeto apenas conhecendo seu ID. O admin continua conseguindo operar as filas administrativas.
 
-### P0.2 — Ledger de créditos e pagamentos confiáveis
+### ✅ P0.2 — Ledger de créditos e pagamentos confiáveis
+
+**Status:** concluído em `0b1ee33` e corrigido para CockroachDB em `8e8ae03`.
 
 **Objetivo:** transformar créditos em uma unidade financeira auditável.
 
@@ -147,9 +163,11 @@ Esses itens não são “features” de marketing, mas são pré-condições par
 
 **Critério de aceite:** repetir o mesmo webhook, reenviar a mesma requisição ou executar duas inscrições concorrentes não gera créditos ou débitos duplicados.
 
-O botão de compra em `src/features/checkout/components/PricingClient.tsx` só deve ser habilitado depois deste fluxo estar coberto.
+O botão de compra em `src/features/checkout/components/PricingClient.tsx` foi habilitado depois da implementação do ledger e da idempotência.
 
-### P0.3 — PR review com ciclo de vida explícito
+### ✅ P0.3 — PR review com ciclo de vida explícito
+
+**Status:** concluído em `89c389b`.
 
 **Objetivo:** representar corretamente quem solicitou, quem revisou e qual é o estado atual.
 
@@ -164,7 +182,9 @@ O botão de compra em `src/features/checkout/components/PricingClient.tsx` só d
 
 **Critério de aceite:** o aluno vê claramente se está aguardando, aprovado ou precisa corrigir; o mentor vê o histórico completo sem registros ativos ambíguos.
 
-### P0.4 — E2E da jornada principal
+### 🚧 P0.4 — E2E da jornada principal
+
+**Status:** primeira versão concluída em `1ecd83c`; o cenário está documentado e executável localmente, mas ainda não há job de CI.
 
 **Objetivo:** testar o produto através do navegador, com banco e serviços de teste reais sempre que possível.
 
@@ -181,30 +201,36 @@ O botão de compra em `src/features/checkout/components/PricingClient.tsx` só d
 9. admin aprova ou solicita alterações;
 10. usuário visualiza o resultado.
 
-Usar dados reais de um banco de teste e autenticação controlada. Mocks ficam restritos a serviços externos que não tenham sandbox adequada, como cobrança real. O framework de navegador deve ser escolhido no momento da implementação; ele ainda não está instalado no projeto.
+Usar dados reais de um banco de teste e autenticação controlada. Mocks ficam restritos a serviços externos que não tenham sandbox adequada, como cobrança real. O cenário usa Playwright, com setup de autenticação, banco isolado e teardown por execução.
 
 **Critério de aceite:** o cenário roda de forma repetível em CI, com limpeza/isolamento de dados e diagnóstico de falha por etapa.
 
 ---
 
-### P1.1 — Dashboard do aluno e próxima ação
+### ✅ P1.1 — Dashboard do aluno e próxima ação
 
-**Problema:** hoje o trabalho do aluno está dividido entre `/my-projects`, exercícios, notificações, PRs e mentorship.
+**Status:** concluído em `f6816f3`; o catálogo ganhou rota própria e entrada no menu em `0f84414`.
+
+**Problema resolvido:** antes desta entrega, o trabalho do aluno estava dividido entre `/my-projects`, exercícios, notificações, PRs e mentorship.
 
 **Proposta:** uma página inicial autenticada que responda “o que devo fazer agora?”.
 
 **Blocos:**
 
 - tarefa mais urgente ou atrasada;
-- projetos ativos e progresso por milestone;
+- projetos ativos e progresso por tarefas; o progresso por milestone está reservado para P1.5;
 - exercício aguardando envio ou correção;
 - review pendente e última decisão;
 - próxima sessão de mentorship;
 - notificações relevantes, sem transformar tudo em alerta.
 
-A primeira versão deve ser uma consulta agregada server-side, não um novo sistema de eventos completo.
+A primeira versão foi implementada como uma consulta agregada server-side, sem criar um novo sistema de eventos.
 
-### P1.2 — Agenda, atrasos e lembretes
+### ✅ P1.2 — Agenda, atrasos e lembretes
+
+**Status:** concluído em `40e97ee`; a migração foi ajustada para CockroachDB em `9f27827`.
+
+**Implementado:** agenda em `/agenda` com visões de tarefas por prazo, filtros por projeto/sprint/responsável e lembretes por cron para tarefas próximas do vencimento e atrasadas.
 
 **Objetivo:** dar uso real ao `Task.dueDate`.
 
@@ -218,7 +244,11 @@ A primeira versão deve ser uma consulta agregada server-side, não um novo sist
 
 Não criar uma segunda forma de editar tarefas: a agenda deve reutilizar a mesma procedure do workspace.
 
-### P1.3 — Fila única de atenção do mentor
+### ✅ P1.3 — Fila única de atenção do mentor
+
+**Status:** concluído nesta entrega.
+
+**Implementado:** fila em `/admin/attention` com paginação por cursor, filtros por tipo/prioridade e busca. A fila reúne PR reviews, exercícios aguardando análise, tarefas bloqueadas, alunos inativos e sessões de mentorship próximas sem objetivo ou follow-up; cada item expõe idade, prioridade, próxima ação e link direto. A rota `/admin/mentorship` permite registrar objetivo e follow-up da sessão.
 
 **Objetivo:** reduzir o tempo gasto alternando entre `/admin/pr-reviews`, `/admin/exercise-reviews` e projetos.
 
@@ -422,22 +452,22 @@ A API interna já existe via tRPC. Se “API based” significa permitir cliente
 
 ### Marco 1 — produto confiável
 
-1. Matriz de autorização.
-2. Ledger de créditos e idempotência Stripe.
-3. Correção do ciclo de vida de PR review.
-4. Primeiro E2E da jornada projeto → tarefa → review.
+1. ✅ Matriz de autorização.
+2. ✅ Ledger de créditos e idempotência Stripe.
+3. ✅ Correção do ciclo de vida de PR review.
+4. 🚧 Primeiro E2E da jornada projeto → tarefa → review; falta integração ao CI.
 
 ### Marco 2 — aluno e mentor orientados por ação
 
-5. Dashboard de próxima ação.
-6. Agenda e lembretes.
-7. Fila única do mentor.
+5. ✅ Dashboard de próxima ação.
+6. ✅ Agenda e lembretes.
+7. ✅ Fila única do mentor.
 8. Roadmap com milestones.
 9. Busca real do catálogo.
 
 ### Marco 3 — monetização e colaboração completa
 
-10. Habilitar checkout e histórico de créditos.
+10. 🚧 Checkout de créditos habilitado; completar histórico e recuperação de checkout interrompido.
 11. Finalizar sprints e epics.
 12. Melhorar notificações, paginação e entrega em tempo real.
 13. Objetivos e histórico de mentorship.

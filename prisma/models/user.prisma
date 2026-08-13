@@ -62,5 +62,6 @@ model User {
   feedbackReports              FeedbackReport[]
 
   @@index([isOrgAdmin])
+  @@index([updatedAt])
   @@schema("public")
 }

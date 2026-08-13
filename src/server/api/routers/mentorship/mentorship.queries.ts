@@ -1,10 +1,16 @@
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 import { getAvailableSlotsSchema } from '~/features/mentorship/schemas/mentorship.schema';
 import { getAvailableSlots } from '~/server/services/calcom/calcomService';
 import {
 	bucketScheduledBookingsByWeek,
 	buildWeekWindows
 } from '~/server/services/mentorship/weeklyBookingCounts';
-import { mentorshipProcedure, protectedProcedure } from '../../trpc';
+import {
+	adminProcedure,
+	mentorshipProcedure,
+	protectedProcedure
+} from '../../trpc';
 
 export const mentorshipQueries = {
 	getMyMentorshipWeekInfo: protectedProcedure.query(async ({ ctx }) => {
@@ -70,5 +76,32 @@ export const mentorshipQueries = {
 		});
 
 		return bookings;
-	})
+	}),
+
+	adminGetBooking: adminProcedure
+		.input(z.object({ bookingId: z.string().uuid() }))
+		.query(async ({ ctx, input }) => {
+			const booking = await ctx.db.mentorshipBooking.findUnique({
+				where: { id: input.bookingId },
+				select: {
+					id: true,
+					scheduledAt: true,
+					status: true,
+					bookingUrl: true,
+					meetingUrl: true,
+					objective: true,
+					followUp: true,
+					user: { select: { id: true, name: true, email: true } }
+				}
+			});
+
+			if (!booking) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Mentorship booking not found'
+				});
+			}
+
+			return booking;
+		})
 };
