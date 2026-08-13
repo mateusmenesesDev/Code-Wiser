@@ -11,17 +11,19 @@ const visibility = {
 
 describe('navigation item visibility', () => {
 	const dashboard = WORK_NAV_ITEMS.find((item) => item.href === '/');
+	const catalog = WORK_NAV_ITEMS.find((item) => item.href === '/projects');
 	const exercises = WORK_NAV_ITEMS.find((item) => item.href === '/exercises');
 	const myProjects = WORK_NAV_ITEMS.find(
 		(item) => item.href === '/my-projects'
 	);
 	const mentorship = WORK_NAV_ITEMS.find((item) => item.href === '/mentorship');
 
-	if (!dashboard || !exercises || !myProjects || !mentorship) {
+	if (!dashboard || !catalog || !exercises || !myProjects || !mentorship) {
 		throw new Error('Expected work navigation items are missing');
 	}
 
 	it('keeps public and signed-in work destinations visible', () => {
+		expect(isNavigationItemVisible(catalog, visibility)).toBe(true);
 		expect(isNavigationItemVisible(exercises, visibility)).toBe(true);
 		expect(isNavigationItemVisible(dashboard, visibility)).toBe(true);
 		expect(isNavigationItemVisible(myProjects, visibility)).toBe(true);

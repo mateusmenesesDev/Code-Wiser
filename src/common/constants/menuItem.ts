@@ -7,6 +7,7 @@ import {
 	GitPullRequest,
 	LayoutDashboard,
 	MessageSquare,
+	Search,
 	UserCog
 } from 'lucide-react';
 
@@ -31,6 +32,11 @@ export const WORK_NAV_ITEMS: NavigationItem[] = [
 		Icon: LayoutDashboard,
 		label: 'Dashboard',
 		loginRequired: true
+	},
+	{
+		href: '/projects',
+		Icon: Search,
+		label: 'Project Catalog'
 	},
 	{
 		href: '/exercises',
