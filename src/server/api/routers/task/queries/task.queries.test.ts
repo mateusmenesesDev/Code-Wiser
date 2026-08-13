@@ -34,7 +34,7 @@ describe('task.getById', () => {
 			id: 'task-1',
 			projectId: 'project-1',
 			projectTemplateId: null,
-			project: { members: [{ id: 'user-1' }] },
+			project: { memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }] },
 			assignees: [],
 			sprint: null,
 			epic: null
@@ -43,7 +43,7 @@ describe('task.getById', () => {
 
 	it('allows a project member to read a task', async () => {
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'user-1' }]
+			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
 		} as never);
 
 		const caller = createCaller(
@@ -55,7 +55,7 @@ describe('task.getById', () => {
 
 	it('rejects a non-member even when the task id is known', async () => {
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'other-user' }]
+			memberships: []
 		} as never);
 
 		const caller = createCaller(

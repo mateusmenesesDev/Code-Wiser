@@ -26,9 +26,7 @@ describe('project.getActiveProjects', () => {
 	let caller: ReturnType<typeof createCaller>;
 
 	beforeEach(async () => {
-		caller = createCaller(
-			await createTRPCContext({ headers: new Headers() })
-		);
+		caller = createCaller(await createTRPCContext({ headers: new Headers() }));
 	});
 
 	it('returns progress aggregates without embedding task arrays', async () => {
@@ -37,7 +35,12 @@ describe('project.getActiveProjects', () => {
 				id: 'p1',
 				title: 'Alpha',
 				category: { name: 'Fullstack' },
-				members: [{ id: 'u1', name: 'Ada', email: 'ada@example.com' }]
+				memberships: [
+					{
+						role: 'LEARNER',
+						user: { id: 'u1', name: 'Ada', email: 'ada@example.com' }
+					}
+				]
 			}
 		] as never);
 
@@ -62,7 +65,7 @@ describe('project.getActiveProjects', () => {
 			include: Record<string, unknown>;
 		};
 		expect(findManyArgs.include.tasks).toBeUndefined();
-		expect(findManyArgs.include.members).toBeTruthy();
+		expect(findManyArgs.include.memberships).toBeTruthy();
 		expect(findManyArgs.include.category).toBe(true);
 	});
 
@@ -82,7 +85,7 @@ describe('project.getActiveProjects', () => {
 							title: expect.objectContaining({ contains: 'ada' })
 						}),
 						expect.objectContaining({
-							members: expect.objectContaining({
+							memberships: expect.objectContaining({
 								some: expect.any(Object)
 							})
 						})

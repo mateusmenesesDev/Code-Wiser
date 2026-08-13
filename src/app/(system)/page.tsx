@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import Dashboard from '~/features/dashboard/components/Dashboard';
 import Projects from '~/features/projects/components/Projects';
 import { api } from '~/trpc/server';
@@ -24,6 +25,7 @@ export default async function Home({
 	searchParams: { userId?: string | string[] };
 }) {
 	const { userId } = auth();
+	const t = await getTranslations('dashboard');
 	const requestedUserId =
 		typeof searchParams.userId === 'string' ? searchParams.userId : undefined;
 
@@ -36,20 +38,20 @@ export default async function Home({
 				<div className="mb-8">
 					<h1 className="font-bold text-3xl text-foreground">
 						{dashboard.viewedUser
-							? `${dashboard.viewedUser.name ?? dashboard.viewedUser.email}'s dashboard`
-							: 'Your dashboard'}
+							? `${dashboard.viewedUser.name ?? dashboard.viewedUser.email} — ${t('yourDashboard')}`
+							: t('yourDashboard')}
 					</h1>
 					<p className="mt-2 text-muted-foreground">
 						{dashboard.viewedUser
-							? 'You are viewing this learner dashboard as an administrator.'
-							: 'See what needs your attention and keep your learning moving.'}
+							? t('adminDashboardDescription')
+							: t('yourDashboardDescription')}
 					</p>
 					{dashboard.viewedUser && (
 						<Link
 							href="/"
 							className="mt-3 inline-block text-primary text-sm underline-offset-4 hover:underline"
 						>
-							Return to your dashboard
+							{t('returnToDashboard')}
 						</Link>
 					)}
 				</div>

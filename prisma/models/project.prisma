@@ -19,6 +19,16 @@ model Project {
   creationIdempotencyKey  String?                @unique
   nextTaskNumber          Int                    @default(1)
 
+  portfolioSummary        String?
+  portfolioDemoUrl        String?
+  portfolioPublishedAt    DateTime?
+  portfolioShowDemo       Boolean   @default(false)
+  portfolioShowRepository Boolean   @default(false)
+  portfolioFeedback       String?
+  portfolioEvaluatedAt    DateTime?
+  portfolioEvaluatedById  String?
+  portfolioEvaluatedBy    User?     @relation("ProjectPortfolioEvaluator", fields: [portfolioEvaluatedById], references: [id], onDelete: SetNull)
+
   canceledAt                    DateTime?
   canceledById                  String?
   cancellationReason            String?
@@ -33,11 +43,14 @@ model Project {
   sprints               Sprint[]
   milestones            Milestone[]
   learningOutcomes      LearningOutcome[]
-  members               User[]
+  technologies          Technology[]
+  memberships           ProjectMembership[]
   planningPokerSessions PlanningPokerSession[]
   invitations           ProjectInvitation[]
 
   @@index([canceledAt])
   @@index([sourceProjectTemplateId])
+  @@index([portfolioPublishedAt])
+  @@index([portfolioEvaluatedById])
   @@schema("public")
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectMethodologyEnum } from '@prisma/client';
+import { ProjectMethodologyEnum, ProjectRoleEnum } from '@prisma/client';
 import {
 	AlertTriangle,
 	Kanban,
@@ -33,6 +33,7 @@ import {
 	TooltipTrigger
 } from '~/common/components/ui/tooltip';
 import { GitHubRepositoryConnector } from '~/features/github/components/GitHubRepositoryConnector';
+import { ProjectPortfolioSettings } from '~/features/portfolio/components/ProjectPortfolioSettings';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
@@ -59,6 +60,10 @@ export function ProjectSettingsModal({
 	);
 
 	const canManageMembers = memberManagement?.canManage === true;
+	const canEditProject =
+		projectInfo?.permissions.includes('EDIT_SETTINGS') ?? false;
+	const canManageGitHub =
+		projectInfo?.permissions.includes('MANAGE_GITHUB') ?? false;
 	const needsCreditCost =
 		canManageMembers &&
 		memberManagement.accessType === 'CREDITS' &&
@@ -70,6 +75,9 @@ export function ProjectSettingsModal({
 		ProjectMethodologyEnum.SCRUM
 	);
 	const [memberSearch, setMemberSearch] = useState('');
+	const [memberRole, setMemberRole] = useState<ProjectRoleEnum>(
+		ProjectRoleEnum.LEARNER
+	);
 	const [creditCost, setCreditCost] = useState('');
 	const [memberPendingRemoval, setMemberPendingRemoval] = useState<{
 		id: string;
@@ -174,6 +182,7 @@ export function ProjectSettingsModal({
 		addMember.mutate({
 			projectId,
 			userId,
+			role: memberRole,
 			...(needsCreditCost ? { creditCost: parsedCreditCost } : {})
 		});
 	};
@@ -334,11 +343,15 @@ export function ProjectSettingsModal({
 							</div>
 						</div>
 
-						<GitHubRepositoryConnector
-							projectId={projectId}
-							currentRepository={projectInfo?.githubRepository}
-							returnTo={`/workspace/${projectId}`}
-						/>
+						{canManageGitHub && (
+							<GitHubRepositoryConnector
+								projectId={projectId}
+								currentRepository={projectInfo?.githubRepository}
+								returnTo={`/workspace/${projectId}`}
+							/>
+						)}
+
+						<ProjectPortfolioSettings projectId={projectId} open={open} />
 
 						{canManageMembers && (
 							<div className="space-y-4 rounded-lg border p-4">
@@ -377,6 +390,23 @@ export function ProjectSettingsModal({
 										/>
 									</div>
 								)}
+
+								<div className="space-y-2">
+									<Label htmlFor="member-role" className="text-sm">
+										Role for new member
+									</Label>
+									<select
+										id="member-role"
+										value={memberRole}
+										onChange={(event) =>
+											setMemberRole(event.target.value as ProjectRoleEnum)
+										}
+										className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+									>
+										<option value={ProjectRoleEnum.LEARNER}>Learner</option>
+										<option value={ProjectRoleEnum.MENTOR}>Mentor</option>
+									</select>
+								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="member-search" className="text-sm">
@@ -460,6 +490,7 @@ export function ProjectSettingsModal({
 													<p className="truncate text-muted-foreground text-xs">
 														{member.email}
 													</p>
+													<Badge variant="secondary">{member.role}</Badge>
 													<p className="text-muted-foreground text-xs">
 														{member.assignedTaskCount} assigned task
 														{member.assignedTaskCount === 1 ? '' : 's'}
@@ -481,7 +512,10 @@ export function ProjectSettingsModal({
 													variant="ghost"
 													size="icon"
 													onClick={() => handleRemoveMember(member)}
-													disabled={removeMember.isPending}
+													disabled={
+														removeMember.isPending ||
+														member.role === ProjectRoleEnum.OWNER
+													}
 													aria-label={`Remove ${member.name ?? member.email}`}
 												>
 													<Trash2 className="h-4 w-4 text-destructive" />
@@ -560,7 +594,9 @@ export function ProjectSettingsModal({
 						</Button>
 						<Button
 							onClick={handleSave}
-							disabled={updateProject.isPending || !title.trim()}
+							disabled={
+								updateProject.isPending || !title.trim() || !canEditProject
+							}
 						>
 							{updateProject.isPending ? 'Saving…' : 'Save'}
 						</Button>

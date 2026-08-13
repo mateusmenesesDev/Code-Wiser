@@ -1,5 +1,6 @@
 import type { NotificationType, PrismaClient } from '@prisma/client';
 import { getBaseUrl } from '~/server/utils/getBaseUrl';
+import type { UserLocale } from '@prisma/client';
 
 interface CreateNotificationParams {
 	db: PrismaClient;
@@ -51,7 +52,12 @@ export async function createNotification(
 }
 
 export async function getAdminUsers(): Promise<
-	Array<{ id: string; email: string; name: string | null }>
+	Array<{
+		id: string;
+		email: string;
+		name: string | null;
+		preferredLocale?: UserLocale;
+	}>
 > {
 	try {
 		const { db } = await import('~/server/db');
@@ -60,7 +66,8 @@ export async function getAdminUsers(): Promise<
 			select: {
 				id: true,
 				email: true,
-				name: true
+				name: true,
+				preferredLocale: true
 			}
 		});
 	} catch (error) {

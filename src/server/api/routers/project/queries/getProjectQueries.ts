@@ -1,14 +1,30 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
-import { userHasAccessToProject } from '~/server/utils/auth';
+import {
+	adminProcedure,
+	protectedProcedure,
+	publicProcedure
+} from '~/server/api/trpc';
+import { getPortfolioCompletion } from '~/features/portfolio/utils/completion';
+import { getPublicPortfolioByCode } from '~/server/services/portfolio';
+import {
+	assertProjectPermission,
+	getProjectMembership,
+	userHasAccessToProject
+} from '~/server/utils/auth';
 import { buildEnrolledProjectStats } from './enrolledProjectStats';
 
 export const getProjectQueries = {
 	getWorkspaceInfo: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
-			await userHasAccessToProject(ctx, input.id);
+			const membership = await getProjectMembership(ctx, input.id);
+			if (!membership) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'You do not have access to this project'
+				});
+			}
 			const project = await ctx.db.project.findUnique({
 				where: { id: input.id },
 				select: {
@@ -26,27 +42,9 @@ export const getProjectQueries = {
 					cancellationReason: true,
 					refundCreditsOnCancellation: true,
 					refundedCreditsOnCancellation: true,
-					_count: { select: { members: true } }
-				}
-			});
-
-			return project;
-		}),
-	getById: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.query(async ({ ctx, input }) => {
-			const { userId } = ctx.session;
-
-			const project = await ctx.db.project.findUnique({
-				where: { id: input.id },
-				include: {
-					category: true,
-					epics: true,
-					sprints: true,
-					members: {
-						select: {
-							id: true
-						}
+					memberships: {
+						where: { status: 'ACTIVE' },
+						select: { id: true }
 					}
 				}
 			});
@@ -58,23 +56,52 @@ export const getProjectQueries = {
 				});
 			}
 
-			const isMember = project.members.some((member) => member.id === userId);
+			const { memberships, ...projectInfo } = project;
+			return {
+				...projectInfo,
+				_count: { members: memberships.length },
+				permissions: membership.permissions
+			};
+		}),
+	getById: protectedProcedure
+		.input(z.object({ id: z.string() }))
+		.query(async ({ ctx, input }) => {
+			const project = await ctx.db.project.findUnique({
+				where: { id: input.id },
+				include: {
+					category: true,
+					epics: true,
+					sprints: true,
+					memberships: {
+						where: { status: 'ACTIVE' },
+						select: { userId: true }
+					}
+				}
+			});
 
-			if (!isMember && !ctx.isAdmin) {
+			if (!project) {
 				throw new TRPCError({
-					code: 'FORBIDDEN',
-					message: 'You do not have access to this project'
+					code: 'NOT_FOUND',
+					message: 'Project not found'
 				});
 			}
 
-			return project;
+			await userHasAccessToProject(ctx, input.id);
+
+			const { memberships, ...projectInfo } = project;
+			return {
+				...projectInfo,
+				members: memberships.map((membership) => ({ id: membership.userId }))
+			};
 		}),
 
 	getEnrolled: protectedProcedure.query(async ({ ctx }) => {
 		const projects = await ctx.db.project.findMany({
 			where: {
 				canceledAt: null,
-				members: { some: { id: ctx.session?.userId } }
+				memberships: {
+					some: { userId: ctx.session.userId, status: 'ACTIVE' }
+				}
 			},
 			include: {
 				category: {
@@ -150,29 +177,27 @@ export const getProjectQueries = {
 			const searchWhere = search
 				? {
 						OR: [
+							{ title: { contains: search, mode: 'insensitive' as const } },
 							{
-								title: {
-									contains: search,
-									mode: 'insensitive' as const
-								}
-							},
-							{
-								members: {
+								memberships: {
 									some: {
-										OR: [
-											{
-												name: {
-													contains: search,
-													mode: 'insensitive' as const
+										status: 'ACTIVE' as const,
+										user: {
+											OR: [
+												{
+													name: {
+														contains: search,
+														mode: 'insensitive' as const
+													}
+												},
+												{
+													email: {
+														contains: search,
+														mode: 'insensitive' as const
+													}
 												}
-											},
-											{
-												email: {
-													contains: search,
-													mode: 'insensitive' as const
-												}
-											}
-										]
+											]
+										}
 									}
 								}
 							}
@@ -192,11 +217,11 @@ export const getProjectQueries = {
 				},
 				include: {
 					category: true,
-					members: {
+					memberships: {
+						where: { status: 'ACTIVE' },
 						select: {
-							id: true,
-							name: true,
-							email: true
+							role: true,
+							user: { select: { id: true, name: true, email: true } }
 						}
 					}
 				}
@@ -234,8 +259,10 @@ export const getProjectQueries = {
 			return {
 				projects: projects.map((project) => {
 					const projectStats = stats[project.id];
+					const { memberships, ...projectInfo } = project;
 					return {
-						...project,
+						...projectInfo,
+						members: memberships.map(({ user, role }) => ({ ...user, role })),
 						totalTasks: projectStats?.totalTasks ?? 0,
 						completedTasks: projectStats?.completedTasks ?? 0,
 						progress: projectStats?.progress ?? 0
@@ -264,6 +291,99 @@ export const getProjectQueries = {
 				: null;
 
 			return result;
+		}),
+
+	getPortfolioSettings: protectedProcedure
+		.input(z.object({ projectId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			const membership = await getProjectMembership(ctx, input.projectId);
+			if (!membership) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'You do not have access to this project'
+				});
+			}
+
+			const project = await ctx.db.project.findUnique({
+				where: { id: input.projectId },
+				select: {
+					id: true,
+					publicCode: true,
+					portfolioSummary: true,
+					portfolioDemoUrl: true,
+					portfolioPublishedAt: true,
+					portfolioShowDemo: true,
+					portfolioShowRepository: true,
+					portfolioFeedback: true,
+					portfolioEvaluatedAt: true,
+					portfolioEvaluatedBy: { select: { name: true } },
+					githubRepository: { select: { htmlUrl: true, private: true } },
+					technologies: {
+						select: { id: true, name: true },
+						orderBy: { name: 'asc' }
+					},
+					tasks: {
+						select: {
+							id: true,
+							title: true,
+							status: true,
+							portfolioRelevant: true,
+							reviews: {
+								where: { isActive: true },
+								select: { status: true }
+							}
+						}
+					},
+					milestones: {
+						orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+						select: { id: true, title: true, reviewedAt: true }
+					}
+				}
+			});
+
+			if (!project) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project not found'
+				});
+			}
+
+			const completion = getPortfolioCompletion({
+				taskCount: project.tasks.length,
+				incompleteTaskCount: project.tasks.filter(
+					(task) => task.status !== 'DONE'
+				).length,
+				milestoneCount: project.milestones.length,
+				unreviewedMilestoneCount: project.milestones.filter(
+					(milestone) => milestone.reviewedAt === null
+				).length,
+				pendingReviewCount: project.tasks
+					.flatMap((task) => task.reviews)
+					.filter((review) => review.status === 'PENDING').length,
+				hasMentorEvaluation: Boolean(
+					project.portfolioFeedback?.trim() && project.portfolioEvaluatedAt
+				)
+			});
+
+			return {
+				...project,
+				canManage: membership.permissions.includes('MANAGE_PORTFOLIO'),
+				canEvaluate: membership.permissions.includes('EVALUATE_PROJECT'),
+				completion
+			};
+		}),
+
+	getPublicPortfolio: publicProcedure
+		.input(z.object({ publicCode: z.string().min(1).max(40) }))
+		.query(async ({ ctx, input }) => {
+			const portfolio = await getPublicPortfolioByCode(ctx.db, input.publicCode);
+			if (!portfolio) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+						message: 'Portfolio not found'
+				});
+			}
+			return portfolio;
 		}),
 
 	getRoadmap: protectedProcedure
@@ -414,12 +534,13 @@ export const getProjectQueries = {
 			const project = await ctx.db.project.findUnique({
 				where: { id: input.projectId },
 				select: {
-					members: {
+					memberships: {
+						where: { status: 'ACTIVE' },
 						select: {
-							id: true,
-							name: true,
-							email: true
-						}
+							role: true,
+							user: { select: { id: true, name: true, email: true } }
+						},
+						orderBy: { user: { name: 'asc' } }
 					}
 				}
 			});
@@ -431,13 +552,14 @@ export const getProjectQueries = {
 				});
 			}
 
-			return project.members;
+			return project.memberships.map(({ user, role }) => ({ ...user, role }));
 		}),
 
 	getMemberManagement: protectedProcedure
 		.input(z.object({ projectId: z.string() }))
 		.query(async ({ ctx, input }) => {
-			if (!ctx.isAdmin) {
+			const membership = await getProjectMembership(ctx, input.projectId);
+			if (!membership?.permissions.includes('MANAGE_MEMBERS')) {
 				return { canManage: false as const };
 			}
 
@@ -451,9 +573,14 @@ export const getProjectQueries = {
 					accessType: true,
 					maxParticipants: true,
 					creditCost: true,
-					members: {
-						select: { id: true, name: true, email: true },
-						orderBy: { name: 'asc' }
+					memberships: {
+						where: { status: 'ACTIVE' },
+						select: {
+							role: true,
+							joinedAt: true,
+							user: { select: { id: true, name: true, email: true } }
+						},
+						orderBy: { user: { name: 'asc' } }
 					},
 					invitations: {
 						where: { status: { in: ['PENDING', 'DECLINED'] } },
@@ -461,6 +588,7 @@ export const getProjectQueries = {
 							id: true,
 							status: true,
 							creditCostSnapshot: true,
+							role: true,
 							createdAt: true,
 							respondedAt: true,
 							user: { select: { id: true, name: true, email: true } },
@@ -478,7 +606,7 @@ export const getProjectQueries = {
 				});
 			}
 
-			const memberIds = project.members.map((member) => member.id);
+			const memberIds = project.memberships.map(({ user }) => user.id);
 			const [paymentEvidences, acceptedCreditInvitations, assignedTasks] =
 				await Promise.all([
 					ctx.db.projectCreditPaymentEvidence.findMany({
@@ -548,16 +676,31 @@ export const getProjectQueries = {
 				}
 			}
 
+			const { memberships, ...projectInfo } = project;
 			return {
 				canManage: true as const,
-				...project,
+				...projectInfo,
 				currentUserId: ctx.session.userId,
-				members: project.members.map((member) => {
-					const refundableCredits =
-						refundableCreditsByUserId.get(member.id) ?? 0;
+				members: memberships.map(({ user, role, joinedAt }) => {
+					const refundableCredits = refundableCreditsByUserId.get(user.id) ?? 0;
 					return {
-						...member,
-						assignedTaskCount: assignedTaskCountByUserId.get(member.id) ?? 0,
+						...user,
+						role,
+						status: 'ACTIVE' as const,
+						joinedAt,
+						permissions:
+							role === 'OWNER'
+								? [
+										'EDIT_SETTINGS',
+										'MANAGE_MEMBERS',
+										'MANAGE_GITHUB',
+										'MANAGE_PORTFOLIO',
+										'EVALUATE_PROJECT'
+									]
+								: role === 'MENTOR'
+									? ['EDIT_SETTINGS', 'MANAGE_GITHUB', 'EVALUATE_PROJECT']
+									: [],
+						assignedTaskCount: assignedTaskCountByUserId.get(user.id) ?? 0,
 						refundableCredits,
 						refundUnavailableReason:
 							project.accessType === 'CREDITS' && refundableCredits === 0
@@ -568,7 +711,7 @@ export const getProjectQueries = {
 			};
 		}),
 
-	searchProjectMemberCandidates: adminProcedure
+	searchProjectMemberCandidates: protectedProcedure
 		.input(
 			z.object({
 				projectId: z.string(),
@@ -576,13 +719,17 @@ export const getProjectQueries = {
 			})
 		)
 		.query(async ({ ctx, input }) => {
+			await assertProjectPermission(ctx, input.projectId, 'MANAGE_MEMBERS');
 			const search = input.search?.trim();
 			const project = await ctx.db.project.findUnique({
 				where: { id: input.projectId },
 				select: {
 					accessType: true,
 					canceledAt: true,
-					members: { select: { id: true } },
+					memberships: {
+						where: { status: 'ACTIVE' },
+						select: { userId: true }
+					},
 					invitations: {
 						where: { status: { in: ['PENDING', 'DECLINED'] } },
 						select: { userId: true, status: true }
@@ -616,7 +763,9 @@ export const getProjectQueries = {
 				take: 8
 			});
 
-			const memberIds = new Set(project.members.map((member) => member.id));
+			const memberIds = new Set(
+				project.memberships.map(({ userId }) => userId)
+			);
 			const projectCanceled = project.canceledAt !== null;
 			const pendingInviteUserIds = new Set(
 				project.invitations

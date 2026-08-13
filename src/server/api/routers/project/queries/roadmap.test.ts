@@ -30,7 +30,16 @@ describe('project.getRoadmap', () => {
 
 	it('derives progress and blockers from milestone-linked work', async () => {
 		mockDb.project.findUnique
-			.mockResolvedValueOnce({ members: [{ id: 'user-1' }] } as never)
+			.mockResolvedValueOnce({
+				memberships: [
+					{
+						userId: 'user-1',
+						role: 'LEARNER',
+						status: 'ACTIVE',
+						joinedAt: new Date()
+					}
+				]
+			} as never)
 			.mockResolvedValueOnce({
 				id: 'project-1',
 				title: 'Project Alpha',
@@ -89,7 +98,7 @@ describe('project.getRoadmap', () => {
 
 	it('rejects a learner outside the project', async () => {
 		mockDb.project.findUnique.mockResolvedValueOnce({
-			members: [{ id: 'another-user' }]
+			memberships: []
 		} as never);
 
 		const caller = createCaller(

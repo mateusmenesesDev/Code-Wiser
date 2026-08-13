@@ -197,7 +197,8 @@ export const prReviewMutations = {
 						select: {
 							id: true,
 							name: true,
-							email: true
+							email: true,
+							preferredLocale: true
 						}
 					},
 					task: {
@@ -261,6 +262,7 @@ export const prReviewMutations = {
 				memberId: activeReview.requestedById,
 				memberName: activeReview.requestedBy.name,
 				memberEmail: activeReview.requestedBy.email,
+				memberLocale: activeReview.requestedBy.preferredLocale,
 				mentorName,
 				projectId: activeReview.task.project?.id ?? '',
 				projectName: activeReview.task.project?.title ?? '',
@@ -289,7 +291,8 @@ export const prReviewMutations = {
 						select: {
 							id: true,
 							name: true,
-							email: true
+							email: true,
+							preferredLocale: true
 						}
 					},
 					task: {
@@ -382,6 +385,7 @@ export const prReviewMutations = {
 				memberId: activeReview.requestedById,
 				memberName: activeReview.requestedBy.name,
 				memberEmail: activeReview.requestedBy.email,
+				memberLocale: activeReview.requestedBy.preferredLocale,
 				mentorName,
 				projectId: activeReview.task.project?.id ?? '',
 				projectName: activeReview.task.project?.title ?? '',

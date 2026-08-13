@@ -32,7 +32,7 @@ vi.mock('~/server/realtime', () => ({
 describe('project resource access', () => {
 	beforeEach(() => {
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'other-user' }]
+			memberships: []
 		} as never);
 	});
 
@@ -72,7 +72,7 @@ describe('project resource access', () => {
 		mockDb.task.findUnique.mockResolvedValue({
 			projectId: 'project-1',
 			projectTemplateId: null,
-			project: { members: [{ id: 'other-user' }] }
+			project: { memberships: [] }
 		} as never);
 
 		const commentCaller = createCallerFactory(commentRouter)(

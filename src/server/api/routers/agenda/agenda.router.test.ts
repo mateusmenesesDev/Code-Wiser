@@ -30,8 +30,14 @@ describe('agenda procedures', () => {
 				sprints: [
 					{ id: 'sprint-1', title: 'Sprint 1', projectId: 'project-1' }
 				],
-				members: [
-					{ id: 'user-1', name: 'Learner', email: 'learner@example.com' }
+				memberships: [
+					{
+						user: {
+							id: 'user-1',
+							name: 'Learner',
+							email: 'learner@example.com'
+						}
+					}
 				]
 			}
 		] as never);

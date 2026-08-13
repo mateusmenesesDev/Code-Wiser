@@ -71,11 +71,7 @@ export const epicMutations = {
 			// Verify access through existing epic
 			const existingEpic = await ctx.db.epic.findUnique({
 				where: { id },
-				include: {
-					project: {
-						include: { members: true }
-					}
-				}
+
 			});
 
 			if (!existingEpic) {
@@ -108,11 +104,7 @@ export const epicMutations = {
 			// Verify access through existing epic
 			const existingEpic = await ctx.db.epic.findUnique({
 				where: { id },
-				include: {
-					project: {
-						include: { members: true }
-					}
-				}
+
 			});
 
 			if (!existingEpic) {

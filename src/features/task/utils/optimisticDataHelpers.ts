@@ -230,6 +230,7 @@ export const createOptimisticBacklogTask = (
 		tags: newTask.tags || [],
 		blocked: newTask.blocked || false,
 		blockedReason: newTask.blockedReason || null,
+		portfolioRelevant: false,
 		dueDate: newTask.dueDate || null,
 		storyPoints: newTask.storyPoints || null,
 		publicNumber: null,

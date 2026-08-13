@@ -336,7 +336,9 @@ Depois do ledger P0.2:
 
 Não usar `agent-browser` como integração principal de produção. Browser automation é frágil para autenticação, rate limit e mudanças de UI; a API/GitHub App é o seam correto.
 
-### P2.2 — Code review assistido por IA
+### 🚧 P2.2 — Code review assistido por IA
+
+**Status:** primeira versão implementada; análise assíncrona, limites, achados editáveis e decisão humana estão cobertos. A configuração do provedor e a aprovação final do copy ainda dependem de operação/produto.
 
 **Objetivo:** oferecer ao mentor uma primeira análise técnica sem substituir a decisão humana.
 

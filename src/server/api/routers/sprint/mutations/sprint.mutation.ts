@@ -69,12 +69,7 @@ export const sprintMutations = {
 			const { id } = input;
 
 			const existingSprint = await ctx.db.sprint.findUnique({
-				where: { id },
-				include: {
-					project: {
-						include: { members: true }
-					}
-				}
+				where: { id }
 			});
 
 			if (!existingSprint) {
@@ -114,12 +109,7 @@ export const sprintMutations = {
 
 			// Verify access through existing sprint
 			const existingSprint = await ctx.db.sprint.findUnique({
-				where: { id },
-				include: {
-					project: {
-						include: { members: true }
-					}
-				}
+				where: { id }
 			});
 
 			if (!existingSprint) {
@@ -188,7 +178,7 @@ export const sprintMutations = {
 
 			const sprint = await ctx.db.sprint.findUnique({
 				where: { id },
-				include: { project: { include: { members: true } } }
+
 			});
 
 			if (!sprint) {
@@ -233,7 +223,7 @@ export const sprintMutations = {
 
 			const sprint = await ctx.db.sprint.findUnique({
 				where: { id },
-				include: { project: { include: { members: true } } }
+
 			});
 
 			if (!sprint) {

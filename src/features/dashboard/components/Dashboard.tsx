@@ -12,6 +12,7 @@ import {
 	Target
 } from 'lucide-react';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -23,24 +24,21 @@ import {
 } from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
 import { Skeleton } from '~/common/components/ui/skeleton';
-import {
-	PROGRESS_STATUS_LABELS,
-	progressStatusBadgeVariant
-} from '~/features/exercises/lib/progressStatus';
+import { progressStatusBadgeVariant } from '~/features/exercises/lib/progressStatus';
 import { api } from '~/trpc/react';
 import { type DashboardOverview, getNextAction } from '../utils/nextAction';
 
-function formatDate(date: Date | null) {
+function formatDate(date: Date | null, locale: string, noDate: string) {
 	return date
-		? new Date(date).toLocaleDateString(undefined, {
+		? new Date(date).toLocaleDateString(locale, {
 				month: 'short',
 				day: 'numeric'
 			})
-		: 'No due date';
+		: noDate;
 }
 
-function formatSession(date: Date) {
-	return new Date(date).toLocaleString(undefined, {
+function formatSession(date: Date, locale: string) {
+	return new Date(date).toLocaleString(locale, {
 		weekday: 'short',
 		month: 'short',
 		day: 'numeric',
@@ -92,6 +90,8 @@ function DashboardCard({
 }
 
 function DashboardContent({ overview }: { overview: DashboardOverview }) {
+	const t = useTranslations('dashboard');
+	const locale = useLocale();
 	const nextAction = getNextAction(overview);
 	const task = overview.urgentTask;
 	const exercise = overview.exercise;
@@ -108,18 +108,22 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 							<Target className="mt-1 h-5 w-5 shrink-0 text-primary" />
 							<div>
 								<p className="font-medium text-muted-foreground text-sm">
-									Your next action
+									{t('yourNextAction')}
 								</p>
 								<h2 className="mt-1 font-semibold text-xl">
-									{nextAction.title}
+									{t(`nextAction.${nextAction.titleKey}`)}
 								</h2>
 								<p className="mt-1 text-muted-foreground text-sm">
-									{nextAction.description}
+									{nextAction.descriptionKey
+										? t(`nextAction.${nextAction.descriptionKey}`)
+										: nextAction.description}
 								</p>
 							</div>
 						</div>
 						<Button asChild className="shrink-0">
-							<Link href={nextAction.href}>{nextAction.label}</Link>
+							<Link href={nextAction.href}>
+								{t(`nextAction.${nextAction.labelKey}`)}
+							</Link>
 						</Button>
 					</CardContent>
 				</Card>
@@ -128,8 +132,8 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 			<div className="grid gap-6 lg:grid-cols-2">
 				<DashboardCard
 					icon={AlertCircle}
-					title="Most urgent task"
-					description="Work that needs your attention first"
+					title={t('mostUrgentTask')}
+					description={t('urgentTaskDescription')}
 				>
 					{task?.project ? (
 						<div className="space-y-3">
@@ -140,7 +144,9 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 								</p>
 							</div>
 							<div className="flex flex-wrap items-center gap-2 text-sm">
-								<Badge variant="outline">{task.status ?? 'Backlog'}</Badge>
+								<Badge variant="outline">
+									{task.status ? t(`taskStatus.${task.status}`) : t('backlog')}
+								</Badge>
 								<span
 									className={
 										overdue
@@ -149,27 +155,25 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 									}
 								>
 									<Clock3 className="mr-1 inline h-4 w-4" />
-									{overdue ? 'Overdue · ' : 'Due · '}
-									{formatDate(task.dueDate)}
+									{overdue ? `${t('overdue')} · ` : `${t('due')} · `}
+									{formatDate(task.dueDate, locale, t('noDueDate'))}
 								</span>
 							</div>
 							<Button asChild variant="outline" size="sm">
 								<Link href={`/workspace/${task.project.id}?taskId=${task.id}`}>
-									Open task
+									{t('nextAction.openTask')}
 								</Link>
 							</Button>
 						</div>
 					) : (
-						<p className="text-muted-foreground text-sm">
-							No open tasks in your projects.
-						</p>
+						<p className="text-muted-foreground text-sm">{t('noOpenTasks')}</p>
 					)}
 				</DashboardCard>
 
 				<DashboardCard
 					icon={BookOpen}
-					title="Exercise progress"
-					description="Pick up where you left off"
+					title={t('exerciseProgress')}
+					description={t('exerciseProgressDescription')}
 				>
 					{exercise ? (
 						<div className="space-y-3">
@@ -180,23 +184,21 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 								</p>
 							</div>
 							<Badge variant={progressStatusBadgeVariant(exercise.status)}>
-								{PROGRESS_STATUS_LABELS[exercise.status]}
+								{t(`status.${exercise.status}`)}
 							</Badge>
 							<Button asChild variant="outline" size="sm">
 								<Link
 									href={`/exercises/${exercise.challenge.track.slug}/${exercise.challenge.slug}`}
 								>
-									Open exercise
+									{t('nextAction.openExercise')}
 								</Link>
 							</Button>
 						</div>
 					) : (
 						<div className="space-y-3">
-							<p className="text-muted-foreground text-sm">
-								No exercise in progress.
-							</p>
+							<p className="text-muted-foreground text-sm">{t('noExercise')}</p>
 							<Button asChild variant="outline" size="sm">
-								<Link href="/exercises">Browse exercises</Link>
+								<Link href="/exercises">{t('browseExercises')}</Link>
 							</Button>
 						</div>
 					)}
@@ -204,8 +206,8 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 
 				<DashboardCard
 					icon={GitPullRequest}
-					title="Code review"
-					description="Review status and latest feedback"
+					title={t('codeReview')}
+					description={t('codeReviewDescription')}
 				>
 					<div className="space-y-3">
 						{review?.task.project && (
@@ -224,8 +226,8 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 									}
 								>
 									{review.status === 'CHANGES_REQUESTED'
-										? 'Changes requested'
-										: 'Waiting for review'}
+										? t('changesRequested')
+										: t('waitingForReview')}
 								</Badge>
 							</div>
 						)}
@@ -239,8 +241,8 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 								<p>
 									<span className="font-medium">
 										{decision.status === 'APPROVED'
-											? 'Last review approved'
-											: 'Last review requested changes'}
+											? t('lastReviewApproved')
+											: t('lastReviewChanges')}
 									</span>{' '}
 									<span className="text-muted-foreground">
 										{decision.task.title}
@@ -250,7 +252,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 						)}
 						{!review && !decision && (
 							<p className="text-muted-foreground text-sm">
-								No project review activity yet.
+								{t('noReviewActivity')}
 							</p>
 						)}
 					</div>
@@ -258,25 +260,25 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 
 				<DashboardCard
 					icon={Calendar}
-					title="Next mentorship session"
-					description="Your upcoming one-on-one session"
+					title={t('nextMentorshipSession')}
+					description={t('nextMentorshipDescription')}
 				>
 					{overview.booking ? (
 						<div className="space-y-3">
 							<p className="font-medium">
-								{formatSession(overview.booking.scheduledAt)}
+								{formatSession(overview.booking.scheduledAt, locale)}
 							</p>
 							<Button asChild variant="outline" size="sm">
-								<Link href="/mentorship">View mentorship</Link>
+								<Link href="/mentorship">{t('viewMentorship')}</Link>
 							</Button>
 						</div>
 					) : (
 						<div className="space-y-3">
 							<p className="text-muted-foreground text-sm">
-								No upcoming session scheduled.
+								{t('noUpcomingSession')}
 							</p>
 							<Button asChild variant="outline" size="sm">
-								<Link href="/mentorship">Book a session</Link>
+								<Link href="/mentorship">{t('bookSession')}</Link>
 							</Button>
 						</div>
 					)}
@@ -285,16 +287,14 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 
 			<DashboardCard
 				icon={FolderOpen}
-				title="Active projects"
-				description="Progress across your six most recent projects"
+				title={t('activeProjects')}
+				description={t('activeProjectsDescription')}
 			>
 				{overview.projects.length === 0 ? (
 					<div className="space-y-3">
-						<p className="text-muted-foreground text-sm">
-							You have not started a project yet.
-						</p>
+						<p className="text-muted-foreground text-sm">{t('noProject')}</p>
 						<Button asChild variant="outline" size="sm">
-							<Link href="/projects">Browse projects</Link>
+							<Link href="/projects">{t('browseProjects')}</Link>
 						</Button>
 					</div>
 				) : (
@@ -315,8 +315,14 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 								<Progress value={project.progress} className="h-2" />
 								<p className="text-muted-foreground text-xs">
 									{project.usesRoadmap
-										? `${project.completedMilestones} of ${project.totalMilestones} milestones complete`
-										: `${project.completedTasks} of ${project.totalTasks} tasks complete`}
+										? t('milestonesComplete', {
+												completed: project.completedMilestones ?? 0,
+												total: project.totalMilestones ?? 0
+											})
+										: t('tasksComplete', {
+												completed: project.completedTasks ?? 0,
+												total: project.totalTasks ?? 0
+											})}
 								</p>
 							</div>
 						))}
@@ -326,13 +332,11 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 
 			<DashboardCard
 				icon={Bell}
-				title="Relevant notifications"
-				description="Unread updates that may need your attention"
+				title={t('relevantNotifications')}
+				description={t('relevantNotificationsDescription')}
 			>
 				{overview.notifications.length === 0 ? (
-					<p className="text-muted-foreground text-sm">
-						You are all caught up.
-					</p>
+					<p className="text-muted-foreground text-sm">{t('allCaughtUp')}</p>
 				) : (
 					<div className="divide-y">
 						{overview.notifications.map((notification) => {
@@ -376,6 +380,7 @@ export default function Dashboard({
 	initialData?: DashboardOverview;
 	userId?: string;
 }) {
+	const t = useTranslations('dashboard');
 	const { data, isLoading } = api.dashboard.getOverview.useQuery(
 		userId ? { userId } : undefined,
 		{ initialData }
@@ -386,10 +391,9 @@ export default function Dashboard({
 			<Card>
 				<CardContent className="space-y-3 py-12">
 					<AlertCircle className="h-8 w-8 text-destructive" />
-					<h2 className="font-semibold text-lg">Dashboard unavailable</h2>
+					<h2 className="font-semibold text-lg">{t('dashboardUnavailable')}</h2>
 					<p className="text-muted-foreground text-sm">
-						We could not load your learning overview. Refresh the page to try
-						again.
+						{t('dashboardUnavailableDescription')}
 					</p>
 				</CardContent>
 			</Card>

@@ -50,7 +50,7 @@ describe('POST /api/pusher/auth', () => {
 			status: 'ACTIVE'
 		} as never);
 		mockDb.project.findUnique
-			.mockResolvedValueOnce({ members: [{ id: 'user-1' }] } as never)
+			.mockResolvedValueOnce({ memberships: [{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }] } as never)
 			.mockResolvedValueOnce({ canceledAt: null } as never);
 		mockDb.user.findUnique.mockResolvedValue({
 			id: 'user-1',

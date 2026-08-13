@@ -1,13 +1,14 @@
 'use client';
 
 import { RotateCcw } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '~/common/components/ui/button';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { api } from '~/trpc/react';
 import {
+	getLocalizedOnboardingTours,
 	getPresentOnboardingSteps,
-	onboardingTours,
 	type OnboardingFlow
 } from './onboardingTours';
 
@@ -25,10 +26,13 @@ function canAutoStartOnThisDevice() {
 	return !window.matchMedia('(max-width: 767px)').matches;
 }
 
-export function OnboardingTour({
-	flow,
-	replayLabel = 'Replay tour'
-}: OnboardingTourProps) {
+export function OnboardingTour({ flow, replayLabel }: OnboardingTourProps) {
+	const t = useTranslations('common');
+	const onboardingT = useTranslations('onboarding');
+	const tours = useMemo(
+		() => getLocalizedOnboardingTours(onboardingT),
+		[onboardingT]
+	);
 	const { user } = useAuth();
 	const isLoggedIn = !!user;
 	const utils = api.useUtils();
@@ -59,8 +63,8 @@ export function OnboardingTour({
 				return false;
 			}
 
-			const steps = getPresentOnboardingSteps(flow);
-			if (steps.length !== onboardingTours[flow].length) {
+			const steps = getPresentOnboardingSteps(flow, tours);
+			if (steps.length !== tours[flow].length) {
 				return false;
 			}
 
@@ -68,9 +72,9 @@ export function OnboardingTour({
 				steps,
 				showProgress: true,
 				progressText: '{{current}} of {{total}}',
-				nextBtnText: 'Next',
-				prevBtnText: 'Back',
-				doneBtnText: 'Finish',
+				nextBtnText: t('next'),
+				prevBtnText: t('back'),
+				doneBtnText: t('finish'),
 				disableActiveInteraction: true,
 				overlayClickBehavior: 'close',
 				onDestroyed: () => {
@@ -83,7 +87,7 @@ export function OnboardingTour({
 			driverObj.drive();
 			return true;
 		},
-		[complete, driverModule, flow]
+		[complete, driverModule, flow, t, tours]
 	);
 
 	const isFlowEligible =
@@ -138,7 +142,7 @@ export function OnboardingTour({
 			onClick={() => startTour(hasCompleted ? 'replay' : 'auto')}
 		>
 			<RotateCcw className="mr-2 h-4 w-4" />
-			{hasCompleted ? replayLabel : 'Start tour'}
+			{hasCompleted ? (replayLabel ?? t('replayTour')) : t('startTour')}
 		</Button>
 	);
 }

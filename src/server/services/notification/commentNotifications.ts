@@ -31,11 +31,10 @@ export async function notifyTaskComment(
 	const project = await db.project.findUnique({
 		where: { id: projectId },
 		select: {
-			members: {
+			memberships: {
+				where: { status: 'ACTIVE' },
 				select: {
-					id: true,
-					email: true,
-					name: true
+					user: { select: { id: true, email: true, name: true } }
 				}
 			}
 		}
@@ -48,10 +47,11 @@ export async function notifyTaskComment(
 
 	const adminUsers = await getAdminUsers();
 
-	const memberIds = new Set(project.members.map((member) => member.id));
+	const members = project.memberships.map(({ user }) => user);
+	const memberIds = new Set(members.map((member) => member.id));
 
 	const usersToNotify = [
-		...project.members.filter((member) => member.id !== authorId),
+		...members.filter((member) => member.id !== authorId),
 		...adminUsers.filter((admin) => !memberIds.has(admin.id))
 	];
 

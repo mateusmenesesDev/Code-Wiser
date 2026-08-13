@@ -15,8 +15,9 @@ model Task {
   dueDate      DateTime?
   publicNumber Int?
 
-  blocked       Boolean? @default(false)
-  blockedReason String?
+  blocked           Boolean? @default(false)
+  blockedReason     String?
+  portfolioRelevant Boolean  @default(false)
 
   storyPoints Int?
   assignees   User[]

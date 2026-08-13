@@ -44,7 +44,7 @@ describe('planningPoker.vote realtime', () => {
 			currentTaskIndex: 0
 		} as never);
 		mockDb.project.findUnique
-			.mockResolvedValueOnce({ members: [{ id: 'user-1' }] } as never)
+			.mockResolvedValueOnce({ memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }] } as never)
 			.mockResolvedValueOnce({ canceledAt: null } as never);
 		mockDb.planningPokerVote.upsert.mockResolvedValue({
 			id: 'vote-1',

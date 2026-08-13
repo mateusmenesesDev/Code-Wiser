@@ -36,7 +36,7 @@ describe('github router', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'user-1' }]
+			memberships: [{ role: 'OWNER', status: 'ACTIVE', joinedAt: new Date() }]
 		} as never);
 		mockDb.gitHubInstallation.findFirst.mockResolvedValue({
 			id: 'installation-1',

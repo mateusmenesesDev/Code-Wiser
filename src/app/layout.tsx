@@ -10,6 +10,8 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { GeistSans } from 'geist/font/sans';
 import { Provider as JotaiProvider } from 'jotai';
 import type { Metadata } from 'next';
+import { getLocale } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Toaster } from 'sonner';
 import Header from '~/common/components/layout/Header';
@@ -51,35 +53,38 @@ export default async function RootLayout({
 	children
 }: Readonly<{ children: React.ReactNode }>) {
 	const sessionClaims = await getSessionClaims();
+	const locale = await getLocale();
 	return (
 		<ClerkProvider>
 			<JotaiProvider>
 				<SyncActiveOrganization membership={sessionClaims?.membership} />
 				<html
-					lang="pt-BR"
+					lang={locale}
 					className={`${GeistSans.variable}`}
 					suppressHydrationWarning
 				>
 					<body>
-						<TRPCReactProvider>
-							<NuqsAdapter>
-								<ThemeProvider
-									attribute="class"
-									defaultTheme="light"
-									enableSystem
-									disableTransitionOnChange
-								>
-									<HydrateClient>
-										<Header />
-										<div className="min-h-[calc(100vh-4.5rem)] md:flex">
-											<NavigationSidebar />
-											<main className="min-w-0 flex-1 p-6">{children}</main>
-										</div>
-									</HydrateClient>
-									<Toaster richColors />
-								</ThemeProvider>
-							</NuqsAdapter>
-						</TRPCReactProvider>
+						<NextIntlClientProvider>
+							<TRPCReactProvider>
+								<NuqsAdapter>
+									<ThemeProvider
+										attribute="class"
+										defaultTheme="light"
+										enableSystem
+										disableTransitionOnChange
+									>
+										<HydrateClient>
+											<Header />
+											<div className="min-h-[calc(100vh-4.5rem)] md:flex">
+												<NavigationSidebar />
+												<main className="min-w-0 flex-1 p-6">{children}</main>
+											</div>
+										</HydrateClient>
+										<Toaster richColors />
+									</ThemeProvider>
+								</NuqsAdapter>
+							</TRPCReactProvider>
+						</NextIntlClientProvider>
 					</body>
 				</html>
 			</JotaiProvider>

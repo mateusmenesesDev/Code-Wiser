@@ -43,6 +43,7 @@ model Technology {
   name            String            @unique
   approved        Boolean           @default(false)
   ProjectTemplate ProjectTemplate[]
+  projects        Project[]
 
   @@schema("public")
 }

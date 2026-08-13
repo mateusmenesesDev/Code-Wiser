@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import type { Prisma } from '@prisma/client';
+import { ProjectRoleEnum, type Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
 	createProjectSchema,
+	evaluatePortfolioSchema,
+	updatePortfolioSchema,
 	updateProjectSchema
 } from '~/features/projects/schemas/projects.schema';
 import { generatePublicCode } from '~/lib/publicTaskId';
@@ -12,7 +14,7 @@ import { applyCreditTransaction } from '~/server/services/creditLedger';
 import { createNotification } from '~/server/services/notification/base';
 import {
 	assertProjectIsActive,
-	userHasAccessToProject
+	assertProjectPermission
 } from '~/server/utils/auth';
 
 const canceledProjectError = () =>
@@ -55,10 +57,20 @@ export const projectMutations = {
 
 				const existingProject = await ctx.db.project.findUnique({
 					where: { creationIdempotencyKey },
-					select: { id: true, members: { select: { id: true } } }
+					select: {
+						id: true,
+						memberships: {
+							where: { status: 'ACTIVE' },
+							select: { userId: true }
+						}
+					}
 				});
 				if (existingProject) {
-					if (existingProject.members.some((member) => member.id === userId)) {
+					if (
+						existingProject.memberships.some(
+							(membership) => membership.userId === userId
+						)
+					) {
 						return existingProject.id;
 					}
 					throw new TRPCError({
@@ -80,7 +92,8 @@ export const projectMutations = {
 							epics: true,
 							tasks: true,
 							milestones: true,
-							learningOutcomes: true
+							learningOutcomes: true,
+							technologies: true
 						}
 					})
 				]);
@@ -112,10 +125,8 @@ export const projectMutations = {
 				const userHasProject = await ctx.db.project.findFirst({
 					where: {
 						title: projectTemplate.title,
-						members: {
-							some: {
-								id: user.id
-							}
+						memberships: {
+							some: { userId: user.id, status: 'ACTIVE' }
 						}
 					}
 				});
@@ -131,6 +142,7 @@ export const projectMutations = {
 				const templateTasks = projectTemplate.tasks;
 				const templateMilestones = projectTemplate.milestones ?? [];
 				const templateLearningOutcomes = projectTemplate.learningOutcomes ?? [];
+				const templateTechnologies = projectTemplate.technologies ?? [];
 
 				const project = await ctx.db.$transaction(
 					async (prisma) => {
@@ -154,7 +166,12 @@ export const projectMutations = {
 								),
 								nextTaskNumber: projectTemplate.nextTaskNumber,
 								categoryId: projectTemplate.categoryId,
-								members: { connect: { id: user.id } }
+								technologies: {
+									connect: templateTechnologies.map(({ id }) => ({ id }))
+								},
+								memberships: {
+									create: { userId: user.id, role: ProjectRoleEnum.OWNER }
+								}
 							}
 						});
 
@@ -413,12 +430,118 @@ export const projectMutations = {
 			});
 		}),
 
+	updatePortfolio: protectedProcedure
+		.input(updatePortfolioSchema)
+		.mutation(async ({ ctx, input }) => {
+			await assertProjectPermission(ctx, input.projectId, 'MANAGE_PORTFOLIO');
+			await assertProjectIsActive(ctx.db, input.projectId);
+
+			const project = await ctx.db.project.findUnique({
+				where: { id: input.projectId },
+				select: {
+					id: true,
+					publicCode: true,
+					portfolioPublishedAt: true,
+					githubRepository: { select: { private: true } }
+				}
+			});
+
+			if (!project) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Project not found'
+				});
+			}
+			if (input.published && !project.publicCode) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'This project does not have a public portfolio identifier'
+				});
+			}
+			if (input.showDemo && !input.demoUrl) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Add a demo URL before showing it on the portfolio'
+				});
+			}
+			if (input.showRepository && (!project.githubRepository || project.githubRepository.private)) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Only a linked public repository can be shown on the portfolio'
+				});
+			}
+
+			const relevantTaskIds = [...new Set(input.relevantTaskIds)];
+			const tasks = await ctx.db.task.findMany({
+				where: { projectId: input.projectId, id: { in: relevantTaskIds } },
+				select: { id: true }
+			});
+			if (tasks.length !== relevantTaskIds.length) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'A selected portfolio task does not belong to this project'
+				});
+			}
+
+			return ctx.db.$transaction(async (prisma) => {
+				await prisma.task.updateMany({
+					where: { projectId: input.projectId },
+					data: { portfolioRelevant: false }
+				});
+				if (relevantTaskIds.length > 0) {
+					await prisma.task.updateMany({
+						where: { projectId: input.projectId, id: { in: relevantTaskIds } },
+						data: { portfolioRelevant: true }
+					});
+				}
+
+				return prisma.project.update({
+					where: { id: input.projectId },
+					data: {
+						portfolioSummary: input.summary?.trim() || null,
+						portfolioDemoUrl: input.demoUrl,
+						portfolioPublishedAt: input.published
+							? (project.portfolioPublishedAt ?? new Date())
+							: null,
+						portfolioShowDemo: input.showDemo,
+						portfolioShowRepository: input.showRepository
+					},
+					select: {
+						id: true,
+						publicCode: true,
+						portfolioPublishedAt: true
+					}
+				});
+			});
+		}),
+
+	evaluatePortfolio: protectedProcedure
+		.input(evaluatePortfolioSchema)
+		.mutation(async ({ ctx, input }) => {
+			await assertProjectPermission(ctx, input.projectId, 'EVALUATE_PROJECT');
+			await assertProjectIsActive(ctx.db, input.projectId);
+
+			return ctx.db.project.update({
+				where: { id: input.projectId },
+				data: {
+					portfolioFeedback: input.feedback,
+					portfolioEvaluatedAt: new Date(),
+					portfolioEvaluatedById: ctx.session.userId
+				},
+				select: {
+					portfolioFeedback: true,
+					portfolioEvaluatedAt: true,
+					portfolioEvaluatedBy: { select: { name: true } }
+				}
+			});
+		}),
+
 	updateProject: protectedProcedure
 		.input(updateProjectSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
 
-			await userHasAccessToProject(ctx, id);
+			await assertProjectPermission(ctx, id, 'EDIT_SETTINGS');
 
 			const project = await ctx.db.project.findUnique({
 				where: { id },
@@ -456,7 +579,10 @@ export const projectMutations = {
 						id: true,
 						title: true,
 						canceledAt: true,
-						members: { select: { id: true } },
+						memberships: {
+							where: { status: 'ACTIVE' },
+							select: { userId: true }
+						},
 						invitations: {
 							where: { status: 'PENDING' },
 							select: { id: true, userId: true }
@@ -474,7 +600,7 @@ export const projectMutations = {
 					throw canceledProjectError();
 				}
 
-				const memberIds = project.members.map((member) => member.id);
+				const memberIds = project.memberships.map(({ userId }) => userId);
 				const [paymentEvidences, legacyPaymentEvidences] = input.refundCredits
 					? await Promise.all([
 							prisma.projectCreditPaymentEvidence.findMany({
@@ -616,15 +742,24 @@ export const projectMutations = {
 			};
 		}),
 
-	addProjectMember: adminProcedure
+	addProjectMember: protectedProcedure
 		.input(
 			z.object({
 				projectId: z.string(),
 				userId: z.string(),
+				role: z.nativeEnum(ProjectRoleEnum).default(ProjectRoleEnum.LEARNER),
 				creditCost: z.number().int().positive().optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			await assertProjectPermission(ctx, input.projectId, 'MANAGE_MEMBERS');
+			if (input.role === ProjectRoleEnum.OWNER) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'A project can only have one owner'
+				});
+			}
+
 			const result = await ctx.db.$transaction(async (prisma) => {
 				const [project, user] = await Promise.all([
 					prisma.project.findUnique({
@@ -636,7 +771,9 @@ export const projectMutations = {
 							creditCost: true,
 							canceledAt: true,
 							maxParticipants: true,
-							members: { select: { id: true } }
+							memberships: {
+								select: { userId: true, status: true }
+							}
 						}
 					}),
 					prisma.user.findUnique({
@@ -662,14 +799,22 @@ export const projectMutations = {
 				if (project.canceledAt) {
 					throw canceledProjectError();
 				}
-				if (project.members.some((member) => member.id === user.id)) {
+				if (
+					project.memberships.some(
+						(membership) =>
+							membership.userId === user.id && membership.status === 'ACTIVE'
+					)
+				) {
 					throw new TRPCError({
 						code: 'CONFLICT',
 						message: 'User is already a project member'
 					});
 				}
 
-				const memberCountAfterAdd = project.members.length + 1;
+				const memberCountAfterAdd =
+					project.memberships.filter(
+						(membership) => membership.status === 'ACTIVE'
+					).length + 1;
 				const overMaxParticipants =
 					memberCountAfterAdd > project.maxParticipants;
 
@@ -712,7 +857,8 @@ export const projectMutations = {
 							projectId: project.id,
 							userId: user.id,
 							invitedById: ctx.session.userId,
-							creditCostSnapshot
+							creditCostSnapshot,
+							role: input.role
 						},
 						select: { id: true }
 					});
@@ -726,9 +872,16 @@ export const projectMutations = {
 					};
 				}
 
-				await prisma.project.update({
-					where: { id: project.id },
-					data: { members: { connect: { id: user.id } } }
+				await prisma.projectMembership.upsert({
+					where: {
+						projectId_userId: { projectId: project.id, userId: user.id }
+					},
+					create: {
+						projectId: project.id,
+						userId: user.id,
+						role: input.role
+					},
+					update: { role: input.role, status: 'ACTIVE', joinedAt: new Date() }
 				});
 
 				return {
@@ -762,7 +915,51 @@ export const projectMutations = {
 			return result;
 		}),
 
-	removeProjectMember: adminProcedure
+	transferProjectOwnership: protectedProcedure
+		.input(z.object({ projectId: z.string(), userId: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			await assertProjectPermission(ctx, input.projectId, 'MANAGE_MEMBERS');
+			return ctx.db.$transaction(async (prisma) => {
+				const target = await prisma.projectMembership.findUnique({
+					where: {
+						projectId_userId: {
+							projectId: input.projectId,
+							userId: input.userId
+						}
+					},
+					select: { role: true, status: true }
+				});
+				if (!target || target.status !== 'ACTIVE') {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'User is not an active project member'
+					});
+				}
+				if (target.role === ProjectRoleEnum.OWNER) {
+					return { success: true as const };
+				}
+				await prisma.projectMembership.updateMany({
+					where: {
+						projectId: input.projectId,
+						role: ProjectRoleEnum.OWNER,
+						status: 'ACTIVE'
+					},
+					data: { role: ProjectRoleEnum.MENTOR }
+				});
+				await prisma.projectMembership.update({
+					where: {
+						projectId_userId: {
+							projectId: input.projectId,
+							userId: input.userId
+						}
+					},
+					data: { role: ProjectRoleEnum.OWNER }
+				});
+				return { success: true as const };
+			});
+		}),
+
+	removeProjectMember: protectedProcedure
 		.input(
 			z.object({
 				projectId: z.string(),
@@ -772,6 +969,7 @@ export const projectMutations = {
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
+			await assertProjectPermission(ctx, input.projectId, 'MANAGE_MEMBERS');
 			const result = await ctx.db.$transaction(async (prisma) => {
 				const project = await prisma.project.findUnique({
 					where: { id: input.projectId },
@@ -779,7 +977,13 @@ export const projectMutations = {
 						id: true,
 						title: true,
 						canceledAt: true,
-						members: { select: { id: true, email: true, name: true } }
+						memberships: {
+							where: { status: 'ACTIVE' },
+							select: {
+								role: true,
+								user: { select: { id: true, email: true, name: true } }
+							}
+						}
 					}
 				});
 
@@ -794,11 +998,20 @@ export const projectMutations = {
 					throw canceledProjectError();
 				}
 
-				const member = project.members.find((user) => user.id === input.userId);
-				if (!member) {
+				const membership = project.memberships.find(
+					({ user }) => user.id === input.userId
+				);
+				const member = membership?.user;
+				if (!member || !membership) {
 					throw new TRPCError({
 						code: 'NOT_FOUND',
 						message: 'User is not a project member'
+					});
+				}
+				if (membership.role === ProjectRoleEnum.OWNER) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Transfer project ownership before removing the owner'
 					});
 				}
 
@@ -866,9 +1079,11 @@ export const projectMutations = {
 
 				const unassignedTasks = { count: assignedTasks.length };
 
-				await prisma.project.update({
-					where: { id: project.id },
-					data: { members: { disconnect: { id: member.id } } }
+				await prisma.projectMembership.update({
+					where: {
+						projectId_userId: { projectId: project.id, userId: member.id }
+					},
+					data: { status: 'INACTIVE' }
 				});
 
 				if (input.refundCredits) {
@@ -897,8 +1112,8 @@ export const projectMutations = {
 						userEmailSnapshot: member.email,
 						removedById: ctx.session.userId,
 						reason: input.reason || null,
-						memberCountBefore: project.members.length,
-						wasLastMember: project.members.length === 1,
+						memberCountBefore: project.memberships.length,
+						wasLastMember: project.memberships.length === 1,
 						wasSelfRemoval: member.id === ctx.session.userId,
 						tasksUnassigned: unassignedTasks.count,
 						refundEligible,
@@ -922,7 +1137,7 @@ export const projectMutations = {
 					reason: input.reason || null,
 					refundedCredits: input.refundCredits ? refundableCredits : 0,
 					tasksUnassigned: unassignedTasks.count,
-					wasLastMember: project.members.length === 1,
+					wasLastMember: project.memberships.length === 1,
 					wasSelfRemoval: member.id === ctx.session.userId
 				};
 			});
@@ -987,13 +1202,13 @@ export const projectMutations = {
 						id: true,
 						status: true,
 						creditCostSnapshot: true,
+						role: true,
 						projectId: true,
 						project: {
 							select: {
 								id: true,
 								title: true,
-								canceledAt: true,
-								members: { select: { id: true } }
+								canceledAt: true
 							}
 						}
 					}
@@ -1042,16 +1257,24 @@ export const projectMutations = {
 					}
 				}
 
-				if (
-					!invitation.project.members.some(
-						(member) => member.id === ctx.session.userId
-					)
-				) {
-					await prisma.project.update({
-						where: { id: invitation.projectId },
-						data: { members: { connect: { id: ctx.session.userId } } }
-					});
-				}
+				await prisma.projectMembership.upsert({
+					where: {
+						projectId_userId: {
+							projectId: invitation.projectId,
+							userId: ctx.session.userId
+						}
+					},
+					create: {
+						projectId: invitation.projectId,
+						userId: ctx.session.userId,
+						role: invitation.role
+					},
+					update: {
+						role: invitation.role,
+						status: 'ACTIVE',
+						joinedAt: new Date()
+					}
+				});
 
 				await prisma.projectInvitation.update({
 					where: { id: invitation.id },

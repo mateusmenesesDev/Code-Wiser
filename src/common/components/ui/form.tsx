@@ -2,6 +2,7 @@
 
 import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import {
 	Controller,
@@ -14,6 +15,7 @@ import {
 
 import { Label } from '~/common/components/ui/label';
 import { cn } from '~/lib/utils';
+import { validationMessageKey } from '~/common/utils/validationMessage';
 
 const Form = FormProvider;
 
@@ -148,7 +150,10 @@ const FormMessage = React.forwardRef<
 	React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
 	const { error, formMessageId } = useFormField();
+	const t = useTranslations('validation');
 	const body = error ? String(error?.message) : children;
+	const key = typeof body === 'string' ? validationMessageKey(body) : undefined;
+	const translatedBody = key ? t(key) : body;
 
 	if (!body) {
 		return null;
@@ -161,7 +166,7 @@ const FormMessage = React.forwardRef<
 			className={cn('font-medium text-destructive text-sm', className)}
 			{...props}
 		>
-			{body}
+			{translatedBody}
 		</p>
 	);
 });

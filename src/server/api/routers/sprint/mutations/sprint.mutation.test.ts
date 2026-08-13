@@ -30,13 +30,13 @@ const projectSprint = (status: SprintStatusEnum) => ({
 	status,
 	projectId: 'project-1',
 	projectTemplateId: null,
-	project: { members: [{ id: 'user-1' }] }
+	project: { memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }] }
 });
 
 describe('sprint mutations', () => {
 	beforeEach(() => {
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'user-1' }],
+			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }],
 			canceledAt: null
 		} as never);
 	});

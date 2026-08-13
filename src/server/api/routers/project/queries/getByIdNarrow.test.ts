@@ -31,7 +31,14 @@ describe('project.getById', () => {
 			category: { name: 'Fullstack' },
 			epics: [],
 			sprints: [],
-			members: [{ id: 'user-1' }]
+			memberships: [
+				{
+					userId: 'user-1',
+					role: 'LEARNER',
+					status: 'ACTIVE',
+					joinedAt: new Date()
+				}
+			]
 		} as never);
 	});
 
@@ -48,6 +55,6 @@ describe('project.getById', () => {
 		expect(args.include.tasks).toBeUndefined();
 		expect(args.include.epics).toBe(true);
 		expect(args.include.sprints).toBe(true);
-		expect(args.include.members).toBeTruthy();
+		expect(args.include.memberships).toBeTruthy();
 	});
 });

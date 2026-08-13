@@ -243,7 +243,13 @@ export const mentorAttentionRouter = createTRPCRouter({
 							select: {
 								id: true,
 								title: true,
-								members: { select: { id: true, name: true, email: true } }
+								memberships: {
+									where: { status: 'ACTIVE' },
+									select: {
+										role: true,
+										user: { select: { id: true, name: true, email: true } }
+									}
+								}
 							}
 						},
 						assignees: { select: { id: true, name: true, email: true } }
@@ -263,7 +269,14 @@ export const mentorAttentionRouter = createTRPCRouter({
 						},
 						NOT: [
 							{ tasks: { some: { updatedAt: { gte: inactivityCutoff } } } },
-							{ projects: { some: { updatedAt: { gte: inactivityCutoff } } } },
+							{
+								projectMemberships: {
+									some: {
+										updatedAt: { gte: inactivityCutoff },
+										status: 'ACTIVE'
+									}
+								}
+							},
 							{
 								challengeProgress: {
 									some: { updatedAt: { gte: inactivityCutoff } }
@@ -289,7 +302,11 @@ export const mentorAttentionRouter = createTRPCRouter({
 							{
 								OR: [
 									{ mentorshipStatus: 'ACTIVE' },
-									{ projects: { some: { canceledAt: null } } },
+									{
+										projectMemberships: {
+											some: { status: 'ACTIVE', project: { canceledAt: null } }
+										}
+									},
 									{
 										challengeProgress: {
 											some: { status: { not: 'NOT_STARTED' } }
@@ -423,7 +440,13 @@ export const mentorAttentionRouter = createTRPCRouter({
 					id: task.id,
 					title: task.title,
 					context: task.project?.title ?? 'Project',
-					learner: task.assignees[0] ?? task.project?.members[0] ?? null,
+					learner:
+						task.assignees[0] ??
+						task.project?.memberships.find(
+							(membership) => membership.role === 'LEARNER'
+						)?.user ??
+						task.project?.memberships[0]?.user ??
+						null,
 					priority: taskPriority(task.priority),
 					createdAt: task.updatedAt,
 					ageInHours: ageInHours(task.updatedAt, now),

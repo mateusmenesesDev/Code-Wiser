@@ -45,7 +45,7 @@ describe('PR review lifecycle', () => {
 			project: { id: 'project-1', title: 'Project' }
 		} as never);
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'user-1' }],
+			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }],
 			canceledAt: null
 		} as never);
 		mockDb.user.findUnique.mockResolvedValue({

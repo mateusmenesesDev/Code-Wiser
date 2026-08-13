@@ -35,7 +35,7 @@ describe('getNextAction', () => {
 		};
 
 		expect(getNextAction(overview)).toMatchObject({
-			title: 'Continue your most urgent task',
+			titleKey: 'urgentTitle',
 			href: '/workspace/project-1?taskId=task-1'
 		});
 	});
@@ -54,14 +54,14 @@ describe('getNextAction', () => {
 		};
 
 		expect(getNextAction(overview)).toMatchObject({
-			title: 'Address your exercise feedback',
+			titleKey: 'exerciseChangesTitle',
 			href: '/exercises/react/counter'
 		});
 	});
 
 	it('falls back to browsing exercises for a new learner', () => {
 		expect(getNextAction(emptyOverview())).toMatchObject({
-			title: 'Choose your next challenge',
+			titleKey: 'emptyTitle',
 			href: '/exercises'
 		});
 	});

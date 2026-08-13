@@ -98,8 +98,9 @@ export async function runServerBenches(
 				orderBy: { updatedAt: 'desc' },
 				include: {
 					category: true,
-					members: {
-						select: { id: true, name: true, email: true }
+					memberships: {
+						where: { status: 'ACTIVE' },
+						select: { user: { select: { id: true, name: true, email: true } } }
 					}
 				}
 			});
@@ -140,8 +141,9 @@ export async function runServerBenches(
 				include: {
 					category: true,
 					tasks: { select: { id: true, status: true } },
-					members: {
-						select: { id: true, name: true, email: true }
+					memberships: {
+						where: { status: 'ACTIVE' },
+						select: { user: { select: { id: true, name: true, email: true } } }
 					}
 				}
 			});

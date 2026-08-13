@@ -52,7 +52,7 @@ export const dashboardRouter = {
 					status: { not: 'DONE' },
 					project: {
 						canceledAt: null,
-						members: { some: { id: userId } }
+						memberships: { some: { userId, status: 'ACTIVE' } }
 					}
 				},
 				orderBy: [
@@ -73,7 +73,7 @@ export const dashboardRouter = {
 			ctx.db.project.findMany({
 				where: {
 					canceledAt: null,
-					members: { some: { id: userId } }
+					memberships: { some: { userId, status: 'ACTIVE' } }
 				},
 				orderBy: { updatedAt: 'desc' },
 				take: 6,

@@ -36,7 +36,7 @@ describe('task.attachments', () => {
 		});
 		caller = createCaller(ctx);
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'user-1' }]
+			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
 		} as never);
 	});
 
@@ -45,7 +45,7 @@ describe('task.attachments', () => {
 		projectId: 'project-1',
 		projectTemplateId: null,
 		project: {
-			members: [{ id: 'user-1' }]
+			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
 		}
 	};
 
@@ -134,10 +134,10 @@ describe('task.attachments', () => {
 	it('rejects create for non-members', async () => {
 		mockDb.task.findUnique.mockResolvedValue({
 			...memberTask,
-			project: { members: [{ id: 'other-user' }] }
+			project: { memberships: [] }
 		} as never);
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'other-user' }]
+			memberships: []
 		} as never);
 
 		await expect(

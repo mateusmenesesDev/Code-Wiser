@@ -1,6 +1,7 @@
 'use client';
 
 import { useTheme } from 'next-themes';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -13,11 +14,13 @@ import { useDialog } from '~/common/hooks/useDialog';
 import SignInDialog from '~/features/auth/components/Signin/SigninDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { NotificationBell } from '~/features/notifications/components/NotificationBell';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { api } from '~/trpc/react';
 import CodeWiseIcon from '../../icons/CodeWiseIcon';
 import HeaderAvatarMenu from './HeaderAvatarMenu';
 
 const Header = () => {
+	const t = useTranslations('common');
 	const { openDialog } = useDialog('signIn');
 	const { theme, setTheme } = useTheme();
 	const [mounted, setMounted] = useState(false);
@@ -53,18 +56,23 @@ const Header = () => {
 					</Link>
 
 					<div className="flex shrink-0 items-center gap-4">
+						<LanguageSwitcher />
 						<div className="flex items-center gap-2">
 							<Sun className="h-4 w-4" aria-hidden="true" />
 							{mounted ? (
 								<Switch
 									checked={theme === 'dark'}
-									aria-label="Toggle dark mode"
+									aria-label={t('toggleDarkMode')}
 									onCheckedChange={() =>
 										setTheme(theme === 'dark' ? 'light' : 'dark')
 									}
 								/>
 							) : (
-								<Switch checked={false} disabled aria-label="Toggle dark mode" />
+								<Switch
+									checked={false}
+									disabled
+									aria-label={t('toggleDarkMode')}
+								/>
 							)}
 							<Moon className="h-4 w-4" aria-hidden="true" />
 						</div>
@@ -74,20 +82,17 @@ const Header = () => {
 								{hasActiveMentorship ? (
 									<Badge variant="success" className="whitespace-nowrap">
 										<Calendar className="mr-1 h-3 w-3" aria-hidden="true" />
-										Mentorship Active
+										{t('mentorshipActive')}
 									</Badge>
 								) : shouldShowCreditsBadge && !mentorshipStatusLoading ? (
-									<Link
-										href="/pricing"
-										aria-label="View pricing and upgrade"
-									>
+									<Link href="/pricing" aria-label={t('viewPricing')}>
 										<Badge
 											variant="purple-gradient"
 											className="whitespace-nowrap"
 											data-onboarding="user-credits"
 										>
 											<Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
-											{userCredits?.credits ?? 0} credits
+											{userCredits?.credits ?? 0} {t('credits')}
 										</Badge>
 									</Link>
 								) : null}
@@ -104,14 +109,14 @@ const Header = () => {
 									onClick={() => openDialog('signIn')}
 								>
 									<LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
-									Sign In
+									{t('signIn')}
 								</Button>
 								<Button
 									onClick={() => openDialog('signIn')}
 									size="sm"
 									className="bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
 								>
-									Get Started
+									{t('getStarted')}
 								</Button>
 							</div>
 						)}

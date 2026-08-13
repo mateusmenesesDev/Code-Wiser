@@ -57,8 +57,64 @@ export const onboardingTours: Record<OnboardingFlow, DriveStep[]> = {
 	]
 };
 
-export function getPresentOnboardingSteps(flow: OnboardingFlow) {
-	return onboardingTours[flow].filter((step) => {
+export function getLocalizedOnboardingTours(
+	t: (key: string) => string
+): Record<OnboardingFlow, DriveStep[]> {
+	return {
+		normal: [
+			{
+				element: '[data-onboarding="project-catalog"]',
+				popover: {
+					title: t('browseCatalogTitle'),
+					description: t('browseCatalogDescription')
+				}
+			},
+			{
+				element: '[data-onboarding="user-credits"]',
+				popover: {
+					title: t('trackCreditsTitle'),
+					description: t('trackCreditsDescription')
+				}
+			},
+			{
+				element: '[data-onboarding="my-projects-access"]',
+				popover: {
+					title: t('openProjectsTitle'),
+					description: t('openProjectsDescription')
+				}
+			}
+		],
+		mentorship: [
+			{
+				element: '[data-onboarding="mentorship-dashboard"]',
+				popover: {
+					title: t('manageMentorshipTitle'),
+					description: t('manageMentorshipDescription')
+				}
+			},
+			{
+				element: '[data-onboarding="mentorship-bookings"]',
+				popover: {
+					title: t('upcomingSessionsTitle'),
+					description: t('upcomingSessionsDescription')
+				}
+			},
+			{
+				element: '[data-onboarding="mentorship-sessions"]',
+				popover: {
+					title: t('bookSessionTitle'),
+					description: t('bookSessionDescription')
+				}
+			}
+		]
+	};
+}
+
+export function getPresentOnboardingSteps(
+	flow: OnboardingFlow,
+	tours: Record<OnboardingFlow, DriveStep[]> = onboardingTours
+) {
+	return tours[flow].filter((step) => {
 		if (typeof step.element !== 'string') {
 			return true;
 		}

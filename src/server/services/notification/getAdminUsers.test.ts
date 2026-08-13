@@ -23,20 +23,31 @@ describe('getAdminUsers', () => {
 		const { getAdminUsers } = await import('./base');
 
 		mockDb.user.findMany.mockResolvedValue([
-			{ id: 'admin-1', email: 'a@example.com', name: 'Ada' }
+			{
+				id: 'admin-1',
+				email: 'a@example.com',
+				name: 'Ada',
+				preferredLocale: 'PT_BR'
+			}
 		] as never);
 
 		const admins = await getAdminUsers();
 
 		expect(admins).toEqual([
-			{ id: 'admin-1', email: 'a@example.com', name: 'Ada' }
+			{
+				id: 'admin-1',
+				email: 'a@example.com',
+				name: 'Ada',
+				preferredLocale: 'PT_BR'
+			}
 		]);
 		expect(mockDb.user.findMany).toHaveBeenCalledWith({
 			where: { isOrgAdmin: true },
 			select: {
 				id: true,
 				email: true,
-				name: true
+				name: true,
+				preferredLocale: true
 			}
 		});
 		expect(

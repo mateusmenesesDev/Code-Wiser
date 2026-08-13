@@ -15,14 +15,14 @@ import {
 export type NavigationItem = {
 	href: string;
 	Icon: LucideIcon;
-	label: string;
+	labelKey: string;
 	loginRequired?: boolean;
 	requiresMentorship?: boolean;
 	permission?: ClerkAuthorization['permission'];
 };
 
 export type NavigationGroup = {
-	label: string;
+	labelKey: string;
 	Icon: LucideIcon;
 	items: NavigationItem[];
 };
@@ -31,35 +31,35 @@ export const WORK_NAV_ITEMS: NavigationItem[] = [
 	{
 		href: '/',
 		Icon: LayoutDashboard,
-		label: 'Dashboard',
+		labelKey: 'dashboard',
 		loginRequired: true
 	},
 	{
 		href: '/projects',
 		Icon: Search,
-		label: 'Project Catalog'
+		labelKey: 'projectCatalog'
 	},
 	{
 		href: '/exercises',
 		Icon: BookOpen,
-		label: 'Exercises'
+		labelKey: 'exercises'
 	},
 	{
 		href: '/my-projects',
 		Icon: FolderOpen,
-		label: 'My Projects',
+		labelKey: 'myProjects',
 		loginRequired: true
 	},
 	{
 		href: '/agenda',
 		Icon: Calendar,
-		label: 'Task Agenda',
+		labelKey: 'taskAgenda',
 		loginRequired: true
 	},
 	{
 		href: '/mentorship',
 		Icon: Calendar,
-		label: 'Mentorship',
+		labelKey: 'mentorship',
 		loginRequired: true,
 		requiresMentorship: true
 	}
@@ -67,73 +67,73 @@ export const WORK_NAV_ITEMS: NavigationItem[] = [
 
 export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
-		label: 'People',
+		labelKey: 'people',
 		Icon: UserCog,
 		items: [
 			{
 				href: '/admin/users',
 				Icon: UserCog,
-				label: 'People',
+				labelKey: 'people',
 				permission: 'org:project:create'
 			}
 		]
 	},
 	{
-		label: 'Content',
+		labelKey: 'content',
 		Icon: FolderOpen,
 		items: [
 			{
 				href: '/admin/templates',
 				Icon: FolderOpen,
-				label: 'Templates',
+				labelKey: 'templates',
 				permission: 'org:project:edit_template'
 			},
 			{
 				href: '/admin/exercises',
 				Icon: BookOpen,
-				label: 'Exercise Management',
+				labelKey: 'exerciseManagement',
 				permission: 'org:project:create'
 			}
 		]
 	},
 	{
-		label: 'Reviews',
+		labelKey: 'reviews',
 		Icon: ClipboardCheck,
 		items: [
 			{
 				href: '/admin/attention',
 				Icon: Clock3,
-				label: 'Attention Queue',
+				labelKey: 'attentionQueue',
 				permission: 'org:project:create'
 			},
 			{
 				href: '/admin/pr-reviews',
 				Icon: GitPullRequest,
-				label: 'PR Reviews',
+				labelKey: 'prReviews',
 				permission: 'org:project:create'
 			},
 			{
 				href: '/admin/exercise-reviews',
 				Icon: ClipboardCheck,
-				label: 'Exercise Reviews',
+				labelKey: 'exerciseReviews',
 				permission: 'org:project:create'
 			},
 			{
 				href: '/admin/mentorship',
 				Icon: Calendar,
-				label: 'Mentorship Sessions',
+				labelKey: 'mentorshipSessions',
 				permission: 'org:project:create'
 			}
 		]
 	},
 	{
-		label: 'Feedback',
+		labelKey: 'feedbackGroup',
 		Icon: MessageSquare,
 		items: [
 			{
 				href: '/admin/feedback',
 				Icon: MessageSquare,
-				label: 'Feedback Inbox',
+				labelKey: 'feedbackInbox',
 				permission: 'org:project:create'
 			}
 		]
@@ -143,7 +143,7 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 export const ADMIN_DASHBOARD: NavigationItem = {
 	href: '/admin',
 	Icon: LayoutDashboard,
-	label: 'Dashboard',
+	labelKey: 'dashboard',
 	permission: 'org:project:create'
 };
 

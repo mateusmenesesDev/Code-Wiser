@@ -43,11 +43,11 @@ describe('task.delete attachment storage cleanup', () => {
 			projectId: 'project-1',
 			projectTemplateId: null,
 			project: {
-				members: [{ id: 'user-1' }]
+				memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
 			}
 		} as never);
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'user-1' }]
+			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
 		} as never);
 		mockDb.taskAttachment.findMany.mockResolvedValue([
 			{ key: 'key-a' },
@@ -85,11 +85,11 @@ describe('task.delete attachment storage cleanup', () => {
 			projectId: 'project-1',
 			projectTemplateId: null,
 			project: {
-				members: [{ id: 'user-1' }]
+				memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
 			}
 		} as never);
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'user-1' }]
+			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
 		} as never);
 		mockDb.taskAttachment.findMany.mockResolvedValue([
 			{ key: 'key-a' }

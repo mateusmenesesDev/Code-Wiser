@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import { ProjectRoleEnum, type PrismaClient } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 
 export interface ResourceAccessContext {
@@ -7,22 +7,53 @@ export interface ResourceAccessContext {
 	isAdmin: boolean;
 }
 
-export const userHasAccessToProject = async (
+export type ProjectPermission =
+	| 'EDIT_SETTINGS'
+	| 'MANAGE_MEMBERS'
+	| 'MANAGE_GITHUB'
+	| 'MANAGE_PORTFOLIO'
+	| 'EVALUATE_PROJECT';
+
+const permissionsByRole: Record<ProjectRoleEnum, readonly ProjectPermission[]> =
+	{
+		[ProjectRoleEnum.OWNER]: [
+			'EDIT_SETTINGS',
+			'MANAGE_MEMBERS',
+			'MANAGE_GITHUB',
+			'MANAGE_PORTFOLIO',
+			'EVALUATE_PROJECT'
+		],
+		[ProjectRoleEnum.MENTOR]: [
+			'EDIT_SETTINGS',
+			'MANAGE_GITHUB',
+			'EVALUATE_PROJECT'
+		],
+		[ProjectRoleEnum.LEARNER]: []
+	};
+
+export const getProjectMembership = async (
 	ctx: ResourceAccessContext,
 	projectId: string
-): Promise<boolean> => {
-	const { session, isAdmin } = ctx;
-	if (isAdmin) return true;
-
-	const userId = session.userId;
+) => {
+	if (ctx.isAdmin) {
+		return {
+			role: ProjectRoleEnum.OWNER,
+			status: 'ACTIVE' as const,
+			joinedAt: null,
+			permissions: [...permissionsByRole[ProjectRoleEnum.OWNER]],
+			isAdmin: true
+		};
+	}
 
 	const project = await ctx.db.project.findUnique({
 		where: { id: projectId },
 		select: {
-			members: {
-				select: {
-					id: true
-				}
+			memberships: {
+				where: {
+					userId: ctx.session.userId,
+					status: 'ACTIVE'
+				},
+				select: { role: true, status: true, joinedAt: true }
 			}
 		}
 	});
@@ -31,18 +62,48 @@ export const userHasAccessToProject = async (
 		throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
 	}
 
-	const isMember = project.members.some(
-		(member: { id: string }) => member.id === userId
-	);
+	const membership = project.memberships[0];
+	return membership
+		? {
+				...membership,
+				permissions: [...permissionsByRole[membership.role]],
+				isAdmin: false
+			}
+		: null;
+};
 
-	if (!isMember && !ctx.isAdmin) {
+export const userHasAccessToProject = async (
+	ctx: ResourceAccessContext,
+	projectId: string
+): Promise<boolean> => {
+	const membership = await getProjectMembership(ctx, projectId);
+	if (!membership) {
 		throw new TRPCError({
 			code: 'FORBIDDEN',
 			message: 'You do not have access to this project'
 		});
 	}
+	return true;
+};
 
-	return isMember;
+export const assertProjectPermission = async (
+	ctx: ResourceAccessContext,
+	projectId: string,
+	permission: ProjectPermission
+): Promise<void> => {
+	const membership = await getProjectMembership(ctx, projectId);
+	if (!membership) {
+		throw new TRPCError({
+			code: 'FORBIDDEN',
+			message: 'You do not have access to this project'
+		});
+	}
+	if (!membership.permissions.includes(permission)) {
+		throw new TRPCError({
+			code: 'FORBIDDEN',
+			message: 'You do not have permission to manage this project'
+		});
+	}
 };
 
 export const userHasAccessToProjectTemplate = async (
@@ -107,7 +168,14 @@ export const assertTaskAccess = async (
 		select: {
 			projectId: true,
 			projectTemplateId: true,
-			project: { select: { members: { select: { id: true } } } }
+			project: {
+				select: {
+					memberships: {
+						where: { status: 'ACTIVE' },
+						select: { userId: true }
+					}
+				}
+			}
 		}
 	});
 

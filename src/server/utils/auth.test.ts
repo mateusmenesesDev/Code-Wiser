@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
 import {
+	assertProjectPermission,
 	assertProjectResourceAccess,
 	assertTaskAccess,
 	userHasAccessToProject,
@@ -22,7 +23,7 @@ const adminContext = {
 describe('resource access', () => {
 	beforeEach(() => {
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'user-1' }]
+			memberships: [{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
 		} as never);
 	});
 
@@ -32,11 +33,30 @@ describe('resource access', () => {
 		).resolves.toBe(true);
 
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'other-user' }]
+			memberships: []
 		} as never);
 
 		await expect(
 			userHasAccessToProject(memberContext, 'project-1')
+		).rejects.toMatchObject({ code: 'FORBIDDEN' });
+	});
+
+	it('derives project permissions from the explicit role', async () => {
+		mockDb.project.findUnique.mockResolvedValue({
+			memberships: [{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
+		} as never);
+		await expect(
+			assertProjectPermission(memberContext, 'project-1', 'EDIT_SETTINGS')
+		).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+		mockDb.project.findUnique.mockResolvedValue({
+			memberships: [{ role: 'MENTOR', status: 'ACTIVE', joinedAt: new Date() }]
+		} as never);
+		await expect(
+			assertProjectPermission(memberContext, 'project-1', 'EDIT_SETTINGS')
+		).resolves.toBeUndefined();
+		await expect(
+			assertProjectPermission(memberContext, 'project-1', 'MANAGE_MEMBERS')
 		).rejects.toMatchObject({ code: 'FORBIDDEN' });
 	});
 
@@ -75,10 +95,10 @@ describe('resource access', () => {
 		mockDb.task.findUnique.mockResolvedValue({
 			projectId: 'project-1',
 			projectTemplateId: null,
-			project: { members: [{ id: 'other-user' }] }
+			project: { memberships: [] }
 		} as never);
 		mockDb.project.findUnique.mockResolvedValue({
-			members: [{ id: 'other-user' }]
+			memberships: []
 		} as never);
 
 		await expect(

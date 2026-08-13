@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import { withSentryConfig } from '@sentry/nextjs';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 /**
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
@@ -27,6 +28,7 @@ function resolveSentryRelease() {
 }
 
 const sentryRelease = resolveSentryRelease();
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 if (sentryRelease) {
 	process.env.SENTRY_RELEASE = sentryRelease;
 	process.env.NEXT_PUBLIC_SENTRY_RELEASE = sentryRelease;
@@ -68,7 +70,7 @@ const config = {
 
 // Injected content via Sentry wizard below
 
-export default withSentryConfig(config, {
+export default withSentryConfig(withNextIntl(config), {
 	// For all available options, see:
 	// https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

@@ -295,7 +295,10 @@ function MentorDashboardContent() {
 									{projects.map((project) => {
 										const progress = project.progress;
 										const status = getStatusBadge(progress);
-										const student = project.members[0];
+										const student =
+											project.members.find(
+												(member) => member.role === 'LEARNER'
+											) ?? project.members[0];
 
 										return (
 											<TableRow key={project.id}>

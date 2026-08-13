@@ -13,6 +13,13 @@ enum MentorshipType {
   @@schema("public")
 }
 
+enum UserLocale {
+  PT_BR
+  EN
+
+  @@schema("public")
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -30,7 +37,8 @@ model User {
   /// Projection of Clerk org:admin membership for notification fan-out (synced via webhook).
   isOrgAdmin Boolean @default(false)
 
-  taskDeadlineRemindersEnabled Boolean @default(true)
+  taskDeadlineRemindersEnabled Boolean    @default(true)
+  preferredLocale              UserLocale @default(PT_BR)
 
   // Mentorship
   mentorshipStatus         MentorshipStatus @default(INACTIVE)
@@ -45,7 +53,7 @@ model User {
   mentorshipOnboardingCompletedAt DateTime?
 
   tasks                        Task[]
-  projects                     Project[]
+  projectMemberships           ProjectMembership[]
   comments                     Comment[]
   taskAttachments              TaskAttachment[]
   prReviewsRequested           PullRequestReview[]        @relation("PullRequestReviewRequester")
@@ -53,6 +61,7 @@ model User {
   prReviewAnalysesRequested    PrReviewAnalysis[]         @relation("PRReviewAnalysisRequester")
   prReviewFindingDecisions     PrReviewFinding[]          @relation("PRReviewFindingDecisionMaker")
   milestonesReviewed           Milestone[]                @relation("MilestoneReviewer")
+  portfolioEvaluations         Project[]                  @relation("ProjectPortfolioEvaluator")
   githubInstallations          GitHubInstallation[]
   createdPlanningPokerSessions PlanningPokerSession[]     @relation("PlanningPokerSessionCreator")
   planningPokerVotes           PlanningPokerVote[]

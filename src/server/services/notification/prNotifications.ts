@@ -1,4 +1,5 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, UserLocale } from '@prisma/client';
+import { localeFromUserLocale } from '~/i18n/locales';
 import { getBaseUrl } from '~/server/utils/getBaseUrl';
 import {
 	sendPRRequestedEmail,
@@ -51,7 +52,8 @@ export async function notifyPRRequested(
 					projectName,
 					taskTitle,
 					prUrl,
-					workspaceUrl: `${workspaceUrl}?taskId=${taskId}`
+					workspaceUrl: `${workspaceUrl}?taskId=${taskId}`,
+					locale: localeFromUserLocale(admin.preferredLocale)
 				});
 			} catch (error) {
 				console.error(`Failed to send email to ${admin.email}:`, error);
@@ -72,6 +74,7 @@ interface NotifyPRResponseParams {
 	taskTitle: string;
 	status: 'APPROVED' | 'CHANGES_REQUESTED';
 	comment?: string | null;
+	memberLocale?: UserLocale;
 }
 
 export async function notifyPRResponse(
@@ -88,7 +91,8 @@ export async function notifyPRResponse(
 		taskId,
 		taskTitle,
 		status,
-		comment
+		comment,
+		memberLocale
 	} = params;
 
 	const baseUrl = getBaseUrl();
@@ -121,7 +125,8 @@ export async function notifyPRResponse(
 			taskTitle,
 			status,
 			comment,
-			workspaceUrl
+			workspaceUrl,
+			locale: localeFromUserLocale(memberLocale)
 		});
 	} catch (error) {
 		console.error(`Failed to send email to ${memberEmail}:`, error);

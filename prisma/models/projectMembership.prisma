@@ -1,0 +1,20 @@
+model ProjectMembership {
+  id        String                      @id @default(cuid())
+  createdAt DateTime                    @default(now())
+  updatedAt DateTime                    @updatedAt
+  joinedAt  DateTime                    @default(now())
+  role      ProjectRoleEnum             @default(LEARNER)
+  status    ProjectMembershipStatusEnum @default(ACTIVE)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId, status])
+  @@index([projectId, role, status])
+  @@index([userId, status])
+  @@schema("public")
+}

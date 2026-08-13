@@ -3,9 +3,10 @@ import type { RouterOutputs } from '~/trpc/react';
 export type DashboardOverview = RouterOutputs['dashboard']['getOverview'];
 
 export type DashboardNextAction = {
-	title: string;
 	description: string;
-	label: string;
+	titleKey: string;
+	labelKey: string;
+	descriptionKey?: string;
 	href: string;
 };
 
@@ -14,9 +15,9 @@ export function getNextAction(
 ): DashboardNextAction | null {
 	if (overview.urgentTask?.project) {
 		return {
-			title: 'Continue your most urgent task',
 			description: overview.urgentTask.title,
-			label: 'Open task',
+			titleKey: 'urgentTitle',
+			labelKey: 'openTask',
 			href: `/workspace/${overview.urgentTask.project.id}?taskId=${overview.urgentTask.id}`
 		};
 	}
@@ -27,21 +28,21 @@ export function getNextAction(
 			overview.exercise.status === 'CHANGES_REQUESTED')
 	) {
 		return {
-			title:
-				overview.exercise.status === 'CHANGES_REQUESTED'
-					? 'Address your exercise feedback'
-					: 'Submit your exercise for review',
 			description: overview.exercise.challenge.title,
-			label: 'Open exercise',
+			titleKey:
+				overview.exercise.status === 'CHANGES_REQUESTED'
+					? 'exerciseChangesTitle'
+					: 'exerciseSubmitTitle',
+			labelKey: 'openExercise',
 			href: `/exercises/${overview.exercise.challenge.track.slug}/${overview.exercise.challenge.slug}`
 		};
 	}
 
 	if (overview.activeReview?.status === 'CHANGES_REQUESTED') {
 		return {
-			title: 'Update your pull request',
 			description: overview.activeReview.task.title,
-			label: 'Open project',
+			titleKey: 'reviewChangesTitle',
+			labelKey: 'openProject',
 			href: overview.activeReview.task.project
 				? `/workspace/${overview.activeReview.task.project.id}?taskId=${overview.activeReview.task.id}`
 				: '/my-projects'
@@ -51,17 +52,18 @@ export function getNextAction(
 	const project = overview.projects[0];
 	if (project) {
 		return {
-			title: 'Continue your learning project',
 			description: project.title,
-			label: 'Open project',
+			titleKey: 'projectTitle',
+			labelKey: 'openProject',
 			href: `/workspace/${project.id}`
 		};
 	}
 
 	return {
-		title: 'Choose your next challenge',
 		description: 'Start with a hands-on exercise or project.',
-		label: 'Browse exercises',
+		titleKey: 'emptyTitle',
+		labelKey: 'browseExercises',
+		descriptionKey: 'emptyDescription',
 		href: '/exercises'
 	};
 }

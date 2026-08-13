@@ -104,7 +104,10 @@ describe('dashboard.getOverview', () => {
 		});
 		expect(mockDb.project.findMany).toHaveBeenCalledWith(
 			expect.objectContaining({
-				where: { canceledAt: null, members: { some: { id: 'user-2' } } }
+				where: {
+					canceledAt: null,
+					memberships: { some: { userId: 'user-2', status: 'ACTIVE' } }
+				}
 			})
 		);
 	});

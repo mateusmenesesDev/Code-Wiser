@@ -62,8 +62,16 @@ enum ProjectDifficultyEnum {
 }
 
 enum ProjectRoleEnum {
-  MENTEE
+  OWNER
   MENTOR
+  LEARNER @map("MENTEE")
+
+  @@schema("public")
+}
+
+enum ProjectMembershipStatusEnum {
+  ACTIVE
+  INACTIVE
 
   @@schema("public")
 }

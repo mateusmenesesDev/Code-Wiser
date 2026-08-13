@@ -22,7 +22,7 @@ export const agendaRouter = {
 				ctx.db.project.findMany({
 					where: {
 						canceledAt: null,
-						members: { some: { id: userId } }
+						memberships: { some: { userId, status: 'ACTIVE' } }
 					},
 					orderBy: { title: 'asc' },
 					select: {
@@ -32,9 +32,12 @@ export const agendaRouter = {
 							orderBy: { title: 'asc' },
 							select: { id: true, title: true, projectId: true }
 						},
-						members: {
-							orderBy: { name: 'asc' },
-							select: { id: true, name: true, email: true }
+						memberships: {
+							where: { status: 'ACTIVE' },
+							orderBy: { user: { name: 'asc' } },
+							select: {
+								user: { select: { id: true, name: true, email: true } }
+							}
 						}
 					}
 				}),
@@ -87,8 +90,8 @@ export const agendaRouter = {
 			);
 			const assigneesById = new Map(
 				projects
-					.flatMap((project) => project.members)
-					.map((member) => [member.id, member])
+					.flatMap((project) => project.memberships)
+					.map(({ user }) => [user.id, user])
 			);
 
 			const hasMoreTasks = tasks.length > MAX_AGENDA_TASKS;

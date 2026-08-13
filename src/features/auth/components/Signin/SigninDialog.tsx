@@ -1,4 +1,5 @@
 import { LogIn } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { GitHubIcon } from '~/common/components/icons/GitHubIcon';
 import { GoogleIcon } from '~/common/components/icons/GoogleIcon';
 import { Button } from '~/common/components/ui/button';
@@ -14,6 +15,7 @@ import { useDialog } from '~/common/hooks/useDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 
 const SignInDialog = () => {
+	const t = useTranslations('auth');
 	const { isDialogOpen, closeDialog } = useDialog('signIn');
 	const { signInWithOAuth } = useAuth();
 
@@ -23,11 +25,10 @@ const SignInDialog = () => {
 				<DialogHeader className="space-y-3 text-center">
 					<DialogTitle className="flex items-center justify-center gap-2 text-2xl">
 						<LogIn className="h-6 w-6" />
-						Welcome Back
+						{t('welcomeBack')}
 					</DialogTitle>
 					<DialogDescription className="text-base">
-						Sign in to your account to continue. Choose your preferred
-						authentication method below.
+						{t('signInDescription')}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -38,7 +39,7 @@ const SignInDialog = () => {
 						onClick={() => signInWithOAuth('oauth_google')}
 					>
 						<GoogleIcon className="mr-3 h-5 w-5" />
-						Sign in with Google
+						{t('signInWithGoogle')}
 					</Button>
 					<Button
 						variant="outline"
@@ -46,7 +47,7 @@ const SignInDialog = () => {
 						onClick={() => signInWithOAuth('oauth_github')}
 					>
 						<GitHubIcon className="mr-3 h-5 w-5" />
-						Sign in with GitHub
+						{t('signInWithGitHub')}
 					</Button>
 				</div>
 
@@ -56,7 +57,7 @@ const SignInDialog = () => {
 					</div>
 					<div className="relative flex justify-center text-xs uppercase">
 						<span className="bg-background px-2 text-muted-foreground">
-							Secure Authentication
+							{t('secureAuthentication')}
 						</span>
 					</div>
 				</div>

@@ -4,6 +4,7 @@ model ProjectInvitation {
   updatedAt DateTime @updatedAt
 
   status             ProjectInvitationStatus @default(PENDING)
+  role               ProjectRoleEnum         @default(LEARNER)
   creditCostSnapshot Int?
   respondedAt        DateTime?
   canceledAt         DateTime?

@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@clerk/nextjs';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, Menu, MessageSquare, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -10,7 +11,13 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger
 } from '~/common/components/ui/collapsible';
-import { CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from '~/common/components/ui/command';
+import {
+	CommandDialog,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList
+} from '~/common/components/ui/command';
 import { Button } from '~/common/components/ui/button';
 import {
 	Sheet,
@@ -41,6 +48,7 @@ function NavigationLink({
 	onNavigate?: () => void;
 }) {
 	const pathname = usePathname();
+	const t = useTranslations('navigation');
 	const Icon = item.Icon;
 	const active = isActivePath(pathname, item.href);
 
@@ -60,7 +68,7 @@ function NavigationLink({
 			)}
 		>
 			<Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-			<span>{item.label}</span>
+			<span>{t(item.labelKey)}</span>
 		</Link>
 	);
 }
@@ -75,6 +83,7 @@ function NavigationGroupMenu({
 	onNavigate?: () => void;
 }) {
 	const pathname = usePathname();
+	const t = useTranslations('navigation');
 	const hasActiveItem = items.some((item) => isActivePath(pathname, item.href));
 	const [open, setOpen] = useState(true);
 	const Icon = group.Icon;
@@ -93,7 +102,7 @@ function NavigationGroupMenu({
 				>
 					<span className="flex items-center gap-3">
 						<Icon className="h-4 w-4" aria-hidden="true" />
-						{group.label}
+						{t(group.labelKey)}
 					</span>
 					<ChevronDown
 						className={cn(
@@ -106,11 +115,7 @@ function NavigationGroupMenu({
 			</CollapsibleTrigger>
 			<CollapsibleContent className="space-y-1 pl-3">
 				{items.map((item) => (
-					<NavigationLink
-						key={item.href}
-						item={item}
-						onNavigate={onNavigate}
-					/>
+					<NavigationLink key={item.href} item={item} onNavigate={onNavigate} />
 				))}
 			</CollapsibleContent>
 		</Collapsible>
@@ -132,6 +137,8 @@ function NavigationContents({
 	onSearch: () => void;
 	onFeedback?: () => void;
 }) {
+	const t = useTranslations('navigation');
+
 	return (
 		<div className="flex min-h-full flex-col">
 			<div className="space-y-4">
@@ -141,19 +148,19 @@ function NavigationContents({
 					onClick={onSearch}
 				>
 					<Search className="h-4 w-4" aria-hidden="true" />
-					<span>Search</span>
+					<span>{t('search')}</span>
 					<kbd className="ml-auto hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline">
 						⌘/Ctrl K
 					</kbd>
 				</Button>
 
-				<nav aria-label="Main navigation" className="space-y-6">
+				<nav aria-label={t('mainNavigation')} className="space-y-6">
 					<section aria-labelledby="work-navigation">
 						<h2
 							id="work-navigation"
 							className="mb-2 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider"
 						>
-							Work
+							{t('work')}
 						</h2>
 						<div className="space-y-1">
 							{workItems.map((item) => (
@@ -172,7 +179,7 @@ function NavigationContents({
 								id="administration-navigation"
 								className="mb-2 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider"
 							>
-								Administration
+								{t('administration')}
 							</h2>
 							<div className="space-y-1">
 								{adminDashboard ? (
@@ -186,13 +193,13 @@ function NavigationContents({
 
 									return items.length === 1 && item ? (
 										<NavigationLink
-											key={group.label}
+											key={group.labelKey}
 											item={item}
 											onNavigate={onNavigate}
 										/>
 									) : (
 										<NavigationGroupMenu
-											key={group.label}
+											key={group.labelKey}
 											group={group}
 											items={items}
 											onNavigate={onNavigate}
@@ -216,7 +223,7 @@ function NavigationContents({
 						}}
 					>
 						<MessageSquare className="h-4 w-4" aria-hidden="true" />
-						Send Feedback
+						{t('sendFeedback')}
 					</Button>
 				</div>
 			) : null}
@@ -225,14 +232,18 @@ function NavigationContents({
 }
 
 export default function NavigationSidebar() {
+	const t = useTranslations('navigation');
 	const router = useRouter();
 	const { has, isLoaded, isSignedIn, orgRole } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
-	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(undefined, {
-		enabled: !!isSignedIn
-	});
+	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
+		undefined,
+		{
+			enabled: !!isSignedIn
+		}
+	);
 	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
 
 	const visibility = useMemo(
@@ -253,7 +264,9 @@ export default function NavigationSidebar() {
 		isNavigationItemVisible(item, visibility)
 	);
 	const adminDashboard =
-		isLoaded && isSignedIn && isNavigationItemVisible(ADMIN_DASHBOARD, visibility)
+		isLoaded &&
+		isSignedIn &&
+		isNavigationItemVisible(ADMIN_DASHBOARD, visibility)
 			? ADMIN_DASHBOARD
 			: undefined;
 	const adminGroups = ADMIN_NAV_GROUPS.map((group) => ({
@@ -298,11 +311,11 @@ export default function NavigationSidebar() {
 					<SheetTrigger asChild>
 						<Button variant="outline" className="gap-2">
 							<Menu className="h-4 w-4" aria-hidden="true" />
-							Menu
+							{t('menu')}
 						</Button>
 					</SheetTrigger>
 					<SheetContent side="left" className="w-80 p-6">
-						<SheetTitle className="sr-only">Main navigation</SheetTitle>
+						<SheetTitle className="sr-only">{t('mainNavigation')}</SheetTitle>
 						<NavigationContents
 							workItems={workItems}
 							adminDashboard={adminDashboard}
@@ -326,19 +339,19 @@ export default function NavigationSidebar() {
 			</aside>
 
 			<CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
-				<CommandInput placeholder="Search navigation..." />
+				<CommandInput placeholder={t('searchNavigation')} />
 				<CommandList>
-					<CommandEmpty>No accessible destinations found.</CommandEmpty>
+					<CommandEmpty>{t('noDestinations')}</CommandEmpty>
 					{searchableItems.map((item) => {
 						const Icon = item.Icon;
 						return (
 							<CommandItem
 								key={item.href}
 								onSelect={() => navigateFromSearch(item.href)}
-								value={item.label}
+								value={t(item.labelKey)}
 							>
 								<Icon className="mr-2 h-4 w-4" aria-hidden="true" />
-								{item.label}
+								{t(item.labelKey)}
 							</CommandItem>
 						);
 					})}

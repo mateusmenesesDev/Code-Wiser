@@ -98,7 +98,9 @@ export const taskMutations = {
 				const members = await ctx.db.user.findMany({
 					where: {
 						id: { in: assigneeIds },
-						projects: { some: { id: projectId } }
+						projectMemberships: {
+							some: { projectId, status: 'ACTIVE' }
+						}
 					},
 					select: { id: true }
 				});
@@ -202,10 +204,9 @@ export const taskMutations = {
 						select: {
 							id: true,
 							title: true,
-							members: {
-								select: {
-									id: true
-								}
+							memberships: {
+								where: { status: 'ACTIVE' },
+								select: { userId: true }
 							}
 						}
 					},
@@ -266,7 +267,9 @@ export const taskMutations = {
 
 			if (assigneeIds && existingTask.project) {
 				const memberIds = new Set(
-					existingTask.project.members.map((member) => member.id)
+					existingTask.project.memberships.map(
+						(membership) => membership.userId
+					)
 				);
 				if (assigneeIds.some((assigneeId) => !memberIds.has(assigneeId))) {
 					throw new TRPCError({
@@ -466,12 +469,7 @@ export const taskMutations = {
 
 			// Verify access through existing task
 			const existingTask = await ctx.db.task.findUnique({
-				where: { id: taskId },
-				include: {
-					project: {
-						include: { members: true }
-					}
-				}
+				where: { id: taskId }
 			});
 
 			if (!existingTask) {

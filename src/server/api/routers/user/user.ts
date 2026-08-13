@@ -234,6 +234,23 @@ export const userRouter = createTRPCRouter({
 		});
 	}),
 
+	getLocale: protectedProcedure.query(async ({ ctx }) => {
+		return ctx.db.user.findUnique({
+			where: { id: ctx.session.userId },
+			select: { preferredLocale: true }
+		});
+	}),
+
+	updateLocale: protectedProcedure
+		.input(z.enum(['PT_BR', 'EN']))
+		.mutation(async ({ ctx, input }) =>
+			ctx.db.user.update({
+				where: { id: ctx.session.userId },
+				data: { preferredLocale: input },
+				select: { preferredLocale: true }
+			})
+		),
+
 	getAvatar: adminProcedure
 		.input(
 			z.object({

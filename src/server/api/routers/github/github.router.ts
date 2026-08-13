@@ -7,6 +7,7 @@ import {
 	protectedProcedure
 } from '~/server/api/trpc';
 import {
+	assertProjectPermission,
 	userHasAccessToProject,
 	type ResourceAccessContext
 } from '~/server/utils/auth';
@@ -229,7 +230,7 @@ export const githubRouter = createTRPCRouter({
 	linkProjectRepository: protectedProcedure
 		.input(repositoryInputSchema.extend({ projectId: z.string().min(1) }))
 		.mutation(async ({ ctx, input }) => {
-			await userHasAccessToProject(ctx, input.projectId);
+			await assertProjectPermission(ctx, input.projectId, 'MANAGE_GITHUB');
 			const resolved = await resolveRepository(ctx, input);
 			if (
 				resolved.existing?.project &&
@@ -277,7 +278,7 @@ export const githubRouter = createTRPCRouter({
 	unlinkProjectRepository: protectedProcedure
 		.input(z.object({ projectId: z.string().min(1) }))
 		.mutation(async ({ ctx, input }) => {
-			await userHasAccessToProject(ctx, input.projectId);
+			await assertProjectPermission(ctx, input.projectId, 'MANAGE_GITHUB');
 			await ctx.db.project.update({
 				where: { id: input.projectId },
 				data: { githubRepository: { disconnect: true } }

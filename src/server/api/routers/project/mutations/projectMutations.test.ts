@@ -129,7 +129,10 @@ describe('project.createProject', () => {
 		expect(mockDb.project.create).toHaveBeenCalledWith({
 			data: expect.objectContaining({
 				publicCode: 'PROJECTALPHA',
-				nextTaskNumber: 3
+				nextTaskNumber: 3,
+				memberships: {
+					create: { userId: 'admin-user-id', role: 'OWNER' }
+				}
 			})
 		});
 		expect(mockDb.sprint.create).not.toHaveBeenCalled();
@@ -289,7 +292,7 @@ describe('project.cancelProject', () => {
 			id: 'project-id',
 			title: 'Project Alpha',
 			canceledAt: null,
-			members: [{ id: 'member-1' }, { id: 'member-2' }],
+			memberships: [{ userId: 'member-1' }, { userId: 'member-2' }],
 			invitations: [{ id: 'invite-1', userId: 'invitee-1' }]
 		} as never);
 		mockDb.projectCreditPaymentEvidence.findMany.mockResolvedValue([
@@ -352,7 +355,7 @@ describe('project.cancelProject', () => {
 			id: 'project-id',
 			title: 'Project Alpha',
 			canceledAt: new Date(),
-			members: [],
+			memberships: [],
 			invitations: []
 		} as never);
 
@@ -365,6 +368,49 @@ describe('project.cancelProject', () => {
 		).rejects.toMatchObject({ code: 'BAD_REQUEST' });
 		expect(mockDb.project.update).not.toHaveBeenCalled();
 		expect(mockDb.user.update).not.toHaveBeenCalled();
+	});
+});
+
+describe('project.transferProjectOwnership', () => {
+	const createCaller = createCallerFactory(projectRouter);
+
+	beforeEach(() => {
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+		mockDb.project.findUnique.mockResolvedValue({
+			memberships: [
+				{ userId: 'admin-user-id', role: 'OWNER', status: 'ACTIVE' },
+				{ userId: 'learner-id', role: 'LEARNER', status: 'ACTIVE' }
+			]
+		} as never);
+		mockDb.projectMembership.findUnique.mockResolvedValue({
+			role: 'LEARNER',
+			status: 'ACTIVE'
+		} as never);
+		mockDb.projectMembership.updateMany.mockResolvedValue({ count: 1 });
+		mockDb.projectMembership.update.mockResolvedValue({} as never);
+	});
+
+	it('transfers ownership without leaving the project ownerless', async () => {
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.transferProjectOwnership({
+				projectId: 'project-id',
+				userId: 'learner-id'
+			})
+		).resolves.toEqual({ success: true });
+		expect(mockDb.projectMembership.updateMany).toHaveBeenCalledWith({
+			where: {
+				projectId: 'project-id',
+				role: 'OWNER',
+				status: 'ACTIVE'
+			},
+			data: { role: 'MENTOR' }
+		});
 	});
 });
 
@@ -385,9 +431,23 @@ describe('project.removeProjectMember', () => {
 		mockDb.project.findUnique.mockResolvedValue({
 			id: 'project-id',
 			title: 'Project Alpha',
-			members: [
-				{ id: 'removed-user-id', email: 'user@example.com', name: 'User' },
-				{ id: 'other-user-id', email: 'other@example.com', name: 'Other' }
+			memberships: [
+				{
+					role: 'LEARNER',
+					user: {
+						id: 'removed-user-id',
+						email: 'user@example.com',
+						name: 'User'
+					}
+				},
+				{
+					role: 'LEARNER',
+					user: {
+						id: 'other-user-id',
+						email: 'other@example.com',
+						name: 'Other'
+					}
+				}
 			]
 		} as never);
 		mockDb.projectCreditPaymentEvidence.findFirst.mockResolvedValue({
@@ -421,9 +481,11 @@ describe('project.removeProjectMember', () => {
 			},
 			select: { id: true }
 		});
-		expect(mockDb.project.update).toHaveBeenCalledWith({
-			where: { id: 'project-id' },
-			data: { members: { disconnect: { id: 'removed-user-id' } } }
+		expect(mockDb.projectMembership.update).toHaveBeenCalledWith({
+			where: {
+				projectId_userId: { projectId: 'project-id', userId: 'removed-user-id' }
+			},
+			data: { status: 'INACTIVE' }
 		});
 		expect(mockDb.user.update).toHaveBeenCalledWith({
 			where: { id: 'removed-user-id' },
@@ -473,8 +535,11 @@ describe('project.removeProjectMember', () => {
 		mockDb.project.findUnique.mockResolvedValue({
 			id: 'project-id',
 			title: 'Project Alpha',
-			members: [
-				{ id: 'removed-user-id', email: 'user@example.com', name: null }
+			memberships: [
+				{
+					role: 'LEARNER',
+					user: { id: 'removed-user-id', email: 'user@example.com', name: null }
+				}
 			]
 		} as never);
 		mockDb.projectCreditPaymentEvidence.findFirst.mockResolvedValue(null);

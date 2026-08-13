@@ -161,13 +161,7 @@ export const taskAttachmentRouter = createTRPCRouter({
 				include: {
 					task: {
 						include: {
-							project: {
-								include: {
-									members: {
-										select: { id: true }
-									}
-								}
-							}
+							project: true
 						}
 					}
 				}
