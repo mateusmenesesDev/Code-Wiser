@@ -36,6 +36,10 @@ if (sentryRelease) {
 
 /** @type {import("next").NextConfig} */
 const config = {
+	experimental: {
+		// The webpack worker crashes while compiling this dependency graph.
+		webpackBuildWorker: false
+	},
 	env: {
 		...(sentryRelease
 			? {
@@ -88,16 +92,10 @@ export default withSentryConfig(withNextIntl(config), {
 	// For all available options, see:
 	// https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-	// Upload a larger set of source maps for prettier stack traces (increases build time)
-	widenClientFileUpload: true,
-
 	// Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
 	tunnelRoute: '/monitoring',
 
 	webpack: {
-		automaticVercelMonitors: true,
-		treeshake: {
-			removeDebugLogging: true
-		}
+		automaticVercelMonitors: true
 	}
 });
