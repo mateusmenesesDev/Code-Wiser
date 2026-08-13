@@ -1,6 +1,5 @@
 'use client';
 
-import { Protect } from '@clerk/nextjs';
 import { AlertTriangle, Calendar, Clock, Play, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -527,9 +526,5 @@ function MentorDashboardContent() {
 }
 
 export default function MentorDashboardPage() {
-	return (
-		<Protect permission="org:project:create">
-			<MentorDashboardContent />
-		</Protect>
-	);
+	return <MentorDashboardContent />;
 }

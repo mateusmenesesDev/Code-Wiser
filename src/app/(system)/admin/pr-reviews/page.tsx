@@ -1,6 +1,5 @@
 'use client';
 
-import { Protect } from '@clerk/nextjs';
 import { PullRequestReviewStatusEnum } from '@prisma/client';
 import { parseAsString, useQueryStates } from 'nuqs';
 import {
@@ -117,9 +116,5 @@ function PRReviewsContent() {
 }
 
 export default function PRReviewsPage() {
-	return (
-		<Protect permission="org:project:create">
-			<PRReviewsContent />
-		</Protect>
-	);
+	return <PRReviewsContent />;
 }

@@ -226,7 +226,7 @@ function NavigationContents({
 
 export default function NavigationSidebar() {
 	const router = useRouter();
-	const { has, isLoaded, isSignedIn } = useAuth();
+	const { has, isLoaded, isSignedIn, orgRole } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -239,11 +239,15 @@ export default function NavigationSidebar() {
 		() => ({
 			isSignedIn: !!isSignedIn,
 			hasMentorship: hasActiveMentorship,
-			hasAdminRole: () => isLoaded && has({ role: 'org:admin' }),
+			hasAdminRole: () =>
+				isLoaded &&
+				(String(orgRole) === 'admin' ||
+					orgRole === 'org:admin' ||
+					has({ role: 'org:admin' })),
 			hasPermission: (permission: ClerkAuthorization['permission']) =>
 				isLoaded && has({ permission })
 		}),
-		[has, hasActiveMentorship, isLoaded, isSignedIn]
+		[has, hasActiveMentorship, isLoaded, isSignedIn, orgRole]
 	);
 	const workItems = WORK_NAV_ITEMS.filter((item) =>
 		isNavigationItemVisible(item, visibility)
