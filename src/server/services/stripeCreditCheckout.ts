@@ -207,12 +207,12 @@ async function getOwnedCheckout(
 }
 
 export async function refreshCreditCheckout(sessionId: string, userId: string) {
-	await getOwnedCheckout(sessionId, userId);
+	const checkout = await getOwnedCheckout(sessionId, userId);
 	const session = await stripe.checkout.sessions.retrieve(sessionId);
 
 	if (session.payment_status === 'paid') {
 		await fulfillCreditCheckout(session);
-	} else {
+	} else if (checkout.status !== 'FAILED' || session.status === 'expired') {
 		await updateCheckoutStatus(session.id, getCheckoutStatus(session));
 	}
 
