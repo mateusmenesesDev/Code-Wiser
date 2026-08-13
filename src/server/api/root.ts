@@ -1,5 +1,6 @@
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 import { aiRouter } from './routers/ai/ai.router';
+import { agendaRouter } from './routers/agenda';
 import { commentRouter } from './routers/comment';
 import { dashboard } from './routers/dashboard';
 import { epicRouter } from './routers/epic/epic.router';
@@ -33,6 +34,7 @@ export const appRouter = createTRPCRouter({
 	dashboard,
 	kanban: kanbanRouter,
 	ai: aiRouter,
+	agenda: agendaRouter,
 	prReview: prReviewRouter,
 	planningPoker: planningPokerRouter,
 	notification: notificationRouter,

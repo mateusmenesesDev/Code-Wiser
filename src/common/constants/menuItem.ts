@@ -50,6 +50,12 @@ export const WORK_NAV_ITEMS: NavigationItem[] = [
 		loginRequired: true
 	},
 	{
+		href: '/agenda',
+		Icon: Calendar,
+		label: 'Task Agenda',
+		loginRequired: true
+	},
+	{
 		href: '/mentorship',
 		Icon: Calendar,
 		label: 'Mentorship',
