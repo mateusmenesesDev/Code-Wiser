@@ -3,7 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
 	PullRequestReviewStatusEnum,
 	TaskPriorityEnum,
-	TaskStatusEnum
+	TaskStatusEnum,
+	TaskTypeEnum
 } from '@prisma/client';
 import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -119,6 +120,10 @@ export function TaskDialogContent({
 		isTemplate
 	});
 	const { data: sprints } = api.sprint.getAllByProjectId.useQuery({
+		projectId,
+		isTemplate
+	});
+	const { data: productVersionData } = api.productVersion.getAll.useQuery({
 		projectId,
 		isTemplate
 	});
@@ -680,6 +685,56 @@ export function TaskDialogContent({
 								</SelectContent>
 							</Select>
 						</div>
+
+						{/* Product Version */}
+						{(form.watch('type') == null ||
+							form.watch('type') === TaskTypeEnum.USER_STORY) && (
+							<FormField
+								control={form.control}
+								name="productVersionId"
+								render={({ field }) => {
+									const versions = productVersionData?.versions ?? [];
+									const selectValue =
+										field.value &&
+										versions.some((version) => version.id === field.value)
+											? field.value
+											: 'none';
+
+									return (
+										<FormItem>
+											<FormLabel>Version</FormLabel>
+											<Select
+												value={selectValue}
+												onValueChange={(value) =>
+													field.onChange(value === 'none' ? null : value)
+												}
+												disabled={versions.length === 0}
+											>
+												<FormControl>
+													<SelectTrigger>
+														<SelectValue
+															placeholder={
+																versions.length === 0
+																	? 'No versions available'
+																	: 'Select version'
+															}
+														/>
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													<SelectItem value="none">No version</SelectItem>
+													{versions.map((version) => (
+														<SelectItem key={version.id} value={version.id}>
+															{version.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</FormItem>
+									);
+								}}
+							/>
+						)}
 
 						{/* Epic */}
 						<FormField

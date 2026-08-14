@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, TaskTypeEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
@@ -40,7 +40,9 @@ const assertTaskRelationsBelongToResource = async (
 	projectId: string,
 	isTemplate: boolean,
 	epicId: string | null | undefined,
-	sprintId: string | null | undefined
+	sprintId: string | null | undefined,
+	productVersionId: string | null | undefined,
+	taskType: TaskTypeEnum | null | undefined
 ) => {
 	if (epicId) {
 		const epic = await ctx.db.epic.findFirst({
@@ -71,14 +73,44 @@ const assertTaskRelationsBelongToResource = async (
 			});
 		}
 	}
+
+	if (productVersionId) {
+		if (taskType !== TaskTypeEnum.USER_STORY) {
+			throw new TRPCError({
+				code: 'BAD_REQUEST',
+				message: 'Only User Stories can belong to a product version'
+			});
+		}
+
+		const version = await ctx.db.productVersion.findFirst({
+			where: isTemplate
+				? { id: productVersionId, projectTemplateId: projectId }
+				: { id: productVersionId, projectId },
+			select: { id: true }
+		});
+		if (!version) {
+			throw new TRPCError({
+				code: 'BAD_REQUEST',
+				message: 'Product version does not belong to this project'
+			});
+		}
+	}
 };
 
 export const taskMutations = {
 	create: protectedProcedure
 		.input(createTaskSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { isTemplate, projectId, epicId, sprintId, assigneeIds, ...rest } =
-				input;
+			const {
+				isTemplate,
+				projectId,
+				epicId,
+				sprintId,
+				assigneeIds,
+				type,
+				productVersionId,
+				...rest
+			} = input;
 
 			if (isTemplate) {
 				await userHasAccessToProjectTemplate(ctx, projectId);
@@ -91,7 +123,9 @@ export const taskMutations = {
 				projectId,
 				isTemplate,
 				epicId,
-				sprintId
+				sprintId,
+				productVersionId,
+				type ?? TaskTypeEnum.USER_STORY
 			);
 
 			if (!isTemplate && assigneeIds?.length) {
@@ -142,7 +176,10 @@ export const taskMutations = {
 									? { connect: assigneeIds.map((id) => ({ id })) }
 									: undefined,
 								epic: epicId ? { connect: { id: epicId } } : undefined,
-								sprint: sprintId ? { connect: { id: sprintId } } : undefined
+								sprint: sprintId ? { connect: { id: sprintId } } : undefined,
+								productVersion: productVersionId
+									? { connect: { id: productVersionId } }
+									: undefined
 							}
 						});
 					});
@@ -187,6 +224,8 @@ export const taskMutations = {
 				assigneeIds,
 				projectId,
 				isTemplate,
+				productVersionId,
+				type,
 				...rest
 			} = input;
 
@@ -199,6 +238,8 @@ export const taskMutations = {
 					projectTemplateId: true,
 					status: true,
 					blocked: true,
+					type: true,
+					productVersionId: true,
 					title: true,
 					project: {
 						select: {
@@ -262,7 +303,11 @@ export const taskMutations = {
 				resourceId,
 				isTemplate,
 				epicId,
-				sprintId
+				sprintId,
+				productVersionId === undefined
+					? existingTask.productVersionId
+					: productVersionId,
+				type ?? existingTask.type
 			);
 
 			if (assigneeIds && existingTask.project) {
@@ -285,6 +330,10 @@ export const taskMutations = {
 
 			const updateData = {
 				...rest,
+				...(type !== undefined && { type }),
+				...(createRelationshipUpdate(productVersionId) && {
+					productVersion: createRelationshipUpdate(productVersionId)
+				}),
 				...(assigneeIds !== undefined && {
 					assignees: {
 						set: assigneeIds.map((assigneeId) => ({ id: assigneeId }))

@@ -221,7 +221,7 @@ export const createOptimisticBacklogTask = (
 		kanbanColumn: null,
 		project: null,
 		projectTemplate: null,
-		productVersionId: null,
+		productVersionId: newTask.productVersionId || null,
 		productVersionOrder: 0,
 		assignees: [],
 		sprint: null,

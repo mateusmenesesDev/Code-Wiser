@@ -1,6 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { createTaskSchema, updateTaskSchema } from './task.schema';
 
+describe('task schema product versions', () => {
+	it('accepts a product version on create and clearing it on update', () => {
+		const createResult = createTaskSchema.safeParse({
+			projectId: 'project-1',
+			title: 'Versioned User Story',
+			isTemplate: false,
+			productVersionId: 'version-1'
+		});
+		const updateResult = updateTaskSchema.safeParse({
+			id: 'task-1',
+			isTemplate: false,
+			productVersionId: null
+		});
+
+		expect(createResult.success).toBe(true);
+		expect(updateResult.success).toBe(true);
+	});
+});
+
 describe('task schema assignees', () => {
 	it('accepts multiple assigneeIds on create', () => {
 		const result = createTaskSchema.safeParse({

@@ -15,11 +15,16 @@ export const useKanbanData = (projectId: string) => {
 		projectId,
 		isTemplate: false
 	});
+	const { data: productVersionData } = api.productVersion.getAll.useQuery({
+		projectId,
+		isTemplate: false
+	});
 
 	return {
 		allTasks,
 		members,
 		sprints,
-		epics
+		epics,
+		productVersions: productVersionData?.versions ?? []
 	};
 };

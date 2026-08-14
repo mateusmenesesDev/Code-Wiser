@@ -15,6 +15,13 @@ import {
 	DialogTitle
 } from '~/common/components/ui/dialog';
 import { Label } from '~/common/components/ui/label';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from '~/common/components/ui/select';
 import { formatPublicTaskId } from '~/lib/publicTaskId';
 import { api } from '~/trpc/react';
 
@@ -33,11 +40,19 @@ export function TaskSelectionDialog({
 	const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
 		new Set()
 	);
+	const [versionFilter, setVersionFilter] = useState('all');
 
 	const { data: tasks, isLoading } = api.task.getAllByProjectId.useQuery({
 		projectId,
 		isTemplate: false
 	});
+	const { data: productVersionData } = api.productVersion.getAll.useQuery({
+		projectId,
+		isTemplate: false
+	});
+	const visibleTasks = (tasks ?? []).filter(
+		(task) => versionFilter === 'all' || task.productVersionId === versionFilter
+	);
 
 	const createSession = api.planningPoker.createSession.useMutation({
 		onSuccess: () => {
@@ -91,9 +106,30 @@ export function TaskSelectionDialog({
 						</div>
 					) : (
 						<div className="space-y-4 py-4">
-							{tasks && tasks.length > 0 ? (
+							{(productVersionData?.versions.length ?? 0) > 0 && (
+								<div className="space-y-2">
+									<Label htmlFor="planning-poker-version-filter">Version</Label>
+									<Select
+										value={versionFilter}
+										onValueChange={setVersionFilter}
+									>
+										<SelectTrigger id="planning-poker-version-filter">
+											<SelectValue placeholder="Filter by version" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">All Versions</SelectItem>
+											{productVersionData?.versions.map((version) => (
+												<SelectItem key={version.id} value={version.id}>
+													{version.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
+							{visibleTasks.length > 0 ? (
 								<div className="space-y-3">
-									{tasks.map((task) => (
+									{visibleTasks.map((task) => (
 										<div
 											key={task.id}
 											className="flex items-start space-x-3 rounded-lg border p-3 hover:bg-accent/50"
@@ -137,7 +173,7 @@ export function TaskSelectionDialog({
 								</div>
 							) : (
 								<div className="py-8 text-center text-muted-foreground">
-									No tasks available for this project
+									No tasks match the selected version
 								</div>
 							)}
 						</div>

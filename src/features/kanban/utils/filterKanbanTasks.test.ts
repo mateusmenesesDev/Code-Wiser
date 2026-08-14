@@ -7,6 +7,7 @@ const tasks = [
 		title: 'Build task search',
 		sprint: { id: 'sprint-1' },
 		priority: TaskPriorityEnum.HIGH,
+		productVersionId: 'version-1',
 		epic: { id: 'epic-1' },
 		assignees: [{ id: 'user-1' }]
 	},
@@ -15,6 +16,7 @@ const tasks = [
 		sprint: { id: 'sprint-2' },
 		epic: { id: 'epic-2' },
 		priority: TaskPriorityEnum.LOW,
+		productVersionId: 'version-2',
 		assignees: [{ id: 'user-2' }]
 	}
 ];
@@ -52,6 +54,19 @@ describe('filterKanbanTasks', () => {
 				search: 'documentation'
 			})
 		).toEqual([]);
+	});
+
+	it('filters by product version together with the other task filters', () => {
+		expect(
+			filterKanbanTasks(tasks, {
+				sprint: 'all',
+				epic: 'all',
+				productVersion: 'version-2',
+				priority: undefined,
+				assignee: 'all',
+				search: ''
+			})
+		).toEqual([tasks[1]]);
 	});
 
 	it('filters by epic together with the other task filters', () => {

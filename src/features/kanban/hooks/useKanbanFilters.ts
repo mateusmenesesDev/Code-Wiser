@@ -10,6 +10,7 @@ export const useKanbanFilters = () => {
 	const [kanbanFilters, setKanbanFilters] = useQueryStates({
 		sprint: parseAsString.withDefault('all'),
 		epic: parseAsString.withDefault('all'),
+		productVersion: parseAsString.withDefault('all'),
 		priority: parseAsString.withDefault('all'),
 		assignee: parseAsString.withDefault('all'),
 		search: parseAsString.withDefault('')
@@ -17,6 +18,7 @@ export const useKanbanFilters = () => {
 
 	const sprint = kanbanFilters.sprint;
 	const epic = kanbanFilters.epic;
+	const productVersion = kanbanFilters.productVersion;
 	const priority =
 		kanbanFilters.priority === 'all'
 			? undefined
@@ -28,15 +30,17 @@ export const useKanbanFilters = () => {
 		return (
 			sprint !== 'all' ||
 			epic !== 'all' ||
+			productVersion !== 'all' ||
 			priority !== undefined ||
 			assignee !== 'all' ||
 			search.trim() !== ''
 		);
-	}, [sprint, epic, priority, assignee, search]);
+	}, [sprint, epic, productVersion, priority, assignee, search]);
 
 	return {
 		sprintFilter: sprint,
 		epicFilter: epic,
+		productVersionFilter: productVersion,
 		priorityFilter: priority,
 		assigneeFilter: assignee,
 		searchFilter: search,
@@ -50,6 +54,12 @@ export const useKanbanFilters = () => {
 			setKanbanFilters({
 				...kanbanFilters,
 				epic
+			});
+		},
+		setProductVersionFilter: (productVersion: string) => {
+			setKanbanFilters({
+				...kanbanFilters,
+				productVersion
 			});
 		},
 		setPriorityFilter: (priority: TaskPriorityEnum | 'all') => {
@@ -74,6 +84,7 @@ export const useKanbanFilters = () => {
 			setKanbanFilters({
 				sprint: 'all',
 				epic: 'all',
+				productVersion: 'all',
 				priority: 'all',
 				assignee: 'all',
 				search: ''
@@ -84,6 +95,7 @@ export const useKanbanFilters = () => {
 			filterKanbanTasks(tasks, {
 				sprint,
 				epic,
+				productVersion,
 				priority,
 				assignee,
 				search

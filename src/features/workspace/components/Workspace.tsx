@@ -41,7 +41,8 @@ const Workspace = () => {
 		sprintId: parseAsString
 	});
 
-	const { allTasks, members, sprints, epics } = useKanbanData(projectId);
+	const { allTasks, members, sprints, epics, productVersions } =
+		useKanbanData(projectId);
 	const { data: projectInfo } = api.project.getWorkspaceInfo.useQuery({
 		id: projectId
 	});
@@ -124,6 +125,7 @@ const Workspace = () => {
 				members={members ?? []}
 				sprints={sprints ?? []}
 				epics={epics ?? []}
+				productVersions={productVersions}
 				stats={
 					tasks?.map((task) => ({
 						status: task.status as TaskStatusEnum

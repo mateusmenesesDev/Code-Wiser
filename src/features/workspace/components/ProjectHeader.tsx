@@ -36,6 +36,7 @@ interface ProjectHeaderProps {
 	members: RouterOutputs['project']['getMembers'];
 	sprints: { id: string; title: string }[];
 	epics: { id: string; title: string }[];
+	productVersions: { id: string; name: string }[];
 	stats: { status: TaskStatusEnum }[];
 	projectTitle: string;
 	projectFigmaUrl: string;
@@ -56,6 +57,7 @@ export default function ProjectHeader({
 	projectFigmaUrl,
 	methodology,
 	epics,
+	productVersions,
 	onCreateTask,
 	onOpenSettings,
 	mainView,
@@ -67,11 +69,13 @@ export default function ProjectHeader({
 	const {
 		sprintFilter,
 		epicFilter,
+		productVersionFilter,
 		priorityFilter,
 		assigneeFilter,
 		searchFilter,
 		setSprintFilter,
 		setEpicFilter,
+		setProductVersionFilter,
 		setPriorityFilter,
 		setAssigneeFilter,
 		setSearchFilter,
@@ -219,6 +223,25 @@ export default function ProjectHeader({
 										</SelectItem>
 									)
 								)}
+							</SelectContent>
+						</Select>
+						<Select
+							value={productVersionFilter ?? 'all'}
+							onValueChange={(value) => setProductVersionFilter(value)}
+						>
+							<SelectTrigger className="h-8 w-[180px]">
+								<SelectValue placeholder="Version" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All Versions</SelectItem>
+								{productVersions
+									.slice()
+									.sort((a, b) => a.name.localeCompare(b.name))
+									.map((version) => (
+										<SelectItem key={version.id} value={version.id}>
+											{version.name}
+										</SelectItem>
+									))}
 							</SelectContent>
 						</Select>
 						<Select

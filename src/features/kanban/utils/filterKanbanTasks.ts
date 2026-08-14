@@ -3,6 +3,7 @@ import type { TaskPriorityEnum } from '@prisma/client';
 type KanbanTaskFilters = {
 	sprint: string;
 	epic: string;
+	productVersion?: string;
 	priority?: TaskPriorityEnum;
 	assignee: string;
 	search: string;
@@ -14,6 +15,7 @@ export type FilterableKanbanTask = {
 	sprintId?: string | null;
 	epic?: { id: string } | null;
 	epicId?: string | null;
+	productVersionId?: string | null;
 	priority?: TaskPriorityEnum | null;
 	assignees?: { id: string }[] | null;
 };
@@ -34,6 +36,13 @@ export function filterKanbanTasks<T extends FilterableKanbanTask>(
 		if (
 			filters.epic !== 'all' &&
 			(task.epic?.id ?? task.epicId) !== filters.epic
+		) {
+			return false;
+		}
+		if (
+			filters.productVersion &&
+			filters.productVersion !== 'all' &&
+			task.productVersionId !== filters.productVersion
 		) {
 			return false;
 		}

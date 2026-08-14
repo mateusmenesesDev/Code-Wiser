@@ -43,6 +43,7 @@ export const baseTaskSchema = z.object({
 	tags: z.array(z.string()).optional(),
 	epicId: z.string().nullable().optional(),
 	sprintId: z.string().nullable().optional(),
+	productVersionId: z.string().nullable().optional(),
 	blocked: z.boolean().optional(),
 	blockedReason: z.string().optional(),
 	assigneeIds: z.array(z.string()).optional(),
