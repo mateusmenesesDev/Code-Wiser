@@ -4,6 +4,7 @@ import { SprintStatusEnum } from '@prisma/client';
 import dayjs from 'dayjs';
 import {
 	AlertTriangle,
+	BarChart3,
 	CheckCircle2,
 	ChevronLeft,
 	ChevronRight,
@@ -44,6 +45,7 @@ interface SprintSidebarProps {
 	selectedSprintId: string | null;
 	currentView: string | null;
 	onSelectBoard: () => void;
+	onSelectReports: () => void;
 	onSelectSprint: (id: string) => void;
 	onSelectBacklog: () => void;
 	onSelectRoadmap: () => void;
@@ -323,6 +325,7 @@ export default function SprintSidebar({
 	selectedSprintId,
 	currentView,
 	onSelectBoard,
+	onSelectReports,
 	onSelectSprint,
 	onSelectBacklog,
 	onSelectRoadmap,
@@ -389,6 +392,7 @@ export default function SprintSidebar({
 						currentView !== 'backlog' &&
 							currentView !== 'sprint' &&
 							currentView !== 'roadmap' &&
+							currentView !== 'reports' &&
 							currentView !== 'versions' &&
 							currentView !== 'list'
 							? 'bg-info-muted font-medium text-info-muted-foreground'
@@ -397,6 +401,20 @@ export default function SprintSidebar({
 				>
 					<Kanban className="h-4 w-4 shrink-0" />
 					<span>Board</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={onSelectReports}
+					className={cn(
+						'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all',
+						currentView === 'reports'
+							? 'bg-info-muted font-medium text-info-muted-foreground'
+							: 'hover:bg-muted/50'
+					)}
+				>
+					<BarChart3 className="h-4 w-4 shrink-0" />
+					<span>Reports</span>
 				</button>
 
 				<button

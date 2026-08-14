@@ -1,6 +1,10 @@
 'use client';
 
-import { ProjectMethodologyEnum, type TaskStatusEnum } from '@prisma/client';
+import {
+	ProjectMethodologyEnum,
+	SprintStatusEnum,
+	type TaskStatusEnum
+} from '@prisma/client';
 import { AlertTriangle } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { parseAsString, useQueryState, useQueryStates } from 'nuqs';
@@ -26,6 +30,7 @@ import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
 import ProductVersionList from '~/features/productVersions/components/ProductVersionList';
 import ProjectRoadmap from '~/features/roadmap/components/ProjectRoadmap';
 import SprintBoard from '~/features/sprints/components/SprintBoard';
+import SprintReports from '~/features/sprints/components/SprintReports';
 import SprintSidebar from '~/features/sprints/components/SprintSidebar';
 import { TaskDialog } from '~/features/task/components/TaskDialog';
 import ProjectHeader from '~/features/workspace/components/ProjectHeader';
@@ -71,6 +76,9 @@ const Workspace = () => {
 		view === 'sprint' && sprintId
 			? ((sprints ?? []).find((s) => s.id === sprintId) ?? null)
 			: null;
+	const reportSprintId =
+		sprintId ??
+		(sprints ?? []).find((s) => s.status === SprintStatusEnum.ACTIVE)?.id;
 
 	const handleDataChange = (data: KanbanItemProps[]) => {
 		const updates = toKanbanOrderUpdates(allTasks ?? data, data);
@@ -154,9 +162,17 @@ const Workspace = () => {
 						}
 						sprints={sprints ?? []}
 						epics={epics ?? []}
-						selectedSprintId={sprintId}
+						selectedSprintId={
+							view === 'reports' ? (reportSprintId ?? null) : sprintId
+						}
 						currentView={view}
 						onSelectBoard={() => setViewParams({ view: null, sprintId: null })}
+						onSelectReports={() =>
+							setViewParams({
+								view: 'reports',
+								sprintId: reportSprintId ?? null
+							})
+						}
 						onSelectSprint={(id) =>
 							setViewParams({ view: 'sprint', sprintId: id })
 						}
@@ -172,7 +188,9 @@ const Workspace = () => {
 					/>
 				)}
 				<div className="flex-1 overflow-hidden">
-					{view === 'roadmap' ? (
+					{view === 'reports' ? (
+						<SprintReports projectId={projectId} sprintId={reportSprintId} />
+					) : view === 'roadmap' ? (
 						<ProjectRoadmap projectId={projectId} />
 					) : view === 'versions' ? (
 						<div className="h-full overflow-y-auto">

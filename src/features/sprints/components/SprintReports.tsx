@@ -2,6 +2,7 @@
 
 import { AlertTriangle, BarChart3, TrendingDown } from 'lucide-react';
 import { Badge } from '~/common/components/ui/badge';
+import { Button } from '~/common/components/ui/button';
 import {
 	Card,
 	CardContent,
@@ -10,7 +11,7 @@ import {
 	CardTitle
 } from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
-import type { RouterOutputs } from '~/trpc/react';
+import { api, type RouterOutputs } from '~/trpc/react';
 
 type SprintMetrics = RouterOutputs['sprint']['getMetrics'];
 type BurndownPoint = {
@@ -23,7 +24,8 @@ type BurndownPoint = {
 };
 
 interface SprintReportsProps {
-	metrics: SprintMetrics;
+	projectId: string;
+	sprintId?: string;
 }
 
 const formatDate = (value: string) =>
@@ -117,12 +119,11 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 	);
 };
 
-const BurndownCard = ({ metrics }: SprintReportsProps) => {
-	const burndown = metrics.burndown as {
-		available: boolean;
-		truncated: boolean;
-		points: BurndownPoint[];
-	};
+const BurndownCard = ({
+	burndown
+}: {
+	burndown: SprintMetrics['burndown'] | undefined;
+}) => {
 	return (
 		<Card>
 			<CardHeader className="pb-2">
@@ -142,7 +143,7 @@ const BurndownCard = ({ metrics }: SprintReportsProps) => {
 				</div>
 			</CardHeader>
 			<CardContent>
-				{burndown.available && burndown.points.length > 0 ? (
+				{burndown?.available && burndown.points.length > 0 ? (
 					<>
 						<ChartLines points={burndown.points} />
 						<div className="flex items-center justify-between text-muted-foreground text-xs">
@@ -157,8 +158,10 @@ const BurndownCard = ({ metrics }: SprintReportsProps) => {
 						)}
 					</>
 				) : (
-					<div className="flex h-52 items-center justify-center rounded-md border border-dashed text-center text-muted-foreground text-sm">
-						Start the Sprint to collect daily burndown data.
+					<div className="flex h-52 items-center justify-center rounded-md border border-dashed px-4 text-center text-muted-foreground text-sm">
+						{burndown
+							? 'Start the Sprint to collect daily burndown data.'
+							: 'Select a Sprint to view burndown data.'}
 					</div>
 				)}
 			</CardContent>
@@ -166,8 +169,14 @@ const BurndownCard = ({ metrics }: SprintReportsProps) => {
 	);
 };
 
-const VelocityCard = ({ metrics }: SprintReportsProps) => {
-	const values = metrics.velocity.filter((item) => item.points !== null);
+const VelocityCard = ({
+	velocity,
+	averageVelocity
+}: {
+	velocity: SprintMetrics['velocity'];
+	averageVelocity: SprintMetrics['averageVelocity'];
+}) => {
+	const values = velocity.filter((item) => item.points !== null);
 	const max = Math.max(1, ...values.map((item) => item.points ?? 0));
 	return (
 		<Card>
@@ -177,16 +186,15 @@ const VelocityCard = ({ metrics }: SprintReportsProps) => {
 					Project velocity
 				</CardTitle>
 				<CardDescription>
-					Last {metrics.velocity.length} completed sprint
-					{metrics.velocity.length === 1 ? '' : 's'}
-					{metrics.averageVelocity !== null &&
-						` · ${metrics.averageVelocity} pts average`}
+					Last {velocity.length} completed sprint
+					{velocity.length === 1 ? '' : 's'}
+					{averageVelocity !== null && ` · ${averageVelocity} pts average`}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				{values.length > 0 ? (
 					<div className="space-y-3">
-						{metrics.velocity.map((item) => (
+						{velocity.map((item) => (
 							<div key={item.id} className="flex items-center gap-3">
 								<span
 									className="w-28 truncate text-muted-foreground text-xs"
@@ -205,7 +213,7 @@ const VelocityCard = ({ metrics }: SprintReportsProps) => {
 								</span>
 							</div>
 						))}
-						{metrics.velocity.some((item) => !item.available) && (
+						{velocity.some((item) => !item.available) && (
 							<p className="text-muted-foreground text-xs">
 								Some older Sprints have insufficient history for velocity.
 							</p>
@@ -221,73 +229,118 @@ const VelocityCard = ({ metrics }: SprintReportsProps) => {
 	);
 };
 
-export default function SprintReports({ metrics }: SprintReportsProps) {
-	const summary = metrics.summary;
-	if (!summary) return null;
-
+export default function SprintReports({
+	projectId,
+	sprintId
+}: SprintReportsProps) {
+	const {
+		data: metrics,
+		isError,
+		isPending,
+		refetch
+	} = api.sprint.getMetrics.useQuery({
+		projectId,
+		sprintId
+	});
+	const summary = metrics?.summary;
 	const progress =
-		summary.committedPoints !== null && summary.committedPoints > 0
+		summary?.committedPoints !== null &&
+		summary?.committedPoints !== undefined &&
+		summary.committedPoints > 0
 			? Math.min(100, (summary.completedPoints / summary.committedPoints) * 100)
 			: 0;
 
 	return (
-		<div className="shrink-0 space-y-3 border-b bg-muted/20 p-4">
-			<div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-				<Metric
-					label="Committed"
-					value={
-						summary.committedPoints === null
-							? '—'
-							: `${summary.committedPoints} pts`
-					}
-					detail={
-						summary.committedTaskCount === null
-							? 'Not captured yet'
-							: `${summary.committedTaskCount} tasks at start`
-					}
-				/>
-				<Metric
-					label="Current scope"
-					value={`${summary.currentPoints} pts`}
-					detail={`${summary.taskCount} tasks`}
-				/>
-				<Metric
-					label="Completed"
-					value={`${summary.completedPoints} pts`}
-					detail={`${summary.doneCount} tasks`}
-					className="text-success"
-				/>
-				<Metric
-					label="Remaining"
-					value={`${summary.remainingPoints} pts`}
-					detail={
-						summary.scopeChangeCount > 0
-							? `${summary.scopeChangeCount} scope changes`
-							: 'No scope changes'
-					}
-				/>
-				<Metric
-					label="Unestimated"
-					value={String(summary.unestimatedTaskCount)}
-					detail="Visible planning risk"
-					className={
-						summary.unestimatedTaskCount > 0
-							? 'text-warning-muted-foreground'
-							: ''
-					}
-				/>
-			</div>
-			{summary.committedPoints !== null && summary.committedPoints > 0 && (
-				<div className="flex items-center gap-3">
-					<Progress value={progress} className="h-2 flex-1" />
-					<span className="font-medium text-muted-foreground text-xs tabular-nums">
-						{Math.round(progress)}% of commitment
-					</span>
+		<div className="h-full overflow-y-auto bg-muted/20 p-4">
+			<div className="mx-auto max-w-6xl space-y-4">
+				<div>
+					<h2 className="font-semibold text-lg">Reports</h2>
+					<p className="text-muted-foreground text-sm">
+						Track sprint progress and delivery trends.
+					</p>
 				</div>
-			)}
-			<div className="grid gap-3 lg:grid-cols-2">
-				<BurndownCard metrics={metrics} />
-				<VelocityCard metrics={metrics} />
+				{isPending ? (
+					<div className="rounded-lg border bg-card p-8 text-center text-muted-foreground text-sm">
+						Loading reports...
+					</div>
+				) : isError ? (
+					<div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-8 text-center">
+						<p className="text-muted-foreground text-sm">
+							Reports could not be loaded.
+						</p>
+						<Button variant="outline" size="sm" onClick={() => void refetch()}>
+							Try again
+						</Button>
+					</div>
+				) : (
+					<>
+						{summary && (
+							<>
+								<div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+									<Metric
+										label="Committed"
+										value={
+											summary.committedPoints === null
+												? '—'
+												: `${summary.committedPoints} pts`
+										}
+										detail={
+											summary.committedTaskCount === null
+												? 'Not captured yet'
+												: `${summary.committedTaskCount} tasks at start`
+										}
+									/>
+									<Metric
+										label="Current scope"
+										value={`${summary.currentPoints} pts`}
+										detail={`${summary.taskCount} tasks`}
+									/>
+									<Metric
+										label="Completed"
+										value={`${summary.completedPoints} pts`}
+										detail={`${summary.doneCount} tasks`}
+										className="text-success"
+									/>
+									<Metric
+										label="Remaining"
+										value={`${summary.remainingPoints} pts`}
+										detail={
+											summary.scopeChangeCount > 0
+												? `${summary.scopeChangeCount} scope changes`
+												: 'No scope changes'
+										}
+									/>
+									<Metric
+										label="Unestimated"
+										value={String(summary.unestimatedTaskCount)}
+										detail="Visible planning risk"
+										className={
+											summary.unestimatedTaskCount > 0
+												? 'text-warning-muted-foreground'
+												: ''
+										}
+									/>
+								</div>
+								{summary.committedPoints !== null &&
+									summary.committedPoints > 0 && (
+										<div className="flex items-center gap-3">
+											<Progress value={progress} className="h-2 flex-1" />
+											<span className="font-medium text-muted-foreground text-xs tabular-nums">
+												{Math.round(progress)}% of commitment
+											</span>
+										</div>
+									)}
+							</>
+						)}
+						<div className="grid gap-3 lg:grid-cols-2">
+							<BurndownCard burndown={metrics?.burndown} />
+							<VelocityCard
+								velocity={metrics?.velocity ?? []}
+								averageVelocity={metrics?.averageVelocity ?? null}
+							/>
+						</div>
+					</>
+				)}
 			</div>
 		</div>
 	);

@@ -33,7 +33,6 @@ import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 import type { SprintsApiOutput } from '../types/Sprint.type';
 import SprintListView from './SprintListView';
-import SprintReports from './SprintReports';
 
 type SprintData = SprintsApiOutput[number];
 
@@ -140,10 +139,6 @@ export default function SprintBoard({
 	const { data: tasks = [] } = api.kanban.getKanbanData.useQuery({
 		projectId,
 		filters: { sprintId: sprint.id }
-	});
-	const { data: metrics } = api.sprint.getMetrics.useQuery({
-		projectId,
-		sprintId: sprint.id
 	});
 	const canEditBoard = sprint.status !== SprintStatusEnum.COMPLETED;
 	const tasksByStatus = useMemo(() => bucketTasksByStatus(tasks), [tasks]);
@@ -269,7 +264,6 @@ export default function SprintBoard({
 
 			{/* Board content */}
 			<div className="min-h-0 flex-1 overflow-y-auto">
-				{metrics && <SprintReports metrics={metrics} />}
 				<div className="min-h-[32rem]">
 					{boardView === 'kanban' ? (
 						<KanbanProvider
