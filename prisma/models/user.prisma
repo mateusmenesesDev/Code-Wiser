@@ -53,6 +53,7 @@ model User {
   mentorshipOnboardingCompletedAt DateTime?
 
   tasks                        Task[]
+  sprintChanges                SprintChange[]
   projectMemberships           ProjectMembership[]
   comments                     Comment[]
   taskAttachments              TaskAttachment[]

@@ -2,7 +2,15 @@
 
 import { SprintStatusEnum, type TaskStatusEnum } from '@prisma/client';
 import dayjs from 'dayjs';
-import { CheckCircle2, Clock, LayoutGrid, List, Play, Zap } from 'lucide-react';
+import {
+	AlertTriangle,
+	CheckCircle2,
+	Clock,
+	LayoutGrid,
+	List,
+	Play,
+	Zap
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
@@ -25,6 +33,7 @@ import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 import type { SprintsApiOutput } from '../types/Sprint.type';
 import SprintListView from './SprintListView';
+import SprintReports from './SprintReports';
 
 type SprintData = SprintsApiOutput[number];
 
@@ -132,6 +141,11 @@ export default function SprintBoard({
 		projectId,
 		filters: { sprintId: sprint.id }
 	});
+	const { data: metrics } = api.sprint.getMetrics.useQuery({
+		projectId,
+		sprintId: sprint.id
+	});
+	const canEditBoard = sprint.status !== SprintStatusEnum.COMPLETED;
 	const tasksByStatus = useMemo(() => bucketTasksByStatus(tasks), [tasks]);
 
 	const updateTaskOrders = api.task.updateTaskOrders.useMutation({
@@ -141,6 +155,7 @@ export default function SprintBoard({
 				projectId,
 				filters: { sprintId: sprint.id }
 			});
+			utils.sprint.getMetrics.invalidate({ projectId, sprintId: sprint.id });
 		}
 	});
 
@@ -156,6 +171,7 @@ export default function SprintBoard({
 			filters: { sprintId: sprint.id }
 		});
 		utils.sprint.getAllByProjectId.invalidate({ projectId });
+		utils.sprint.getMetrics.invalidate({ projectId, sprintId: sprint.id });
 	};
 
 	const totalPoints = tasks.reduce(
@@ -192,6 +208,12 @@ export default function SprintBoard({
 								)}
 								{statusLabel[sprint.status]}
 							</Badge>
+							{sprint.isOverdue && (
+								<Badge variant="warning" className="gap-1 text-xs">
+									<AlertTriangle className="h-3 w-3" />
+									Overdue
+								</Badge>
+							)}
 						</div>
 						{hasDateRange && (
 							<p className="flex items-center gap-1 text-muted-foreground text-xs">
@@ -246,64 +268,69 @@ export default function SprintBoard({
 			</div>
 
 			{/* Board content */}
-			<div className="flex-1 overflow-hidden">
-				{boardView === 'kanban' ? (
-					<KanbanProvider
-						columns={columns}
-						data={tasks}
-						onDataChange={handleDataChange}
-					>
-						{(column) => {
-							const columnTasks = tasksByStatus.get(column.id) ?? [];
-							return (
-								<KanbanBoard
-									id={column.id}
-									key={column.id}
-									className="bg-card/30"
-								>
-									<KanbanHeader>
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2">
-												<div
-													className="h-2 w-2 rounded-full shadow-sm"
-													style={{ backgroundColor: column.color }}
-												/>
-												<span className="font-semibold text-sm">
-													{column.name}
+			<div className="min-h-0 flex-1 overflow-y-auto">
+				{metrics && <SprintReports metrics={metrics} />}
+				<div className="min-h-[32rem]">
+					{boardView === 'kanban' ? (
+						<KanbanProvider
+							columns={columns}
+							data={tasks}
+							onDataChange={canEditBoard ? handleDataChange : undefined}
+						>
+							{(column) => {
+								const columnTasks = tasksByStatus.get(column.id) ?? [];
+								return (
+									<KanbanBoard
+										id={column.id}
+										key={column.id}
+										className="bg-card/30"
+									>
+										<KanbanHeader>
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<div
+														className="h-2 w-2 rounded-full shadow-sm"
+														style={{ backgroundColor: column.color }}
+													/>
+													<span className="font-semibold text-sm">
+														{column.name}
+													</span>
+												</div>
+												<span
+													className="flex h-6 min-w-6 items-center justify-center rounded-full px-2 font-medium text-xs"
+													style={{
+														backgroundColor: column.color,
+														color: 'white'
+													}}
+												>
+													{columnTasks.length}
 												</span>
 											</div>
-											<span
-												className="flex h-6 min-w-6 items-center justify-center rounded-full px-2 font-medium text-xs"
-												style={{
-													backgroundColor: column.color,
-													color: 'white'
-												}}
-											>
-												{columnTasks.length}
-											</span>
-										</div>
-										<QuickAddRow
-											columnId={column.id}
-											sprintId={sprint.id}
-											projectId={projectId}
-											onAdded={handleTaskAdded}
-										/>
-									</KanbanHeader>
-									<KanbanCards id={column.id}>
-										{(task) => <SprintKanbanCard task={task} />}
-									</KanbanCards>
-								</KanbanBoard>
-							);
-						}}
-					</KanbanProvider>
-				) : (
-					<SprintListView
-						tasks={tasks}
-						sprintId={sprint.id}
-						projectId={projectId}
-						onTaskUpdated={handleTaskAdded}
-					/>
-				)}
+											{canEditBoard && (
+												<QuickAddRow
+													columnId={column.id}
+													sprintId={sprint.id}
+													projectId={projectId}
+													onAdded={handleTaskAdded}
+												/>
+											)}
+										</KanbanHeader>
+										<KanbanCards id={column.id}>
+											{(task) => <SprintKanbanCard task={task} />}
+										</KanbanCards>
+									</KanbanBoard>
+								);
+							}}
+						</KanbanProvider>
+					) : (
+						<SprintListView
+							tasks={tasks}
+							sprintId={sprint.id}
+							projectId={projectId}
+							onTaskUpdated={handleTaskAdded}
+						/>
+					)}
+				</div>
 			</div>
 		</div>
 	);

@@ -149,6 +149,9 @@ const Workspace = () => {
 				{(isScrum || view === 'roadmap' || view === 'versions') && (
 					<SprintSidebar
 						projectId={projectId}
+						canManageSprints={
+							projectInfo?.permissions?.includes('MANAGE_SPRINT_CYCLE') ?? false
+						}
 						sprints={sprints ?? []}
 						epics={epics ?? []}
 						selectedSprintId={sprintId}

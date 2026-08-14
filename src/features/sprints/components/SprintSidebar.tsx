@@ -3,6 +3,7 @@
 import { SprintStatusEnum } from '@prisma/client';
 import dayjs from 'dayjs';
 import {
+	AlertTriangle,
 	CheckCircle2,
 	ChevronLeft,
 	ChevronRight,
@@ -38,6 +39,7 @@ type SprintWithStats = SprintsApiOutput[number];
 interface SprintSidebarProps {
 	projectId: string;
 	sprints: SprintsApiOutput;
+	canManageSprints: boolean;
 	epics: EpicsApiOutput;
 	selectedSprintId: string | null;
 	currentView: string | null;
@@ -155,7 +157,8 @@ const SprintEntry = ({
 	onDelete,
 	isStarting,
 	isCompleting,
-	isDeleting
+	isDeleting,
+	canManage
 }: {
 	sprint: SprintWithStats;
 	isSelected: boolean;
@@ -167,12 +170,16 @@ const SprintEntry = ({
 	isStarting: boolean;
 	isCompleting: boolean;
 	isDeleting: boolean;
+	canManage: boolean;
 }) => {
 	const progress =
-		sprint.taskCount > 0
-			? Math.round((sprint.doneCount / sprint.taskCount) * 100)
-			: 0;
+		sprint.committedPoints !== null && sprint.committedPoints > 0
+			? Math.round((sprint.completedPoints / sprint.committedPoints) * 100)
+			: sprint.taskCount > 0
+				? Math.round((sprint.doneCount / sprint.taskCount) * 100)
+				: 0;
 	const hasDateRange = sprint.startDate && sprint.endDate;
+	const isOverdue = sprint.isOverdue;
 
 	return (
 		<div
@@ -182,7 +189,9 @@ const SprintEntry = ({
 					? 'border-info-border bg-info-muted'
 					: 'border-transparent hover:border-border hover:bg-muted/50',
 				sprint.status === SprintStatusEnum.ACTIVE &&
-					'border-success-border/50 bg-success-muted/20'
+					(isOverdue
+						? 'border-warning-border/60 bg-warning-muted/20'
+						: 'border-success-border/50 bg-success-muted/20')
 			)}
 		>
 			<button type="button" onClick={onSelect} className="w-full text-left">
@@ -191,12 +200,14 @@ const SprintEntry = ({
 						<StatusIcon status={sprint.status} />
 						<span className="truncate font-medium text-sm">{sprint.title}</span>
 					</div>
-					{sprint.totalPoints > 0 && (
+					{(sprint.totalPoints > 0 || sprint.committedPoints !== null) && (
 						<Badge
 							variant="secondary"
 							className="shrink-0 px-1.5 py-0 text-xs tabular-nums"
 						>
-							{sprint.totalPoints} pts
+							{sprint.committedPoints !== null
+								? `${sprint.completedPoints}/${sprint.committedPoints} pts`
+								: `${sprint.totalPoints} pts`}
 						</Badge>
 					)}
 				</div>
@@ -208,6 +219,12 @@ const SprintEntry = ({
 							{dayjs(sprint.startDate).format('MMM D')} –{' '}
 							{dayjs(sprint.endDate).format('MMM D')}
 						</span>
+					</div>
+				)}
+				{isOverdue && (
+					<div className="mt-1 flex items-center gap-1 text-warning-muted-foreground text-xs">
+						<AlertTriangle className="h-3 w-3" />
+						Overdue
 					</div>
 				)}
 
@@ -229,7 +246,7 @@ const SprintEntry = ({
 				)}
 			</button>
 
-			{sprint.status === SprintStatusEnum.PLANNING && (
+			{sprint.status === SprintStatusEnum.PLANNING && canManage && (
 				<div className="mt-2 hidden group-hover:block">
 					<Button
 						variant="outline"
@@ -246,7 +263,7 @@ const SprintEntry = ({
 				</div>
 			)}
 
-			{sprint.status === SprintStatusEnum.ACTIVE && (
+			{sprint.status === SprintStatusEnum.ACTIVE && canManage && (
 				<div className="mt-2 hidden group-hover:block">
 					<Button
 						variant="outline"
@@ -262,34 +279,38 @@ const SprintEntry = ({
 					</Button>
 				</div>
 			)}
-			<div className="mt-1 flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-				<Button
-					variant="ghost"
-					size="icon"
-					className="h-7 w-7"
-					onClick={onEdit}
-					aria-label={`Edit ${sprint.title}`}
-				>
-					<Pencil className="h-3.5 w-3.5" />
-				</Button>
-				{sprint.status !== SprintStatusEnum.ACTIVE && (
-					<ConfirmationDialog
-						title="Delete Sprint"
-						description={`Delete "${sprint.title}"? Its tasks will lose their sprint assignment.`}
-						onConfirm={onDelete}
-					>
+			{canManage && (
+				<div className="mt-1 flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+					{sprint.status !== SprintStatusEnum.COMPLETED && (
 						<Button
 							variant="ghost"
 							size="icon"
-							className="h-7 w-7 text-destructive hover:text-destructive"
-							disabled={isDeleting}
-							aria-label={`Delete ${sprint.title}`}
+							className="h-7 w-7"
+							onClick={onEdit}
+							aria-label={`Edit ${sprint.title}`}
 						>
-							<Trash2 className="h-3.5 w-3.5" />
+							<Pencil className="h-3.5 w-3.5" />
 						</Button>
-					</ConfirmationDialog>
-				)}
-			</div>
+					)}
+					{sprint.status === SprintStatusEnum.PLANNING && (
+						<ConfirmationDialog
+							title="Delete Sprint"
+							description={`Delete "${sprint.title}"? Its tasks will lose their sprint assignment.`}
+							onConfirm={onDelete}
+						>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-7 w-7 text-destructive hover:text-destructive"
+								disabled={isDeleting}
+								aria-label={`Delete ${sprint.title}`}
+							>
+								<Trash2 className="h-3.5 w-3.5" />
+							</Button>
+						</ConfirmationDialog>
+					)}
+				</div>
+			)}
 		</div>
 	);
 };
@@ -297,6 +318,7 @@ const SprintEntry = ({
 export default function SprintSidebar({
 	projectId,
 	sprints,
+	canManageSprints,
 	epics,
 	selectedSprintId,
 	currentView,
@@ -444,6 +466,7 @@ export default function SprintSidebar({
 										isStarting={startSprint.isPending}
 										isCompleting={completeSprint.isPending}
 										isDeleting={deleteSprint.isPending}
+										canManage={canManageSprints}
 									/>
 								))}
 							</div>
@@ -491,20 +514,22 @@ export default function SprintSidebar({
 				</div>
 			</div>
 
-			<div className="border-t p-2">
-				<Button
-					variant="ghost"
-					size="sm"
-					className="w-full justify-start gap-2 text-muted-foreground"
-					onClick={() => {
-						setSelectedSprintForEdit(null);
-						openDialog('sprint');
-					}}
-				>
-					<Plus className="h-4 w-4" />
-					New Sprint
-				</Button>
-			</div>
+			{canManageSprints && (
+				<div className="border-t p-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="w-full justify-start gap-2 text-muted-foreground"
+						onClick={() => {
+							setSelectedSprintForEdit(null);
+							openDialog('sprint');
+						}}
+					>
+						<Plus className="h-4 w-4" />
+						New Sprint
+					</Button>
+				</div>
+			)}
 
 			<Dialog open={isDialogOpen} onOpenChange={closeDialog}>
 				<SprintDialog

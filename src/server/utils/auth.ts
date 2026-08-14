@@ -13,7 +13,8 @@ export type ProjectPermission =
 	| 'MANAGE_GITHUB'
 	| 'MANAGE_PORTFOLIO'
 	| 'EVALUATE_PROJECT'
-	| 'MANAGE_VERSIONS';
+	| 'MANAGE_VERSIONS'
+	| 'MANAGE_SPRINT_CYCLE';
 
 const permissionsByRole: Record<ProjectRoleEnum, readonly ProjectPermission[]> =
 	{
@@ -22,13 +23,15 @@ const permissionsByRole: Record<ProjectRoleEnum, readonly ProjectPermission[]> =
 			'MANAGE_MEMBERS',
 			'MANAGE_GITHUB',
 			'MANAGE_PORTFOLIO',
-			'MANAGE_VERSIONS'
+			'MANAGE_VERSIONS',
+			'MANAGE_SPRINT_CYCLE'
 		],
 		[ProjectRoleEnum.MENTOR]: [
 			'EDIT_SETTINGS',
 			'MANAGE_GITHUB',
 			'EVALUATE_PROJECT',
-			'MANAGE_VERSIONS'
+			'MANAGE_VERSIONS',
+			'MANAGE_SPRINT_CYCLE'
 		],
 		[ProjectRoleEnum.LEARNER]: []
 	};

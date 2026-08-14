@@ -1,3 +1,11 @@
+enum SprintChangeTypeEnum {
+  TASK_ADDED
+  TASK_REMOVED
+  ESTIMATE_CHANGED
+
+  @@schema("public")
+}
+
 model Task {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -43,6 +51,7 @@ model Task {
   comments           Comment[]
   attachments        TaskAttachment[]
   planningPokerVotes PlanningPokerVote[]
+  sprintChanges      SprintChange[]
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])
@@ -136,6 +145,12 @@ model Sprint {
 
   status SprintStatusEnum @default(PLANNING)
 
+  startedAt                 DateTime?
+  completedAt               DateTime?
+  committedPoints           Int?
+  committedTaskCount        Int?
+  committedUnestimatedCount Int?
+
   projectTemplateId String?
   projectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
 
@@ -146,11 +161,57 @@ model Sprint {
   endDate   DateTime?
 
   tasks       Task[]
+  changes     SprintChange[]
+  snapshots   SprintDailySnapshot[]
   milestoneId String?
-  milestone   Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  milestone   Milestone?            @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])
+  @@schema("public")
+}
+
+model SprintChange {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  type                SprintChangeTypeEnum
+  previousStoryPoints Int?
+  newStoryPoints      Int?
+
+  sprintId String
+  sprint   Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([sprintId, createdAt])
+  @@index([taskId])
+  @@schema("public")
+}
+
+model SprintDailySnapshot {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  day       DateTime
+
+  committedPoints      Int?
+  currentPoints        Int
+  completedPoints      Int
+  remainingPoints      Int
+  taskCount            Int
+  completedTaskCount   Int
+  unestimatedTaskCount Int
+
+  sprintId String
+  sprint   Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+
+  @@unique([sprintId, day])
+  @@index([sprintId, day])
   @@schema("public")
 }
 

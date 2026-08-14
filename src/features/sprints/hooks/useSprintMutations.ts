@@ -27,7 +27,19 @@ const getPrismaFields = (
 		tasks: [],
 		taskCount: 0,
 		doneCount: 0,
-		totalPoints: 0
+		totalPoints: 0,
+		currentPoints: 0,
+		completedPoints: 0,
+		remainingPoints: 0,
+		unestimatedTaskCount: 0,
+		scopeChangeCount: 0,
+		isOverdue: false,
+		startedAt: null,
+		completedAt: null,
+		committedPoints: null,
+		committedTaskCount: null,
+		committedUnestimatedCount: null,
+		_count: { changes: 0 }
 	};
 };
 
@@ -42,6 +54,7 @@ export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 		});
 		utils.task.getAllByProjectId.invalidate({ projectId, isTemplate });
 		utils.kanban.getKanbanData.invalidate({ projectId });
+		utils.sprint.getMetrics.invalidate({ projectId });
 		if (isTemplate) {
 			utils.projectTemplate.getById.invalidate({ id: projectId });
 		} else {

@@ -30,15 +30,67 @@ const projectSprint = (status: SprintStatusEnum) => ({
 	status,
 	projectId: 'project-1',
 	projectTemplateId: null,
-	project: { memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }] }
+	project: {
+		memberships: [
+			{
+				userId: 'user-1',
+				role: 'MENTOR',
+				status: 'ACTIVE',
+				joinedAt: new Date()
+			}
+		]
+	}
 });
 
 describe('sprint mutations', () => {
 	beforeEach(() => {
 		mockDb.project.findUnique.mockResolvedValue({
-			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }],
+			memberships: [
+				{
+					userId: 'user-1',
+					role: 'MENTOR',
+					status: 'ACTIVE',
+					joinedAt: new Date()
+				}
+			],
 			canceledAt: null
 		} as never);
+	});
+
+	it('requires mentor or owner access for lifecycle changes', async () => {
+		mockDb.project.findUnique.mockResolvedValue({
+			memberships: [
+				{
+					userId: 'user-1',
+					role: 'LEARNER',
+					status: 'ACTIVE',
+					joinedAt: new Date()
+				}
+			],
+			canceledAt: null
+		} as never);
+		mockDb.sprint.findUnique.mockResolvedValue(
+			projectSprint(SprintStatusEnum.PLANNING) as never
+		);
+
+		await expect(
+			(await caller()).start({ id: 'sprint-1' })
+		).rejects.toMatchObject({
+			code: 'FORBIDDEN'
+		});
+	});
+
+	it('requires dates before starting a sprint', async () => {
+		mockDb.sprint.findUnique.mockResolvedValue(
+			projectSprint(SprintStatusEnum.PLANNING) as never
+		);
+
+		await expect(
+			(await caller()).start({ id: 'sprint-1' })
+		).rejects.toMatchObject({
+			code: 'BAD_REQUEST',
+			message: 'A sprint needs a start and end date before it can start'
+		});
 	});
 
 	it('only starts planning sprints', async () => {
@@ -65,6 +117,20 @@ describe('sprint mutations', () => {
 		).rejects.toMatchObject({
 			code: 'BAD_REQUEST',
 			message: 'Only an active sprint can be completed'
+		});
+		expect(mockDb.$transaction).not.toHaveBeenCalled();
+	});
+
+	it('only deletes planning sprints', async () => {
+		mockDb.sprint.findUnique.mockResolvedValue(
+			projectSprint(SprintStatusEnum.COMPLETED) as never
+		);
+
+		await expect(
+			(await caller()).delete({ id: 'sprint-1' })
+		).rejects.toMatchObject({
+			code: 'BAD_REQUEST',
+			message: 'Only planning sprints can be deleted'
 		});
 		expect(mockDb.$transaction).not.toHaveBeenCalled();
 	});

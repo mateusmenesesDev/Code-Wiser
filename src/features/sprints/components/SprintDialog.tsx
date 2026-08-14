@@ -25,6 +25,11 @@ import { useSprintMutations } from '../hooks/useSprintMutations';
 import { newSprintSchema } from '../schemas/sprint.schema';
 import type { NewSprint, SprintApiOutput } from '../types/Sprint.type';
 
+const suggestedSprintDates = () => ({
+	startDate: dayjs().format('YYYY-MM-DD'),
+	endDate: dayjs().add(13, 'day').format('YYYY-MM-DD')
+});
+
 interface SprintDialogProps {
 	projectId: string;
 	sprint?: SprintApiOutput | null;
@@ -48,8 +53,7 @@ export default function SprintDialog({
 			description: '',
 			projectId,
 			isTemplate,
-			startDate: '',
-			endDate: ''
+			...suggestedSprintDates()
 		}
 	});
 
@@ -73,8 +77,7 @@ export default function SprintDialog({
 				description: '',
 				projectId,
 				isTemplate,
-				startDate: '',
-				endDate: ''
+				...suggestedSprintDates()
 			});
 		}
 	}, [sprint, form, projectId, isTemplate]);
@@ -126,7 +129,7 @@ export default function SprintDialog({
 						name="description"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Description</FormLabel>
+								<FormLabel>Sprint goal (optional)</FormLabel>
 								<FormControl>
 									<Textarea
 										placeholder="Sprint goals and objectives"

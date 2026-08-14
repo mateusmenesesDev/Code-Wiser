@@ -1,4 +1,9 @@
-import { Prisma, TaskTypeEnum } from '@prisma/client';
+import {
+	Prisma,
+	SprintChangeTypeEnum,
+	SprintStatusEnum,
+	TaskTypeEnum
+} from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import {
@@ -6,6 +11,7 @@ import {
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
+import { captureSprintSnapshot } from '../../sprint/sprintMetrics';
 import {
 	notifyTaskAssigned,
 	notifyTaskBlocked,
@@ -128,6 +134,19 @@ export const taskMutations = {
 				type ?? TaskTypeEnum.USER_STORY
 			);
 
+			if (sprintId) {
+				const sprint = await ctx.db.sprint.findUnique({
+					where: { id: sprintId },
+					select: { status: true }
+				});
+				if (sprint?.status === SprintStatusEnum.COMPLETED) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Completed sprints cannot receive new tasks'
+					});
+				}
+			}
+
 			if (!isTemplate && assigneeIds?.length) {
 				const members = await ctx.db.user.findMany({
 					where: {
@@ -165,7 +184,7 @@ export const taskMutations = {
 									select: { nextTaskNumber: true }
 								});
 
-						return prisma.task.create({
+						const task = await prisma.task.create({
 							data: {
 								...rest,
 								publicNumber: counter.nextTaskNumber - 1,
@@ -182,6 +201,28 @@ export const taskMutations = {
 									: undefined
 							}
 						});
+
+						if (sprintId) {
+							const sprint = await prisma.sprint.findUnique({
+								where: { id: sprintId },
+								select: { status: true }
+							});
+							if (sprint?.status === SprintStatusEnum.ACTIVE) {
+								await prisma.sprintChange.create({
+									data: {
+										sprintId,
+										taskId: task.id,
+										authorId: ctx.session.userId,
+										type: SprintChangeTypeEnum.TASK_ADDED,
+										previousStoryPoints: null,
+										newStoryPoints: task.storyPoints
+									}
+								});
+								await captureSprintSnapshot(prisma, sprintId);
+							}
+						}
+
+						return task;
 					});
 					return task;
 				} catch (error) {
@@ -238,9 +279,14 @@ export const taskMutations = {
 					projectTemplateId: true,
 					status: true,
 					blocked: true,
+					storyPoints: true,
+					sprintId: true,
 					type: true,
 					productVersionId: true,
 					title: true,
+					sprint: {
+						select: { id: true, status: true }
+					},
 					project: {
 						select: {
 							id: true,
@@ -310,6 +356,31 @@ export const taskMutations = {
 				type ?? existingTask.type
 			);
 
+			const targetSprint = sprintId
+				? await ctx.db.sprint.findUnique({
+						where: { id: sprintId },
+						select: { id: true, status: true }
+					})
+				: null;
+			if (targetSprint?.status === SprintStatusEnum.COMPLETED) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Completed sprints cannot receive new task changes'
+				});
+			}
+			if (
+				existingTask.sprint?.status === SprintStatusEnum.COMPLETED &&
+				(sprintId !== undefined ||
+					rest.storyPoints !== undefined ||
+					rest.status !== undefined)
+			) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message:
+						'Tasks in completed sprints are immutable for planning metrics'
+				});
+			}
+
 			if (assigneeIds && existingTask.project) {
 				const memberIds = new Set(
 					existingTask.project.memberships.map(
@@ -347,30 +418,103 @@ export const taskMutations = {
 				})
 			};
 
-			const task = await ctx.db.task.update({
-				where: { id },
-				data: {
-					...updateData,
-					...(projectId
-						? isTemplate
-							? { projectTemplate: { connect: { id: projectId } } }
-							: { project: { connect: { id: projectId } } }
-						: {})
-				},
-				include: {
-					assignees: {
-						select: {
-							id: true,
-							name: true
-						}
+			const task = await ctx.db.$transaction(async (tx) => {
+				const updatedTask = await tx.task.update({
+					where: { id },
+					data: {
+						...updateData,
+						...(projectId
+							? isTemplate
+								? { projectTemplate: { connect: { id: projectId } } }
+								: { project: { connect: { id: projectId } } }
+							: {})
 					},
-					project: {
-						select: {
-							id: true,
-							title: true
+					include: {
+						assignees: {
+							select: {
+								id: true,
+								name: true
+							}
+						},
+						project: {
+							select: {
+								id: true,
+								title: true
+							}
 						}
 					}
+				});
+
+				const nextSprintId =
+					sprintId === undefined ? existingTask.sprintId : sprintId;
+				const changedSprintIds = new Set<string>();
+				if (
+					existingTask.sprintId &&
+					existingTask.sprintId !== nextSprintId &&
+					existingTask.sprint?.status === SprintStatusEnum.ACTIVE
+				) {
+					await tx.sprintChange.create({
+						data: {
+							sprintId: existingTask.sprintId,
+							taskId: updatedTask.id,
+							authorId: ctx.session.userId,
+							type: SprintChangeTypeEnum.TASK_REMOVED,
+							previousStoryPoints: existingTask.storyPoints,
+							newStoryPoints: null
+						}
+					});
+					changedSprintIds.add(existingTask.sprintId);
 				}
+				if (
+					nextSprintId &&
+					nextSprintId !== existingTask.sprintId &&
+					targetSprint?.status === SprintStatusEnum.ACTIVE
+				) {
+					await tx.sprintChange.create({
+						data: {
+							sprintId: nextSprintId,
+							taskId: updatedTask.id,
+							authorId: ctx.session.userId,
+							type: SprintChangeTypeEnum.TASK_ADDED,
+							previousStoryPoints: null,
+							newStoryPoints: updatedTask.storyPoints
+						}
+					});
+					changedSprintIds.add(nextSprintId);
+				}
+				if (
+					nextSprintId &&
+					nextSprintId === existingTask.sprintId &&
+					existingTask.sprint?.status === SprintStatusEnum.ACTIVE &&
+					rest.storyPoints !== undefined &&
+					rest.storyPoints !== existingTask.storyPoints
+				) {
+					await tx.sprintChange.create({
+						data: {
+							sprintId: nextSprintId,
+							taskId: updatedTask.id,
+							authorId: ctx.session.userId,
+							type: SprintChangeTypeEnum.ESTIMATE_CHANGED,
+							previousStoryPoints: existingTask.storyPoints,
+							newStoryPoints: updatedTask.storyPoints
+						}
+					});
+					changedSprintIds.add(nextSprintId);
+				}
+				if (
+					nextSprintId &&
+					nextSprintId === existingTask.sprintId &&
+					existingTask.sprint?.status === SprintStatusEnum.ACTIVE &&
+					rest.status !== undefined &&
+					rest.status !== existingTask.status
+				) {
+					changedSprintIds.add(nextSprintId);
+				}
+
+				for (const changedSprintId of changedSprintIds) {
+					await captureSprintSnapshot(tx, changedSprintId);
+				}
+				return updatedTask;
 			});
 
 			if (existingTask.projectId && existingTask.project) {
@@ -456,13 +600,15 @@ export const taskMutations = {
 	updateTaskOrders: protectedProcedure
 		.input(
 			z.object({
-				updates: z.array(
-					z.object({
-						id: z.string(),
-						order: z.number(),
-						status: z.string().optional()
-					})
-				)
+				updates: z
+					.array(
+						z.object({
+							id: z.string(),
+							order: z.number(),
+							status: z.string().optional()
+						})
+					)
+					.max(100)
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -478,7 +624,8 @@ export const taskMutations = {
 					order: true,
 					status: true,
 					projectId: true,
-					projectTemplateId: true
+					projectTemplateId: true,
+					sprint: { select: { id: true, status: true } }
 				}
 			});
 
@@ -494,6 +641,19 @@ export const taskMutations = {
 				if (task.projectId) {
 					await assertProjectIsActive(ctx.db, task.projectId);
 				}
+				const requestedUpdate = input.updates.find(
+					(update) => update.id === task.id
+				);
+				if (
+					task.sprint?.status === SprintStatusEnum.COMPLETED &&
+					requestedUpdate?.status !== undefined &&
+					requestedUpdate.status !== task.status
+				) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Tasks in completed sprints cannot change status'
+					});
+				}
 			}
 
 			const currentById = new Map(tasks.map((task) => [task.id, task]));
@@ -506,7 +666,25 @@ export const taskMutations = {
 				return { success: true, updatedCount: 0 };
 			}
 
-			await ctx.db.$executeRaw(buildBulkTaskOrderUpdateSql(changedUpdates));
+			await ctx.db.$transaction(async (tx) => {
+				await tx.$executeRaw(buildBulkTaskOrderUpdateSql(changedUpdates));
+				const changedSprintIds = new Set(
+					tasks
+						.filter((task) => {
+							const update = changedUpdates.find((item) => item.id === task.id);
+							return (
+								update?.status !== undefined &&
+								task.sprint?.status === SprintStatusEnum.ACTIVE &&
+								task.sprint.id
+							);
+						})
+						.map((task) => task.sprint?.id)
+						.filter((sprintId): sprintId is string => Boolean(sprintId))
+				);
+				for (const sprintId of changedSprintIds) {
+					await captureSprintSnapshot(tx, sprintId);
+				}
+			});
 
 			return { success: true, updatedCount: changedUpdates.length };
 		}),
@@ -518,7 +696,8 @@ export const taskMutations = {
 
 			// Verify access through existing task
 			const existingTask = await ctx.db.task.findUnique({
-				where: { id: taskId }
+				where: { id: taskId },
+				include: { sprint: { select: { id: true, status: true } } }
 			});
 
 			if (!existingTask) {
@@ -541,7 +720,31 @@ export const taskMutations = {
 			});
 			const attachmentKeys = attachments.map((attachment) => attachment.key);
 
-			await ctx.db.task.delete({ where: { id: taskId } });
+			if (existingTask.sprint?.status === SprintStatusEnum.COMPLETED) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Tasks in completed sprints cannot be deleted'
+				});
+			}
+
+			await ctx.db.$transaction(async (tx) => {
+				if (existingTask.sprint?.status === SprintStatusEnum.ACTIVE) {
+					await tx.sprintChange.create({
+						data: {
+							sprintId: existingTask.sprint.id,
+							taskId,
+							authorId: ctx.session.userId,
+							type: SprintChangeTypeEnum.TASK_REMOVED,
+							previousStoryPoints: existingTask.storyPoints,
+							newStoryPoints: null
+						}
+					});
+				}
+				await tx.task.delete({ where: { id: taskId } });
+				if (existingTask.sprint?.status === SprintStatusEnum.ACTIVE) {
+					await captureSprintSnapshot(tx, existingTask.sprint.id);
+				}
+			});
 			await deleteUploadThingFiles(attachmentKeys);
 
 			if (existingTask.projectId) {
@@ -568,7 +771,7 @@ export const taskMutations = {
 	bulkDelete: protectedProcedure
 		.input(
 			z.object({
-				taskIds: z.array(z.string())
+				taskIds: z.array(z.string()).min(1).max(100)
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -580,8 +783,11 @@ export const taskMutations = {
 					}
 				},
 				select: {
+					id: true,
 					projectId: true,
-					projectTemplateId: true
+					projectTemplateId: true,
+					storyPoints: true,
+					sprint: { select: { id: true, status: true } }
 				}
 			});
 
@@ -597,6 +803,12 @@ export const taskMutations = {
 				if (task.projectId) {
 					await assertProjectIsActive(ctx.db, task.projectId);
 				}
+				if (task.sprint?.status === SprintStatusEnum.COMPLETED) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Tasks in completed sprints cannot be deleted'
+					});
+				}
 			}
 
 			const attachments = await ctx.db.taskAttachment.findMany({
@@ -609,12 +821,35 @@ export const taskMutations = {
 			});
 			const attachmentKeys = attachments.map((attachment) => attachment.key);
 
-			const result = await ctx.db.task.deleteMany({
-				where: {
-					id: {
-						in: input.taskIds
+			const activeSprintIds = new Set(
+				existingTasks
+					.filter((task) => task.sprint?.status === SprintStatusEnum.ACTIVE)
+					.map((task) => task.sprint?.id)
+					.filter((sprintId): sprintId is string => Boolean(sprintId))
+			);
+			const result = await ctx.db.$transaction(async (tx) => {
+				for (const task of existingTasks) {
+					if (!task.sprint || task.sprint.status !== SprintStatusEnum.ACTIVE) {
+						continue;
 					}
+					await tx.sprintChange.create({
+						data: {
+							sprintId: task.sprint.id,
+							taskId: task.id,
+							authorId: ctx.session.userId,
+							type: SprintChangeTypeEnum.TASK_REMOVED,
+							previousStoryPoints: task.storyPoints,
+							newStoryPoints: null
+						}
+					});
 				}
+				const deleted = await tx.task.deleteMany({
+					where: { id: { in: input.taskIds } }
+				});
+				for (const sprintId of activeSprintIds) {
+					await captureSprintSnapshot(tx, sprintId);
+				}
+				return deleted;
 			});
 
 			await deleteUploadThingFiles(attachmentKeys);

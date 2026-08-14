@@ -15,7 +15,16 @@ const bulkTaskSchema = z.object({
 	blockedReason: z.string().optional(),
 	status: z.nativeEnum(TaskStatusEnum).optional(),
 	order: z.number().optional(),
-	storyPoints: z.number().optional(),
+	storyPoints: z
+		.number()
+		.optional()
+		.refine(
+			(value) => value === undefined || [1, 2, 3, 5, 8, 13, 21].includes(value),
+			{
+				message:
+					'Story points must be a Fibonacci value: 1, 2, 3, 5, 8, 13, or 21'
+			}
+		),
 	dueDate: z.string().optional() // ISO date string
 });
 
