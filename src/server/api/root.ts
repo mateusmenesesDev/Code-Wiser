@@ -16,6 +16,7 @@ import { planningPokerRouter } from './routers/planningPoker/planningPokerRouter
 import { prReviewRouter } from './routers/prReview/prReviewRouter';
 import { projectRouter } from './routers/project';
 import { productVersionRouter } from './routers/productVersion';
+import { searchRouter } from './routers/search/search.router';
 import { sprintRouter } from './routers/sprint/sprint.router';
 import { taskRouter } from './routers/task/taskRouter';
 import { projectTemplateRouter } from './routers/template';
@@ -47,7 +48,8 @@ export const appRouter = createTRPCRouter({
 	mentorAttention: mentorAttentionRouter,
 	exercise: exerciseRouter,
 	feedback: feedbackRouter,
-	github: githubRouter
+	github: githubRouter,
+	search: searchRouter
 });
 
 // export type definition of API

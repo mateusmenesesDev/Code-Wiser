@@ -4,20 +4,13 @@ import { useAuth } from '@clerk/nextjs';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, Menu, MessageSquare, Search } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger
 } from '~/common/components/ui/collapsible';
-import {
-	CommandDialog,
-	CommandEmpty,
-	CommandInput,
-	CommandItem,
-	CommandList
-} from '~/common/components/ui/command';
 import { Button } from '~/common/components/ui/button';
 import {
 	Sheet,
@@ -35,6 +28,7 @@ import {
 } from '~/common/constants/menuItem';
 import { cn } from '~/lib/utils';
 import { FeedbackDialog } from '~/features/feedback/FeedbackDialog';
+import { GlobalSearchDialog } from '~/features/search/components/GlobalSearchDialog';
 import { api } from '~/trpc/react';
 
 const isActivePath = (pathname: string, href: string) =>
@@ -233,7 +227,6 @@ function NavigationContents({
 
 export default function NavigationSidebar() {
 	const t = useTranslations('navigation');
-	const router = useRouter();
 	const { has, isLoaded, isSignedIn, orgRole } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [searchOpen, setSearchOpen] = useState(false);
@@ -298,12 +291,6 @@ export default function NavigationSidebar() {
 		setSearchOpen(true);
 	};
 	const closeMobileNavigation = () => setMobileOpen(false);
-	const navigateFromSearch = (href: string) => {
-		setSearchOpen(false);
-		setMobileOpen(false);
-		router.push(href);
-	};
-
 	return (
 		<div className="md:flex md:shrink-0">
 			<div className="border-b bg-background px-4 py-2 md:hidden">
@@ -338,25 +325,12 @@ export default function NavigationSidebar() {
 				/>
 			</aside>
 
-			<CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
-				<CommandInput placeholder={t('searchNavigation')} />
-				<CommandList>
-					<CommandEmpty>{t('noDestinations')}</CommandEmpty>
-					{searchableItems.map((item) => {
-						const Icon = item.Icon;
-						return (
-							<CommandItem
-								key={item.href}
-								onSelect={() => navigateFromSearch(item.href)}
-								value={t(item.labelKey)}
-							>
-								<Icon className="mr-2 h-4 w-4" aria-hidden="true" />
-								{t(item.labelKey)}
-							</CommandItem>
-						);
-					})}
-				</CommandList>
-			</CommandDialog>
+			<GlobalSearchDialog
+				open={searchOpen}
+				onOpenChange={setSearchOpen}
+				searchableItems={searchableItems}
+				onNavigate={closeMobileNavigation}
+			/>
 
 			<FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
 		</div>

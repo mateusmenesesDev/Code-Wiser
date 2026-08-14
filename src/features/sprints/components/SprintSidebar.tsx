@@ -20,13 +20,14 @@ import {
 	Plus,
 	Trash2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Dialog } from '~/common/components/ui/dialog';
 import { Progress } from '~/common/components/ui/progress';
 import { useDialog } from '~/common/hooks/useDialog';
+import { useQueryState } from 'nuqs';
 import EpicDialog from '~/features/epics/components/EpicDialog';
 import { useEpicMutations } from '~/features/epics/hooks/useEpicMutations';
 import type { EpicsApiOutput } from '~/features/epics/types/Epic.type';
@@ -332,6 +333,7 @@ export default function SprintSidebar({
 	onSelectVersions
 }: SprintSidebarProps) {
 	const [collapsed, setCollapsed] = useState(false);
+	const [epicId] = useQueryState('epicId');
 	const [selectedSprintForEdit, setSelectedSprintForEdit] =
 		useState<SprintWithStats | null>(null);
 	const { openDialog, closeDialog, isDialogOpen } = useDialog('sprint');
@@ -343,6 +345,14 @@ export default function SprintSidebar({
 	const [selectedEpicForEdit, setSelectedEpicForEdit] = useState<
 		EpicsApiOutput[number] | null
 	>(null);
+
+	useEffect(() => {
+		if (!epicId || selectedEpicForEdit?.id === epicId) return;
+		const epic = epics.find((item) => item.id === epicId);
+		if (!epic) return;
+		setSelectedEpicForEdit(epic);
+		openEpicDialog('epic');
+	}, [epicId, epics, openEpicDialog, selectedEpicForEdit?.id]);
 
 	const grouped = statusOrder.reduce<
 		Record<SprintStatusEnum, SprintWithStats[]>
