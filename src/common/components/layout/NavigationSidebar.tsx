@@ -43,10 +43,12 @@ const isActivePath = (pathname: string, href: string) =>
 
 function NavigationLink({
 	item,
-	onNavigate
+	onNavigate,
+	collapsed = false
 }: {
 	item: NavigationItem;
 	onNavigate?: () => void;
+	collapsed?: boolean;
 }) {
 	const pathname = usePathname();
 	const t = useTranslations('navigation');
@@ -63,13 +65,17 @@ function NavigationLink({
 			}
 			className={cn(
 				'flex items-center gap-3 rounded-md px-3 py-2 font-medium text-sm transition-colors',
+				collapsed && 'justify-center px-2',
 				active
 					? 'bg-primary/10 text-primary'
 					: 'text-muted-foreground hover:bg-accent hover:text-foreground'
 			)}
+			title={collapsed ? t(item.labelKey) : undefined}
 		>
 			<Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-			<span>{t(item.labelKey)}</span>
+			<span className={collapsed ? 'sr-only' : undefined}>
+				{t(item.labelKey)}
+			</span>
 		</Link>
 	);
 }
@@ -77,11 +83,13 @@ function NavigationLink({
 function NavigationGroupMenu({
 	group,
 	items,
-	onNavigate
+	onNavigate,
+	collapsed = false
 }: {
 	group: NavigationGroup;
 	items: NavigationItem[];
 	onNavigate?: () => void;
+	collapsed?: boolean;
 }) {
 	const pathname = usePathname();
 	const t = useTranslations('navigation');
@@ -99,24 +107,37 @@ function NavigationGroupMenu({
 				<Button
 					variant="ghost"
 					size="sm"
-					className="h-9 w-full justify-between px-3 font-semibold text-muted-foreground"
+					className={cn(
+						'h-9 w-full justify-between px-3 font-semibold text-muted-foreground',
+						collapsed && 'justify-center px-2'
+					)}
+					title={collapsed ? t(group.labelKey) : undefined}
 				>
 					<span className="flex items-center gap-3">
 						<Icon className="h-4 w-4" aria-hidden="true" />
-						{t(group.labelKey)}
+						<span className={collapsed ? 'sr-only' : undefined}>
+							{t(group.labelKey)}
+						</span>
 					</span>
-					<ChevronDown
-						className={cn(
-							'h-4 w-4 transition-transform',
-							!open && '-rotate-90'
-						)}
-						aria-hidden="true"
-					/>
+					{collapsed ? null : (
+						<ChevronDown
+							className={cn(
+								'h-4 w-4 transition-transform',
+								!open && '-rotate-90'
+							)}
+							aria-hidden="true"
+						/>
+					)}
 				</Button>
 			</CollapsibleTrigger>
-			<CollapsibleContent className="space-y-1 pl-3">
+			<CollapsibleContent className={cn('space-y-1', !collapsed && 'pl-3')}>
 				{items.map((item) => (
-					<NavigationLink key={item.href} item={item} onNavigate={onNavigate} />
+					<NavigationLink
+						key={item.href}
+						item={item}
+						onNavigate={onNavigate}
+						collapsed={collapsed}
+					/>
 				))}
 			</CollapsibleContent>
 		</Collapsible>
@@ -129,7 +150,8 @@ function NavigationContents({
 	adminGroups,
 	onNavigate,
 	onSearch,
-	onFeedback
+	onFeedback,
+	collapsed = false
 }: {
 	workItems: NavigationItem[];
 	adminDashboard?: NavigationItem;
@@ -137,6 +159,7 @@ function NavigationContents({
 	onNavigate?: () => void;
 	onSearch: () => void;
 	onFeedback?: () => void;
+	collapsed?: boolean;
 }) {
 	const t = useTranslations('navigation');
 
@@ -145,12 +168,23 @@ function NavigationContents({
 			<div className="space-y-4">
 				<Button
 					variant="outline"
-					className="w-full justify-start gap-3 text-muted-foreground"
+					className={cn(
+						'w-full justify-start gap-3 text-muted-foreground',
+						collapsed && 'justify-center px-2'
+					)}
 					onClick={onSearch}
+					title={collapsed ? t('search') : undefined}
 				>
 					<Search className="h-4 w-4" aria-hidden="true" />
-					<span>{t('search')}</span>
-					<kbd className="ml-auto hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline">
+					<span className={collapsed ? 'sr-only' : undefined}>
+						{t('search')}
+					</span>
+					<kbd
+						className={cn(
+							'ml-auto hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline',
+							collapsed && 'sm:hidden'
+						)}
+					>
 						⌘/Ctrl K
 					</kbd>
 				</Button>
@@ -159,7 +193,10 @@ function NavigationContents({
 					<section aria-labelledby="work-navigation">
 						<h2
 							id="work-navigation"
-							className="mb-2 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider"
+							className={cn(
+								'mb-2 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider',
+								collapsed && 'sr-only'
+							)}
 						>
 							{t('work')}
 						</h2>
@@ -169,6 +206,7 @@ function NavigationContents({
 									key={item.href}
 									item={item}
 									onNavigate={onNavigate}
+									collapsed={collapsed}
 								/>
 							))}
 						</div>
@@ -178,7 +216,10 @@ function NavigationContents({
 						<section aria-labelledby="administration-navigation">
 							<h2
 								id="administration-navigation"
-								className="mb-2 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider"
+								className={cn(
+									'mb-2 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider',
+									collapsed && 'sr-only'
+								)}
 							>
 								{t('administration')}
 							</h2>
@@ -187,6 +228,7 @@ function NavigationContents({
 									<NavigationLink
 										item={adminDashboard}
 										onNavigate={onNavigate}
+										collapsed={collapsed}
 									/>
 								) : null}
 								{adminGroups.map(({ group, items }) => {
@@ -197,6 +239,7 @@ function NavigationContents({
 											key={group.labelKey}
 											item={item}
 											onNavigate={onNavigate}
+											collapsed={collapsed}
 										/>
 									) : (
 										<NavigationGroupMenu
@@ -204,6 +247,7 @@ function NavigationContents({
 											group={group}
 											items={items}
 											onNavigate={onNavigate}
+											collapsed={collapsed}
 										/>
 									);
 								})}
@@ -217,14 +261,20 @@ function NavigationContents({
 				<div className="mt-auto border-t pt-4">
 					<Button
 						variant="ghost"
-						className="w-full justify-start gap-3 text-muted-foreground"
+						className={cn(
+							'w-full justify-start gap-3 text-muted-foreground',
+							collapsed && 'justify-center px-2'
+						)}
+						title={collapsed ? t('sendFeedback') : undefined}
 						onClick={() => {
 							onFeedback();
 							onNavigate?.();
 						}}
 					>
 						<MessageSquare className="h-4 w-4" aria-hidden="true" />
-						{t('sendFeedback')}
+						<span className={collapsed ? 'sr-only' : undefined}>
+							{t('sendFeedback')}
+						</span>
 					</Button>
 				</div>
 			) : null}
@@ -236,7 +286,7 @@ export default function NavigationSidebar() {
 	const t = useTranslations('navigation');
 	const { has, isLoaded, isSignedIn, orgRole } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
-	const [desktopOpen, setDesktopOpen] = useState(true);
+	const [desktopExpanded, setDesktopExpanded] = useState(true);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
 	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
@@ -300,9 +350,7 @@ export default function NavigationSidebar() {
 	};
 	const closeMobileNavigation = () => setMobileOpen(false);
 	return (
-		<div
-			className={cn('relative md:flex md:shrink-0', !desktopOpen && 'md:w-0')}
-		>
+		<div className="md:flex md:shrink-0">
 			<div className="border-b bg-background px-4 py-2 md:hidden">
 				<Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
 					<SheetTrigger asChild>
@@ -325,39 +373,42 @@ export default function NavigationSidebar() {
 				</Sheet>
 			</div>
 
-			{desktopOpen ? (
-				<aside className="hidden w-64 shrink-0 border-r bg-background p-4 md:flex md:flex-col">
-					<div className="mb-2 flex justify-end">
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setDesktopOpen(false)}
-							aria-label={t('closeSidebar')}
-							title={t('closeSidebar')}
-						>
-							<PanelLeftClose className="h-4 w-4" aria-hidden="true" />
-						</Button>
-					</div>
-					<NavigationContents
-						workItems={workItems}
-						adminDashboard={adminDashboard}
-						adminGroups={adminGroups}
-						onSearch={openSearch}
-						onFeedback={isSignedIn ? () => setFeedbackOpen(true) : undefined}
-					/>
-				</aside>
-			) : (
-				<Button
-					variant="outline"
-					size="icon"
-					className="fixed top-[4.5rem] left-2 z-20 hidden md:inline-flex"
-					onClick={() => setDesktopOpen(true)}
-					aria-label={t('openSidebar')}
-					title={t('openSidebar')}
+			<aside
+				className={cn(
+					'hidden shrink-0 border-r bg-background md:flex md:flex-col',
+					desktopExpanded ? 'w-64 p-4' : 'w-16 p-2'
+				)}
+			>
+				<div
+					className={cn(
+						'mb-2 flex',
+						desktopExpanded ? 'justify-end' : 'justify-center'
+					)}
 				>
-					<PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
-				</Button>
-			)}
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => setDesktopExpanded((expanded) => !expanded)}
+						aria-expanded={desktopExpanded}
+						aria-label={t(desktopExpanded ? 'closeSidebar' : 'openSidebar')}
+						title={t(desktopExpanded ? 'closeSidebar' : 'openSidebar')}
+					>
+						{desktopExpanded ? (
+							<PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+						) : (
+							<PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+						)}
+					</Button>
+				</div>
+				<NavigationContents
+					workItems={workItems}
+					adminDashboard={adminDashboard}
+					adminGroups={adminGroups}
+					onSearch={openSearch}
+					onFeedback={isSignedIn ? () => setFeedbackOpen(true) : undefined}
+					collapsed={!desktopExpanded}
+				/>
+			</aside>
 
 			<GlobalSearchDialog
 				open={searchOpen}
