@@ -52,7 +52,9 @@
 		"searchStartTyping": "Digite pelo menos 2 caracteres para buscar conteúdo.",
 		"searchNoResults": "Nenhum conteúdo encontrado.",
 		"mainNavigation": "Navegação principal",
-		"menu": "Menu"
+		"menu": "Menu",
+		"closeSidebar": "Fechar barra lateral",
+		"openSidebar": "Abrir barra lateral"
 	},
 	"auth": {
 		"welcomeBack": "Bem-vindo de volta",

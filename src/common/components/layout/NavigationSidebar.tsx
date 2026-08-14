@@ -1,17 +1,24 @@
 'use client';
 
 import { useAuth } from '@clerk/nextjs';
+import {
+	ChevronDown,
+	Menu,
+	MessageSquare,
+	PanelLeftClose,
+	PanelLeftOpen,
+	Search
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, Menu, MessageSquare, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { Button } from '~/common/components/ui/button';
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger
 } from '~/common/components/ui/collapsible';
-import { Button } from '~/common/components/ui/button';
 import {
 	Sheet,
 	SheetContent,
@@ -21,14 +28,14 @@ import {
 import {
 	ADMIN_DASHBOARD,
 	ADMIN_NAV_GROUPS,
-	isNavigationItemVisible,
-	WORK_NAV_ITEMS,
 	type NavigationGroup,
-	type NavigationItem
+	type NavigationItem,
+	WORK_NAV_ITEMS,
+	isNavigationItemVisible
 } from '~/common/constants/menuItem';
-import { cn } from '~/lib/utils';
 import { FeedbackDialog } from '~/features/feedback/FeedbackDialog';
 import { GlobalSearchDialog } from '~/features/search/components/GlobalSearchDialog';
+import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
 const isActivePath = (pathname: string, href: string) =>
@@ -229,6 +236,7 @@ export default function NavigationSidebar() {
 	const t = useTranslations('navigation');
 	const { has, isLoaded, isSignedIn, orgRole } = useAuth();
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [desktopOpen, setDesktopOpen] = useState(true);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
 	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
@@ -292,7 +300,9 @@ export default function NavigationSidebar() {
 	};
 	const closeMobileNavigation = () => setMobileOpen(false);
 	return (
-		<div className="md:flex md:shrink-0">
+		<div
+			className={cn('relative md:flex md:shrink-0', !desktopOpen && 'md:w-0')}
+		>
 			<div className="border-b bg-background px-4 py-2 md:hidden">
 				<Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
 					<SheetTrigger asChild>
@@ -315,15 +325,39 @@ export default function NavigationSidebar() {
 				</Sheet>
 			</div>
 
-			<aside className="hidden w-64 shrink-0 border-r bg-background p-4 md:flex md:flex-col">
-				<NavigationContents
-					workItems={workItems}
-					adminDashboard={adminDashboard}
-					adminGroups={adminGroups}
-					onSearch={openSearch}
-					onFeedback={isSignedIn ? () => setFeedbackOpen(true) : undefined}
-				/>
-			</aside>
+			{desktopOpen ? (
+				<aside className="hidden w-64 shrink-0 border-r bg-background p-4 md:flex md:flex-col">
+					<div className="mb-2 flex justify-end">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => setDesktopOpen(false)}
+							aria-label={t('closeSidebar')}
+							title={t('closeSidebar')}
+						>
+							<PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+						</Button>
+					</div>
+					<NavigationContents
+						workItems={workItems}
+						adminDashboard={adminDashboard}
+						adminGroups={adminGroups}
+						onSearch={openSearch}
+						onFeedback={isSignedIn ? () => setFeedbackOpen(true) : undefined}
+					/>
+				</aside>
+			) : (
+				<Button
+					variant="outline"
+					size="icon"
+					className="fixed top-[4.5rem] left-2 z-20 hidden md:inline-flex"
+					onClick={() => setDesktopOpen(true)}
+					aria-label={t('openSidebar')}
+					title={t('openSidebar')}
+				>
+					<PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+				</Button>
+			)}
 
 			<GlobalSearchDialog
 				open={searchOpen}
