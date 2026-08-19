@@ -1,20 +1,17 @@
 import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
 import Dashboard from '~/features/dashboard/components/Dashboard';
 import Projects from '~/features/projects/components/Projects';
 import { api } from '~/trpc/server';
 
 export const metadata: Metadata = {
-	title: 'Software Development Projects | Learn by Building Real Applications',
+	title: 'Dashboard | CodeWise',
 	description:
-		'Browse our curated collection of real-world software development projects. From web development to cloud computing, find hands-on projects that match your skill level and career goals. Get expert guidance and practical experience.',
+		'Keep your software development learning journey moving with projects, sprints, reviews, and mentorship in one place.',
 	openGraph: {
-		title:
-			'Software Development Projects | Learn by Building Real Applications',
+		title: 'Dashboard | CodeWise',
 		description:
-			'Browse our curated collection of real-world software development projects. From web development to cloud computing, find hands-on projects that match your skill level and career goals. Get expert guidance and practical experience.',
+			'Keep your software development learning journey moving with projects, sprints, reviews, and mentorship in one place.',
 		type: 'website'
 	}
 };
@@ -25,7 +22,6 @@ export default async function Home({
 	searchParams: { userId?: string | string[] };
 }) {
 	const { userId } = auth();
-	const t = await getTranslations('dashboard');
 	const requestedUserId =
 		typeof searchParams.userId === 'string' ? searchParams.userId : undefined;
 
@@ -34,32 +30,12 @@ export default async function Home({
 			requestedUserId ? { userId: requestedUserId } : undefined
 		);
 		return (
-			<main className="container mx-auto px-4 py-8">
-				<div className="mb-8">
-					<h1 className="font-bold text-3xl text-foreground">
-						{dashboard.viewedUser
-							? `${dashboard.viewedUser.name ?? dashboard.viewedUser.email} — ${t('yourDashboard')}`
-							: t('yourDashboard')}
-					</h1>
-					<p className="mt-2 text-muted-foreground">
-						{dashboard.viewedUser
-							? t('adminDashboardDescription')
-							: t('yourDashboardDescription')}
-					</p>
-					{dashboard.viewedUser && (
-						<Link
-							href="/"
-							className="mt-3 inline-block text-primary text-sm underline-offset-4 hover:underline"
-						>
-							{t('returnToDashboard')}
-						</Link>
-					)}
-				</div>
+			<div className="dark -m-6 min-h-[calc(100vh-4.5rem)] bg-[#0d1119] px-4 py-8 sm:px-8 lg:px-12">
 				<Dashboard
 					initialData={dashboard}
 					userId={dashboard.viewedUser ? requestedUserId : undefined}
 				/>
-			</main>
+			</div>
 		);
 	}
 

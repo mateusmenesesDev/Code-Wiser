@@ -39,7 +39,22 @@ describe('dashboard.getOverview', () => {
 			project: { id: 'project-1', title: 'Portal' }
 		} as never);
 		mockDb.project.findMany.mockResolvedValue([
-			{ id: 'project-1', title: 'Portal' }
+			{
+				id: 'project-1',
+				title: 'Portal',
+				description: 'Build a customer portal',
+				sprints: [
+					{
+						title: 'Sprint 1',
+						endDate: null,
+						committedPoints: 8,
+						tasks: [
+							{ status: 'DONE', storyPoints: 3 },
+							{ status: 'IN_PROGRESS', storyPoints: 5 }
+						]
+					}
+				]
+			}
 		] as never);
 		mockDb.userChallengeProgress.findFirst.mockResolvedValue(null);
 		mockDb.pullRequestReview.findFirst.mockResolvedValue(null);
@@ -71,6 +86,11 @@ describe('dashboard.getOverview', () => {
 		const result = await caller.getOverview();
 
 		expect(result.urgentTask?.id).toBe('task-1');
+		expect(result.currentSprint).toMatchObject({
+			title: 'Sprint 1',
+			completedPoints: 3,
+			totalPoints: 8
+		});
 		expect(result.projects[0]).toMatchObject({
 			id: 'project-1',
 			totalTasks: 5,

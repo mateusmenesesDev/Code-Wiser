@@ -80,6 +80,18 @@ export const dashboardRouter = {
 				select: {
 					id: true,
 					title: true,
+					description: true,
+					sprints: {
+						where: { status: 'ACTIVE' },
+						orderBy: { order: 'asc' },
+						take: 1,
+						select: {
+							title: true,
+							endDate: true,
+							committedPoints: true,
+							tasks: { select: { status: true, storyPoints: true } }
+						}
+					},
 					milestones: {
 						select: {
 							id: true,
@@ -219,9 +231,29 @@ export const dashboardRouter = {
 			)
 		});
 
+		const currentSprint = projects[0]?.sprints?.[0];
+		const sprintPoints = currentSprint?.tasks.reduce(
+			(total, task) => total + (task.storyPoints ?? 0),
+			0
+		);
+		const sprintCompletedPoints = currentSprint?.tasks.reduce(
+			(total, task) =>
+				total + (task.status === 'DONE' ? (task.storyPoints ?? 0) : 0),
+			0
+		);
+		const currentSprintSummary = currentSprint
+			? {
+					title: currentSprint.title,
+					endDate: currentSprint.endDate,
+					completedPoints: sprintCompletedPoints ?? 0,
+					totalPoints: currentSprint.committedPoints ?? sprintPoints ?? 0
+				}
+			: null;
+
 		return {
 			...(viewedUser ? { viewedUser } : {}),
 			urgentTask,
+			currentSprint: currentSprintSummary,
 			projects: projects.map((project) => {
 				const milestones = project.milestones ?? [];
 				const milestoneStats = milestones.map((milestone) => {
@@ -256,6 +288,7 @@ export const dashboardRouter = {
 				return {
 					id: project.id,
 					title: project.title,
+					description: project.description,
 					...(hasRoadmap
 						? {
 								progress: roadmapTaskCount
@@ -267,6 +300,7 @@ export const dashboardRouter = {
 									(milestone) => milestone.completed
 								).length,
 								totalMilestones: milestones.length,
+								lastActivityAt: stats[project.id]?.lastActivityAt ?? null,
 								usesRoadmap: true as const
 							}
 						: {

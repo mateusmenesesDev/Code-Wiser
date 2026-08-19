@@ -4,6 +4,7 @@ import { type DashboardOverview, getNextAction } from './nextAction';
 const emptyOverview = (): DashboardOverview =>
 	({
 		urgentTask: null,
+		currentSprint: null,
 		projects: [],
 		exercise: null,
 		activeReview: null,
