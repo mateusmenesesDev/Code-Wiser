@@ -61,15 +61,15 @@ function formatActivity(
 function DashboardSkeleton() {
 	return (
 		<div className="space-y-6" aria-live="polite" aria-busy="true">
-			<Skeleton className="h-24 bg-[#171d28]" />
+			<Skeleton className="h-24 bg-muted" />
 			<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
 				{[1, 2, 3, 4, 5].map((id) => (
-					<Skeleton key={id} className="h-32 bg-[#171d28]" />
+					<Skeleton key={id} className="h-32 bg-muted" />
 				))}
 			</div>
 			<div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
-				<Skeleton className="h-[420px] bg-[#171d28]" />
-				<Skeleton className="h-[420px] bg-[#171d28]" />
+				<Skeleton className="h-[420px] bg-muted" />
+				<Skeleton className="h-[420px] bg-muted" />
 			</div>
 		</div>
 	);
@@ -89,14 +89,14 @@ function StatCard({
 	iconClassName: string;
 }) {
 	return (
-		<Card className="border-[#2b3340] bg-[#171d28] text-[#f1f3f7] shadow-none">
+		<Card className="shadow-none">
 			<CardContent className="p-4">
-				<div className="mb-4 flex h-8 w-8 items-center justify-center rounded-lg bg-[#222a38]">
+				<div className="mb-4 flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
 					<Icon className={`h-4 w-4 ${iconClassName}`} aria-hidden="true" />
 				</div>
 				<p className="font-semibold text-2xl tracking-tight">{value}</p>
 				<p className="mt-1 text-sm">{label}</p>
-				<p className="mt-1 truncate text-[#8793aa] text-xs">{meta}</p>
+				<p className="mt-1 truncate text-muted-foreground text-xs">{meta}</p>
 			</CardContent>
 		</Card>
 	);
@@ -208,19 +208,19 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 	}
 
 	return (
-		<div className="mx-auto max-w-[1336px] space-y-7 text-[#f1f3f7]">
+		<div className="mx-auto max-w-[1336px] space-y-7 text-foreground">
 			<header className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 				<div>
 					<h1 className="font-semibold text-2xl tracking-tight sm:text-[28px]">
 						{greeting}, {firstName}
 					</h1>
-					<p className="mt-1 text-[#8793aa] text-sm">
+					<p className="mt-1 text-muted-foreground text-sm">
 						{t('journeyDescription')}
 					</p>
 					{overview.viewedUser && (
 						<Link
 							href="/"
-							className="mt-2 inline-block text-[#8588ff] text-xs underline-offset-4 hover:underline"
+							className="mt-2 inline-block text-primary text-xs underline-offset-4 hover:underline"
 						>
 							{t('returnToDashboard')}
 						</Link>
@@ -228,7 +228,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 				</div>
 				<Button
 					asChild
-					className="h-10 rounded-lg bg-[#7b7eff] px-5 font-semibold text-[#10131c] hover:bg-[#9496ff]"
+					className="h-10 rounded-lg bg-primary px-5 font-semibold text-primary-foreground hover:bg-primary/90"
 				>
 					<Link href={nextAction?.href ?? '/projects'}>
 						<Play className="mr-2 h-4 w-4 fill-current" aria-hidden="true" />
@@ -246,7 +246,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 					label={t('stats.activeProjects')}
 					value={overview.projects.length}
 					meta={t('stats.activeProjectsMeta')}
-					iconClassName="text-[#888aff]"
+					iconClassName="text-primary"
 				/>
 				<StatCard
 					icon={CheckCircle2}
@@ -255,7 +255,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 						overview.projects.filter((item) => item.progress === 100).length
 					}
 					meta={t('stats.completedProjectsMeta')}
-					iconClassName="text-[#27d47b]"
+					iconClassName="text-success"
 				/>
 				<StatCard
 					icon={Timer}
@@ -270,14 +270,14 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 								})
 							: t('stats.noCurrentSprint')
 					}
-					iconClassName="text-[#1bb7f0]"
+					iconClassName="text-info"
 				/>
 				<StatCard
 					icon={GitPullRequest}
 					label={t('stats.pendingReviews')}
 					value={overview.activeReview ? 1 : 0}
 					meta={reviewMeta}
-					iconClassName="text-[#f0aa31]"
+					iconClassName="text-warning"
 				/>
 				<StatCard
 					icon={CalendarClock}
@@ -290,25 +290,25 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 					meta={
 						overview.booking ? t('stats.mentoringMeta') : t('stats.noMentoring')
 					}
-					iconClassName="text-[#9a8cff]"
+					iconClassName="text-epic"
 				/>
 			</section>
 
 			<div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
 				<div className="space-y-8">
 					<section>
-						<Card className="border-[#2b3340] bg-[#171d28] text-[#f1f3f7] shadow-none">
+						<Card className="shadow-none">
 							<CardContent className="p-5 sm:p-6">
 								{project ? (
 									<>
 										<div className="flex items-start justify-between gap-4">
 											<div className="min-w-0">
 												<div className="mb-3 flex flex-wrap items-center gap-2">
-													<Badge className="border-transparent bg-[#063e5d] text-[#1eb7f1]">
+													<Badge className="border-transparent bg-info-muted text-info-muted-foreground">
 														{t('project.inProgress')}
 													</Badge>
 													{currentSprint && (
-														<Badge className="border-[#384255] bg-[#202733] text-[#9aa6bb]">
+														<Badge className="border-border bg-muted text-muted-foreground">
 															{currentSprint.title}
 														</Badge>
 													)}
@@ -316,7 +316,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 												<h2 className="font-semibold text-lg tracking-tight">
 													{project.title}
 												</h2>
-												<p className="mt-1 max-w-2xl text-[#8793aa] text-sm">
+												<p className="mt-1 max-w-2xl text-muted-foreground text-sm">
 													{project.description}
 												</p>
 											</div>
@@ -324,18 +324,18 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 												<p className="font-semibold text-2xl">
 													{project.progress}%
 												</p>
-												<p className="text-[#8793aa] text-xs">
+												<p className="text-muted-foreground text-xs">
 													{t('project.complete')}
 												</p>
 											</div>
 										</div>
 										<Progress
 											value={project.progress}
-											className="mt-6 h-1.5 bg-[#252d3b] [&>div]:bg-[#7b7eff]"
+											className="mt-6 h-1.5 bg-muted [&>div]:bg-primary"
 										/>
-										<div className="mt-5 grid gap-4 border-[#2b3340] border-b pb-5 sm:grid-cols-3">
+										<div className="mt-5 grid gap-4 border-border border-b pb-5 sm:grid-cols-3">
 											<div>
-												<p className="text-[#8793aa] text-xs">
+												<p className="text-muted-foreground text-xs">
 													{t('project.tasksDone')}
 												</p>
 												<p className="mt-1 text-sm">
@@ -344,7 +344,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 												</p>
 											</div>
 											<div>
-												<p className="text-[#8793aa] text-xs">
+												<p className="text-muted-foreground text-xs">
 													{t('project.milestones')}
 												</p>
 												<p className="mt-1 text-sm">
@@ -353,7 +353,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 												</p>
 											</div>
 											<div>
-												<p className="text-[#8793aa] text-xs">
+												<p className="text-muted-foreground text-xs">
 													{t('project.lastActivity')}
 												</p>
 												<p className="mt-1 text-sm">
@@ -368,7 +368,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 										<div className="mt-5 flex flex-wrap gap-2">
 											<Button
 												asChild
-												className="bg-[#7b7eff] text-[#10131c] hover:bg-[#9496ff]"
+												className="bg-primary text-primary-foreground hover:bg-primary/90"
 											>
 												<Link href={`/workspace/${project.id}`}>
 													{t('continueProject')}
@@ -381,7 +381,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 											<Button
 												asChild
 												variant="outline"
-												className="border-[#384255] bg-transparent text-[#f1f3f7] hover:bg-[#202733] hover:text-white"
+												className="border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground"
 											>
 												<Link href={`/workspace/${project.id}`}>
 													{t('project.viewBacklog')}
@@ -394,12 +394,12 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 										<h2 className="font-semibold text-lg">
 											{t('project.noProject')}
 										</h2>
-										<p className="mt-2 text-[#8793aa] text-sm">
+										<p className="mt-2 text-muted-foreground text-sm">
 											{t('project.noProjectDescription')}
 										</p>
 										<Button
 											asChild
-											className="mt-5 bg-[#7b7eff] text-[#10131c] hover:bg-[#9496ff]"
+											className="mt-5 bg-primary text-primary-foreground hover:bg-primary/90"
 										>
 											<Link href="/projects">
 												{t('actions.browseProjects')}
@@ -416,7 +416,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 							<h2 className="font-semibold text-base">
 								{t('recommendedNextActions')}
 							</h2>
-							<p className="mt-1 text-[#8793aa] text-sm">
+							<p className="mt-1 text-muted-foreground text-sm">
 								{t('recommendedDescription')}
 							</p>
 						</div>
@@ -425,24 +425,24 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 								const Icon = action.icon;
 								const tone =
 									action.priority === 'critical'
-										? 'border-[#633538] bg-[#351e27] text-[#f25e51]'
+										? 'border-destructive/30 bg-destructive/10 text-destructive'
 										: action.priority === 'high'
-											? 'border-[#604b1e] bg-[#382c13] text-[#f0ad2d]'
-											: 'border-[#244761] bg-[#14334a] text-[#23a9e1]';
+											? 'border-warning-border bg-warning-muted text-warning-muted-foreground'
+											: 'border-info-border bg-info-muted text-info-muted-foreground';
 								return (
 									<Link
 										key={action.href + action.title}
 										href={action.href}
-										className="group flex items-center gap-3 rounded-2xl border border-[#2b3340] bg-[#171d28] p-4 transition-colors hover:border-[#4a556b]"
+										className="group flex items-center gap-3 rounded-2xl border border-border bg-muted p-4 transition-colors hover:border-primary"
 									>
-										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#222a38] text-[#9aa6bb]">
+										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
 											<Icon className="h-4 w-4" aria-hidden="true" />
 										</span>
 										<span className="min-w-0 flex-1">
 											<span className="block truncate font-medium text-sm">
 												{action.title}
 											</span>
-											<span className="mt-1 block truncate text-[#8793aa] text-xs">
+											<span className="mt-1 block truncate text-muted-foreground text-xs">
 												{action.description}
 											</span>
 											<span className="mt-2 flex items-center gap-2">
@@ -452,7 +452,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 											</span>
 										</span>
 										<ArrowRight
-											className="h-4 w-4 shrink-0 text-[#8793aa] transition-transform group-hover:translate-x-1"
+											className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1"
 											aria-hidden="true"
 										/>
 									</Link>
@@ -467,42 +467,42 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 						<h2 className="mb-3 font-semibold text-base">
 							{t('upcomingMentorship')}
 						</h2>
-						<Card className="border-[#2b3340] bg-[#171d28] text-[#f1f3f7] shadow-none">
+						<Card className="shadow-none">
 							<CardContent className="p-5">
 								{overview.booking ? (
 									<div className="space-y-4">
 										<div className="flex items-center gap-3">
-											<div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#222a38] font-semibold text-sm">
+											<div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted font-semibold text-sm">
 												{t('mentorshipInitials')}
 											</div>
 											<div>
 												<p className="font-medium">{t('mentorshipTitle')}</p>
-												<p className="text-[#8793aa] text-xs">
+												<p className="text-muted-foreground text-xs">
 													{t('mentorshipSubtitle')}
 												</p>
 											</div>
 										</div>
-										<div className="rounded-xl border border-[#384255] bg-[#1c232f] p-3">
+										<div className="rounded-xl border border-border bg-muted p-3">
 											<div className="flex items-center gap-2 font-medium text-sm">
 												<CalendarClock
-													className="h-4 w-4 text-[#8b8eff]"
+													className="h-4 w-4 text-epic"
 													aria-hidden="true"
 												/>
 												{formatSession(overview.booking.scheduledAt, locale)}
 											</div>
-											<p className="mt-2 flex items-center gap-2 text-[#8793aa] text-sm">
+											<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 												<Clock3 className="h-4 w-4" aria-hidden="true" />
 												{t('mentorshipDuration')}
 											</p>
 										</div>
 										<p className="text-sm">{t('mentorshipDescription')}</p>
-										<Badge className="border-transparent bg-[#073e2c] text-[#21d47b]">
+										<Badge className="border-transparent bg-success-muted text-success-muted-foreground">
 											{t('confirmed')}
 										</Badge>
 										<Button
 											asChild
 											variant="outline"
-											className="w-full border-[#384255] bg-transparent text-[#f1f3f7] hover:bg-[#202733] hover:text-white"
+											className="w-full border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground"
 										>
 											<Link href="/mentorship">
 												<Video className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -513,12 +513,12 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 								) : (
 									<div className="py-5">
 										<p className="font-medium">{t('noUpcomingSession')}</p>
-										<p className="mt-1 text-[#8793aa] text-sm">
+										<p className="mt-1 text-muted-foreground text-sm">
 											{t('mentorshipEmptyDescription')}
 										</p>
 										<Button
 											asChild
-											className="mt-4 bg-[#7b7eff] text-[#10131c] hover:bg-[#9496ff]"
+											className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90"
 										>
 											<Link href="/mentorship">{t('bookSession')}</Link>
 										</Button>
@@ -532,14 +532,14 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 						<h2 className="mb-3 font-semibold text-base">
 							{t('recentActivity')}
 						</h2>
-						<Card className="border-[#2b3340] bg-[#171d28] text-[#f1f3f7] shadow-none">
+						<Card className="shadow-none">
 							<CardContent className="p-5">
 								{overview.notifications.length > 0 ? (
 									<div className="space-y-5">
 										{overview.notifications.map((notification) => {
 											const content = (
 												<div key={notification.id} className="flex gap-3">
-													<span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#222a38] text-[#8b8eff]">
+													<span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-epic">
 														<CircleDot
 															className="h-3.5 w-3.5"
 															aria-hidden="true"
@@ -549,10 +549,10 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 														<span className="block font-medium text-sm">
 															{notification.title}
 														</span>
-														<span className="mt-1 block text-[#8793aa] text-xs">
+														<span className="mt-1 block text-muted-foreground text-xs">
 															{notification.message}
 														</span>
-														<span className="mt-1 block text-[#718096] text-[11px]">
+														<span className="mt-1 block text-[11px] text-muted-foreground">
 															{formatActivity(
 																notification.createdAt,
 																locale,
@@ -566,7 +566,7 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 												<Link
 													key={notification.id}
 													href={notification.link}
-													className="block rounded-lg hover:bg-[#202733]"
+													className="block rounded-lg hover:bg-accent"
 												>
 													{content}
 												</Link>
@@ -576,9 +576,9 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 										})}
 									</div>
 								) : (
-									<div className="py-5 text-[#8793aa] text-sm">
+									<div className="py-5 text-muted-foreground text-sm">
 										<CheckCircle2
-											className="mb-2 h-5 w-5 text-[#27d47b]"
+											className="mb-2 h-5 w-5 text-success"
 											aria-hidden="true"
 										/>
 										{t('allCaughtUp')}
@@ -608,11 +608,11 @@ export default function Dashboard({
 	if (isLoading && !data) return <DashboardSkeleton />;
 	if (!data)
 		return (
-			<Card className="border-[#2b3340] bg-[#171d28] text-[#f1f3f7]">
+			<Card className="shadow-none">
 				<CardContent className="space-y-3 py-12">
-					<CircleDot className="h-8 w-8 text-[#f25e51]" />
+					<CircleDot className="h-8 w-8 text-destructive" />
 					<h2 className="font-semibold text-lg">{t('dashboardUnavailable')}</h2>
-					<p className="text-[#8793aa] text-sm">
+					<p className="text-muted-foreground text-sm">
 						{t('dashboardUnavailableDescription')}
 					</p>
 				</CardContent>

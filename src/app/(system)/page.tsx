@@ -30,7 +30,7 @@ export default async function Home({
 			requestedUserId ? { userId: requestedUserId } : undefined
 		);
 		return (
-			<div className="dark -m-6 min-h-[calc(100vh-4.5rem)] bg-[#0d1119] px-4 py-8 sm:px-8 lg:px-12">
+			<div className="-m-6 min-h-[calc(100vh-4.5rem)] px-4 py-8 sm:px-8 lg:px-12">
 				<Dashboard
 					initialData={dashboard}
 					userId={dashboard.viewedUser ? requestedUserId : undefined}
