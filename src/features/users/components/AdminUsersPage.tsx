@@ -37,6 +37,7 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import { api } from '~/trpc/react';
+import { UserPreviewSelector } from '~/features/userPreview/UserPreviewProvider';
 import { EditUserDialog } from './EditUserDialog';
 
 export default function AdminUsersPage() {
@@ -111,6 +112,8 @@ export default function AdminUsersPage() {
 						Manage users, credits, and mentorship status
 					</p>
 				</div>
+
+				<UserPreviewSelector />
 
 				{/* Filters */}
 				<Card className="mb-6">

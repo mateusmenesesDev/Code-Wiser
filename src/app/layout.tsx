@@ -17,6 +17,10 @@ import { Toaster } from 'sonner';
 import Header from '~/common/components/layout/Header';
 import NavigationSidebar from '~/common/components/layout/NavigationSidebar';
 import { SyncActiveOrganization } from '~/features/auth/components/SyncActiveOrganizations';
+import {
+	UserPreviewBanner,
+	UserPreviewProvider
+} from '~/features/userPreview/UserPreviewProvider';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { TRPCReactProvider } from '~/trpc/react';
 import { HydrateClient } from '~/trpc/server';
@@ -73,13 +77,16 @@ export default async function RootLayout({
 										enableSystem
 										disableTransitionOnChange
 									>
-										<HydrateClient>
-											<Header />
-											<div className="min-h-[calc(100vh-4.5rem)] md:flex">
-												<NavigationSidebar />
-												<main className="min-w-0 flex-1 p-6">{children}</main>
-											</div>
-										</HydrateClient>
+										<UserPreviewProvider>
+											<HydrateClient>
+												<Header />
+												<UserPreviewBanner />
+												<div className="min-h-[calc(100vh-4.5rem)] md:flex">
+													<NavigationSidebar />
+													<main className="min-w-0 flex-1 p-6">{children}</main>
+												</div>
+											</HydrateClient>
+										</UserPreviewProvider>
 										<Toaster richColors />
 									</ThemeProvider>
 								</NuqsAdapter>

@@ -35,6 +35,7 @@ import {
 } from '~/common/constants/menuItem';
 import { FeedbackDialog } from '~/features/feedback/FeedbackDialog';
 import { GlobalSearchDialog } from '~/features/search/components/GlobalSearchDialog';
+import { useUserPreview } from '~/features/userPreview/UserPreviewProvider';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
@@ -289,27 +290,31 @@ export default function NavigationSidebar() {
 	const [desktopExpanded, setDesktopExpanded] = useState(true);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
+	const { mode: previewMode } = useUserPreview();
 	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
 		undefined,
 		{
-			enabled: !!isSignedIn
+			enabled: !!isSignedIn && !previewMode
 		}
 	);
-	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+	const hasActiveMentorship =
+		previewMode === 'mentorship' ||
+		mentorshipStatus?.mentorshipStatus === 'ACTIVE';
 
 	const visibility = useMemo(
 		() => ({
 			isSignedIn: !!isSignedIn,
 			hasMentorship: hasActiveMentorship,
 			hasAdminRole: () =>
+				!previewMode &&
 				isLoaded &&
 				(String(orgRole) === 'admin' ||
 					orgRole === 'org:admin' ||
 					has({ role: 'org:admin' })),
 			hasPermission: (permission: ClerkAuthorization['permission']) =>
-				isLoaded && has({ permission })
+				!previewMode && isLoaded && has({ permission })
 		}),
-		[has, hasActiveMentorship, isLoaded, isSignedIn, orgRole]
+		[has, hasActiveMentorship, isLoaded, isSignedIn, orgRole, previewMode]
 	);
 	const workItems = WORK_NAV_ITEMS.filter((item) =>
 		isNavigationItemVisible(item, visibility)

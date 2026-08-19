@@ -193,6 +193,23 @@
 			"CHANGES_REQUESTED": "Changes requested"
 		}
 	},
+	"userPreview": {
+		"badge": "Preview",
+		"title": "Test learner experience",
+		"description": "Preview learner navigation and access. Data and actions still belong to your admin account.",
+		"activeAs": "Viewing as {profile}",
+		"creditsAccess": "{credits} credits available",
+		"mentorshipAccess": "Active mentorship access",
+		"exit": "Exit preview",
+		"free": {
+			"label": "free learner with credits",
+			"button": "Free learner · 500 credits"
+		},
+		"mentorship": {
+			"label": "mentorship learner",
+			"button": "Mentorship learner"
+		}
+	},
 	"onboarding": {
 		"browseCatalogTitle": "Browse the project catalog",
 		"browseCatalogDescription": "Find a project that matches your level and goals. Use filters to narrow the catalog before starting.",

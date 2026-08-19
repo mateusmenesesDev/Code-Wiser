@@ -193,6 +193,23 @@
 			"CHANGES_REQUESTED": "Alterações solicitadas"
 		}
 	},
+	"userPreview": {
+		"badge": "Visualização",
+		"title": "Testar experiência do aluno",
+		"description": "Veja a navegação e o acesso do aluno. Os dados e as ações continuam na sua conta de administrador.",
+		"activeAs": "Vendo como {profile}",
+		"creditsAccess": "{credits} créditos disponíveis",
+		"mentorshipAccess": "Acesso à mentoria ativa",
+		"exit": "Sair da visualização",
+		"free": {
+			"label": "aluno free com créditos",
+			"button": "Aluno free · 500 créditos"
+		},
+		"mentorship": {
+			"label": "aluno de mentoria",
+			"button": "Aluno de mentoria"
+		}
+	},
 	"onboarding": {
 		"browseCatalogTitle": "Explore o catálogo de projetos",
 		"browseCatalogDescription": "Encontre um projeto compatível com seu nível e seus objetivos. Use os filtros antes de começar.",

@@ -14,6 +14,8 @@ import { useDialog } from '~/common/hooks/useDialog';
 import SignInDialog from '~/features/auth/components/Signin/SigninDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { NotificationBell } from '~/features/notifications/components/NotificationBell';
+import { getUserPreviewProfile } from '~/features/userPreview/userPreview';
+import { useUserPreview } from '~/features/userPreview/UserPreviewProvider';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { api } from '~/trpc/react';
 import CodeWiseIcon from '../../icons/CodeWiseIcon';
@@ -30,22 +32,34 @@ const Header = () => {
 	}, []);
 
 	const { user } = useAuth();
+	const { mode: previewMode } = useUserPreview();
 	const isLoggedIn = !!user;
 	const {
 		data: mentorshipStatus,
 		isError: mentorshipStatusErrored,
 		isLoading: mentorshipStatusLoading
 	} = api.user.getMentorshipStatus.useQuery(undefined, {
-		enabled: isLoggedIn
+		enabled: isLoggedIn && !previewMode
 	});
-	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
+		enabled:
+			isLoggedIn &&
+			!previewMode &&
+			(mentorshipStatus?.mentorshipStatus === 'INACTIVE' ||
+				mentorshipStatusErrored)
+	});
+	const previewProfile = previewMode
+		? getUserPreviewProfile(previewMode)
+		: undefined;
+	const hasActiveMentorship =
+		previewProfile?.hasMentorship ??
+		mentorshipStatus?.mentorshipStatus === 'ACTIVE';
 	const shouldShowCreditsBadge =
 		isLoggedIn &&
-		(mentorshipStatus?.mentorshipStatus === 'INACTIVE' ||
-			mentorshipStatusErrored);
-	const { data: userCredits } = api.user.getCredits.useQuery(undefined, {
-		enabled: shouldShowCreditsBadge
-	});
+		(previewMode === 'free' ||
+			(!previewMode &&
+				(mentorshipStatus?.mentorshipStatus === 'INACTIVE' ||
+					mentorshipStatusErrored)));
 
 	return (
 		<header className="border-b bg-background/80 backdrop-blur-md">
@@ -84,7 +98,8 @@ const Header = () => {
 										<Calendar className="mr-1 h-3 w-3" aria-hidden="true" />
 										{t('mentorshipActive')}
 									</Badge>
-								) : shouldShowCreditsBadge && !mentorshipStatusLoading ? (
+								) : shouldShowCreditsBadge &&
+									(previewMode || !mentorshipStatusLoading) ? (
 									<Link href="/pricing" aria-label={t('viewPricing')}>
 										<Badge
 											variant="purple-gradient"
@@ -92,7 +107,8 @@ const Header = () => {
 											data-onboarding="user-credits"
 										>
 											<Sparkles className="mr-1 h-3 w-3" aria-hidden="true" />
-											{userCredits?.credits ?? 0} {t('credits')}
+											{previewProfile?.credits ?? userCredits?.credits ?? 0}{' '}
+											{t('credits')}
 										</Badge>
 									</Link>
 								) : null}
