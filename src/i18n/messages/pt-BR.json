@@ -112,7 +112,8 @@
 			"noProjectDescription": "Comece um projeto para acompanhar seu progresso aqui."
 		},
 		"recommendedNextActions": "Próximas ações recomendadas",
-		"recommendedDescription": "Ordenadas pelo que desbloqueia seu aprendizado mais rápido.",
+		"recommendedDescription": "Prévia do sistema de recomendações que está em desenvolvimento.",
+		"soon": "Em breve",
 		"actions": {
 			"finish": "Concluir",
 			"review": "Revisar feedback de",

@@ -112,7 +112,8 @@
 			"noProjectDescription": "Start a project to see your progress here."
 		},
 		"recommendedNextActions": "Recommended next actions",
-		"recommendedDescription": "Ordered by what unblocks your learning fastest.",
+		"recommendedDescription": "Preview of the recommendation system currently in development.",
+		"soon": "Soon",
 		"actions": {
 			"finish": "Finish",
 			"review": "Review feedback on",

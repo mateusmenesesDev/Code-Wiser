@@ -139,7 +139,6 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 		icon: LucideIcon;
 		title: string;
 		description: string;
-		href: string;
 		priority: 'critical' | 'high' | 'medium';
 		priorityLabel: string;
 	}> = [];
@@ -149,7 +148,6 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 			icon: Code2,
 			title: `${t('actions.finish')} ${overview.urgentTask.title}`,
 			description: overview.urgentTask.project.title,
-			href: `/workspace/${overview.urgentTask.project.id}?taskId=${overview.urgentTask.id}`,
 			priority:
 				overview.urgentTask.priority === 'HIGH' ||
 				overview.urgentTask.priority === 'HIGHEST'
@@ -171,7 +169,6 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 			icon: MessageSquare,
 			title: `${t('actions.review')} ${overview.activeReview.task.title}`,
 			description: t('actions.reviewDescription'),
-			href: `/workspace/${overview.activeReview.task.project.id}?taskId=${overview.activeReview.task.id}`,
 			priority: 'high',
 			priorityLabel: t('priority.high')
 		});
@@ -181,7 +178,6 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 			icon: BookOpen,
 			title: `${t('actions.continue')} ${overview.exercise.challenge.title}`,
 			description: overview.exercise.challenge.track.name,
-			href: `/exercises/${overview.exercise.challenge.track.slug}/${overview.exercise.challenge.slug}`,
 			priority: 'medium',
 			priorityLabel: t('priority.medium')
 		});
@@ -191,7 +187,6 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 			icon: CalendarClock,
 			title: t('actions.prepareMentoring'),
 			description: formatSession(overview.booking.scheduledAt, locale),
-			href: '/mentorship',
 			priority: 'medium',
 			priorityLabel: t('priority.medium')
 		});
@@ -201,7 +196,6 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 			icon: FolderKanban,
 			title: t('actions.browseProjects'),
 			description: t('actions.browseProjectsDescription'),
-			href: '/projects',
 			priority: 'medium',
 			priorityLabel: t('priority.medium')
 		});
@@ -413,9 +407,18 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 
 					<section>
 						<div className="mb-3">
-							<h2 className="font-semibold text-base">
-								{t('recommendedNextActions')}
-							</h2>
+							<div className="flex items-center gap-3">
+								<h2 className="font-semibold text-base">
+									{t('recommendedNextActions')}
+								</h2>
+								<Badge
+									variant="outline"
+									className="gap-1 border-info-border bg-info-muted text-info-muted-foreground"
+								>
+									<Clock3 className="h-3 w-3" aria-hidden="true" />
+									{t('soon')}
+								</Badge>
+							</div>
 							<p className="mt-1 text-muted-foreground text-sm">
 								{t('recommendedDescription')}
 							</p>
@@ -430,10 +433,9 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 											? 'border-warning-border bg-warning-muted text-warning-muted-foreground'
 											: 'border-info-border bg-info-muted text-info-muted-foreground';
 								return (
-									<Link
-										key={action.href + action.title}
-										href={action.href}
-										className="group flex items-center gap-3 rounded-2xl border border-border bg-muted p-4 transition-colors hover:border-primary"
+									<div
+										key={action.title}
+										className="flex items-center gap-3 rounded-2xl border border-border border-dashed bg-muted/50 p-4 opacity-75"
 									>
 										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
 											<Icon className="h-4 w-4" aria-hidden="true" />
@@ -451,11 +453,11 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 												</Badge>
 											</span>
 										</span>
-										<ArrowRight
-											className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1"
-											aria-hidden="true"
-										/>
-									</Link>
+										<span className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
+											<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+											{t('soon')}
+										</span>
+									</div>
 								);
 							})}
 						</div>
