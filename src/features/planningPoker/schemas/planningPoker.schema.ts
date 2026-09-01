@@ -53,6 +53,11 @@ export const updateTaskDescriptionSchema = z.object({
 	description: z.string()
 });
 
+export const deleteTaskSchema = z.object({
+	sessionId: z.string(),
+	taskId: z.string()
+});
+
 export const endSessionSchema = z.object({
 	sessionId: z.string()
 });

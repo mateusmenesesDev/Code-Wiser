@@ -197,6 +197,13 @@ export function useRealtimeClient({
 			});
 		});
 
+		channel.bind('task-deleted', (data: unknown) => {
+			callbacksRef.current.onEvent?.({
+				type: 'task-deleted',
+				data
+			});
+		});
+
 		channel.bind('session-ended', (data: unknown) => {
 			callbacksRef.current.onEvent?.({
 				type: 'session-ended',

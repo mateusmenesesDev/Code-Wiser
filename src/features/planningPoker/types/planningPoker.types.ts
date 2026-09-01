@@ -34,6 +34,7 @@ export interface SSEMessage {
 		| 'vote'
 		| 'task-finalized'
 		| 'task-description-updated'
+		| 'task-deleted'
 		| 'session-ended';
 	data: unknown;
 }
@@ -56,6 +57,13 @@ export interface TaskDescriptionUpdatedSSEData {
 	sessionId: string;
 	taskId: string;
 	description: string | null;
+	projectId: string;
+}
+
+export interface TaskDeletedSSEData {
+	sessionId: string;
+	taskId: string;
+	nextTaskIndex: number | null;
 	projectId: string;
 }
 

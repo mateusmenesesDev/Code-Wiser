@@ -5,13 +5,14 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useSetAtom } from 'jotai';
 import { Loader2, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '~/common/components/ui/button';
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
 import { planningPokerDialogAtom } from '../atoms/planningPokerDialog.atom';
 import { usePlanningPoker } from '../hooks/usePlanningPoker';
 import type { PlanningPokerStoryPoint } from '../types/planningPoker.types';
+import { DeleteTaskDialog } from './DeleteTaskDialog';
 import { EndSessionDialog } from './EndSessionDialog';
 import { FinalizeLastTaskDialog } from './FinalizeLastTaskDialog';
 import { MemberList } from './MemberList';
@@ -31,6 +32,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 	const userId = user?.id;
 	const setDialogState = useSetAtom(planningPokerDialogAtom);
 	const [storyRegionRef] = useAutoAnimate<HTMLDivElement>({ duration: 250 });
+	const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
 	const {
 		session,
 		currentTask,
@@ -45,6 +47,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		handleVote,
 		handleFinalizeTask,
 		handleEndSession,
+		handleDeleteTask,
 		handleUpdateTaskDescription,
 		isCreator,
 		isLastTask,
@@ -55,6 +58,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		isSessionComplete,
 		isFinalizing,
 		isEnding,
+		isDeletingTask,
 		isUpdatingDescription
 	} = usePlanningPoker({ sessionId });
 
@@ -88,6 +92,10 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 
 	const handleFinalizeLastTaskConfirm = () => {
 		handleFinalizeTask();
+	};
+
+	const handleDeleteTaskConfirm = async () => {
+		await handleDeleteTask();
 	};
 
 	if (isSessionComplete) {
@@ -183,7 +191,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 								variant="destructive"
 								size="sm"
 								onClick={handleEndSessionClick}
-								disabled={isEnding || isFinalizing}
+								disabled={isEnding || isFinalizing || isDeletingTask}
 							>
 								{isEnding ? (
 									<>
@@ -228,8 +236,9 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 								{/* Task Card */}
 								<TaskCard
 									task={currentTask}
-									canEdit={isCreator && !isFinalizing}
+									canEdit={isCreator && !isFinalizing && !isDeletingTask}
 									onSaveDescription={handleUpdateTaskDescription}
+									onDelete={() => setIsDeleteTaskDialogOpen(true)}
 									isSavingDescription={isUpdatingDescription}
 								/>
 
@@ -343,6 +352,15 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 				isFinalizing={isFinalizing}
 				isEnding={isEnding}
 			/>
+			{currentTask && (
+				<DeleteTaskDialog
+					open={isDeleteTaskDialogOpen}
+					taskTitle={currentTask.title}
+					isDeleting={isDeletingTask}
+					onConfirm={handleDeleteTaskConfirm}
+					onOpenChange={setIsDeleteTaskDialogOpen}
+				/>
+			)}
 		</div>
 	);
 }

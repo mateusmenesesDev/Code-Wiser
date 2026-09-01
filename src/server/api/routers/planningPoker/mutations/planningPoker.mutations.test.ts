@@ -139,6 +139,142 @@ describe('planningPoker.vote realtime', () => {
 		});
 	});
 
+	it('deletes the current task, advances the session, and broadcasts it', async () => {
+		authState.isAdmin = true;
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		mockDb.planningPokerSession.findUnique.mockResolvedValue({
+			projectId: 'project-1',
+			status: 'ACTIVE',
+			taskIds: ['task-1', 'task-2'],
+			currentTaskIndex: 0,
+			createdById: 'user-1'
+		} as never);
+		mockDb.project.findUnique.mockResolvedValue({ canceledAt: null } as never);
+		mockDb.task.findUnique.mockResolvedValue({
+			projectId: 'project-1',
+			storyPoints: 5,
+			sprint: null
+		} as never);
+		mockDb.taskAttachment.findMany.mockResolvedValue([] as never);
+		mockDb.planningPokerSession.update.mockResolvedValue({
+			taskIds: ['task-2'],
+			currentTaskIndex: 0,
+			status: 'ACTIVE'
+		} as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+
+		const result = await caller.deleteTask({
+			sessionId: 'session-1',
+			taskId: 'task-1'
+		});
+
+		expect(result).toEqual({
+			session: {
+				taskIds: ['task-2'],
+				currentTaskIndex: 0,
+				status: 'ACTIVE'
+			},
+			isSessionComplete: false,
+			nextTaskIndex: 0,
+			projectId: 'project-1'
+		});
+		expect(mockDb.planningPokerSession.update).toHaveBeenCalledWith({
+			where: { id: 'session-1' },
+			data: {
+				taskIds: ['task-2'],
+				currentTaskIndex: 0,
+				status: 'ACTIVE'
+			},
+			select: {
+				taskIds: true,
+				currentTaskIndex: true,
+				status: true
+			}
+		});
+		expect(mockDb.task.delete).toHaveBeenCalledWith({
+			where: { id: 'task-1' }
+		});
+		expect(realtime.trigger).toHaveBeenCalledWith(
+			'presence-planning-poker-session-1',
+			'task-deleted',
+			{
+				sessionId: 'session-1',
+				taskId: 'task-1',
+				nextTaskIndex: 0,
+				projectId: 'project-1'
+			}
+		);
+	});
+
+	it('completes the session when its last task is deleted', async () => {
+		authState.isAdmin = true;
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		mockDb.planningPokerSession.findUnique.mockResolvedValue({
+			projectId: 'project-1',
+			status: 'ACTIVE',
+			taskIds: ['task-1'],
+			currentTaskIndex: 0,
+			createdById: 'user-1'
+		} as never);
+		mockDb.project.findUnique.mockResolvedValue({ canceledAt: null } as never);
+		mockDb.task.findUnique.mockResolvedValue({
+			projectId: 'project-1',
+			storyPoints: null,
+			sprint: null
+		} as never);
+		mockDb.taskAttachment.findMany.mockResolvedValue([] as never);
+		mockDb.planningPokerSession.update.mockResolvedValue({
+			taskIds: [],
+			currentTaskIndex: 0,
+			status: 'COMPLETED'
+		} as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+
+		const result = await caller.deleteTask({
+			sessionId: 'session-1',
+			taskId: 'task-1'
+		});
+
+		expect(result.isSessionComplete).toBe(true);
+		expect(result.nextTaskIndex).toBeNull();
+		expect(result.session.status).toBe('COMPLETED');
+		expect(realtime.trigger).toHaveBeenCalledWith(
+			'presence-planning-poker-session-1',
+			'task-deleted',
+			expect.objectContaining({ nextTaskIndex: null })
+		);
+	});
+
+	it('rejects task deletion from an admin who did not create the session', async () => {
+		authState.isAdmin = true;
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		mockDb.planningPokerSession.findUnique.mockResolvedValue({
+			projectId: 'project-1',
+			status: 'ACTIVE',
+			taskIds: ['task-1'],
+			currentTaskIndex: 0,
+			createdById: 'another-admin'
+		} as never);
+
+		await expect(
+			caller.deleteTask({ sessionId: 'session-1', taskId: 'task-1' })
+		).rejects.toMatchObject({ code: 'FORBIDDEN' });
+		expect(mockDb.task.findUnique).not.toHaveBeenCalled();
+	});
+
 	it('rejects edits for a task other than the current story', async () => {
 		authState.isAdmin = true;
 		const caller = createCaller(

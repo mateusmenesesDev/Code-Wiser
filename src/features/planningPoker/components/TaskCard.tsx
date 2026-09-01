@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '~/common/components/ui/button';
 import { Textarea } from '~/common/components/ui/textarea';
@@ -12,6 +12,7 @@ interface TaskCardProps {
 	};
 	canEdit?: boolean;
 	onSaveDescription?: (description: string) => Promise<void>;
+	onDelete?: () => void;
 	isSavingDescription?: boolean;
 }
 
@@ -19,6 +20,7 @@ export function TaskCard({
 	task,
 	canEdit = false,
 	onSaveDescription,
+	onDelete,
 	isSavingDescription = false
 }: TaskCardProps) {
 	const plainDescription = task.description
@@ -62,15 +64,28 @@ export function TaskCard({
 			<div className="flex items-start justify-between gap-4">
 				<h2 className="font-semibold text-xl">{task.title}</h2>
 				{canEdit && !isEditing && (
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setIsEditing(true)}
-						aria-label="Edit task description"
-					>
-						<Pencil className="mr-2 h-4 w-4" />
-						Edit description
-					</Button>
+					<div className="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setIsEditing(true)}
+							aria-label="Edit task description"
+						>
+							<Pencil className="mr-2 h-4 w-4" />
+							Edit description
+						</Button>
+						{onDelete && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={onDelete}
+								aria-label="Delete task"
+								className="text-destructive hover:text-destructive"
+							>
+								<Trash2 className="h-4 w-4" />
+							</Button>
+						)}
+					</div>
 				)}
 			</div>
 

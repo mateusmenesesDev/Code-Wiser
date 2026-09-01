@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import type {
 	PlanningPokerStoryPoint,
 	SSEMessage,
+	TaskDeletedSSEData,
 	TaskDescriptionUpdatedSSEData,
 	TaskFinalizedSSEData,
 	VoteSSEData
@@ -148,6 +149,36 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		},
 		onError: (error) => {
 			toast.error(error.message || 'Failed to end session');
+		}
+	});
+
+	const deleteTaskMutation = api.planningPoker.deleteTask.useMutation({
+		onSuccess: (data) => {
+			utils.planningPoker.getSession.setData({ sessionId }, (previous) => {
+				if (!previous) return previous;
+
+				return {
+					...previous,
+					taskIds: data.session.taskIds,
+					currentTaskIndex: data.session.currentTaskIndex,
+					status: data.session.status
+				};
+			});
+
+			if (data.isSessionComplete) {
+				beginSessionComplete();
+			} else {
+				beginTaskTransition();
+			}
+
+			void utils.task.getAllByProjectId.invalidate({
+				projectId: data.projectId,
+				isTemplate: false
+			});
+			void refetchSession();
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to delete task');
 		}
 	});
 
@@ -299,6 +330,25 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 					});
 					break;
 				}
+				case 'task-deleted': {
+					const data = event.data as TaskDeletedSSEData;
+					if (data.sessionId !== sessionId) break;
+
+					if (data.nextTaskIndex == null) {
+						beginSessionComplete();
+					} else {
+						beginTaskTransition();
+					}
+
+					void utils.planningPoker.getSession
+						.invalidate({ sessionId })
+						.then(() => refetchSession());
+					void utils.task.getAllByProjectId.invalidate({
+						projectId: data.projectId,
+						isTemplate: false
+					});
+					break;
+				}
 				case 'session-ended': {
 					beginSessionComplete();
 					void refetchSession();
@@ -425,6 +475,23 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	const isCreator = session?.createdById === userId;
 	const isLastTask = displayTaskIndex >= (session?.taskIds.length ?? 0) - 1;
 
+	const handleDeleteTask = useCallback(async () => {
+		if (!currentTaskId || !isCreator || isSessionComplete) {
+			return;
+		}
+
+		await deleteTaskMutation.mutateAsync({
+			sessionId,
+			taskId: currentTaskId
+		});
+	}, [
+		currentTaskId,
+		deleteTaskMutation,
+		isCreator,
+		isSessionComplete,
+		sessionId
+	]);
+
 	const handleUpdateTaskDescription = useCallback(
 		async (description: string) => {
 			if (!currentTaskId || !isCreator || isSessionComplete) {
@@ -460,6 +527,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		handleVote,
 		handleFinalizeTask,
 		handleEndSession,
+		handleDeleteTask,
 		handleUpdateTaskDescription,
 		isCreator,
 		isLastTask,
@@ -472,6 +540,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		isFinalizing:
 			finalizeTaskMutation.isPending || isTransitioning || isSessionComplete,
 		isEnding: endSessionMutation.isPending || isSessionComplete,
+		isDeletingTask: deleteTaskMutation.isPending,
 		isUpdatingDescription: updateTaskDescriptionMutation.isPending
 	};
 }

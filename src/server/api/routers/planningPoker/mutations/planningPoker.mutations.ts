@@ -1,7 +1,9 @@
+import { SprintChangeTypeEnum, SprintStatusEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import {
 	changeVoteSchema,
 	createSessionSchema,
+	deleteTaskSchema,
 	endSessionSchema,
 	finalizeTaskSchema,
 	joinSessionSchema,
@@ -13,6 +15,8 @@ import {
 	assertProjectIsActive,
 	userHasAccessToProject
 } from '~/server/utils/auth';
+import { deleteUploadThingFiles } from '../../task/attachments/taskAttachment.utils';
+import { captureSprintSnapshot } from '../../sprint/sprintMetrics';
 
 export const planningPokerMutations = {
 	createSession: adminProcedure
@@ -341,6 +345,157 @@ export const planningPokerMutations = {
 			);
 
 			return updatedTask;
+		}),
+
+	deleteTask: adminProcedure
+		.input(deleteTaskSchema)
+		.mutation(async ({ ctx, input }) => {
+			const session = await ctx.db.planningPokerSession.findUnique({
+				where: { id: input.sessionId },
+				select: {
+					projectId: true,
+					status: true,
+					taskIds: true,
+					currentTaskIndex: true,
+					createdById: true
+				}
+			});
+
+			if (!session) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Session not found'
+				});
+			}
+
+			if (session.status !== 'ACTIVE') {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Session is not active'
+				});
+			}
+
+			if (session.createdById !== ctx.session.userId) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Only the session creator can delete tasks'
+				});
+			}
+			await assertProjectIsActive(ctx.db, session.projectId);
+
+			const currentTaskId = session.taskIds[session.currentTaskIndex];
+			if (currentTaskId !== input.taskId) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Only the current task can be deleted'
+				});
+			}
+
+			const existingTask = await ctx.db.task.findUnique({
+				where: { id: currentTaskId },
+				include: { sprint: { select: { id: true, status: true } } }
+			});
+
+			if (!existingTask || existingTask.projectId !== session.projectId) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Task not found in this project'
+				});
+			}
+
+			if (existingTask.sprint?.status === SprintStatusEnum.COMPLETED) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Tasks in completed sprints cannot be deleted'
+				});
+			}
+
+			const attachments = await ctx.db.taskAttachment.findMany({
+				where: { taskId: currentTaskId },
+				select: { key: true }
+			});
+			const attachmentKeys = attachments.map((attachment) => attachment.key);
+			const remainingTaskIds = session.taskIds.filter(
+				(taskId) => taskId !== currentTaskId
+			);
+			const isSessionComplete =
+				session.currentTaskIndex >= remainingTaskIds.length;
+			const nextTaskIndex = isSessionComplete
+				? null
+				: session.currentTaskIndex;
+
+			const updatedSession = await ctx.db.$transaction(async (tx) => {
+				const updated = await tx.planningPokerSession.update({
+					where: { id: input.sessionId },
+					data: {
+						taskIds: remainingTaskIds,
+						currentTaskIndex: session.currentTaskIndex,
+						status: isSessionComplete ? 'COMPLETED' : 'ACTIVE'
+					},
+					select: {
+						taskIds: true,
+						currentTaskIndex: true,
+						status: true
+					}
+				});
+
+				if (existingTask.sprint?.status === SprintStatusEnum.ACTIVE) {
+					await tx.sprintChange.create({
+						data: {
+							sprintId: existingTask.sprint.id,
+							taskId: currentTaskId,
+							authorId: ctx.session.userId,
+							type: SprintChangeTypeEnum.TASK_REMOVED,
+							previousStoryPoints: existingTask.storyPoints,
+							newStoryPoints: null
+						}
+					});
+				}
+
+				await tx.task.delete({ where: { id: currentTaskId } });
+
+				if (existingTask.sprint?.status === SprintStatusEnum.ACTIVE) {
+					await captureSprintSnapshot(tx, existingTask.sprint.id);
+				}
+
+				return updated;
+			});
+
+			await deleteUploadThingFiles(attachmentKeys);
+
+			const { getBaseUrl } = await import('~/server/utils/getBaseUrl');
+			const workspaceUrl = `${getBaseUrl()}/workspace/${session.projectId}?taskId=${currentTaskId}`;
+			await ctx.db.notification.deleteMany({
+				where: {
+					OR: [
+						{ type: 'TASK_COMMENT', link: workspaceUrl },
+						{
+							type: {
+								in: ['PR_REQUESTED', 'PR_APPROVED', 'PR_CHANGES_REQUESTED']
+							},
+							link: { contains: `taskId=${currentTaskId}` }
+						}
+					]
+				}
+			});
+
+			await ctx.realtime.trigger(
+				`presence-planning-poker-${input.sessionId}`,
+				'task-deleted',
+				{
+					sessionId: input.sessionId,
+					taskId: currentTaskId,
+					nextTaskIndex,
+					projectId: session.projectId
+				}
+			);
+
+			return {
+				session: updatedSession,
+				isSessionComplete,
+				nextTaskIndex,
+				projectId: session.projectId
+			};
 		}),
 
 	finalizeTask: adminProcedure
