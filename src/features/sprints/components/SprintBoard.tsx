@@ -39,7 +39,6 @@ type SprintData = SprintsApiOutput[number];
 interface SprintBoardProps {
 	sprint: SprintData;
 	projectId: string;
-	allTasks: KanbanItemProps[];
 }
 
 const statusBadgeVariant: Record<SprintStatusEnum, string> = {
@@ -128,11 +127,7 @@ const QuickAddRow = ({
 	);
 };
 
-export default function SprintBoard({
-	sprint,
-	projectId,
-	allTasks
-}: SprintBoardProps) {
+export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 	const [boardView, setBoardView] = useState<'kanban' | 'list'>('kanban');
 	const utils = api.useUtils();
 
@@ -155,7 +150,7 @@ export default function SprintBoard({
 	});
 
 	const handleDataChange = (data: KanbanItemProps[]) => {
-		const updates = toKanbanOrderUpdates(allTasks, data);
+		const updates = toKanbanOrderUpdates(data);
 		if (updates.length === 0) return;
 		updateTaskOrders.mutate({ updates });
 	};

@@ -206,7 +206,6 @@ const Workspace = () => {
 						<SprintBoard
 							sprint={selectedSprint}
 							projectId={projectId}
-							allTasks={allTasks ?? []}
 						/>
 					) : isScrum && view === 'backlog' ? (
 						<Suspense
