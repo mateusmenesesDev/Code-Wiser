@@ -65,4 +65,41 @@ describe('task.updateTaskOrders batching', () => {
 		expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
 		expect(mockDb.$executeRaw).toHaveBeenCalledTimes(1);
 	});
+
+	it('accepts a board reorder larger than the legacy 100-item limit', async () => {
+		mockDb.task.findMany.mockResolvedValue(
+			Array.from({ length: 101 }, (_, index) => ({
+				id: `task-${index}`,
+				order: index,
+				status: 'TODO',
+				projectId: 'project-1',
+				projectTemplateId: null,
+				sprint: null
+			})) as never
+		);
+		mockDb.project.findUnique.mockResolvedValue({
+			memberships: [
+				{
+					userId: 'user-1',
+					role: 'LEARNER',
+					status: 'ACTIVE',
+					joinedAt: new Date()
+				}
+			],
+			canceledAt: null
+		} as never);
+		mockDb.$executeRaw.mockResolvedValue(101 as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+
+		const result = await caller.updateTaskOrders({
+			updates: Array.from({ length: 101 }, (_, index) => ({
+				id: `task-${index}`,
+				order: index + 1
+			}))
+		});
+
+		expect(result).toEqual({ success: true, updatedCount: 101 });
+	});
 });

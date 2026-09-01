@@ -33,6 +33,7 @@ import {
 type RelationshipUpdate = { connect: { id: string } } | { disconnect: true };
 
 const MAX_TRANSACTION_RETRIES = 3;
+const MAX_TASK_ORDER_UPDATES = 500;
 
 const createRelationshipUpdate = (
 	id: string | null | undefined
@@ -608,7 +609,7 @@ export const taskMutations = {
 							status: z.string().optional()
 						})
 					)
-					.max(100)
+					.max(MAX_TASK_ORDER_UPDATES)
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
