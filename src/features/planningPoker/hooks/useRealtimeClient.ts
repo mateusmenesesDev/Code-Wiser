@@ -190,6 +190,13 @@ export function useRealtimeClient({
 			});
 		});
 
+		channel.bind('task-description-updated', (data: unknown) => {
+			callbacksRef.current.onEvent?.({
+				type: 'task-description-updated',
+				data
+			});
+		});
+
 		channel.bind('session-ended', (data: unknown) => {
 			callbacksRef.current.onEvent?.({
 				type: 'session-ended',

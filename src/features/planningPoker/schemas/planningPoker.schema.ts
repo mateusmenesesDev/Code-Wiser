@@ -47,6 +47,12 @@ export const finalizeTaskSchema = z.object({
 		.optional()
 });
 
+export const updateTaskDescriptionSchema = z.object({
+	sessionId: z.string(),
+	taskId: z.string(),
+	description: z.string()
+});
+
 export const endSessionSchema = z.object({
 	sessionId: z.string()
 });

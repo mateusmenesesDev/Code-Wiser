@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import type {
 	PlanningPokerStoryPoint,
 	SSEMessage,
+	TaskDescriptionUpdatedSSEData,
 	TaskFinalizedSSEData,
 	VoteSSEData
 } from '~/features/planningPoker/types/planningPoker.types';
@@ -47,6 +48,22 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 
 		void utils.task.getById.prefetch({ id: nextTaskId });
 	}, [nextTaskId, utils.task.getById]);
+
+	const updateTaskDescriptionMutation =
+		api.planningPoker.updateTaskDescription.useMutation({
+			onSuccess: (task) => {
+				utils.task.getById.setData({ id: task.id }, (previous) =>
+					previous ? { ...previous, description: task.description } : previous
+				);
+				void utils.task.getAllByProjectId.invalidate({
+					projectId: task.projectId,
+					isTemplate: false
+				});
+			},
+			onError: (error) => {
+				toast.error(error.message || 'Failed to update task description');
+			}
+		});
 
 	const { data: votes, refetch: refetchVotes } =
 		api.planningPoker.getSessionVotes.useQuery(
@@ -269,6 +286,19 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 						});
 					break;
 				}
+				case 'task-description-updated': {
+					const data = event.data as TaskDescriptionUpdatedSSEData;
+					if (data.sessionId !== sessionId) break;
+
+					utils.task.getById.setData({ id: data.taskId }, (previous) =>
+						previous ? { ...previous, description: data.description } : previous
+					);
+					void utils.task.getAllByProjectId.invalidate({
+						projectId: data.projectId,
+						isTemplate: false
+					});
+					break;
+				}
 				case 'session-ended': {
 					beginSessionComplete();
 					void refetchSession();
@@ -393,8 +423,28 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 	}, [sessionId, endSessionMutation, isSessionComplete]);
 
 	const isCreator = session?.createdById === userId;
-	const isLastTask =
-		displayTaskIndex >= (session?.taskIds.length ?? 0) - 1;
+	const isLastTask = displayTaskIndex >= (session?.taskIds.length ?? 0) - 1;
+
+	const handleUpdateTaskDescription = useCallback(
+		async (description: string) => {
+			if (!currentTaskId || !isCreator || isSessionComplete) {
+				return;
+			}
+
+			await updateTaskDescriptionMutation.mutateAsync({
+				sessionId,
+				taskId: currentTaskId,
+				description
+			});
+		},
+		[
+			currentTaskId,
+			isCreator,
+			isSessionComplete,
+			sessionId,
+			updateTaskDescriptionMutation
+		]
+	);
 
 	return {
 		session,
@@ -410,6 +460,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		handleVote,
 		handleFinalizeTask,
 		handleEndSession,
+		handleUpdateTaskDescription,
 		isCreator,
 		isLastTask,
 		currentTaskIndex: displayTaskIndex,
@@ -420,6 +471,7 @@ export function usePlanningPoker({ sessionId }: UsePlanningPokerProps) {
 		isSessionComplete,
 		isFinalizing:
 			finalizeTaskMutation.isPending || isTransitioning || isSessionComplete,
-		isEnding: endSessionMutation.isPending || isSessionComplete
+		isEnding: endSessionMutation.isPending || isSessionComplete,
+		isUpdatingDescription: updateTaskDescriptionMutation.isPending
 	};
 }

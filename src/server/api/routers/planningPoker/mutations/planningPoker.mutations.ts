@@ -5,6 +5,7 @@ import {
 	endSessionSchema,
 	finalizeTaskSchema,
 	joinSessionSchema,
+	updateTaskDescriptionSchema,
 	voteSchema
 } from '~/features/planningPoker/schemas/planningPoker.schema';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
@@ -272,6 +273,74 @@ export const planningPokerMutations = {
 			});
 
 			return vote;
+		}),
+
+	updateTaskDescription: adminProcedure
+		.input(updateTaskDescriptionSchema)
+		.mutation(async ({ ctx, input }) => {
+			const session = await ctx.db.planningPokerSession.findUnique({
+				where: { id: input.sessionId },
+				select: {
+					projectId: true,
+					status: true,
+					taskIds: true,
+					currentTaskIndex: true,
+					createdById: true
+				}
+			});
+
+			if (!session) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Session not found'
+				});
+			}
+
+			if (session.status !== 'ACTIVE') {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Session is not active'
+				});
+			}
+
+			if (session.createdById !== ctx.session.userId) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Only the session creator can edit task descriptions'
+				});
+			}
+			await assertProjectIsActive(ctx.db, session.projectId);
+
+			const currentTaskId = session.taskIds[session.currentTaskIndex];
+			if (currentTaskId !== input.taskId) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Only the current task can be edited'
+				});
+			}
+
+			const task = await ctx.db.task.update({
+				where: { id: input.taskId },
+				data: { description: input.description.trim() || null },
+				select: {
+					id: true,
+					description: true
+				}
+			});
+			const updatedTask = { ...task, projectId: session.projectId };
+
+			await ctx.realtime.trigger(
+				`presence-planning-poker-${input.sessionId}`,
+				'task-description-updated',
+				{
+					sessionId: input.sessionId,
+					taskId: updatedTask.id,
+					description: updatedTask.description,
+					projectId: updatedTask.projectId
+				}
+			);
+
+			return updatedTask;
 		}),
 
 	finalizeTask: adminProcedure

@@ -45,6 +45,7 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		handleVote,
 		handleFinalizeTask,
 		handleEndSession,
+		handleUpdateTaskDescription,
 		isCreator,
 		isLastTask,
 		currentTaskIndex,
@@ -53,7 +54,8 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 		isTransitioning,
 		isSessionComplete,
 		isFinalizing,
-		isEnding
+		isEnding,
+		isUpdatingDescription
 	} = usePlanningPoker({ sessionId });
 
 	useEffect(() => {
@@ -224,7 +226,12 @@ export function PlanningPokerRoom({ sessionId }: PlanningPokerRoomProps) {
 								</div>
 
 								{/* Task Card */}
-								<TaskCard task={currentTask} />
+								<TaskCard
+									task={currentTask}
+									canEdit={isCreator && !isFinalizing}
+									onSaveDescription={handleUpdateTaskDescription}
+									isSavingDescription={isUpdatingDescription}
+								/>
 
 								{/* Voting Cards */}
 								{!showResults && (

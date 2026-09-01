@@ -30,7 +30,11 @@ export interface PlanningPokerVoteWithRelations extends PlanningPokerVote {
 }
 
 export interface SSEMessage {
-	type: 'vote' | 'task-finalized' | 'session-ended';
+	type:
+		| 'vote'
+		| 'task-finalized'
+		| 'task-description-updated'
+		| 'session-ended';
 	data: unknown;
 }
 
@@ -46,6 +50,13 @@ export interface TaskFinalizedSSEData {
 	taskId: string;
 	finalStoryPoints: number | null;
 	nextTaskIndex: number | null;
+}
+
+export interface TaskDescriptionUpdatedSSEData {
+	sessionId: string;
+	taskId: string;
+	description: string | null;
+	projectId: string;
 }
 
 export interface SessionEndedSSEData {
