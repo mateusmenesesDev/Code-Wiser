@@ -41,6 +41,7 @@ export function TaskSelectionDialog({
 		new Set()
 	);
 	const [versionFilter, setVersionFilter] = useState('all');
+	const [onlyUnestimated, setOnlyUnestimated] = useState(false);
 
 	const { data: tasks, isLoading } = api.task.getAllByProjectId.useQuery({
 		projectId,
@@ -51,7 +52,9 @@ export function TaskSelectionDialog({
 		isTemplate: false
 	});
 	const visibleTasks = (tasks ?? []).filter(
-		(task) => versionFilter === 'all' || task.productVersionId === versionFilter
+		(task) =>
+			(versionFilter === 'all' || task.productVersionId === versionFilter) &&
+			(!onlyUnestimated || task.storyPoints == null)
 	);
 
 	const createSession = api.planningPoker.createSession.useMutation({
@@ -127,6 +130,21 @@ export function TaskSelectionDialog({
 									</Select>
 								</div>
 							)}
+							<div className="flex items-center gap-2">
+								<Checkbox
+									id="planning-poker-unestimated-filter"
+									checked={onlyUnestimated}
+									onCheckedChange={(checked) =>
+										setOnlyUnestimated(checked === true)
+									}
+								/>
+								<Label
+									htmlFor="planning-poker-unestimated-filter"
+									className="cursor-pointer"
+								>
+									Only stories without story points
+								</Label>
+							</div>
 							{visibleTasks.length > 0 ? (
 								<div className="space-y-3">
 									{visibleTasks.map((task) => (
@@ -158,6 +176,11 @@ export function TaskSelectionDialog({
 														</span>
 													)}
 													<span className="font-medium">{task.title}</span>
+													{task.storyPoints != null && (
+														<span className="rounded bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+															{task.storyPoints} story points
+														</span>
+													)}
 												</div>
 												{task.description && (
 													<div className="line-clamp-2 text-muted-foreground text-sm">
@@ -173,7 +196,7 @@ export function TaskSelectionDialog({
 								</div>
 							) : (
 								<div className="py-8 text-center text-muted-foreground">
-									No tasks match the selected version
+									No tasks match the selected filters
 								</div>
 							)}
 						</div>
