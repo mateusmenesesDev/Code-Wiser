@@ -15,20 +15,20 @@ import {
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { applyCreditTransaction } from '~/server/services/creditLedger';
 import {
+	GitHubServiceError,
+	getPullRequestSnapshotForRepository,
+	githubPullRequestRefFromUrl
+} from '~/server/services/github/github';
+import {
 	notifyPRRequested,
 	notifyPRResponse
 } from '~/server/services/notification/notificationService';
+import { PR_REVIEW_ANALYSIS_PROMPT_VERSION } from '~/server/services/prReviewAnalysis';
 import {
 	assertProjectIsActive,
 	assertTaskAccess,
 	userHasAccessToProject
 } from '~/server/utils/auth';
-import {
-	GitHubServiceError,
-	getPullRequestSnapshotForRepository,
-	githubPullRequestRefFromUrl
-} from '~/server/services/github/github';
-import { PR_REVIEW_ANALYSIS_PROMPT_VERSION } from '~/server/services/prReviewAnalysis';
 
 export const prReviewMutations = {
 	startAIAnalysis: adminProcedure
@@ -222,7 +222,10 @@ export const prReviewMutations = {
 					message: 'No active PR review found for this task.'
 				});
 			}
-			if (activeReview.status !== PullRequestReviewStatusEnum.PENDING) {
+			if (
+				activeReview.status !== PullRequestReviewStatusEnum.PENDING &&
+				activeReview.status !== PullRequestReviewStatusEnum.CHANGES_REQUESTED
+			) {
 				throw new TRPCError({
 					code: 'CONFLICT',
 					message: 'This review has already been decided'
@@ -235,7 +238,7 @@ export const prReviewMutations = {
 			const decision = await ctx.db.pullRequestReview.updateMany({
 				where: {
 					id: activeReview.id,
-					status: PullRequestReviewStatusEnum.PENDING
+					status: activeReview.status
 				},
 				data: {
 					status: PullRequestReviewStatusEnum.APPROVED,

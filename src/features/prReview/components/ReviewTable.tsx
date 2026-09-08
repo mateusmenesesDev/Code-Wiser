@@ -250,8 +250,10 @@ export function ReviewTable({ reviews, isLoading }: ReviewListProps) {
 												</Button>
 											)}
 											{review.isActive &&
-												review.status ===
-													PullRequestReviewStatusEnum.PENDING && (
+												(review.status ===
+													PullRequestReviewStatusEnum.PENDING ||
+													review.status ===
+														PullRequestReviewStatusEnum.CHANGES_REQUESTED) && (
 													<ReviewActions
 														reviewId={review.id}
 														taskId={review.taskId}

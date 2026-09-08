@@ -45,7 +45,14 @@ describe('PR review lifecycle', () => {
 			project: { id: 'project-1', title: 'Project' }
 		} as never);
 		mockDb.project.findUnique.mockResolvedValue({
-			memberships: [{ userId: 'user-1', role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }],
+			memberships: [
+				{
+					userId: 'user-1',
+					role: 'LEARNER',
+					status: 'ACTIVE',
+					joinedAt: new Date()
+				}
+			],
 			canceledAt: null
 		} as never);
 		mockDb.user.findUnique.mockResolvedValue({
@@ -161,6 +168,38 @@ describe('PR review lifecycle', () => {
 			code: 'CONFLICT'
 		});
 		expect(notifyPRResponse).not.toHaveBeenCalled();
+	});
+
+	it('allows approving the active review after changes were requested', async () => {
+		mockDb.pullRequestReview.findFirst.mockResolvedValue({
+			id: 'review-1',
+			status: 'CHANGES_REQUESTED',
+			requestedById: 'user-1',
+			requestedBy: {
+				id: 'user-1',
+				name: 'Student',
+				email: 'student@example.com'
+			},
+			task: {
+				id: 'task-1',
+				title: 'Build feature',
+				project: { id: 'project-1', title: 'Project' }
+			}
+		} as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.approve({ taskId: 'task-1' });
+
+		expect(mockDb.pullRequestReview.updateMany).toHaveBeenCalledWith({
+			where: { id: 'review-1', status: 'CHANGES_REQUESTED' },
+			data: {
+				status: 'APPROVED',
+				reviewedById: 'user-1',
+				reviewedAt: expect.any(Date)
+			}
+		});
 	});
 
 	it('closes a changes-requested review before creating the next version', async () => {

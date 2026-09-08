@@ -39,7 +39,9 @@ export function ReviewActions({
 	const [comment, setComment] = useState('');
 	const [analysisId, setAnalysisId] = useState<string>();
 
-	const isApproved = status === PullRequestReviewStatusEnum.APPROVED;
+	const isPending = status === PullRequestReviewStatusEnum.PENDING;
+	const canApprove =
+		isPending || status === PullRequestReviewStatusEnum.CHANGES_REQUESTED;
 	const isBusy = isApproving || isRequestingChanges || isStartingAIAnalysis;
 
 	const handleApprove = () => {
@@ -60,41 +62,45 @@ export function ReviewActions({
 	return (
 		<>
 			<div className="flex flex-wrap justify-end gap-2">
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => {
-						setShowAIReviewDialog(true);
-						startAIAnalysis({ reviewId });
-					}}
-					disabled={isBusy || isApproved}
-				>
-					{isStartingAIAnalysis ? (
-						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-					) : (
-						<Sparkles className="mr-2 h-4 w-4" />
-					)}
-					Analyze with AI
-				</Button>
+				{isPending && (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => {
+							setShowAIReviewDialog(true);
+							startAIAnalysis({ reviewId });
+						}}
+						disabled={isBusy}
+					>
+						{isStartingAIAnalysis ? (
+							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+						) : (
+							<Sparkles className="mr-2 h-4 w-4" />
+						)}
+						Analyze with AI
+					</Button>
+				)}
 				<Button
 					variant="default"
 					size="sm"
 					onClick={handleApprove}
-					disabled={isBusy || isApproved}
+					disabled={isBusy || !canApprove}
 					className="bg-success hover:bg-success/90"
 				>
 					<CheckCircle2 className="mr-2 h-4 w-4" />
 					Approve
 				</Button>
-				<Button
-					variant="destructive"
-					size="sm"
-					onClick={() => setShowRequestChangesDialog(true)}
-					disabled={isBusy}
-				>
-					<XCircle className="mr-2 h-4 w-4" />
-					Request Changes
-				</Button>
+				{isPending && (
+					<Button
+						variant="destructive"
+						size="sm"
+						onClick={() => setShowRequestChangesDialog(true)}
+						disabled={isBusy}
+					>
+						<XCircle className="mr-2 h-4 w-4" />
+						Request Changes
+					</Button>
+				)}
 			</div>
 
 			<AIReviewDialog

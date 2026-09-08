@@ -98,6 +98,16 @@ test('completes the main project and code-review journey', async ({
 			.getByTestId('review-row')
 			.filter({ hasText: fixture.taskTitle });
 		await expect(reviewRow).toBeVisible();
+		await reviewRow.getByRole('button', { name: 'Request Changes' }).click();
+		await expect(adminPage.getByRole('dialog')).toBeVisible();
+		await adminPage
+			.getByRole('dialog')
+			.getByRole('button', { name: 'Request Changes' })
+			.click();
+		await expect(
+			reviewRow.getByText('Changes Requested', { exact: true })
+		).toBeVisible();
+
 		await reviewRow.getByRole('button', { name: 'Approve' }).click();
 		await expect(
 			reviewRow.getByText('Approved', { exact: true })
