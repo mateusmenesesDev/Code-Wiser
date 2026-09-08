@@ -7,7 +7,6 @@ import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { GeistSans } from 'geist/font/sans';
 import { Provider as JotaiProvider } from 'jotai';
 import type { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
@@ -62,11 +61,7 @@ export default async function RootLayout({
 		<ClerkProvider>
 			<JotaiProvider>
 				<SyncActiveOrganization membership={sessionClaims?.membership} />
-				<html
-					lang={locale}
-					className={`${GeistSans.variable}`}
-					suppressHydrationWarning
-				>
+				<html lang={locale} suppressHydrationWarning>
 					<body>
 						<NextIntlClientProvider>
 							<TRPCReactProvider>
