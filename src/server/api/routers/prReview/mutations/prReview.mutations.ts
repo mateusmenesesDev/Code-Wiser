@@ -40,9 +40,31 @@ export const prReviewMutations = {
 					id: true,
 					isActive: true,
 					status: true,
+					prUrl: true,
 					githubHeadSha: true,
 					githubPullRequestNumber: true,
-					githubRepositoryId: true
+					githubRepositoryId: true,
+					task: {
+						select: {
+							project: {
+								select: {
+									githubRepository: {
+										select: {
+											id: true,
+											owner: true,
+											name: true,
+											installation: {
+												select: {
+													githubInstallationId: true,
+													active: true
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			});
 			if (!review) {
@@ -60,23 +82,62 @@ export const prReviewMutations = {
 					message: 'Only an active pending review can be analyzed'
 				});
 			}
+			let sourceHeadSha = review.githubHeadSha;
 			if (
-				!review.githubHeadSha ||
+				!sourceHeadSha ||
 				!review.githubRepositoryId ||
 				!review.githubPullRequestNumber
 			) {
-				throw new TRPCError({
-					code: 'BAD_REQUEST',
-					message:
-						'Link this review to a GitHub pull request before analyzing it'
+				const repository = review.task?.project?.githubRepository;
+				if (!repository || !review.prUrl) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message:
+							'Link this review to a GitHub pull request before analyzing it'
+					});
+				}
+
+				let snapshot: Awaited<
+					ReturnType<typeof getPullRequestSnapshotForRepository>
+				>;
+				try {
+					snapshot = await getPullRequestSnapshotForRepository(
+						repository,
+						review.prUrl
+					);
+				} catch (error) {
+					if (error instanceof GitHubServiceError) {
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: error.message
+						});
+					}
+					throw error;
+				}
+
+				await ctx.db.pullRequestReview.update({
+					where: { id: review.id },
+					data: {
+						prUrl: snapshot.htmlUrl,
+						githubRepositoryId: repository.id,
+						githubPullRequestNumber: snapshot.number,
+						githubTitle: snapshot.title,
+						githubState: snapshot.state,
+						githubAuthorLogin: snapshot.authorLogin,
+						githubCommitCount: snapshot.commitCount,
+						githubHeadSha: snapshot.headSha,
+						githubChecksStatus: snapshot.checksStatus,
+						githubLastSyncedAt: new Date()
+					}
 				});
+				sourceHeadSha = snapshot.headSha;
 			}
 
 			const existing = await ctx.db.prReviewAnalysis.findUnique({
 				where: {
 					reviewId_sourceHeadSha: {
 						reviewId: review.id,
-						sourceHeadSha: review.githubHeadSha
+						sourceHeadSha
 					}
 				},
 				select: { id: true, status: true, attempts: true }
@@ -111,13 +172,13 @@ export const prReviewMutations = {
 				where: {
 					reviewId_sourceHeadSha: {
 						reviewId: review.id,
-						sourceHeadSha: review.githubHeadSha
+						sourceHeadSha
 					}
 				},
 				create: {
 					reviewId: review.id,
 					requestedById: ctx.session.userId,
-					sourceHeadSha: review.githubHeadSha,
+					sourceHeadSha,
 					promptVersion: PR_REVIEW_ANALYSIS_PROMPT_VERSION
 				},
 				update: {},

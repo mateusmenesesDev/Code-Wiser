@@ -3,7 +3,12 @@ import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
 import { prReviewRouter } from '../prReviewRouter';
 
-const { notifyPRRequested, notifyPRResponse } = vi.hoisted(() => ({
+const {
+	getPullRequestSnapshotForRepository,
+	notifyPRRequested,
+	notifyPRResponse
+} = vi.hoisted(() => ({
+	getPullRequestSnapshotForRepository: vi.fn(),
 	notifyPRRequested: vi.fn(),
 	notifyPRResponse: vi.fn()
 }));
@@ -30,6 +35,12 @@ vi.mock('~/server/db', () => ({
 vi.mock('~/server/services/notification/notificationService', () => ({
 	notifyPRRequested,
 	notifyPRResponse
+}));
+
+vi.mock('~/server/services/github/github', () => ({
+	GitHubServiceError: class GitHubServiceError extends Error {},
+	getPullRequestSnapshotForRepository,
+	githubPullRequestRefFromUrl: vi.fn()
 }));
 
 describe('PR review lifecycle', () => {
@@ -74,6 +85,7 @@ describe('PR review lifecycle', () => {
 		} as never);
 		mockDb.user.updateMany.mockResolvedValue({ count: 1 });
 		vi.clearAllMocks();
+		getPullRequestSnapshotForRepository.mockReset();
 		notifyPRRequested.mockResolvedValue(undefined);
 		notifyPRResponse.mockResolvedValue(undefined);
 	});
@@ -266,6 +278,78 @@ describe('PR review lifecycle', () => {
 			update: {},
 			select: { id: true, status: true }
 		});
+	});
+
+	it('hydrates a linked pull request before queuing AI analysis', async () => {
+		mockDb.pullRequestReview.findUnique.mockResolvedValue({
+			id: 'review-1',
+			isActive: true,
+			status: 'PENDING',
+			prUrl: 'https://github.com/acme/app/pull/7',
+			githubHeadSha: null,
+			githubPullRequestNumber: null,
+			githubRepositoryId: null,
+			task: {
+				project: {
+					githubRepository: {
+						id: 'repository-1',
+						owner: 'acme',
+						name: 'app',
+						installation: {
+							githubInstallationId: 'installation-1',
+							active: true
+						}
+					}
+				}
+			}
+		} as never);
+		getPullRequestSnapshotForRepository.mockResolvedValue({
+			number: 7,
+			htmlUrl: 'https://github.com/acme/app/pull/7',
+			title: 'Build feature',
+			state: 'OPEN',
+			authorLogin: 'student',
+			commitCount: 2,
+			headSha: 'head-1',
+			checksStatus: 'SUCCESS'
+		});
+		mockDb.pullRequestReview.update.mockResolvedValue({} as never);
+		mockDb.prReviewAnalysis.findUnique.mockResolvedValue(null);
+		mockDb.prReviewAnalysis.upsert.mockResolvedValue({
+			id: 'analysis-1',
+			status: 'QUEUED'
+		} as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.startAIAnalysis({ reviewId: 'review-1' });
+
+		expect(mockDb.pullRequestReview.update).toHaveBeenCalledWith({
+			where: { id: 'review-1' },
+			data: {
+				prUrl: 'https://github.com/acme/app/pull/7',
+				githubRepositoryId: 'repository-1',
+				githubPullRequestNumber: 7,
+				githubTitle: 'Build feature',
+				githubState: 'OPEN',
+				githubAuthorLogin: 'student',
+				githubCommitCount: 2,
+				githubHeadSha: 'head-1',
+				githubChecksStatus: 'SUCCESS',
+				githubLastSyncedAt: expect.any(Date)
+			}
+		});
+		expect(mockDb.prReviewAnalysis.upsert).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: {
+					reviewId_sourceHeadSha: {
+						reviewId: 'review-1',
+						sourceHeadSha: 'head-1'
+					}
+				}
+			})
+		);
 	});
 
 	it('does not queue an AI analysis without a linked GitHub pull request', async () => {
