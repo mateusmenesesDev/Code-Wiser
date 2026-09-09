@@ -14,7 +14,6 @@ import {
 import { useMemo, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
-import { Progress } from '~/common/components/ui/progress';
 import { Input } from '~/common/components/ui/input';
 import {
 	KanbanBoard,
@@ -23,9 +22,10 @@ import {
 	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
+import { Progress } from '~/common/components/ui/progress';
 import {
-	bucketTasksByStatus,
-	toKanbanOrderUpdates
+	type KanbanMove,
+	bucketTasksByStatus
 } from '~/common/utils/kanbanReorder';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 import { columns } from '~/features/kanban/constants';
@@ -133,12 +133,13 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 
 	const { data: tasks = [] } = api.kanban.getKanbanData.useQuery({
 		projectId,
+		includeBacklog: true,
 		filters: { sprintId: sprint.id }
 	});
 	const canEditBoard = sprint.status !== SprintStatusEnum.COMPLETED;
 	const tasksByStatus = useMemo(() => bucketTasksByStatus(tasks), [tasks]);
 
-	const updateTaskOrders = api.task.updateTaskOrders.useMutation({
+	const moveTask = api.task.moveTask.useMutation({
 		onSettled: () => {
 			utils.kanban.getKanbanData.invalidate({ projectId });
 			utils.kanban.getKanbanData.invalidate({
@@ -149,10 +150,8 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 		}
 	});
 
-	const handleDataChange = (data: KanbanItemProps[]) => {
-		const updates = toKanbanOrderUpdates(data);
-		if (updates.length === 0) return;
-		updateTaskOrders.mutate({ updates });
+	const handleTaskMove = (move: KanbanMove) => {
+		moveTask.mutate({ projectId, ...move });
 	};
 
 	const handleTaskAdded = () => {
@@ -264,7 +263,7 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 						<KanbanProvider
 							columns={columns}
 							data={tasks}
-							onDataChange={canEditBoard ? handleDataChange : undefined}
+							onMove={canEditBoard ? handleTaskMove : undefined}
 						>
 							{(column) => {
 								const columnTasks = tasksByStatus.get(column.id) ?? [];

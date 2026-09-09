@@ -2,6 +2,7 @@ import {
 	Prisma,
 	SprintChangeTypeEnum,
 	SprintStatusEnum,
+	TaskStatusEnum,
 	TaskTypeEnum
 } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
@@ -11,7 +12,6 @@ import {
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
-import { captureSprintSnapshot } from '../../sprint/sprintMetrics';
 import {
 	notifyTaskAssigned,
 	notifyTaskBlocked,
@@ -24,9 +24,13 @@ import {
 	userHasAccessToProject,
 	userHasAccessToProjectTemplate
 } from '~/server/utils/auth';
+import { captureSprintSnapshot } from '../../sprint/sprintMetrics';
 import { deleteUploadThingFiles } from '../attachments/taskAttachment.utils';
 import {
+	KANBAN_RANK_STEP,
 	buildBulkTaskOrderUpdateSql,
+	buildKanbanRankRebalanceSql,
+	calculateKanbanRank,
 	selectChangedTaskOrderUpdates
 } from './taskOrderUpdates';
 
@@ -185,9 +189,20 @@ export const taskMutations = {
 									select: { nextTaskNumber: true }
 								});
 
+						const taskStatus = rest.status ?? TaskStatusEnum.BACKLOG;
+						const lastKanbanTask = await prisma.task.findFirst({
+							where: isTemplate
+								? { projectTemplateId: projectId, status: taskStatus }
+								: { projectId, status: taskStatus },
+							orderBy: { kanbanRank: 'desc' },
+							select: { kanbanRank: true }
+						});
+
 						const task = await prisma.task.create({
 							data: {
 								...rest,
+								kanbanRank:
+									(lastKanbanTask?.kanbanRank ?? 0n) + KANBAN_RANK_STEP,
 								publicNumber: counter.nextTaskNumber - 1,
 								...(isTemplate
 									? { projectTemplate: { connect: { id: projectId } } }
@@ -420,10 +435,40 @@ export const taskMutations = {
 			};
 
 			const task = await ctx.db.$transaction(async (tx) => {
+				let kanbanRank: bigint | undefined;
+				if (rest.status !== undefined && rest.status !== existingTask.status) {
+					if (existingTask.projectId) {
+						await tx.$queryRaw(
+							Prisma.sql`SELECT "id" FROM "public"."Project" WHERE "id" = ${existingTask.projectId} FOR UPDATE`
+						);
+					} else if (existingTask.projectTemplateId) {
+						await tx.$queryRaw(
+							Prisma.sql`SELECT "id" FROM "public"."ProjectTemplate" WHERE "id" = ${existingTask.projectTemplateId} FOR UPDATE`
+						);
+					}
+
+					const lastKanbanTask = await tx.task.findFirst({
+						where: existingTask.projectId
+							? {
+									projectId: existingTask.projectId,
+									status: rest.status
+								}
+							: {
+									projectTemplateId:
+										existingTask.projectTemplateId ?? undefined,
+									status: rest.status
+								},
+						orderBy: { kanbanRank: 'desc' },
+						select: { kanbanRank: true }
+					});
+					kanbanRank = (lastKanbanTask?.kanbanRank ?? 0n) + KANBAN_RANK_STEP;
+				}
+
 				const updatedTask = await tx.task.update({
 					where: { id },
 					data: {
 						...updateData,
+						...(kanbanRank !== undefined && { kanbanRank }),
 						...(projectId
 							? isTemplate
 								? { projectTemplate: { connect: { id: projectId } } }
@@ -596,6 +641,257 @@ export const taskMutations = {
 			}
 
 			return task;
+		}),
+
+	moveTask: protectedProcedure
+		.input(
+			z.object({
+				projectId: z.string(),
+				taskId: z.string(),
+				targetStatus: z.nativeEnum(TaskStatusEnum),
+				beforeTaskId: z.string().nullable().optional()
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const task = await ctx.db.task.findUnique({
+				where: { id: input.taskId },
+				select: {
+					id: true,
+					projectId: true,
+					projectTemplateId: true,
+					status: true,
+					kanbanRank: true,
+					sprint: { select: { id: true, status: true } }
+				}
+			});
+
+			if (!task) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Task not found'
+				});
+			}
+			if (task.projectTemplateId || task.projectId !== input.projectId) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Task does not belong to this project'
+				});
+			}
+
+			await userHasAccessToProject(ctx, input.projectId);
+			await assertProjectIsActive(ctx.db, input.projectId);
+			if (
+				task.sprint?.status === SprintStatusEnum.COMPLETED &&
+				task.status !== input.targetStatus
+			) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Tasks in completed sprints cannot change status'
+				});
+			}
+
+			const beforeTaskId = input.beforeTaskId ?? null;
+			if (beforeTaskId === input.taskId) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'A task cannot be placed before itself'
+				});
+			}
+
+			for (let attempt = 1; attempt <= MAX_TRANSACTION_RETRIES; attempt += 1) {
+				try {
+					return await ctx.db.$transaction(async (tx) => {
+						await tx.$queryRaw(
+							Prisma.sql`SELECT "id" FROM "public"."Project" WHERE "id" = ${input.projectId} FOR UPDATE`
+						);
+
+						let currentTask = await tx.task.findUnique({
+							where: { id: input.taskId },
+							select: {
+								id: true,
+								projectId: true,
+								status: true,
+								kanbanRank: true,
+								sprint: { select: { id: true, status: true } }
+							}
+						});
+						if (!currentTask || currentTask.projectId !== input.projectId) {
+							throw new TRPCError({
+								code: 'NOT_FOUND',
+								message: 'Task not found in this project'
+							});
+						}
+						if (
+							currentTask.sprint?.status === SprintStatusEnum.COMPLETED &&
+							currentTask.status !== input.targetStatus
+						) {
+							throw new TRPCError({
+								code: 'BAD_REQUEST',
+								message: 'Tasks in completed sprints cannot change status'
+							});
+						}
+
+						if (
+							currentTask.kanbanRank === null &&
+							currentTask.status === input.targetStatus
+						) {
+							await tx.$executeRaw(
+								buildKanbanRankRebalanceSql(input.projectId, input.targetStatus)
+							);
+							const refreshedTask = await tx.task.findUnique({
+								where: { id: input.taskId },
+								select: {
+									id: true,
+									projectId: true,
+									status: true,
+									kanbanRank: true,
+									sprint: { select: { id: true, status: true } }
+								}
+							});
+							if (!refreshedTask) {
+								throw new TRPCError({
+									code: 'NOT_FOUND',
+									message: 'Task not found in this project'
+								});
+							}
+							currentTask = refreshedTask;
+						}
+
+						const targetWhere = {
+							projectId: input.projectId,
+							status: input.targetStatus,
+							id: { not: input.taskId }
+						};
+						const findNeighbors = async () => {
+							const successor = beforeTaskId
+								? await tx.task.findUnique({
+										where: { id: beforeTaskId },
+										select: {
+											id: true,
+											projectId: true,
+											status: true,
+											kanbanRank: true
+										}
+									})
+								: null;
+							if (
+								successor &&
+								(successor.projectId !== input.projectId ||
+									successor.status !== input.targetStatus)
+							) {
+								throw new TRPCError({
+									code: 'CONFLICT',
+									message: 'The task order changed; please retry'
+								});
+							}
+							if (beforeTaskId && !successor) {
+								throw new TRPCError({
+									code: 'CONFLICT',
+									message: 'The task order changed; please retry'
+								});
+							}
+
+							const predecessor = await tx.task.findFirst({
+								where:
+									successor?.kanbanRank !== null &&
+									successor?.kanbanRank !== undefined
+										? {
+												...targetWhere,
+												kanbanRank: { lt: successor.kanbanRank }
+											}
+										: targetWhere,
+								orderBy: { kanbanRank: 'desc' },
+								select: { kanbanRank: true }
+							});
+							return { successor, predecessor };
+						};
+
+						if (
+							currentTask.status === input.targetStatus &&
+							currentTask.kanbanRank !== null
+						) {
+							const currentSuccessor = await tx.task.findFirst({
+								where: {
+									...targetWhere,
+									kanbanRank: { gt: currentTask.kanbanRank }
+								},
+								orderBy: { kanbanRank: 'asc' },
+								select: { id: true }
+							});
+							if (
+								currentSuccessor?.id === beforeTaskId ||
+								(!currentSuccessor && !beforeTaskId)
+							) {
+								return { success: true, updatedCount: 0 };
+							}
+						}
+
+						let neighbors = await findNeighbors();
+						if (
+							neighbors.successor?.kanbanRank === null ||
+							neighbors.predecessor?.kanbanRank === null
+						) {
+							await tx.$executeRaw(
+								buildKanbanRankRebalanceSql(input.projectId, input.targetStatus)
+							);
+							neighbors = await findNeighbors();
+						}
+
+						let newRank = calculateKanbanRank(
+							neighbors.predecessor?.kanbanRank ?? null,
+							neighbors.successor?.kanbanRank ?? null
+						);
+						if (newRank === null) {
+							await tx.$executeRaw(
+								buildKanbanRankRebalanceSql(input.projectId, input.targetStatus)
+							);
+							neighbors = await findNeighbors();
+							newRank = calculateKanbanRank(
+								neighbors.predecessor?.kanbanRank ?? null,
+								neighbors.successor?.kanbanRank ?? null
+							);
+						}
+						if (newRank === null) {
+							throw new TRPCError({
+								code: 'INTERNAL_SERVER_ERROR',
+								message: 'Could not allocate a task position'
+							});
+						}
+
+						await tx.task.update({
+							where: { id: input.taskId },
+							data: {
+								status: input.targetStatus,
+								kanbanRank: newRank
+							}
+						});
+
+						if (
+							currentTask.sprint?.status === SprintStatusEnum.ACTIVE &&
+							currentTask.sprint.id &&
+							currentTask.status !== input.targetStatus
+						) {
+							await captureSprintSnapshot(tx, currentTask.sprint.id);
+						}
+
+						return { success: true, updatedCount: 1 };
+					});
+				} catch (error) {
+					if (
+						error instanceof Prisma.PrismaClientKnownRequestError &&
+						error.code === 'P2034' &&
+						attempt < MAX_TRANSACTION_RETRIES
+					) {
+						continue;
+					}
+					throw error;
+				}
+			}
+
+			throw new TRPCError({
+				code: 'CONFLICT',
+				message: 'The task order changed; please retry'
+			});
 		}),
 
 	updateTaskOrders: protectedProcedure

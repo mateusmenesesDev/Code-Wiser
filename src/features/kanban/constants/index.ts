@@ -32,3 +32,7 @@ export const columns = [
 		color: 'var(--status-done)'
 	}
 ];
+
+export const boardColumns = columns.filter(
+	(column) => column.id !== TaskStatusEnum.BACKLOG
+);

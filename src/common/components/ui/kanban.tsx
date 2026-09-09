@@ -36,6 +36,7 @@ import { createPortal } from 'react-dom';
 import { Card } from '~/common/components/ui/card';
 import { ScrollArea, ScrollBar } from '~/common/components/ui/scroll-area';
 import {
+	type KanbanMove,
 	bucketTasksByStatus,
 	idsByStatusFromBuckets,
 	reorderKanbanItems
@@ -234,7 +235,7 @@ export type KanbanProviderProps<
 	className?: string;
 	columns: C[];
 	data: T[];
-	onDataChange?: (data: T[]) => void;
+	onMove?: (move: KanbanMove) => void;
 	onDragStart?: (event: DragStartEvent) => void;
 	onDragEnd?: (event: DragEndEvent) => void;
 	onDragOver?: (event: DragOverEvent) => void;
@@ -251,7 +252,7 @@ export const KanbanProvider = <
 	className,
 	columns,
 	data,
-	onDataChange,
+	onMove,
 	...props
 }: KanbanProviderProps<T, C>) => {
 	const [activeCardId, setActiveCardId] = useState<string | null>(null);
@@ -318,8 +319,7 @@ export const KanbanProvider = <
 	};
 
 	const handleDragOver = (event: DragOverEvent) => {
-		// Don't call onDataChange here - it causes multiple mutations during drag
-		// Only handle visual feedback, actual updates happen in handleDragEnd
+		// Only handle visual feedback; the semantic move is emitted on drag end.
 		onDragOver?.(event);
 	};
 
@@ -352,7 +352,18 @@ export const KanbanProvider = <
 		);
 
 		if (newData !== data) {
-			onDataChange?.(newData);
+			const movedItem = newData.find((item) => item.id === active.id);
+			if (!movedItem?.status) return;
+
+			const targetTasks = newData.filter(
+				(item) => item.status === movedItem.status
+			);
+			const movedIndex = targetTasks.findIndex((item) => item.id === active.id);
+			onMove?.({
+				taskId: active.id as string,
+				targetStatus: movedItem.status,
+				beforeTaskId: targetTasks[movedIndex + 1]?.id ?? null
+			});
 		}
 	};
 

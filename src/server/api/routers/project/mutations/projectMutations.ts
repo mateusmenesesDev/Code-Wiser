@@ -9,6 +9,7 @@ import {
 	updateProjectSchema
 } from '~/features/projects/schemas/projects.schema';
 import { generatePublicCode } from '~/lib/publicTaskId';
+import { KANBAN_RANK_STEP } from '~/server/api/routers/task/mutations/taskOrderUpdates';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { applyCreditTransaction } from '~/server/services/creditLedger';
 import { createNotification } from '~/server/services/notification/base';
@@ -290,6 +291,7 @@ export const projectMutations = {
 										sprintId,
 										milestoneId,
 										productVersionId,
+										kanbanRank: sourceKanbanRank,
 										projectTemplateId,
 										...taskData
 									} = task;
@@ -300,6 +302,9 @@ export const projectMutations = {
 										...taskData,
 										id: newId,
 										projectId: newProject.id,
+										kanbanRank:
+											sourceKanbanRank ??
+											BigInt((taskData.order ?? 0) + 1) * KANBAN_RANK_STEP,
 										epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
 										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
 										milestoneId: milestoneId

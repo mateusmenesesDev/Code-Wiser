@@ -12,6 +12,7 @@ import {
 	updateTemplateStatusSchema
 } from '~/features/templates/schemas/template.schema';
 import { generatePublicCode } from '~/lib/publicTaskId';
+import { KANBAN_RANK_STEP } from '~/server/api/routers/task/mutations/taskOrderUpdates';
 import { adminProcedure } from '~/server/api/trpc';
 import {
 	createProjectTemplateData,
@@ -473,6 +474,8 @@ export const projectTemplateMutations = {
 							blockedReason: taskData.blockedReason,
 							status: taskData.status,
 							order: taskData.order,
+							kanbanRank:
+								BigInt((taskData.order ?? taskIndex) + 1) * KANBAN_RANK_STEP,
 							storyPoints: taskData.storyPoints,
 							dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
 							publicNumber: publicNumberStart + taskIndex,
@@ -701,6 +704,7 @@ export const projectTemplateMutations = {
 										sprintId,
 										milestoneId,
 										productVersionId,
+										kanbanRank: sourceKanbanRank,
 										projectTemplateId: _projectTemplateId,
 										projectId: _projectId,
 										createdAt: _taskCreatedAt,
@@ -711,6 +715,9 @@ export const projectTemplateMutations = {
 									return {
 										...taskData,
 										projectTemplateId: newTemplate.id,
+										kanbanRank:
+											sourceKanbanRank ??
+											BigInt((taskData.order ?? 0) + 1) * KANBAN_RANK_STEP,
 										epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
 										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
 										milestoneId: milestoneId

@@ -1,5 +1,7 @@
+import { TaskStatusEnum } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 import {
+	applyKanbanMove,
 	applyTaskOrderUpdates,
 	bucketTasksByStatus,
 	groupTasksBySprintId,
@@ -31,6 +33,28 @@ describe('kanban reorder', () => {
 			{ id: 'progress-1', order: 0, status: 'IN_PROGRESS' },
 			{ id: 'todo-2', order: 1, status: 'TODO' },
 			{ id: 'progress-2', order: 1, status: 'IN_PROGRESS' }
+		]);
+	});
+
+	it('applies a semantic move before a target card', () => {
+		const result = applyKanbanMove(
+			[
+				task('todo-1', TaskStatusEnum.BACKLOG),
+				task('progress-1', TaskStatusEnum.IN_PROGRESS),
+				task('progress-2', TaskStatusEnum.IN_PROGRESS)
+			],
+			{
+				taskId: 'todo-1',
+				targetStatus: TaskStatusEnum.IN_PROGRESS,
+				beforeTaskId: 'progress-2'
+			},
+			[TaskStatusEnum.BACKLOG, TaskStatusEnum.IN_PROGRESS]
+		);
+
+		expect(ids(result)).toEqual([
+			{ id: 'progress-1', status: TaskStatusEnum.IN_PROGRESS },
+			{ id: 'todo-1', status: TaskStatusEnum.IN_PROGRESS },
+			{ id: 'progress-2', status: TaskStatusEnum.IN_PROGRESS }
 		]);
 	});
 
@@ -157,9 +181,9 @@ describe('kanban reorder', () => {
 			task('visible-1', 'TODO', 0)
 		];
 
-		expect(mergeVisibleKanbanItems(allData, visibleData).map((t) => t.id)).toEqual(
-			['visible-2', 'hidden', 'visible-1']
-		);
+		expect(
+			mergeVisibleKanbanItems(allData, visibleData).map((t) => t.id)
+		).toEqual(['visible-2', 'hidden', 'visible-1']);
 	});
 
 	it('applies order updates with a Map in one pass', () => {

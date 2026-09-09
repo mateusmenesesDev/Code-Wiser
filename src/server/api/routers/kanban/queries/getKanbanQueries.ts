@@ -1,3 +1,4 @@
+import { TaskStatusEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { protectedProcedure } from '~/server/api/trpc';
 import { userHasAccessToProject } from '~/server/utils/auth';
@@ -15,6 +16,9 @@ export const getKanbanQueries = {
 			const kanbanData = await ctx.db.task.findMany({
 				where: {
 					projectId: input.projectId,
+					...(input.includeBacklog
+						? {}
+						: { status: { not: TaskStatusEnum.BACKLOG } }),
 					sprintId: input.filters?.sprintId,
 					priority: input.filters?.priority,
 					epicId: input.filters?.epicId,
@@ -32,6 +36,8 @@ export const getKanbanQueries = {
 					type: true,
 					status: true,
 					order: true,
+					productVersionId: true,
+					kanbanRank: true,
 					priority: true,
 					storyPoints: true,
 					publicNumber: true,
@@ -57,7 +63,13 @@ export const getKanbanQueries = {
 						}
 					}
 				},
-				orderBy: [{ status: 'asc' }, { order: 'asc' }, { createdAt: 'asc' }]
+				orderBy: [
+					{ status: 'asc' },
+					{ kanbanRank: 'asc' },
+					{ order: 'asc' },
+					{ createdAt: 'asc' },
+					{ id: 'asc' }
+				]
 			});
 			return kanbanData;
 		})

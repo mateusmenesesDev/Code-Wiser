@@ -13,17 +13,16 @@ import {
 	KanbanBoard,
 	KanbanCards,
 	KanbanHeader,
-	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
 import {
-	bucketTasksByStatus,
-	toKanbanOrderUpdates
+	type KanbanMove,
+	bucketTasksByStatus
 } from '~/common/utils/kanbanReorder';
 import Backlog from '~/features/backlog/components/Backlog';
 import KanbanCardContent from '~/features/kanban/components/KanbanCardContent';
 import ProjectListView from '~/features/kanban/components/ProjectListView';
-import { columns } from '~/features/kanban/constants';
+import { boardColumns } from '~/features/kanban/constants';
 import { useKanbanData } from '~/features/kanban/hooks/useKanbanData';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
@@ -52,7 +51,7 @@ const Workspace = () => {
 		id: projectId
 	});
 	const { filterTasks } = useKanbanFilters();
-	const { updateTaskOrdersMutation } = useKanbanMutations(projectId);
+	const { moveTaskMutation } = useKanbanMutations(projectId);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	const tasks = filterTasks(allTasks ?? []);
@@ -80,10 +79,8 @@ const Workspace = () => {
 		sprintId ??
 		(sprints ?? []).find((s) => s.status === SprintStatusEnum.ACTIVE)?.id;
 
-	const handleDataChange = (data: KanbanItemProps[]) => {
-		const updates = toKanbanOrderUpdates(allTasks ?? data, data);
-		if (updates.length === 0) return;
-		updateTaskOrdersMutation.mutate({ updates });
+	const handleTaskMove = (move: KanbanMove) => {
+		moveTaskMutation.mutate({ projectId, ...move });
 	};
 
 	if (isCanceled) {
@@ -203,10 +200,7 @@ const Workspace = () => {
 							/>
 						</div>
 					) : isScrum && view === 'sprint' && selectedSprint ? (
-						<SprintBoard
-							sprint={selectedSprint}
-							projectId={projectId}
-						/>
+						<SprintBoard sprint={selectedSprint} projectId={projectId} />
 					) : isScrum && view === 'backlog' ? (
 						<Suspense
 							fallback={
@@ -223,9 +217,9 @@ const Workspace = () => {
 						<ProjectListView tasks={tasks} sprints={sprints ?? []} />
 					) : (
 						<KanbanProvider
-							columns={columns}
+							columns={boardColumns}
 							data={tasks}
-							onDataChange={handleDataChange}
+							onMove={handleTaskMove}
 						>
 							{(column) => {
 								const columnTasks = tasksByStatus.get(column.id) ?? [];

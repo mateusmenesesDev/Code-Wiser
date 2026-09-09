@@ -13,6 +13,8 @@ Aumentar o limite do endpoint para 500 resolve apenas a primeira falha observada
 
 ### Recomendação
 
+O runtime da aplicação usa Prisma com `provider = "cockroachdb"`. O benchmark SQL desta análise usa PostgreSQL 16 apenas para comparar as formas de atualização; a implementação deve usar tipos, locks e retries compatíveis com CockroachDB.
+
 Adotar como arquitetura-alvo:
 
 - uma mutação semântica de movimento, por exemplo:
@@ -251,11 +253,9 @@ Para o contrato semântico, a política precisa ser explícita:
 6. faz reequilíbrio local se necessário;
 7. confirma a transação.
 
-`pg_advisory_xact_lock` é uma boa opção para o primeiro desenho porque o lock é liberado automaticamente no fim da transação. Locks transacionais advisory não são impostos pelo banco: todos os caminhos que movem uma tarefa precisam usar a mesma chave. A documentação cobre essa propriedade em [explicit locking](https://www.postgresql.org/docs/current/explicit-locking.html).
+Como o banco da aplicação é CockroachDB, não usar `pg_advisory_xact_lock`: esse mecanismo é específico do PostgreSQL. A transação de movimento deve bloquear a linha do projeto com `SELECT ... FOR UPDATE`, para que todos os movimentos do mesmo projeto adquiram uma linha de serialização comum. O lock é liberado ao fim da transação; todos os caminhos que movem uma tarefa precisam usar o mesmo protocolo.
 
-`SELECT ... FOR UPDATE` também funciona, mas selecionar apenas o item movido não protege o intervalo entre seus vizinhos. Para duas colunas, locks de linhas devem ser adquiridos na mesma ordem para reduzir deadlocks. O PostgreSQL recomenda ordem consistente de aquisição ou retry de transações abortadas por deadlock ([explicit locking](https://www.postgresql.org/docs/current/explicit-locking.html)).
-
-`SERIALIZABLE` oferece uma garantia mais forte, mas exige que a aplicação repita transações que falharem com SQLSTATE `40001` ([transaction isolation](https://www.postgresql.org/docs/current/transaction-iso.html)). Eu não o usaria como primeira solução para todo o Board: um lock por coluna é mais previsível e torna a política de conflito local e observável.
+CockroachDB usa `SERIALIZABLE` por padrão e pode devolver SQLSTATE `40001`, que o Prisma expõe como `P2034`. A aplicação precisa repetir a transação inteira, incluindo a leitura dos vizinhos e o cálculo do rank. O reequilíbrio também deve ocorrer dentro dessa transação. O desempate por `rank, id` continua obrigatório, pois protege a ordenação mesmo durante dados legados ou manutenção.
 
 O rank não precisa ser único se o índice ordenar por `(rank, id)`. Se a equipe quiser detectar colisões como erro, pode usar uma constraint única e retry; se quiser que o servidor linearize tudo, o lock por coluna deve ser a primeira defesa. O desempate por ID é obrigatório de qualquer forma, porque um rank igual sem segundo critério não define ordem.
 
@@ -296,19 +296,18 @@ Esta fase já reduz o tráfego de `O(k)` para `O(1)` e elimina o limite artifici
 Adicionar uma coluna nova, em vez de mudar silenciosamente o tipo de `order`:
 
 ```prisma
-rank BigInt?
+kanbanRank BigInt?
 ```
 
 A coluna deve ter índices que reflitam os dois escopos existentes — projeto e template — e o status. O backfill deve ordenar por `order` e um desempate estável, atribuindo uma distância inicial, por exemplo 1.000.000. A migração deve ser feita em batches se o banco real for grande; não usar o endpoint de produto para o backfill.
 
 Depois do backfill:
 
-1. escrever `rank` em criação e movimentação;
-2. ler por `rank, id`;
-3. verificar que nenhum item relevante ficou sem rank;
-4. marcar `rank` como não nulo quando a verificação terminar;
-5. remover o uso de `order` dos caminhos de leitura;
-6. somente então remover a coluna antiga em uma migração separada.
+1. escrever `kanbanRank` em criação, atualização de status e movimentação;
+2. ler o Board por `kanbanRank, id`;
+3. verificar que nenhum item com status ficou sem rank;
+4. manter `order` nos caminhos do Backlog, que representam uma ordenação diferente;
+5. manter a coluna nullable para dados sem status e para compatibilidade durante a migração.
 
 O reequilíbrio deve operar uma janela da coluna, não o projeto inteiro. Ele precisa:
 
@@ -340,6 +339,8 @@ A escolha pragmática é semântica primeiro e rank esparso depois. O benchmark 
 
 ## Fontes
 
+- Prisma — [CockroachDB connector and scalar type mappings](https://www.prisma.io/docs/orm/overview/databases/cockroachdb)
+- CockroachDB — [Transaction retry errors](https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference)
 - PostgreSQL — [Numeric Types](https://www.postgresql.org/docs/current/datatype-numeric.html)
 - PostgreSQL — [UPDATE](https://www.postgresql.org/docs/current/sql-update.html)
 - PostgreSQL — [Transaction Isolation](https://www.postgresql.org/docs/current/transaction-iso.html)

@@ -4,6 +4,7 @@ import { TaskPriorityEnum } from '@prisma/client';
 
 export const kanbanDataSchema = z.object({
 	projectId: z.string(),
+	includeBacklog: z.boolean().default(false),
 	filters: z
 		.object({
 			sprintId: z.string().optional(),

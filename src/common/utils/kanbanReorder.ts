@@ -1,3 +1,5 @@
+import type { TaskStatusEnum } from '@prisma/client';
+
 export type KanbanReorderItem = {
 	id: string;
 	status: string | null;
@@ -14,6 +16,25 @@ export type TaskOrderUpdate = {
 };
 
 export type KanbanInsertPosition = 'before' | 'after';
+
+export type KanbanMove = {
+	taskId: string;
+	targetStatus: TaskStatusEnum;
+	beforeTaskId: string | null;
+};
+
+export const applyKanbanMove = <T extends KanbanReorderItem>(
+	data: T[],
+	move: KanbanMove,
+	columnIds: readonly string[]
+): T[] =>
+	reorderKanbanItems(
+		data,
+		move.taskId,
+		move.beforeTaskId ?? move.targetStatus,
+		columnIds,
+		move.beforeTaskId ? 'before' : 'after'
+	);
 
 export const reorderKanbanItems = <T extends KanbanReorderItem>(
 	data: T[],
@@ -239,9 +260,7 @@ export const bucketTasksByStatus = <T extends { status: string | null }>(
 	return buckets;
 };
 
-export const groupTasksBySprintId = <
-	T extends { sprintId: string | null }
->(
+export const groupTasksBySprintId = <T extends { sprintId: string | null }>(
 	tasks: T[]
 ): Map<string | null, T[]> => {
 	const groups = new Map<string | null, T[]>();

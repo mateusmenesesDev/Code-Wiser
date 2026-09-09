@@ -47,11 +47,15 @@ export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 	const utils = api.useUtils();
 	const isTemplate = useIsTemplate();
 
-	const invalidateSprints = useCallback(() => {
+	const invalidateSprintList = useCallback(() => {
 		utils.sprint.getAllByProjectId.invalidate({
 			projectId,
 			isTemplate
 		});
+	}, [projectId, isTemplate, utils]);
+
+	const invalidateSprints = useCallback(() => {
+		invalidateSprintList();
 		utils.task.getAllByProjectId.invalidate({ projectId, isTemplate });
 		utils.kanban.getKanbanData.invalidate({ projectId });
 		utils.sprint.getMetrics.invalidate({ projectId });
@@ -60,7 +64,7 @@ export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 		} else {
 			utils.project.getById.invalidate({ id: projectId });
 		}
-	}, [projectId, isTemplate, utils]);
+	}, [invalidateSprintList, projectId, isTemplate, utils]);
 
 	const createSprint = api.sprint.create.useMutation({
 		onMutate: async (newSprint) => {
@@ -86,7 +90,7 @@ export const useSprintMutations = ({ projectId }: { projectId: string }) => {
 			return { previousSprints };
 		},
 		onSettled: () => {
-			invalidateSprints();
+			invalidateSprintList();
 		},
 		onSuccess: () => {
 			toast.success('Sprint created successfully');

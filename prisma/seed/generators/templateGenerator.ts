@@ -138,6 +138,7 @@ async function createRelatedEntities(
 		await prisma.task.create({
 			data: {
 				...taskData,
+				kanbanRank: BigInt(taskIndex + 1) * 1_000_000n,
 				projectTemplateId: projectTemplate.id,
 				publicNumber: taskIndex + 1,
 				sprintId: sprint.id,

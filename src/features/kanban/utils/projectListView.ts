@@ -50,8 +50,13 @@ const prioritySortOrder: TaskPriorityEnum[] = [
 const priorityGroupOrder: TaskPriorityEnum[] = [...prioritySortOrder].reverse();
 
 const compareManualOrder = (left: ProjectListTask, right: ProjectListTask) => {
-	const orderDifference = (left.order ?? 0) - (right.order ?? 0);
-	if (orderDifference !== 0) return orderDifference;
+	if (left.kanbanRank != null && right.kanbanRank != null) {
+		if (left.kanbanRank < right.kanbanRank) return -1;
+		if (left.kanbanRank > right.kanbanRank) return 1;
+	} else {
+		const orderDifference = (left.order ?? 0) - (right.order ?? 0);
+		if (orderDifference !== 0) return orderDifference;
+	}
 
 	return (
 		new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()

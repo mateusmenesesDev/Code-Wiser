@@ -14,11 +14,12 @@ model Task {
   title       String
   description String?
 
-  type     TaskTypeEnum?     @default(USER_STORY)
-  tags     String[]
-  priority TaskPriorityEnum?
-  status   TaskStatusEnum?   @default(BACKLOG)
-  order    Int?              @default(0)
+  type       TaskTypeEnum?     @default(USER_STORY)
+  tags       String[]
+  priority   TaskPriorityEnum?
+  status     TaskStatusEnum?   @default(BACKLOG)
+  order      Int?              @default(0)
+  kanbanRank BigInt?
 
   productVersionId    String?
   productVersion      ProductVersion? @relation(fields: [productVersionId], references: [id], onDelete: SetNull)
@@ -58,6 +59,8 @@ model Task {
   @@unique([projectTemplateId, publicNumber])
   @@unique([projectId, publicNumber])
   @@index([blocked, updatedAt])
+  @@index([projectId, status, kanbanRank])
+  @@index([projectTemplateId, status, kanbanRank])
   @@schema("public")
 }
 

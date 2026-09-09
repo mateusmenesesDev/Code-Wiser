@@ -108,6 +108,8 @@ export const createOptimisticHelpers = ({
 		projectId: string,
 		optimisticTask: KanbanTask
 	) => {
+		if (optimisticTask.status === TaskStatusEnum.BACKLOG) return;
+
 		utils.kanban.getKanbanData.setData({ projectId }, (old) => {
 			if (!old) return old;
 			return [...old, optimisticTask];
@@ -132,11 +134,12 @@ export const createOptimisticHelpers = ({
 	) => {
 		utils.kanban.getKanbanData.setData({ projectId }, (old) => {
 			if (!old) return old;
-			return old.map((task) => {
-				if (task.id === taskId) {
-					return { ...task, ...updates };
-				}
-				return task;
+			return old.flatMap((task) => {
+				if (task.id !== taskId) return [task];
+				const updatedTask = { ...task, ...updates };
+				return updatedTask.status === TaskStatusEnum.BACKLOG
+					? []
+					: [updatedTask];
 			});
 		});
 	};
@@ -194,6 +197,8 @@ export const createOptimisticKanbanTask = (
 		status: newTask.status || TaskStatusEnum.BACKLOG,
 		priority: newTask.priority || null,
 		order: null,
+		kanbanRank: null,
+		productVersionId: newTask.productVersionId || null,
 		storyPoints: null,
 		publicNumber: null,
 		project: null,
@@ -229,6 +234,7 @@ export const createOptimisticBacklogTask = (
 		type: newTask.type || null,
 		status: newTask.status || TaskStatusEnum.BACKLOG,
 		order: null,
+		kanbanRank: null,
 		description: newTask.description || null,
 		priority: newTask.priority || null,
 		tags: newTask.tags || [],

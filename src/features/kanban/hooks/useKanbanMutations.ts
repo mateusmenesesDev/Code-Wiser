@@ -1,10 +1,12 @@
-import { applyTaskOrderUpdates } from '~/common/utils/kanbanReorder';
+import type { TaskStatusEnum } from '@prisma/client';
+import { applyKanbanMove } from '~/common/utils/kanbanReorder';
 import { api } from '~/trpc/react';
+import { boardColumns } from '../constants';
 
 export const useKanbanMutations = (projectId: string) => {
 	const utils = api.useUtils();
-	const updateTaskOrdersMutation = api.task.updateTaskOrders.useMutation({
-		onMutate: async ({ updates }) => {
+	const moveTaskMutation = api.task.moveTask.useMutation({
+		onMutate: async (move) => {
 			// Cancel any outgoing refetches
 			await utils.kanban.getKanbanData.cancel({ projectId });
 
@@ -15,7 +17,11 @@ export const useKanbanMutations = (projectId: string) => {
 			if (previousTasks) {
 				utils.kanban.getKanbanData.setData(
 					{ projectId },
-					applyTaskOrderUpdates(previousTasks, updates)
+					applyKanbanMove(
+						previousTasks,
+						{ ...move, beforeTaskId: move.beforeTaskId ?? null },
+						boardColumns.map((column) => column.id as TaskStatusEnum)
+					)
 				);
 			}
 
@@ -31,11 +37,12 @@ export const useKanbanMutations = (projectId: string) => {
 			}
 		},
 		onSettled: () => {
+			utils.kanban.getKanbanData.invalidate({ projectId });
 			utils.project.getRoadmap.invalidate({ projectId });
 		}
 	});
 
 	return {
-		updateTaskOrdersMutation
+		moveTaskMutation
 	};
 };
