@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, BarChart3, TrendingDown } from 'lucide-react';
+import { type MouseEvent, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -11,7 +12,7 @@ import {
 	CardTitle
 } from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
-import { api, type RouterOutputs } from '~/trpc/react';
+import { type RouterOutputs, api } from '~/trpc/react';
 
 type SprintMetrics = RouterOutputs['sprint']['getMetrics'];
 type BurndownPoint = {
@@ -53,7 +54,11 @@ const Metric = ({
 	</div>
 );
 
+const formatChartValue = (value: number) =>
+	Number.isInteger(value) ? String(value) : value.toFixed(1);
+
 const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
+	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 	const maxValue = Math.max(
 		1,
 		...points.flatMap((point) => [point.idealRemaining, point.remainingPoints])
@@ -67,6 +72,38 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 	const actual = points.map(
 		(point, index) => `${x(index)},${y(point.remainingPoints)}`
 	);
+	const handleMouseMove = (event: MouseEvent<SVGSVGElement>) => {
+		const transform = event.currentTarget.getScreenCTM();
+		if (!transform) return;
+		const cursor = event.currentTarget.createSVGPoint();
+		cursor.x = event.clientX;
+		cursor.y = event.clientY;
+		const { x: chartX, y: chartY } = cursor.matrixTransform(
+			transform.inverse()
+		);
+		if (chartX < 20 || chartX > 580 || chartY < 30 || chartY > 180) {
+			setHoveredIndex(null);
+			return;
+		}
+		const index = Math.round(
+			((chartX - 20) / 560) * Math.max(0, points.length - 1)
+		);
+		setHoveredIndex(index);
+	};
+	const hoveredPoint = hoveredIndex === null ? null : points[hoveredIndex];
+	const tooltipX =
+		hoveredIndex === null
+			? 0
+			: Math.min(Math.max(x(hoveredIndex) - 62, 4), 472);
+	const tooltipY = hoveredPoint
+		? Math.max(
+				4,
+				Math.min(
+					y(hoveredPoint.remainingPoints),
+					y(hoveredPoint.idealRemaining)
+				) - 64
+			)
+		: 0;
 
 	return (
 		<svg
@@ -74,6 +111,8 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 			role="img"
 			aria-label="Sprint burndown showing ideal and actual remaining story points"
 			className="h-52 w-full overflow-visible"
+			onMouseMove={handleMouseMove}
+			onMouseLeave={() => setHoveredIndex(null)}
 		>
 			<line x1="20" y1="180" x2="580" y2="180" className="stroke-border" />
 			<line x1="20" y1="30" x2="20" y2="180" className="stroke-border" />
@@ -90,11 +129,33 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 				className="stroke-info"
 				strokeWidth="3"
 			/>
-			{points.map(
-				(point, index) =>
-					point.scopeChangeCount > 0 && (
+			{points.map((point, index) => (
+				<g
+					key={point.date}
+					tabIndex={0}
+					aria-label={`${formatDate(point.date)}: ${formatChartValue(point.remainingPoints)} remaining points, ${formatChartValue(point.idealRemaining)} ideal points`}
+					onFocus={() => setHoveredIndex(index)}
+					onBlur={() => setHoveredIndex(null)}
+				>
+					<title>
+						{`${formatDate(point.date)} · ${formatChartValue(point.remainingPoints)} remaining · ${formatChartValue(point.idealRemaining)} ideal`}
+					</title>
+					<circle
+						cx={x(index)}
+						cy={y(point.idealRemaining)}
+						r={10}
+						fill="transparent"
+						pointerEvents="all"
+					/>
+					<circle
+						cx={x(index)}
+						cy={y(point.remainingPoints)}
+						r={10}
+						fill="transparent"
+						pointerEvents="all"
+					/>
+					{point.scopeChangeCount > 0 && (
 						<circle
-							key={point.date}
 							cx={x(index)}
 							cy={y(point.remainingPoints)}
 							r={5}
@@ -102,7 +163,45 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 							strokeWidth="2"
 							aria-label={`${point.scopeChangeCount} scope changes on ${formatDate(point.date)}`}
 						/>
-					)
+					)}
+				</g>
+			))}
+			{hoveredPoint && (
+				<g pointerEvents="none">
+					<rect
+						x={tooltipX}
+						y={tooltipY}
+						width="124"
+						height="58"
+						rx="6"
+						className="fill-popover stroke-border"
+					/>
+					<text
+						x={tooltipX + 10}
+						y={tooltipY + 17}
+						className="fill-popover-foreground"
+						fontSize="11"
+						fontWeight="600"
+					>
+						{formatDate(hoveredPoint.date)}
+					</text>
+					<text
+						x={tooltipX + 10}
+						y={tooltipY + 34}
+						className="fill-popover-foreground"
+						fontSize="11"
+					>
+						{`Remaining: ${formatChartValue(hoveredPoint.remainingPoints)} pts`}
+					</text>
+					<text
+						x={tooltipX + 10}
+						y={tooltipY + 49}
+						className="fill-muted-foreground"
+						fontSize="11"
+					>
+						{`Ideal: ${formatChartValue(hoveredPoint.idealRemaining)} pts`}
+					</text>
+				</g>
 			)}
 			<text x="20" y="205" className="fill-muted-foreground text-[11px]">
 				{formatDate(points[0]?.date ?? '')}
