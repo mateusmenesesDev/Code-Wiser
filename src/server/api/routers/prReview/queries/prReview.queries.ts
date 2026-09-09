@@ -108,6 +108,7 @@ export const prReviewQueries = {
 			const review = await ctx.db.pullRequestReview.findFirst({
 				where: {
 					taskId: input.taskId,
+					requestedById: ctx.session.userId,
 					isActive: true
 				},
 				include: {

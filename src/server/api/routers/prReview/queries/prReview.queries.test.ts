@@ -40,3 +40,36 @@ describe('prReview.getAll', () => {
 		);
 	});
 });
+
+describe('prReview.getActiveByTaskId', () => {
+	const createCaller = createCallerFactory(prReviewRouter);
+
+	beforeEach(() => {
+		mockDb.task.findUnique.mockResolvedValue({
+			id: 'task-1',
+			projectId: 'project-1',
+			project: {
+				memberships: [{ userId: 'admin-user-id', status: 'ACTIVE' }]
+			}
+		} as never);
+		mockDb.pullRequestReview.findFirst.mockResolvedValue(null);
+	});
+
+	it('returns only the current review for the signed-in student', async () => {
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.getActiveByTaskId({ taskId: 'task-1' });
+
+		expect(mockDb.pullRequestReview.findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: {
+					taskId: 'task-1',
+					requestedById: 'admin-user-id',
+					isActive: true
+				}
+			})
+		);
+	});
+});

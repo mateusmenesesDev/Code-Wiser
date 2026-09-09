@@ -268,7 +268,7 @@ model PullRequestReview {
 
   analyses PrReviewAnalysis[]
 
-  @@index([taskId, isActive])
+  @@index([taskId, requestedById, isActive])
   @@index([reviewedById])
   @@index([isActive, status, createdAt])
   @@index([githubRepositoryId, githubPullRequestNumber])

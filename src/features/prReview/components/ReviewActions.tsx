@@ -51,6 +51,7 @@ export function ReviewActions({
 	const handleRequestChanges = () => {
 		requestChanges({
 			taskId,
+			reviewId,
 			comment: comment.trim() || undefined,
 			analysisId
 		});

@@ -348,12 +348,12 @@ export const prReviewMutations = {
 		.input(requestChangesPRSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { taskId, comment, analysisId } = input;
+			const reviewIdentifier = input.reviewId ?? taskId;
 
 			const activeReview = await ctx.db.pullRequestReview.findFirst({
-				where: {
-					taskId,
-					isActive: true
-				},
+				where: input.reviewId
+					? { id: reviewIdentifier, isActive: true }
+					: { taskId: reviewIdentifier, isActive: true },
 				include: {
 					requestedBy: {
 						select: {
@@ -580,7 +580,7 @@ export const prReviewMutations = {
 
 			await ctx.db.$transaction(async (tx) => {
 				const activeReview = await tx.pullRequestReview.findFirst({
-					where: { taskId, isActive: true },
+					where: { taskId, requestedById: requesterId, isActive: true },
 					select: { id: true, status: true }
 				});
 

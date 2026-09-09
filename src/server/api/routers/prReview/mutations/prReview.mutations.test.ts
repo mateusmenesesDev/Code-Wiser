@@ -101,6 +101,14 @@ describe('PR review lifecycle', () => {
 			idempotencyKey: '11111111-1111-4111-8111-111111111111'
 		});
 
+		expect(mockDb.pullRequestReview.findFirst).toHaveBeenCalledWith({
+			where: {
+				taskId: 'task-1',
+				requestedById: 'user-1',
+				isActive: true
+			},
+			select: { id: true, status: true }
+		});
 		expect(mockDb.pullRequestReview.create).toHaveBeenCalledWith({
 			data: {
 				taskId: 'task-1',
@@ -507,10 +515,16 @@ describe('PR review lifecycle', () => {
 
 		await caller.requestChanges({
 			taskId: 'task-1',
+			reviewId: 'review-1',
 			comment: 'Please address the accepted finding.',
 			analysisId: 'analysis-1'
 		});
 
+		expect(mockDb.pullRequestReview.findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { id: 'review-1', isActive: true }
+			})
+		);
 		expect(mockDb.pullRequestReview.updateMany).toHaveBeenCalledWith({
 			where: { id: 'review-1', status: 'PENDING' },
 			data: expect.objectContaining({
