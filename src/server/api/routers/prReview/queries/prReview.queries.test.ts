@@ -39,6 +39,26 @@ describe('prReview.getAll', () => {
 			})
 		);
 	});
+
+	it('marks the latest review per student as active for legacy data', async () => {
+		const createdAt = new Date('2026-01-02');
+		mockDb.pullRequestReview.findMany.mockResolvedValue([
+			{
+				id: 'review-1',
+				taskId: 'task-1',
+				requestedById: 'student-1',
+				createdAt,
+				isActive: false
+			}
+		] as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		const reviews = await caller.getAll({});
+
+		expect(reviews[0]?.isActive).toBe(true);
+	});
 });
 
 describe('prReview.getActiveByTaskId', () => {

@@ -38,6 +38,8 @@ export const prReviewMutations = {
 				where: { id: input.reviewId },
 				select: {
 					id: true,
+					taskId: true,
+					requestedById: true,
 					isActive: true,
 					status: true,
 					prUrl: true,
@@ -74,15 +76,29 @@ export const prReviewMutations = {
 				});
 			}
 			if (
-				!review.isActive ||
-				(review.status !== PullRequestReviewStatusEnum.PENDING &&
-					review.status !== PullRequestReviewStatusEnum.CHANGES_REQUESTED)
+				review.status !== PullRequestReviewStatusEnum.PENDING &&
+				review.status !== PullRequestReviewStatusEnum.CHANGES_REQUESTED
 			) {
 				throw new TRPCError({
 					code: 'CONFLICT',
-					message:
-						'Only an active pending or changes-requested review can be analyzed'
+					message: 'Only a pending or changes-requested review can be analyzed'
 				});
+			}
+			if (!review.isActive) {
+				const latestReview = await ctx.db.pullRequestReview.findFirst({
+					where: {
+						taskId: review.taskId,
+						requestedById: review.requestedById
+					},
+					orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+					select: { id: true }
+				});
+				if (latestReview?.id !== review.id) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'This review has been superseded'
+					});
+				}
 			}
 			let sourceHeadSha = review.githubHeadSha;
 			if (
@@ -255,7 +271,7 @@ export const prReviewMutations = {
 			const reviewIdentifier = input.reviewId ?? input.taskId;
 			const activeReview = await ctx.db.pullRequestReview.findFirst({
 				where: input.reviewId
-					? { id: reviewIdentifier, isActive: true }
+					? { id: reviewIdentifier }
 					: { taskId: reviewIdentifier, isActive: true },
 				include: {
 					requestedBy: {
@@ -284,8 +300,24 @@ export const prReviewMutations = {
 			if (!activeReview) {
 				throw new TRPCError({
 					code: 'NOT_FOUND',
-					message: 'No active PR review found for this task.'
+					message: 'No PR review found for this task.'
 				});
+			}
+			if (input.reviewId && !activeReview.isActive) {
+				const latestReview = await ctx.db.pullRequestReview.findFirst({
+					where: {
+						taskId: activeReview.taskId,
+						requestedById: activeReview.requestedById
+					},
+					orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+					select: { id: true }
+				});
+				if (latestReview?.id !== activeReview.id) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'This review has already been superseded'
+					});
+				}
 			}
 			if (
 				activeReview.status !== PullRequestReviewStatusEnum.PENDING &&
@@ -352,7 +384,7 @@ export const prReviewMutations = {
 
 			const activeReview = await ctx.db.pullRequestReview.findFirst({
 				where: input.reviewId
-					? { id: reviewIdentifier, isActive: true }
+					? { id: reviewIdentifier }
 					: { taskId: reviewIdentifier, isActive: true },
 				include: {
 					requestedBy: {
@@ -381,8 +413,24 @@ export const prReviewMutations = {
 			if (!activeReview) {
 				throw new TRPCError({
 					code: 'NOT_FOUND',
-					message: 'No active PR review found for this task.'
+					message: 'No PR review found for this task.'
 				});
+			}
+			if (input.reviewId && !activeReview.isActive) {
+				const latestReview = await ctx.db.pullRequestReview.findFirst({
+					where: {
+						taskId: activeReview.taskId,
+						requestedById: activeReview.requestedById
+					},
+					orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+					select: { id: true }
+				});
+				if (latestReview?.id !== activeReview.id) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'This review has already been superseded'
+					});
+				}
 			}
 			if (activeReview.status !== PullRequestReviewStatusEnum.PENDING) {
 				throw new TRPCError({

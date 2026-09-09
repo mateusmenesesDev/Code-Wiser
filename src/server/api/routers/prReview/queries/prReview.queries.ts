@@ -54,7 +54,33 @@ export const prReviewQueries = {
 				]
 			});
 
-			return reviews;
+			const latestReviewByRequester = new Map<
+				string,
+				{ id: string; createdAt: Date }
+			>();
+			for (const review of reviews) {
+				const key = `${review.taskId}:${review.requestedById}`;
+				const latestReview = latestReviewByRequester.get(key);
+				if (
+					!latestReview ||
+					review.createdAt > latestReview.createdAt ||
+					(review.createdAt.getTime() === latestReview.createdAt.getTime() &&
+						review.id > latestReview.id)
+				) {
+					latestReviewByRequester.set(key, {
+						id: review.id,
+						createdAt: review.createdAt
+					});
+				}
+			}
+
+			return reviews.map((review) => ({
+				...review,
+				isActive:
+					latestReviewByRequester.get(
+						`${review.taskId}:${review.requestedById}`
+					)?.id === review.id
+			}));
 		}),
 
 	getLatestAIAnalysis: adminProcedure

@@ -195,6 +195,8 @@ describe('PR review lifecycle', () => {
 	it('allows approving the active review after changes were requested', async () => {
 		mockDb.pullRequestReview.findFirst.mockResolvedValue({
 			id: 'review-1',
+			isActive: false,
+			taskId: 'task-1',
 			status: 'CHANGES_REQUESTED',
 			requestedById: 'user-1',
 			requestedBy: {
@@ -216,7 +218,7 @@ describe('PR review lifecycle', () => {
 
 		expect(mockDb.pullRequestReview.findFirst).toHaveBeenCalledWith(
 			expect.objectContaining({
-				where: { id: 'review-1', isActive: true }
+				where: { id: 'review-1' }
 			})
 		);
 		expect(mockDb.pullRequestReview.updateMany).toHaveBeenCalledWith({
@@ -298,7 +300,9 @@ describe('PR review lifecycle', () => {
 	it('refreshes and queues AI analysis after changes were requested', async () => {
 		mockDb.pullRequestReview.findUnique.mockResolvedValue({
 			id: 'review-1',
-			isActive: true,
+			isActive: false,
+			taskId: 'task-1',
+			requestedById: 'user-1',
 			status: 'CHANGES_REQUESTED',
 			prUrl: 'https://github.com/acme/app/pull/7',
 			githubHeadSha: 'head-requested',
@@ -317,6 +321,9 @@ describe('PR review lifecycle', () => {
 					}
 				}
 			}
+		} as never);
+		mockDb.pullRequestReview.findFirst.mockResolvedValue({
+			id: 'review-1'
 		} as never);
 		getPullRequestSnapshotForRepository.mockResolvedValue({
 			number: 7,
@@ -489,6 +496,8 @@ describe('PR review lifecycle', () => {
 	it('marks feedback as AI-assisted only after accepted current findings are selected', async () => {
 		mockDb.pullRequestReview.findFirst.mockResolvedValue({
 			id: 'review-1',
+			isActive: false,
+			taskId: 'task-1',
 			status: 'PENDING',
 			githubHeadSha: 'head-1',
 			requestedById: 'user-1',
@@ -522,7 +531,7 @@ describe('PR review lifecycle', () => {
 
 		expect(mockDb.pullRequestReview.findFirst).toHaveBeenCalledWith(
 			expect.objectContaining({
-				where: { id: 'review-1', isActive: true }
+				where: { id: 'review-1' }
 			})
 		);
 		expect(mockDb.pullRequestReview.updateMany).toHaveBeenCalledWith({
