@@ -247,7 +247,7 @@ export function ProjectSettingsModal({
 	return (
 		<>
 			<Dialog open={open} onOpenChange={onOpenChange}>
-				<DialogContent className="max-w-2xl">
+				<DialogContent className="max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto sm:max-h-[calc(100dvh-4rem)]">
 					<DialogHeader>
 						<DialogTitle>Project Settings</DialogTitle>
 						<DialogDescription>
