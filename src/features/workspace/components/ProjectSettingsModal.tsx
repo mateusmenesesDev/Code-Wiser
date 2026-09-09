@@ -3,15 +3,25 @@
 import { ProjectMethodologyEnum, ProjectRoleEnum } from '@prisma/client';
 import {
 	AlertTriangle,
+	GitBranch,
 	Kanban,
 	LayoutList,
 	Search,
+	Settings2,
+	Share2,
 	Trash2,
 	UserPlus,
+	Users,
 	X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger
+} from '~/common/components/ui/accordion';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Checkbox } from '~/common/components/ui/checkbox';
@@ -64,6 +74,10 @@ export function ProjectSettingsModal({
 		projectInfo?.permissions.includes('EDIT_SETTINGS') ?? false;
 	const canManageGitHub =
 		projectInfo?.permissions.includes('MANAGE_GITHUB') ?? false;
+	const canManagePortfolio =
+		projectInfo?.permissions.includes('MANAGE_PORTFOLIO') ?? false;
+	const canEvaluatePortfolio =
+		projectInfo?.permissions.includes('EVALUATE_PROJECT') ?? false;
 	const needsCreditCost =
 		canManageMembers &&
 		memberManagement.accessType === 'CREDITS' &&
@@ -247,344 +261,443 @@ export function ProjectSettingsModal({
 	return (
 		<>
 			<Dialog open={open} onOpenChange={onOpenChange}>
-				<DialogContent className="max-h-[calc(100dvh-2rem)] max-w-2xl overflow-y-auto sm:max-h-[calc(100dvh-4rem)]">
-					<DialogHeader>
+				<DialogContent className="flex max-h-[calc(100dvh-2rem)] max-w-3xl flex-col overflow-hidden sm:max-h-[calc(100dvh-4rem)]">
+					<DialogHeader className="shrink-0">
 						<DialogTitle>Project Settings</DialogTitle>
 						<DialogDescription>
-							Update your project's view type and general information.
+							Manage the project details, integrations, and access.
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="space-y-6 py-2">
-						<div className="space-y-3">
-							<Label className="font-semibold text-sm">View Type</Label>
-							<div className="grid grid-cols-2 gap-3">
-								<TooltipProvider>
-									{methodologyOptions.map((option) => {
-										const Icon = option.icon;
-										const isSelected = methodology === option.value;
-										const card = (
-											<button
-												key={option.value}
-												type="button"
-												onClick={() => setMethodology(option.value)}
-												className={cn(
-													'flex flex-col items-start gap-2 rounded-lg border p-4 text-left transition-all hover:border-primary/60',
-													isSelected
-														? 'border-primary bg-primary/5 ring-1 ring-primary'
-														: 'border-border bg-card'
-												)}
-											>
-												<div className="flex items-center gap-2">
-													<Icon className="h-4 w-4" />
-													<span className="font-medium text-sm">
-														{option.label}
+					<div className="min-h-0 flex-1 overflow-y-auto pr-1">
+						<Accordion
+							type="single"
+							collapsible
+							defaultValue="details"
+							className="w-full"
+						>
+							<AccordionItem value="details">
+								<AccordionTrigger className="hover:no-underline">
+									<div className="flex items-center gap-3 text-left">
+										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+											<Settings2 className="h-4 w-4" />
+										</div>
+										<div className="flex flex-col items-start gap-1">
+											<span className="font-semibold">Project details</span>
+											<span className="font-normal text-muted-foreground text-xs">
+												View type, title, and description
+											</span>
+										</div>
+									</div>
+								</AccordionTrigger>
+								<AccordionContent className="space-y-6">
+									<div className="space-y-3">
+										<Label className="font-semibold text-sm">View Type</Label>
+										<div className="grid grid-cols-2 gap-3">
+											<TooltipProvider>
+												{methodologyOptions.map((option) => {
+													const Icon = option.icon;
+													const isSelected = methodology === option.value;
+													const card = (
+														<button
+															key={option.value}
+															type="button"
+															onClick={() => setMethodology(option.value)}
+															className={cn(
+																'flex flex-col items-start gap-2 rounded-lg border p-4 text-left transition-all hover:border-primary/60',
+																isSelected
+																	? 'border-primary bg-primary/5 ring-1 ring-primary'
+																	: 'border-border bg-card'
+															)}
+														>
+															<div className="flex items-center gap-2">
+																<Icon className="h-4 w-4" />
+																<span className="font-medium text-sm">
+																	{option.label}
+																</span>
+															</div>
+															<p className="text-muted-foreground text-xs leading-relaxed">
+																{option.description}
+															</p>
+														</button>
+													);
+
+													if (option.warning) {
+														return (
+															<Tooltip key={option.value}>
+																<TooltipTrigger asChild>{card}</TooltipTrigger>
+																<TooltipContent
+																	side="bottom"
+																	className="max-w-[220px] text-center text-xs"
+																>
+																	{option.warning}
+																</TooltipContent>
+															</Tooltip>
+														);
+													}
+
+													return card;
+												})}
+											</TooltipProvider>
+										</div>
+									</div>
+
+									<div className="space-y-3">
+										<Label className="font-semibold text-sm">General</Label>
+										<div className="space-y-3">
+											<div className="space-y-1.5">
+												<Label
+													htmlFor="project-title"
+													className="text-muted-foreground text-sm"
+												>
+													Title
+												</Label>
+												<Input
+													id="project-title"
+													value={title}
+													onChange={(e) => setTitle(e.target.value)}
+													placeholder="Project title"
+												/>
+											</div>
+											<div className="space-y-1.5">
+												<Label
+													htmlFor="project-description"
+													className="text-muted-foreground text-sm"
+												>
+													Description
+												</Label>
+												<Textarea
+													id="project-description"
+													value={description}
+													onChange={(e) => setDescription(e.target.value)}
+													placeholder="Project description"
+													rows={3}
+													className="resize-none"
+												/>
+											</div>
+										</div>
+									</div>
+								</AccordionContent>
+							</AccordionItem>
+
+							{canManageGitHub && (
+								<AccordionItem value="integrations">
+									<AccordionTrigger className="hover:no-underline">
+										<div className="flex items-center gap-3 text-left">
+											<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+												<GitBranch className="h-4 w-4" />
+											</div>
+											<div className="flex flex-col items-start gap-1">
+												<span className="font-semibold">Integrations</span>
+												<span className="font-normal text-muted-foreground text-xs">
+													Connect a GitHub repository
+													{(canManagePortfolio || canEvaluatePortfolio) &&
+														' and manage portfolio sharing'}
+												</span>
+											</div>
+										</div>
+									</AccordionTrigger>
+									<AccordionContent className="space-y-6">
+										<GitHubRepositoryConnector
+											projectId={projectId}
+											currentRepository={projectInfo?.githubRepository}
+											returnTo={`/workspace/${projectId}`}
+										/>
+										{(canManagePortfolio || canEvaluatePortfolio) && (
+											<ProjectPortfolioSettings
+												projectId={projectId}
+												open={open}
+											/>
+										)}
+									</AccordionContent>
+								</AccordionItem>
+							)}
+
+							{!canManageGitHub &&
+								(canManagePortfolio || canEvaluatePortfolio) && (
+									<AccordionItem value="portfolio">
+										<AccordionTrigger className="hover:no-underline">
+											<div className="flex items-center gap-3 text-left">
+												<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+													<Share2 className="h-4 w-4" />
+												</div>
+												<div className="flex flex-col items-start gap-1">
+													<span className="font-semibold">Portfolio</span>
+													<span className="font-normal text-muted-foreground text-xs">
+														Manage portfolio sharing and mentor feedback
 													</span>
 												</div>
-												<p className="text-muted-foreground text-xs leading-relaxed">
-													{option.description}
-												</p>
-											</button>
-										);
-
-										if (option.warning) {
-											return (
-												<Tooltip key={option.value}>
-													<TooltipTrigger asChild>{card}</TooltipTrigger>
-													<TooltipContent
-														side="bottom"
-														className="max-w-[220px] text-center text-xs"
-													>
-														{option.warning}
-													</TooltipContent>
-												</Tooltip>
-											);
-										}
-
-										return card;
-									})}
-								</TooltipProvider>
-							</div>
-						</div>
-
-						<div className="space-y-3">
-							<Label className="font-semibold text-sm">General</Label>
-							<div className="space-y-3">
-								<div className="space-y-1.5">
-									<Label
-										htmlFor="project-title"
-										className="text-muted-foreground text-sm"
-									>
-										Title
-									</Label>
-									<Input
-										id="project-title"
-										value={title}
-										onChange={(e) => setTitle(e.target.value)}
-										placeholder="Project title"
-									/>
-								</div>
-								<div className="space-y-1.5">
-									<Label
-										htmlFor="project-description"
-										className="text-muted-foreground text-sm"
-									>
-										Description
-									</Label>
-									<Textarea
-										id="project-description"
-										value={description}
-										onChange={(e) => setDescription(e.target.value)}
-										placeholder="Project description"
-										rows={3}
-										className="resize-none"
-									/>
-								</div>
-							</div>
-						</div>
-
-						{canManageGitHub && (
-							<GitHubRepositoryConnector
-								projectId={projectId}
-								currentRepository={projectInfo?.githubRepository}
-								returnTo={`/workspace/${projectId}`}
-							/>
-						)}
-
-						<ProjectPortfolioSettings projectId={projectId} open={open} />
-
-						{canManageMembers && (
-							<div className="space-y-4 rounded-lg border p-4">
-								<div className="flex items-center justify-between gap-3">
-									<div>
-										<Label className="font-semibold text-sm">Members</Label>
-										<p className="text-muted-foreground text-xs">
-											{memberManagement.members.length}/
-											{memberManagement.maxParticipants} members
-											{memberManagement.accessType === 'CREDITS' &&
-												` · ${memberManagement.creditCost ?? 'custom'} credits on accept`}
-										</p>
-									</div>
-									{memberManagement.members.length >=
-										memberManagement.maxParticipants && (
-										<div className="flex items-center gap-1 text-amber-600 text-xs">
-											<AlertTriangle className="h-4 w-4" />
-											Over max allowed
-										</div>
-									)}
-								</div>
-
-								{needsCreditCost && (
-									<div className="space-y-1.5">
-										<Label htmlFor="credit-cost" className="text-sm">
-											Credit cost for this invitation
-										</Label>
-										<Input
-											id="credit-cost"
-											type="number"
-											min={1}
-											step={1}
-											value={creditCost}
-											onChange={(event) => setCreditCost(event.target.value)}
-											placeholder="Required for legacy credit projects"
-										/>
-									</div>
+											</div>
+										</AccordionTrigger>
+										<AccordionContent>
+											<ProjectPortfolioSettings
+												projectId={projectId}
+												open={open}
+											/>
+										</AccordionContent>
+									</AccordionItem>
 								)}
 
-								<div className="space-y-2">
-									<Label htmlFor="member-role" className="text-sm">
-										Role for new member
-									</Label>
-									<select
-										id="member-role"
-										value={memberRole}
-										onChange={(event) =>
-											setMemberRole(event.target.value as ProjectRoleEnum)
-										}
-										className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-									>
-										<option value={ProjectRoleEnum.LEARNER}>Learner</option>
-										<option value={ProjectRoleEnum.MENTOR}>Mentor</option>
-									</select>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="member-search" className="text-sm">
-										Find user to{' '}
-										{memberManagement.accessType === 'CREDITS'
-											? 'invite'
-											: 'add'}
-									</Label>
-									<div className="relative">
-										<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-										<Input
-											id="member-search"
-											value={memberSearch}
-											onChange={(event) => setMemberSearch(event.target.value)}
-											placeholder="Search by name or email"
-											className="pl-10"
-										/>
-									</div>
-
-									<div className="grid max-h-48 gap-2 overflow-y-auto">
-										{memberCandidates.map((candidate) => (
-											<div
-												key={candidate.id}
-												className="flex items-center justify-between gap-3 rounded-md bg-muted/50 px-2 py-2 text-sm"
-											>
-												<div className="min-w-0">
-													<p className="truncate font-medium">
-														{candidate.name ?? candidate.email}
-													</p>
-													<p className="truncate text-muted-foreground text-xs">
-														{candidate.email}
-													</p>
-													{candidate.disabledReason && (
-														<p className="text-muted-foreground text-xs">
-															{candidate.disabledReason}
-														</p>
-													)}
-													{candidate.note && (
-														<p className="text-amber-600 text-xs">
-															{candidate.note}
-														</p>
-													)}
-												</div>
-												<Button
-													type="button"
-													size="sm"
-													onClick={() => handleAddMember(candidate.id)}
-													disabled={
-														addMember.isPending ||
-														!hasValidCreditCost ||
-														candidate.disabledReason !== null
-													}
-												>
-													<UserPlus className="mr-2 h-4 w-4" />
-													{memberManagement.accessType === 'CREDITS'
-														? 'Invite'
-														: 'Add'}
-												</Button>
+							{canManageMembers && (
+								<AccordionItem value="members">
+									<AccordionTrigger className="hover:no-underline">
+										<div className="flex items-center gap-3 text-left">
+											<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+												<Users className="h-4 w-4" />
 											</div>
-										))}
-									</div>
-								</div>
-
-								<div className="space-y-2">
-									<p className="font-medium text-xs">Current members</p>
-									<div className="grid gap-2 text-sm">
-										{memberManagement.members.map((member) => (
-											<div
-												key={member.id}
-												className="flex items-center justify-between gap-3 rounded-md bg-muted/50 px-2 py-2"
-											>
-												<div className="min-w-0">
-													<p className="truncate font-medium">
-														{member.name ?? member.email}{' '}
-														{member.id === memberManagement.currentUserId && (
-															<span className="text-muted-foreground text-xs">
-																(you)
-															</span>
-														)}
-													</p>
-													<p className="truncate text-muted-foreground text-xs">
-														{member.email}
-													</p>
-													<Badge variant="secondary">{member.role}</Badge>
+											<div className="flex flex-col items-start gap-1">
+												<span className="font-semibold">Members</span>
+												<span className="font-normal text-muted-foreground text-xs">
+													Manage access, roles, and invitations
+												</span>
+											</div>
+										</div>
+									</AccordionTrigger>
+									<AccordionContent>
+										<div className="space-y-4 rounded-lg border p-4">
+											<div className="flex items-center justify-between gap-3">
+												<div>
+													<Label className="font-semibold text-sm">
+														Members
+													</Label>
 													<p className="text-muted-foreground text-xs">
-														{member.assignedTaskCount} assigned task
-														{member.assignedTaskCount === 1 ? '' : 's'}
+														{memberManagement.members.length}/
+														{memberManagement.maxParticipants} members
+														{memberManagement.accessType === 'CREDITS' &&
+															` · ${memberManagement.creditCost ?? 'custom'} credits on accept`}
 													</p>
-													{member.refundableCredits > 0 ? (
-														<p className="text-emerald-600 text-xs">
-															Refund available: {member.refundableCredits}{' '}
-															credits
-														</p>
-													) : member.refundUnavailableReason ? (
-														<p className="text-muted-foreground text-xs">
-															Refund unavailable:{' '}
-															{member.refundUnavailableReason}
-														</p>
-													) : null}
 												</div>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													onClick={() => handleRemoveMember(member)}
-													disabled={
-														removeMember.isPending ||
-														member.role === ProjectRoleEnum.OWNER
-													}
-													aria-label={`Remove ${member.name ?? member.email}`}
-												>
-													<Trash2 className="h-4 w-4 text-destructive" />
-												</Button>
+												{memberManagement.members.length >=
+													memberManagement.maxParticipants && (
+													<div className="flex items-center gap-1 text-amber-600 text-xs">
+														<AlertTriangle className="h-4 w-4" />
+														Over max allowed
+													</div>
+												)}
 											</div>
-										))}
-									</div>
-									<p className="text-muted-foreground text-xs">
-										Removing a member unassigns their tasks. Last-member and
-										self-removal are allowed after confirmation.
-									</p>
-								</div>
 
-								{memberManagement.invitations.length > 0 && (
-									<div className="space-y-2">
-										<p className="font-medium text-xs">Invitations</p>
-										<div className="grid gap-2">
-											{memberManagement.invitations.map((invitation) => (
-												<div
-													key={invitation.id}
-													className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1 text-sm"
+											{needsCreditCost && (
+												<div className="space-y-1.5">
+													<Label htmlFor="credit-cost" className="text-sm">
+														Credit cost for this invitation
+													</Label>
+													<Input
+														id="credit-cost"
+														type="number"
+														min={1}
+														step={1}
+														value={creditCost}
+														onChange={(event) =>
+															setCreditCost(event.target.value)
+														}
+														placeholder="Required for legacy credit projects"
+													/>
+												</div>
+											)}
+
+											<div className="space-y-2">
+												<Label htmlFor="member-role" className="text-sm">
+													Role for new member
+												</Label>
+												<select
+													id="member-role"
+													value={memberRole}
+													onChange={(event) =>
+														setMemberRole(event.target.value as ProjectRoleEnum)
+													}
+													className="h-10 w-full rounded-md border bg-background px-3 text-sm"
 												>
-													<div>
-														<div className="flex items-center gap-2">
-															<span>
-																{invitation.user.name ?? invitation.user.email}
-															</span>
-															<Badge
-																variant={
-																	invitation.status === 'PENDING'
-																		? 'warning'
-																		: 'secondary'
+													<option value={ProjectRoleEnum.LEARNER}>
+														Learner
+													</option>
+													<option value={ProjectRoleEnum.MENTOR}>Mentor</option>
+												</select>
+											</div>
+
+											<div className="space-y-2">
+												<Label htmlFor="member-search" className="text-sm">
+													Find user to{' '}
+													{memberManagement.accessType === 'CREDITS'
+														? 'invite'
+														: 'add'}
+												</Label>
+												<div className="relative">
+													<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+													<Input
+														id="member-search"
+														value={memberSearch}
+														onChange={(event) =>
+															setMemberSearch(event.target.value)
+														}
+														placeholder="Search by name or email"
+														className="pl-10"
+													/>
+												</div>
+
+												<div className="grid max-h-48 gap-2 overflow-y-auto">
+													{memberCandidates.map((candidate) => (
+														<div
+															key={candidate.id}
+															className="flex items-center justify-between gap-3 rounded-md bg-muted/50 px-2 py-2 text-sm"
+														>
+															<div className="min-w-0">
+																<p className="truncate font-medium">
+																	{candidate.name ?? candidate.email}
+																</p>
+																<p className="truncate text-muted-foreground text-xs">
+																	{candidate.email}
+																</p>
+																{candidate.disabledReason && (
+																	<p className="text-muted-foreground text-xs">
+																		{candidate.disabledReason}
+																	</p>
+																)}
+																{candidate.note && (
+																	<p className="text-amber-600 text-xs">
+																		{candidate.note}
+																	</p>
+																)}
+															</div>
+															<Button
+																type="button"
+																size="sm"
+																onClick={() => handleAddMember(candidate.id)}
+																disabled={
+																	addMember.isPending ||
+																	!hasValidCreditCost ||
+																	candidate.disabledReason !== null
 																}
 															>
-																{invitation.status}
-															</Badge>
+																<UserPlus className="mr-2 h-4 w-4" />
+																{memberManagement.accessType === 'CREDITS'
+																	? 'Invite'
+																	: 'Add'}
+															</Button>
 														</div>
-														<span className="text-muted-foreground text-xs">
-															{invitation.creditCostSnapshot ?? 0} credits ·
-															invited by{' '}
-															{invitation.invitedBy.name ??
-																invitation.invitedBy.email}
-														</span>
-													</div>
-													{invitation.status === 'PENDING' && (
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															onClick={() =>
-																cancelInvitation.mutate({
-																	invitationId: invitation.id
-																})
-															}
-															disabled={cancelInvitation.isPending}
-														>
-															<X className="h-4 w-4" />
-														</Button>
-													)}
+													))}
 												</div>
-											))}
+											</div>
+
+											<div className="space-y-2">
+												<p className="font-medium text-xs">Current members</p>
+												<div className="grid gap-2 text-sm">
+													{memberManagement.members.map((member) => (
+														<div
+															key={member.id}
+															className="flex items-center justify-between gap-3 rounded-md bg-muted/50 px-2 py-2"
+														>
+															<div className="min-w-0">
+																<p className="truncate font-medium">
+																	{member.name ?? member.email}{' '}
+																	{member.id ===
+																		memberManagement.currentUserId && (
+																		<span className="text-muted-foreground text-xs">
+																			(you)
+																		</span>
+																	)}
+																</p>
+																<p className="truncate text-muted-foreground text-xs">
+																	{member.email}
+																</p>
+																<Badge variant="secondary">{member.role}</Badge>
+																<p className="text-muted-foreground text-xs">
+																	{member.assignedTaskCount} assigned task
+																	{member.assignedTaskCount === 1 ? '' : 's'}
+																</p>
+																{member.refundableCredits > 0 ? (
+																	<p className="text-emerald-600 text-xs">
+																		Refund available: {member.refundableCredits}{' '}
+																		credits
+																	</p>
+																) : member.refundUnavailableReason ? (
+																	<p className="text-muted-foreground text-xs">
+																		Refund unavailable:{' '}
+																		{member.refundUnavailableReason}
+																	</p>
+																) : null}
+															</div>
+															<Button
+																type="button"
+																variant="ghost"
+																size="icon"
+																onClick={() => handleRemoveMember(member)}
+																disabled={
+																	removeMember.isPending ||
+																	member.role === ProjectRoleEnum.OWNER
+																}
+																aria-label={`Remove ${member.name ?? member.email}`}
+															>
+																<Trash2 className="h-4 w-4 text-destructive" />
+															</Button>
+														</div>
+													))}
+												</div>
+												<p className="text-muted-foreground text-xs">
+													Removing a member unassigns their tasks. Last-member
+													and self-removal are allowed after confirmation.
+												</p>
+											</div>
+
+											{memberManagement.invitations.length > 0 && (
+												<div className="space-y-2">
+													<p className="font-medium text-xs">Invitations</p>
+													<div className="grid gap-2">
+														{memberManagement.invitations.map((invitation) => (
+															<div
+																key={invitation.id}
+																className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1 text-sm"
+															>
+																<div>
+																	<div className="flex items-center gap-2">
+																		<span>
+																			{invitation.user.name ??
+																				invitation.user.email}
+																		</span>
+																		<Badge
+																			variant={
+																				invitation.status === 'PENDING'
+																					? 'warning'
+																					: 'secondary'
+																			}
+																		>
+																			{invitation.status}
+																		</Badge>
+																	</div>
+																	<span className="text-muted-foreground text-xs">
+																		{invitation.creditCostSnapshot ?? 0} credits
+																		· invited by{' '}
+																		{invitation.invitedBy.name ??
+																			invitation.invitedBy.email}
+																	</span>
+																</div>
+																{invitation.status === 'PENDING' && (
+																	<Button
+																		type="button"
+																		variant="ghost"
+																		size="icon"
+																		onClick={() =>
+																			cancelInvitation.mutate({
+																				invitationId: invitation.id
+																			})
+																		}
+																		disabled={cancelInvitation.isPending}
+																	>
+																		<X className="h-4 w-4" />
+																	</Button>
+																)}
+															</div>
+														))}
+													</div>
+												</div>
+											)}
 										</div>
-									</div>
-								)}
-							</div>
-						)}
+									</AccordionContent>
+								</AccordionItem>
+							)}
+						</Accordion>
 					</div>
 
-					<DialogFooter>
+					<DialogFooter className="shrink-0 border-t pt-4">
 						<Button
 							variant="outline"
 							onClick={() => onOpenChange(false)}
