@@ -176,7 +176,9 @@ describe('PR review lifecycle', () => {
 			await createTRPCContext({ headers: new Headers() })
 		);
 
-		await expect(caller.approve({ taskId: 'task-1' })).rejects.toMatchObject({
+		await expect(
+			caller.approve({ taskId: 'task-1', reviewId: 'review-1' })
+		).rejects.toMatchObject({
 			code: 'CONFLICT'
 		});
 		expect(notifyPRResponse).not.toHaveBeenCalled();
@@ -202,8 +204,13 @@ describe('PR review lifecycle', () => {
 			await createTRPCContext({ headers: new Headers() })
 		);
 
-		await caller.approve({ taskId: 'task-1' });
+		await caller.approve({ taskId: 'task-1', reviewId: 'review-1' });
 
+		expect(mockDb.pullRequestReview.findFirst).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { id: 'review-1', isActive: true }
+			})
+		);
 		expect(mockDb.pullRequestReview.updateMany).toHaveBeenCalledWith({
 			where: { id: 'review-1', status: 'CHANGES_REQUESTED' },
 			data: {
@@ -278,6 +285,69 @@ describe('PR review lifecycle', () => {
 			update: {},
 			select: { id: true, status: true }
 		});
+	});
+
+	it('refreshes and queues AI analysis after changes were requested', async () => {
+		mockDb.pullRequestReview.findUnique.mockResolvedValue({
+			id: 'review-1',
+			isActive: true,
+			status: 'CHANGES_REQUESTED',
+			prUrl: 'https://github.com/acme/app/pull/7',
+			githubHeadSha: 'head-requested',
+			githubPullRequestNumber: 7,
+			githubRepositoryId: 'repository-1',
+			task: {
+				project: {
+					githubRepository: {
+						id: 'repository-1',
+						owner: 'acme',
+						name: 'app',
+						installation: {
+							githubInstallationId: 'installation-1',
+							active: true
+						}
+					}
+				}
+			}
+		} as never);
+		getPullRequestSnapshotForRepository.mockResolvedValue({
+			number: 7,
+			htmlUrl: 'https://github.com/acme/app/pull/7',
+			title: 'Build feature',
+			state: 'OPEN',
+			authorLogin: 'student',
+			commitCount: 3,
+			headSha: 'head-2',
+			checksStatus: 'SUCCESS'
+		});
+		mockDb.pullRequestReview.update.mockResolvedValue({} as never);
+		mockDb.prReviewAnalysis.findUnique.mockResolvedValue(null);
+		mockDb.prReviewAnalysis.upsert.mockResolvedValue({
+			id: 'analysis-1',
+			status: 'QUEUED'
+		} as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.startAIAnalysis({ reviewId: 'review-1' });
+
+		expect(mockDb.pullRequestReview.update).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { id: 'review-1' },
+				data: expect.objectContaining({ githubHeadSha: 'head-2' })
+			})
+		);
+		expect(mockDb.prReviewAnalysis.upsert).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: {
+					reviewId_sourceHeadSha: {
+						reviewId: 'review-1',
+						sourceHeadSha: 'head-2'
+					}
+				}
+			})
+		);
 	});
 
 	it('hydrates a linked pull request before queuing AI analysis', async () => {

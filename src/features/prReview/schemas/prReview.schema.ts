@@ -12,7 +12,8 @@ export const createPRReviewSchema = z.object({
 });
 
 export const approvePRSchema = z.object({
-	taskId: z.string()
+	taskId: z.string(),
+	reviewId: z.string().optional()
 });
 
 export const requestChangesPRSchema = z.object({

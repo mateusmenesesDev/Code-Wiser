@@ -40,12 +40,12 @@ export function ReviewActions({
 	const [analysisId, setAnalysisId] = useState<string>();
 
 	const isPending = status === PullRequestReviewStatusEnum.PENDING;
-	const canApprove =
+	const canReview =
 		isPending || status === PullRequestReviewStatusEnum.CHANGES_REQUESTED;
 	const isBusy = isApproving || isRequestingChanges || isStartingAIAnalysis;
 
 	const handleApprove = () => {
-		approvePR({ taskId });
+		approvePR({ taskId, reviewId });
 	};
 
 	const handleRequestChanges = () => {
@@ -62,7 +62,7 @@ export function ReviewActions({
 	return (
 		<>
 			<div className="flex flex-wrap justify-end gap-2">
-				{isPending && (
+				{canReview && (
 					<Button
 						variant="outline"
 						size="sm"
@@ -84,7 +84,7 @@ export function ReviewActions({
 					variant="default"
 					size="sm"
 					onClick={handleApprove}
-					disabled={isBusy || !canApprove}
+					disabled={isBusy || !canReview}
 					className="bg-success hover:bg-success/90"
 				>
 					<CheckCircle2 className="mr-2 h-4 w-4" />

@@ -75,15 +75,18 @@ export const prReviewMutations = {
 			}
 			if (
 				!review.isActive ||
-				review.status !== PullRequestReviewStatusEnum.PENDING
+				(review.status !== PullRequestReviewStatusEnum.PENDING &&
+					review.status !== PullRequestReviewStatusEnum.CHANGES_REQUESTED)
 			) {
 				throw new TRPCError({
 					code: 'CONFLICT',
-					message: 'Only an active pending review can be analyzed'
+					message:
+						'Only an active pending or changes-requested review can be analyzed'
 				});
 			}
 			let sourceHeadSha = review.githubHeadSha;
 			if (
+				review.status === PullRequestReviewStatusEnum.CHANGES_REQUESTED ||
 				!sourceHeadSha ||
 				!review.githubRepositoryId ||
 				!review.githubPullRequestNumber
@@ -211,7 +214,10 @@ export const prReviewMutations = {
 			if (
 				finding.analysis.status !== PRReviewAnalysisStatus.COMPLETED ||
 				!finding.analysis.review.isActive ||
-				finding.analysis.review.status !== PullRequestReviewStatusEnum.PENDING
+				(finding.analysis.review.status !==
+					PullRequestReviewStatusEnum.PENDING &&
+					finding.analysis.review.status !==
+						PullRequestReviewStatusEnum.CHANGES_REQUESTED)
 			) {
 				throw new TRPCError({
 					code: 'CONFLICT',
@@ -246,13 +252,11 @@ export const prReviewMutations = {
 	approve: adminProcedure
 		.input(approvePRSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { taskId } = input;
-
+			const reviewIdentifier = input.reviewId ?? input.taskId;
 			const activeReview = await ctx.db.pullRequestReview.findFirst({
-				where: {
-					taskId,
-					isActive: true
-				},
+				where: input.reviewId
+					? { id: reviewIdentifier, isActive: true }
+					: { taskId: reviewIdentifier, isActive: true },
 				include: {
 					requestedBy: {
 						select: {
