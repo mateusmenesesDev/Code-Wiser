@@ -14,7 +14,8 @@ import { usePRReview } from '~/features/prReview/hooks/usePRReview';
 
 const filtersSearchParams = {
 	status: parseAsString.withDefault('all'),
-	userId: parseAsString.withDefault('all')
+	userId: parseAsString.withDefault('all'),
+	projectId: parseAsString.withDefault('all')
 };
 
 function PRReviewsContent() {
@@ -22,11 +23,13 @@ function PRReviewsContent() {
 	const statusFilter =
 		(filters.status as PullRequestReviewStatusEnum | 'all') || 'all';
 	const userIdFilter = filters.userId || 'all';
+	const projectIdFilter = filters.projectId || 'all';
 
 	const { data: reviews, isLoading } = usePRReview().getAllReviews(
 		{
 			status: statusFilter === 'all' ? undefined : statusFilter,
-			userId: userIdFilter === 'all' ? undefined : userIdFilter
+			userId: userIdFilter === 'all' ? undefined : userIdFilter,
+			projectId: projectIdFilter === 'all' ? undefined : projectIdFilter
 		},
 		{
 			refetchOnMount: true,
@@ -40,6 +43,16 @@ function PRReviewsContent() {
 				review.requestedBy.id,
 				review.requestedBy
 			])
+		).values()
+	);
+
+	const uniqueProjects = Array.from(
+		new Map(
+			(reviews ?? []).flatMap((review) =>
+				review.task.project
+					? [[review.task.project.id, review.task.project] as const]
+					: []
+			)
 		).values()
 	);
 
@@ -102,6 +115,29 @@ function PRReviewsContent() {
 								{uniqueUsers.map((user) => (
 									<SelectItem key={user?.id} value={user?.id || ''}>
 										{user?.name || user?.email}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					<div className="flex-1">
+						<Select
+							value={projectIdFilter}
+							onValueChange={(value) =>
+								setFilters({
+									projectId: value === 'all' ? 'all' : value
+								})
+							}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Filter by project" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All Projects</SelectItem>
+								{uniqueProjects.map((project) => (
+									<SelectItem key={project.id} value={project.id}>
+										{project.title}
 									</SelectItem>
 								))}
 							</SelectContent>

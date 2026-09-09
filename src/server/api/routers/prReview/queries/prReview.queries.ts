@@ -8,7 +8,7 @@ export const prReviewQueries = {
 		.input(filterPRReviewsSchema.optional())
 		.query(async ({ ctx, input }) => {
 			const where = {
-				task: { projectId: { not: null } },
+				task: { projectId: input?.projectId ?? { not: null } },
 				...(input?.status && { status: input.status }),
 				...(input?.userId && { requestedById: input.userId })
 			};

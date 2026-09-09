@@ -38,7 +38,8 @@ export const reviewAIFindingSchema = z.object({
 
 export const filterPRReviewsSchema = z.object({
 	userId: z.string().optional(),
-	status: z.nativeEnum(PullRequestReviewStatusEnum).optional()
+	status: z.nativeEnum(PullRequestReviewStatusEnum).optional(),
+	projectId: z.string().optional()
 });
 
 export const updatePRReviewUrlSchema = z.object({
