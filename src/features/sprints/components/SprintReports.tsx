@@ -20,7 +20,7 @@ type BurndownPoint = {
 	idealRemaining: number;
 	currentPoints: number;
 	completedPoints: number;
-	remainingPoints: number;
+	remainingPoints: number | null;
 	scopeChangeCount: number;
 };
 
@@ -54,23 +54,51 @@ const Metric = ({
 	</div>
 );
 
-const formatChartValue = (value: number) =>
-	Number.isInteger(value) ? String(value) : value.toFixed(1);
+const formatChartValue = (value: number | null) =>
+	value === null
+		? '—'
+		: Number.isInteger(value)
+			? String(value)
+			: value.toFixed(1);
 
 const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+	const plotLeft = 48;
+	const plotRight = 580;
+	const plotTop = 24;
+	const plotBottom = 180;
 	const maxValue = Math.max(
 		1,
-		...points.flatMap((point) => [point.idealRemaining, point.remainingPoints])
+		...points.flatMap((point) =>
+			point.remainingPoints === null
+				? [point.idealRemaining]
+				: [point.idealRemaining, point.remainingPoints]
+		)
 	);
 	const x = (index: number) =>
-		20 + (index / Math.max(1, points.length - 1)) * 560;
-	const y = (value: number) => 180 - (value / maxValue) * 150;
+		plotLeft +
+		(index / Math.max(1, points.length - 1)) * (plotRight - plotLeft);
+	const y = (value: number) =>
+		plotBottom - (value / maxValue) * (plotBottom - plotTop);
 	const ideal = points.map(
 		(point, index) => `${x(index)},${y(point.idealRemaining)}`
 	);
-	const actual = points.map(
-		(point, index) => `${x(index)},${y(point.remainingPoints)}`
+	const actual = points.flatMap((point, index) =>
+		point.remainingPoints === null
+			? []
+			: [`${x(index)},${y(point.remainingPoints)}`]
+	);
+	const yTickValues = Array.from(
+		{ length: 4 },
+		(_, index) => (maxValue * (3 - index)) / 3
+	);
+	const xTickIndexes = Array.from(
+		{ length: Math.min(6, points.length) },
+		(_, index) =>
+			Math.round(
+				(index * Math.max(0, points.length - 1)) /
+					Math.max(1, Math.min(5, points.length - 1))
+			)
 	);
 	const handleMouseMove = (event: MouseEvent<SVGSVGElement>) => {
 		const transform = event.currentTarget.getScreenCTM();
@@ -81,41 +109,91 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 		const { x: chartX, y: chartY } = cursor.matrixTransform(
 			transform.inverse()
 		);
-		if (chartX < 20 || chartX > 580 || chartY < 30 || chartY > 180) {
+		if (
+			chartX < plotLeft ||
+			chartX > plotRight ||
+			chartY < plotTop ||
+			chartY > plotBottom
+		) {
 			setHoveredIndex(null);
 			return;
 		}
-		const index = Math.round(
-			((chartX - 20) / 560) * Math.max(0, points.length - 1)
+		const index = Math.min(
+			points.length - 1,
+			Math.max(
+				0,
+				Math.round(
+					((chartX - plotLeft) / (plotRight - plotLeft)) *
+						Math.max(0, points.length - 1)
+				)
+			)
 		);
 		setHoveredIndex(index);
 	};
 	const hoveredPoint = hoveredIndex === null ? null : points[hoveredIndex];
+	const tooltipWidth = 176;
 	const tooltipX =
 		hoveredIndex === null
 			? 0
-			: Math.min(Math.max(x(hoveredIndex) - 62, 4), 472);
+			: Math.min(
+					Math.max(x(hoveredIndex) - tooltipWidth / 2, 4),
+					600 - tooltipWidth - 4
+				);
 	const tooltipY = hoveredPoint
 		? Math.max(
 				4,
 				Math.min(
-					y(hoveredPoint.remainingPoints),
-					y(hoveredPoint.idealRemaining)
+					y(hoveredPoint.idealRemaining),
+					hoveredPoint.remainingPoints === null
+						? y(hoveredPoint.idealRemaining)
+						: y(hoveredPoint.remainingPoints)
 				) - 64
 			)
 		: 0;
 
 	return (
 		<svg
-			viewBox="0 0 600 220"
+			viewBox="0 0 600 240"
 			role="img"
 			aria-label="Sprint burndown showing ideal and actual remaining story points"
-			className="h-52 w-full overflow-visible"
+			className="h-60 w-full overflow-visible"
 			onMouseMove={handleMouseMove}
 			onMouseLeave={() => setHoveredIndex(null)}
 		>
-			<line x1="20" y1="180" x2="580" y2="180" className="stroke-border" />
-			<line x1="20" y1="30" x2="20" y2="180" className="stroke-border" />
+			{yTickValues.map((value) => (
+				<g key={value}>
+					<line
+						x1={plotLeft}
+						y1={y(value)}
+						x2={plotRight}
+						y2={y(value)}
+						className="stroke-border"
+						strokeOpacity="0.65"
+					/>
+					<text
+						x={plotLeft - 8}
+						y={y(value) + 4}
+						textAnchor="end"
+						className="fill-muted-foreground text-[11px]"
+					>
+						{formatChartValue(value)}
+					</text>
+				</g>
+			))}
+			<line
+				x1={plotLeft}
+				y1={plotBottom}
+				x2={plotRight}
+				y2={plotBottom}
+				className="stroke-border"
+			/>
+			<line
+				x1={plotLeft}
+				y1={plotTop}
+				x2={plotLeft}
+				y2={plotBottom}
+				className="stroke-border"
+			/>
 			<polyline
 				points={ideal.join(' ')}
 				fill="none"
@@ -129,32 +207,35 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 				className="stroke-info"
 				strokeWidth="3"
 			/>
+			<rect
+				x={plotLeft}
+				y={plotTop}
+				width={plotRight - plotLeft}
+				height={plotBottom - plotTop}
+				fill="transparent"
+				pointerEvents="all"
+			/>
 			{points.map((point, index) => (
 				<g
 					key={point.date}
 					tabIndex={0}
-					aria-label={`${formatDate(point.date)}: ${formatChartValue(point.remainingPoints)} remaining points, ${formatChartValue(point.idealRemaining)} ideal points`}
+					aria-label={`${formatDate(point.date)}: ${point.remainingPoints === null ? 'remaining points not collected yet' : `${formatChartValue(point.remainingPoints)} remaining points`}, ${formatChartValue(point.idealRemaining)} ideal points`}
 					onFocus={() => setHoveredIndex(index)}
 					onBlur={() => setHoveredIndex(null)}
 				>
 					<title>
-						{`${formatDate(point.date)} · ${formatChartValue(point.remainingPoints)} remaining · ${formatChartValue(point.idealRemaining)} ideal`}
+						{`${formatDate(point.date)} · ${point.remainingPoints === null ? 'remaining not collected' : `${formatChartValue(point.remainingPoints)} remaining`} · ${formatChartValue(point.idealRemaining)} ideal`}
 					</title>
-					<circle
-						cx={x(index)}
-						cy={y(point.idealRemaining)}
-						r={10}
-						fill="transparent"
-						pointerEvents="all"
-					/>
-					<circle
-						cx={x(index)}
-						cy={y(point.remainingPoints)}
-						r={10}
-						fill="transparent"
-						pointerEvents="all"
-					/>
-					{point.scopeChangeCount > 0 && (
+					{point.remainingPoints !== null && (
+						<circle
+							cx={x(index)}
+							cy={y(point.remainingPoints)}
+							r={3}
+							className="fill-info stroke-background"
+							strokeWidth="1"
+						/>
+					)}
+					{point.scopeChangeCount > 0 && point.remainingPoints !== null && (
 						<circle
 							cx={x(index)}
 							cy={y(point.remainingPoints)}
@@ -166,12 +247,21 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 					)}
 				</g>
 			))}
-			{hoveredPoint && (
+			{hoveredPoint && hoveredIndex !== null && (
 				<g pointerEvents="none">
+					<line
+						x1={x(hoveredIndex)}
+						y1={plotTop}
+						x2={x(hoveredIndex)}
+						y2={plotBottom}
+						className="stroke-info"
+						strokeDasharray="2 3"
+						strokeOpacity="0.45"
+					/>
 					<rect
 						x={tooltipX}
 						y={tooltipY}
-						width="124"
+						width={tooltipWidth}
 						height="58"
 						rx="6"
 						className="fill-popover stroke-border"
@@ -191,7 +281,9 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 						className="fill-popover-foreground"
 						fontSize="11"
 					>
-						{`Remaining: ${formatChartValue(hoveredPoint.remainingPoints)} pts`}
+						{hoveredPoint.remainingPoints === null
+							? 'Remaining: not collected'
+							: `Remaining: ${formatChartValue(hoveredPoint.remainingPoints)} pts`}
 					</text>
 					<text
 						x={tooltipX + 10}
@@ -203,16 +295,41 @@ const ChartLines = ({ points }: { points: BurndownPoint[] }) => {
 					</text>
 				</g>
 			)}
-			<text x="20" y="205" className="fill-muted-foreground text-[11px]">
-				{formatDate(points[0]?.date ?? '')}
-			</text>
+			{xTickIndexes.map((index) => (
+				<g key={points[index]?.date ?? index}>
+					<line
+						x1={x(index)}
+						y1={plotBottom}
+						x2={x(index)}
+						y2={plotBottom + 4}
+						className="stroke-border"
+					/>
+					<text
+						x={x(index)}
+						y={plotBottom + 19}
+						textAnchor="middle"
+						className="fill-muted-foreground text-[11px]"
+					>
+						{formatDate(points[index]?.date ?? '')}
+					</text>
+				</g>
+			))}
 			<text
-				x="580"
-				y="205"
-				textAnchor="end"
+				x="14"
+				y={(plotTop + plotBottom) / 2}
+				textAnchor="middle"
+				transform={`rotate(-90 14 ${(plotTop + plotBottom) / 2})`}
 				className="fill-muted-foreground text-[11px]"
 			>
-				{formatDate(points.at(-1)?.date ?? '')}
+				Story points
+			</text>
+			<text
+				x={(plotLeft + plotRight) / 2}
+				y="232"
+				textAnchor="middle"
+				className="fill-muted-foreground text-[11px]"
+			>
+				Date
 			</text>
 		</svg>
 	);
@@ -245,10 +362,18 @@ const BurndownCard = ({
 				{burndown?.available && burndown.points.length > 0 ? (
 					<>
 						<ChartLines points={burndown.points} />
-						<div className="flex items-center justify-between text-muted-foreground text-xs">
+						<div className="flex flex-wrap items-center justify-between gap-x-3 text-muted-foreground text-xs">
+							<span>Solid: actual</span>
 							<span>Dashed: ideal</span>
 							<span>Dots: scope changes</span>
 						</div>
+						{burndown.points.some(
+							({ remainingPoints }) => remainingPoints === null
+						) && (
+							<p className="mt-2 text-muted-foreground text-xs">
+								Future dates show the planned ideal only.
+							</p>
+						)}
 						{burndown.truncated && (
 							<p className="mt-2 flex items-center gap-1 text-warning-muted-foreground text-xs">
 								<AlertTriangle className="h-3 w-3" />
