@@ -27,6 +27,7 @@ import { useKanbanData } from '~/features/kanban/hooks/useKanbanData';
 import { useKanbanFilters } from '~/features/kanban/hooks/useKanbanFilters';
 import { useKanbanMutations } from '~/features/kanban/hooks/useKanbanMutations';
 import ProductVersionList from '~/features/productVersions/components/ProductVersionList';
+import RetrospectivesPanel from '~/features/retrospectives/components/RetrospectivesPanel';
 import ProjectRoadmap from '~/features/roadmap/components/ProjectRoadmap';
 import SprintBoard from '~/features/sprints/components/SprintBoard';
 import SprintReports from '~/features/sprints/components/SprintReports';
@@ -65,6 +66,7 @@ const Workspace = () => {
 			!isScrum &&
 			view !== 'roadmap' &&
 			view !== 'versions' &&
+			view !== 'retrospectives' &&
 			view !== 'list'
 		) {
 			setViewParams({ view: null, sprintId: null });
@@ -171,6 +173,9 @@ const Workspace = () => {
 								sprintId: reportSprintId ?? null
 							})
 						}
+						onSelectRetrospectives={() =>
+							setViewParams({ view: 'retrospectives', sprintId: null })
+						}
 						onSelectSprint={(id) =>
 							setViewParams({ view: 'sprint', sprintId: id })
 						}
@@ -195,6 +200,15 @@ const Workspace = () => {
 				<div className="flex-1 overflow-hidden">
 					{view === 'reports' ? (
 						<SprintReports projectId={projectId} sprintId={reportSprintId} />
+					) : view === 'retrospectives' ? (
+						<RetrospectivesPanel
+							projectId={projectId}
+							sprints={sprints ?? []}
+							canManageRetrospectives={
+								projectInfo?.permissions?.includes('MANAGE_SPRINT_CYCLE') ??
+								false
+							}
+						/>
 					) : view === 'roadmap' ? (
 						<ProjectRoadmap projectId={projectId} />
 					) : view === 'versions' ? (

@@ -65,6 +65,8 @@ model User {
   portfolioEvaluations         Project[]                  @relation("ProjectPortfolioEvaluator")
   githubInstallations          GitHubInstallation[]
   createdPlanningPokerSessions PlanningPokerSession[]     @relation("PlanningPokerSessionCreator")
+  retrospectivesHosted         Retrospective[]            @relation("RetrospectiveCreator")
+  retrospectiveItems           RetrospectiveItem[]        @relation("RetrospectiveItemAuthor")
   planningPokerVotes           PlanningPokerVote[]
   notifications                Notification[]
   projectInvitationsReceived   ProjectInvitation[]        @relation("ProjectInvitationsReceived")

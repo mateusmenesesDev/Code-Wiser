@@ -50,7 +50,11 @@ describe('POST /api/pusher/auth', () => {
 			status: 'ACTIVE'
 		} as never);
 		mockDb.project.findUnique
-			.mockResolvedValueOnce({ memberships: [{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }] } as never)
+			.mockResolvedValueOnce({
+				memberships: [
+					{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }
+				]
+			} as never)
 			.mockResolvedValueOnce({ canceledAt: null } as never);
 		mockDb.user.findUnique.mockResolvedValue({
 			id: 'user-1',
@@ -78,6 +82,33 @@ describe('POST /api/pusher/auth', () => {
 					email: 'ada@example.com'
 				}
 			}
+		);
+	});
+
+	it('authorizes retrospective project presence channels for project members', async () => {
+		mockDb.project.findUnique
+			.mockResolvedValueOnce({ id: 'project-1' } as never)
+			.mockResolvedValueOnce({
+				memberships: [
+					{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }
+				]
+			} as never)
+			.mockResolvedValueOnce({ canceledAt: null } as never);
+		mockDb.user.findUnique.mockResolvedValue({
+			id: 'user-1',
+			name: 'Ada',
+			email: 'ada@example.com'
+		} as never);
+
+		const response = await POST(
+			authRequest('presence-retrospective-project-project-1')
+		);
+
+		expect(response.status).toBe(200);
+		expect(pusherAuth.authenticatePresenceChannel).toHaveBeenCalledWith(
+			'123.456',
+			'presence-retrospective-project-project-1',
+			expect.objectContaining({ user_id: 'user-1' })
 		);
 	});
 

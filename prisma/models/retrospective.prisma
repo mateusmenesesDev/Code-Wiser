@@ -1,0 +1,47 @@
+enum RetrospectiveCategoryEnum {
+  WENT_WELL
+  IMPROVE
+  ACTION
+
+  @@schema("public")
+}
+
+model Retrospective {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  sprintId String @unique
+  sprint   Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?   @relation("RetrospectiveCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  items RetrospectiveItem[]
+
+  @@index([projectId, createdAt])
+  @@schema("public")
+}
+
+model RetrospectiveItem {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category  RetrospectiveCategoryEnum
+  content   String
+  completed Boolean                   @default(false)
+  order     Int                       @default(0)
+
+  retrospectiveId String
+  retrospective   Retrospective @relation(fields: [retrospectiveId], references: [id], onDelete: Cascade)
+
+  authorId String?
+  author   User?   @relation("RetrospectiveItemAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([retrospectiveId, category, order])
+  @@schema("public")
+}

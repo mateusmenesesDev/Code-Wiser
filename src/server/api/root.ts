@@ -1,6 +1,6 @@
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
-import { aiRouter } from './routers/ai/ai.router';
 import { agendaRouter } from './routers/agenda';
+import { aiRouter } from './routers/ai/ai.router';
 import { commentRouter } from './routers/comment';
 import { dashboard } from './routers/dashboard';
 import { epicRouter } from './routers/epic/epic.router';
@@ -8,14 +8,15 @@ import { exerciseRouter } from './routers/exercise';
 import { feedbackRouter } from './routers/feedback';
 import { githubRouter } from './routers/github';
 import { kanbanRouter } from './routers/kanban';
-import { mentorshipRouter } from './routers/mentorship/mentorship';
 import { mentorAttentionRouter } from './routers/mentorAttention';
+import { mentorshipRouter } from './routers/mentorship/mentorship';
 import { notificationRouter } from './routers/notification/notificationRouter';
 import { onboardingRouter } from './routers/onboarding/onboarding.router';
 import { planningPokerRouter } from './routers/planningPoker/planningPokerRouter';
 import { prReviewRouter } from './routers/prReview/prReviewRouter';
-import { projectRouter } from './routers/project';
 import { productVersionRouter } from './routers/productVersion';
+import { projectRouter } from './routers/project';
+import { retrospectiveRouter } from './routers/retrospective';
 import { searchRouter } from './routers/search/search.router';
 import { sprintRouter } from './routers/sprint/sprint.router';
 import { taskRouter } from './routers/task/taskRouter';
@@ -34,6 +35,7 @@ export const appRouter = createTRPCRouter({
 	projectTemplate: projectTemplateRouter,
 	task: taskRouter,
 	sprint: sprintRouter,
+	retrospective: retrospectiveRouter,
 	epic: epicRouter,
 	comment: commentRouter,
 	dashboard,

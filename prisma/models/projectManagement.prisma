@@ -163,11 +163,12 @@ model Sprint {
   startDate DateTime?
   endDate   DateTime?
 
-  tasks       Task[]
-  changes     SprintChange[]
-  snapshots   SprintDailySnapshot[]
-  milestoneId String?
-  milestone   Milestone?            @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  tasks         Task[]
+  changes       SprintChange[]
+  snapshots     SprintDailySnapshot[]
+  retrospective Retrospective?
+  milestoneId   String?
+  milestone     Milestone?            @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
 
   @@unique([projectTemplateId, title])
   @@unique([projectId, title])

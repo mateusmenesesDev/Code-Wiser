@@ -14,6 +14,7 @@ import {
 	Kanban,
 	Layers,
 	Lightbulb,
+	ListChecks,
 	Milestone as MilestoneIcon,
 	Pencil,
 	Play,
@@ -48,6 +49,7 @@ interface SprintSidebarProps {
 	currentView: string | null;
 	onSelectBoard: () => void;
 	onSelectReports: () => void;
+	onSelectRetrospectives: () => void;
 	onSelectSprint: (id: string) => void;
 	onSelectBacklog: () => void;
 	onSelectRoadmap: () => void;
@@ -349,6 +351,7 @@ export default function SprintSidebar({
 	currentView,
 	onSelectBoard,
 	onSelectReports,
+	onSelectRetrospectives,
 	onSelectSprint,
 	onSelectBacklog,
 	onSelectRoadmap,
@@ -426,6 +429,7 @@ export default function SprintSidebar({
 							currentView !== 'sprint' &&
 							currentView !== 'roadmap' &&
 							currentView !== 'reports' &&
+							currentView !== 'retrospectives' &&
 							currentView !== 'versions' &&
 							currentView !== 'list'
 							? 'bg-info-muted font-medium text-info-muted-foreground'
@@ -448,6 +452,20 @@ export default function SprintSidebar({
 				>
 					<BarChart3 className="h-4 w-4 shrink-0" />
 					<span>Reports</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={onSelectRetrospectives}
+					className={cn(
+						'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all',
+						currentView === 'retrospectives'
+							? 'bg-info-muted font-medium text-info-muted-foreground'
+							: 'hover:bg-muted/50'
+					)}
+				>
+					<ListChecks className="h-4 w-4 shrink-0" />
+					<span>Retrospectives</span>
 				</button>
 
 				<button
