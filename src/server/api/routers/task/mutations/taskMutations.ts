@@ -414,6 +414,13 @@ export const taskMutations = {
 			const oldAssigneeIds = existingTask.assignees.map((a) => a.id);
 			const oldStatus = existingTask.status;
 			const oldBlocked = existingTask.blocked;
+			const isMovingIntoProgress =
+				Boolean(existingTask.projectId) &&
+				rest.status === TaskStatusEnum.IN_PROGRESS &&
+				existingTask.status !== TaskStatusEnum.IN_PROGRESS;
+			const assigneeIdsToSet = isMovingIntoProgress
+				? [...new Set([...(assigneeIds ?? oldAssigneeIds), ctx.session.userId])]
+				: assigneeIds;
 
 			const updateData = {
 				...rest,
@@ -421,9 +428,9 @@ export const taskMutations = {
 				...(createRelationshipUpdate(productVersionId) && {
 					productVersion: createRelationshipUpdate(productVersionId)
 				}),
-				...(assigneeIds !== undefined && {
+				...(assigneeIdsToSet !== undefined && {
 					assignees: {
-						set: assigneeIds.map((assigneeId) => ({ id: assigneeId }))
+						set: assigneeIdsToSet.map((assigneeId) => ({ id: assigneeId }))
 					}
 				}),
 				...(createRelationshipUpdate(epicId) && {
@@ -572,8 +579,8 @@ export const taskMutations = {
 				const notificationPromises: Promise<void>[] = [];
 				const currentAssigneeIds = task.assignees.map((a) => a.id);
 
-				if (assigneeIds !== undefined) {
-					const newlyAssignedIds = assigneeIds.filter(
+				if (assigneeIdsToSet !== undefined) {
+					const newlyAssignedIds = assigneeIdsToSet.filter(
 						(assigneeId) => !oldAssigneeIds.includes(assigneeId)
 					);
 					for (const newlyAssignedId of newlyAssignedIds) {
@@ -862,7 +869,13 @@ export const taskMutations = {
 							where: { id: input.taskId },
 							data: {
 								status: input.targetStatus,
-								kanbanRank: newRank
+								kanbanRank: newRank,
+								...(currentTask.status !== TaskStatusEnum.IN_PROGRESS &&
+									input.targetStatus === TaskStatusEnum.IN_PROGRESS && {
+										assignees: {
+											connect: { id: ctx.session.userId }
+										}
+									})
 							}
 						});
 
