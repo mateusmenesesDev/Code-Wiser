@@ -1,50 +1,31 @@
 'use client';
 
-import type { ProductVersionStatusEnum, TaskStatusEnum } from '@prisma/client';
-import {
-	ArrowDown,
-	ArrowUp,
-	Check,
-	Circle,
-	CircleSlash,
-	Pencil,
-	Play,
-	Plus,
-	RotateCcw,
-	Trash2,
-	X
-} from 'lucide-react';
+import type { ProductVersionStatusEnum } from '@prisma/client';
+import { Layers3, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
-import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent, CardHeader } from '~/common/components/ui/card';
 import { Dialog } from '~/common/components/ui/dialog';
 import { Input } from '~/common/components/ui/input';
-import { Progress } from '~/common/components/ui/progress';
-import { Separator } from '~/common/components/ui/separator';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from '~/common/components/ui/select';
+import { cn } from '~/lib/utils';
 import { type RouterOutputs, api } from '~/trpc/react';
+import ProductVersionCard, {
+	countCompletedStories,
+	statusLabel,
+	type ProductVersion
+} from './ProductVersionCard';
 import ProductVersionDialog from './ProductVersionDialog';
+import StoryRow from './StoryRow';
 
-type Story = {
-	id: string;
-	title: string;
-	status: TaskStatusEnum | null;
-	publicNumber: number | null;
-	productVersionOrder: number;
-	order: number | null;
-};
-type ProductVersion = {
-	id: string;
-	name: string;
-	description: string | null;
-	order: number;
-	status: ProductVersionStatusEnum | null;
-	tasks: Story[];
-};
 type VersionData = RouterOutputs['productVersion']['getAll'];
-
-type VersionStatus = ProductVersionStatusEnum | null;
 
 interface ProductVersionListProps {
 	projectId: string;
@@ -53,28 +34,7 @@ interface ProductVersionListProps {
 	readOnly?: boolean;
 }
 
-const statusLabel: Record<ProductVersionStatusEnum, string> = {
-	PLANNED: 'Planned',
-	IN_PROGRESS: 'In progress',
-	COMPLETED: 'Completed',
-	CANCELED: 'Canceled'
-};
-
-const statusIcon = (status: VersionStatus) => {
-	if (status === 'COMPLETED') return <Check className="h-3.5 w-3.5" />;
-	if (status === 'CANCELED') return <CircleSlash className="h-3.5 w-3.5" />;
-	if (status === 'IN_PROGRESS') return <Play className="h-3.5 w-3.5" />;
-	return <Circle className="h-3.5 w-3.5" />;
-};
-
-const progressFor = (stories: ProductVersion['tasks']) => {
-	if (stories.length === 0) return 0;
-	return Math.round(
-		(stories.filter((story) => story.status === 'DONE').length /
-			stories.length) *
-			100
-	);
-};
+type StatusFilter = 'ALL' | ProductVersionStatusEnum;
 
 export default function ProductVersionList({
 	projectId,
@@ -87,6 +47,7 @@ export default function ProductVersionList({
 	);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [search, setSearch] = useState('');
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
 	const { data, isLoading } = api.productVersion.getAll.useQuery({
 		projectId,
 		isTemplate
@@ -126,9 +87,37 @@ export default function ProductVersionList({
 	}
 
 	const versionData: VersionData = data;
+	const normalizedSearch = search.trim().toLowerCase();
+	const filteredVersions = versionData.versions
+		.map((version, index) => ({ version, index }))
+		.filter(({ version }) => {
+			const matchesStatus =
+				statusFilter === 'ALL' || version.status === statusFilter;
+			const matchesSearch =
+				!normalizedSearch ||
+				version.name.toLowerCase().includes(normalizedSearch) ||
+				(version.description?.toLowerCase().includes(normalizedSearch) ??
+					false) ||
+				version.tasks.some((story) =>
+					story.title.toLowerCase().includes(normalizedSearch)
+				);
+			return matchesStatus && matchesSearch;
+		});
 	const visibleStories = versionData.unassignedStories.filter((story) =>
-		story.title.toLowerCase().includes(search.trim().toLowerCase())
+		story.title.toLowerCase().includes(normalizedSearch)
 	);
+	const totalStories = versionData.versions.reduce(
+		(total, version) => total + version.tasks.length,
+		0
+	);
+	const completedStories = versionData.versions.reduce(
+		(total, version) => total + countCompletedStories(version.tasks),
+		0
+	);
+	const activeVersions = versionData.versions.filter(
+		(version) => version.status === 'IN_PROGRESS'
+	).length;
+	const hasFilters = Boolean(normalizedSearch) || statusFilter !== 'ALL';
 
 	const moveVersion = (index: number, direction: -1 | 1) => {
 		if (!canManageVersions || readOnly) return;
@@ -187,26 +176,78 @@ export default function ProductVersionList({
 	};
 
 	return (
-		<div className="space-y-6 p-6">
-			<div className="flex flex-wrap items-center justify-between gap-4">
-				<div>
-					<h2 className="font-semibold text-2xl">Product versions</h2>
-					<p className="text-muted-foreground text-sm">
-						Organize User Stories into MVP, v0.1, v1 and other deliveries.
-					</p>
+		<div className="space-y-6 p-4 sm:p-6">
+			<header className="flex flex-col gap-5 border-b pb-6 sm:flex-row sm:items-end sm:justify-between">
+				<div className="flex items-start gap-3">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+						<Layers3 className="h-5 w-5" />
+					</div>
+					<div>
+						<p className="font-medium text-primary text-xs uppercase tracking-wider">
+							Delivery planning
+						</p>
+						<h2 className="mt-1 font-semibold text-2xl tracking-tight">
+							Product versions
+						</h2>
+						<p className="mt-1 max-w-xl text-muted-foreground text-sm">
+							Organize User Stories into focused deliveries and track their
+							progress.
+						</p>
+					</div>
 				</div>
 				{canManageVersions && !readOnly && (
-					<Button onClick={openCreateDialog}>
+					<Button onClick={openCreateDialog} className="sm:shrink-0">
 						<Plus className="mr-2 h-4 w-4" />
 						New version
 					</Button>
 				)}
+			</header>
+
+			<div className="grid grid-cols-2 overflow-hidden rounded-xl border bg-card sm:grid-cols-4">
+				<VersionStat label="Versions" value={versionData.versions.length} />
+				<VersionStat label="In progress" value={activeVersions} />
+				<VersionStat
+					label="Stories done"
+					value={`${completedStories}/${totalStories}`}
+				/>
+				<VersionStat
+					label="Unassigned"
+					value={versionData.unassignedStories.length}
+					accent={versionData.unassignedStories.length > 0}
+				/>
 			</div>
 
-			<Separator />
+			<div className="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center">
+				<div className="relative min-w-0 flex-1">
+					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+					<Input
+						value={search}
+						onChange={(event) => setSearch(event.target.value)}
+						placeholder="Search versions or stories"
+						aria-label="Search versions or stories"
+						className="border-0 pl-9 shadow-none focus-visible:ring-1"
+					/>
+				</div>
+				<Select
+					value={statusFilter}
+					onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+				>
+					<SelectTrigger className="w-full sm:w-44">
+						<SelectValue placeholder="Filter status" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="ALL">All statuses</SelectItem>
+						{Object.entries(statusLabel).map(([value, label]) => (
+							<SelectItem key={value} value={value}>
+								{label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
 
 			<div className="space-y-4">
-				{versionData.versions.map((version, index) => (
+				{filteredVersions.map(({ version, index }) => (
 					<ProductVersionCard
 						key={version.id}
 						version={version}
@@ -226,29 +267,50 @@ export default function ProductVersionList({
 						onReopen={() => reopenVersion.mutate({ id: version.id })}
 					/>
 				))}
-				{versionData.versions.length === 0 && (
-					<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-						No product versions yet.
+				{filteredVersions.length === 0 && (
+					<div className="rounded-xl border border-dashed p-10 text-center">
+						<p className="font-medium text-sm">
+							{hasFilters
+								? 'No versions match your filters'
+								: 'No product versions yet'}
+						</p>
+						<p className="mt-1 text-muted-foreground text-sm">
+							{hasFilters
+								? 'Try a different search or status.'
+								: 'Create a version to start organizing User Stories.'}
+						</p>
+						{hasFilters && (
+							<Button
+								variant="link"
+								onClick={() => {
+									setSearch('');
+									setStatusFilter('ALL');
+								}}
+							>
+								Clear filters
+							</Button>
+						)}
 					</div>
 				)}
 			</div>
 
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0">
+			<Card className="overflow-hidden">
+				<CardHeader className="flex flex-col gap-3 border-b bg-muted/20 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
 					<div>
-						<h3 className="font-semibold">Without a version</h3>
-						<p className="text-muted-foreground text-sm">
+						<div className="flex items-center gap-2">
+							<h3 className="font-semibold">Without a version</h3>
+							{versionData.unassignedStories.length > 0 && (
+								<Badge variant="warning">
+									{versionData.unassignedStories.length}
+								</Badge>
+							)}
+						</div>
+						<p className="mt-1 text-muted-foreground text-sm">
 							User Stories still in the general backlog.
 						</p>
 					</div>
-					<Input
-						value={search}
-						onChange={(event) => setSearch(event.target.value)}
-						placeholder="Search stories"
-						className="max-w-xs"
-					/>
 				</CardHeader>
-				<CardContent className="space-y-2">
+				<CardContent className="space-y-2 p-4 sm:p-6">
 					{visibleStories.map((story) => (
 						<StoryRow
 							key={story.id}
@@ -288,297 +350,26 @@ export default function ProductVersionList({
 	);
 }
 
-interface ProductVersionCardProps {
-	version: ProductVersion;
-	versions: ProductVersion[];
-	index: number;
-	versionCount: number;
-	canManageVersions: boolean;
-	readOnly: boolean;
-	onMoveVersion: (index: number, direction: -1 | 1) => void;
-	onMoveStory: (
-		version: ProductVersion,
-		index: number,
-		direction: -1 | 1
-	) => void;
-	onAssignStory: (
-		storyId: string,
-		versionId: string | null,
-		order: number
-	) => void;
-	onEdit: (version: ProductVersion) => void;
-	onDelete: () => void;
-	onStart: () => void;
-	onComplete: () => void;
-	onCancel: () => void;
-	onReopen: () => void;
-}
-
-function ProductVersionCard({
-	version,
-	versions,
-	index,
-	versionCount,
-	canManageVersions,
-	readOnly,
-	onMoveVersion,
-	onMoveStory,
-	onAssignStory,
-	onEdit,
-	onDelete,
-	onStart,
-	onComplete,
-	onCancel,
-	onReopen
-}: ProductVersionCardProps) {
-	const progress = progressFor(version.tasks);
-	const status = version.status;
-	const canEdit = canManageVersions && !readOnly;
-	const canMoveStories = !readOnly;
-
-	return (
-		<Card>
-			<CardHeader className="space-y-3">
-				<div className="flex flex-wrap items-start justify-between gap-3">
-					<div className="flex min-w-0 items-start gap-3">
-						<div className="flex shrink-0 flex-col gap-1">
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-6 w-6"
-								disabled={!canEdit || index === 0}
-								onClick={() => onMoveVersion(index, -1)}
-								aria-label={`Move ${version.name} up`}
-							>
-								<ArrowUp className="h-3.5 w-3.5" />
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-6 w-6"
-								disabled={!canEdit || index === versionCount - 1}
-								onClick={() => onMoveVersion(index, 1)}
-								aria-label={`Move ${version.name} down`}
-							>
-								<ArrowDown className="h-3.5 w-3.5" />
-							</Button>
-						</div>
-						<div className="min-w-0">
-							<div className="flex flex-wrap items-center gap-2">
-								<h3 className="font-semibold text-lg">{version.name}</h3>
-								{status && (
-									<Badge
-										variant={status === 'COMPLETED' ? 'success' : 'secondary'}
-									>
-										{statusIcon(status)}
-										<span className="ml-1">{statusLabel[status]}</span>
-									</Badge>
-								)}
-							</div>
-							{version.description && (
-								<p className="mt-1 text-muted-foreground text-sm">
-									{version.description}
-								</p>
-							)}
-						</div>
-					</div>
-					<div className="flex items-center gap-1">
-						{canEdit && (
-							<>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => onEdit(version)}
-									aria-label={`Edit ${version.name}`}
-								>
-									<Pencil className="h-4 w-4" />
-								</Button>
-								<ConfirmationDialog
-									title="Delete product version"
-									description={`Delete "${version.name}"? Move its User Stories first.`}
-									onConfirm={onDelete}
-								>
-									<Button
-										variant="ghost"
-										size="icon"
-										className="text-destructive"
-										aria-label={`Delete ${version.name}`}
-									>
-										<Trash2 className="h-4 w-4" />
-									</Button>
-								</ConfirmationDialog>
-							</>
-						)}
-					</div>
-				</div>
-				<div className="flex items-center gap-3">
-					<Progress value={progress} className="h-2 flex-1" />
-					<span className="text-muted-foreground text-sm tabular-nums">
-						{progress}%
-					</span>
-					<span className="text-muted-foreground text-sm">
-						{version.tasks.length} US
-					</span>
-				</div>
-				{status && (
-					<div className="flex flex-wrap gap-2">
-						{status === 'PLANNED' && (
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={onStart}
-								disabled={readOnly}
-							>
-								<Play className="mr-1.5 h-3.5 w-3.5" /> Start
-							</Button>
-						)}
-						{status === 'IN_PROGRESS' && canManageVersions && (
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => {
-									if (version.tasks.some((story) => story.status !== 'DONE')) {
-										if (
-											!window.confirm(
-												'This version has open User Stories. Complete it anyway?'
-											)
-										)
-											return;
-									}
-									onComplete();
-								}}
-								disabled={readOnly}
-							>
-								<Check className="mr-1.5 h-3.5 w-3.5" /> Complete
-							</Button>
-						)}
-						{(status === 'PLANNED' || status === 'IN_PROGRESS') &&
-							canManageVersions && (
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={onCancel}
-									disabled={readOnly}
-								>
-									<X className="mr-1.5 h-3.5 w-3.5" /> Cancel
-								</Button>
-							)}
-						{(status === 'COMPLETED' || status === 'CANCELED') &&
-							canManageVersions && (
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={onReopen}
-									disabled={readOnly}
-								>
-									<RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reopen
-								</Button>
-							)}
-					</div>
-				)}
-			</CardHeader>
-			<CardContent className="space-y-2">
-				{version.tasks.map((story, storyIndex) => (
-					<StoryRow
-						key={story.id}
-						story={story}
-						versions={versions}
-						readOnly={!canMoveStories}
-						onAssign={(versionId) =>
-							onAssignStory(
-								story.id,
-								versionId,
-								versions.find((candidate) => candidate.id === versionId)?.tasks
-									.length ?? 0
-							)
-						}
-						onMoveUp={() => onMoveStory(version, storyIndex, -1)}
-						onMoveDown={() => onMoveStory(version, storyIndex, 1)}
-						canMove={canMoveStories}
-					/>
-				))}
-				{version.tasks.length === 0 && (
-					<p className="py-2 text-muted-foreground text-sm">
-						No User Stories in this version. Progress: 0%.
-					</p>
-				)}
-			</CardContent>
-		</Card>
-	);
-}
-
-function StoryRow({
-	story,
-	versions,
-	readOnly,
-	onAssign,
-	onMoveUp,
-	onMoveDown,
-	canMove = true
+function VersionStat({
+	label,
+	value,
+	accent = false
 }: {
-	story: Story;
-	versions: ProductVersion[];
-	readOnly: boolean;
-	onAssign: (versionId: string | null) => void;
-	onMoveUp?: () => void;
-	onMoveDown?: () => void;
-	canMove?: boolean;
+	label: string;
+	value: number | string;
+	accent?: boolean;
 }) {
 	return (
-		<div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 px-3 py-2">
-			<div className="min-w-0 flex-1">
-				<div className="font-medium text-sm">{story.title}</div>
-				<div className="text-muted-foreground text-xs">
-					{story.publicNumber ? `#${story.publicNumber} · ` : ''}
-					{story.status ?? 'Backlog'}
-				</div>
-			</div>
-			{onMoveUp && onMoveDown && (
-				<div className="flex gap-1">
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-7 w-7"
-						disabled={readOnly}
-						onClick={onMoveUp}
-						aria-label={`Move ${story.title} up`}
-					>
-						<ArrowUp className="h-3.5 w-3.5" />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-7 w-7"
-						disabled={readOnly}
-						onClick={onMoveDown}
-						aria-label={`Move ${story.title} down`}
-					>
-						<ArrowDown className="h-3.5 w-3.5" />
-					</Button>
-				</div>
-			)}
-			{canMove && (
-				<select
-					value=""
-					disabled={readOnly}
-					onChange={(event) =>
-						onAssign(
-							event.target.value === '__unassigned'
-								? null
-								: event.target.value || null
-						)
-					}
-					className="h-9 rounded-md border bg-background px-2 text-sm"
-				>
-					<option value="">Move to...</option>
-					<option value="__unassigned">No version</option>
-					{versions.map((version) => (
-						<option key={version.id} value={version.id}>
-							{version.name}
-						</option>
-					))}
-				</select>
-			)}
+		<div className="border-b p-4 first:border-l-0 sm:border-b-0 sm:border-l sm:p-5 first:sm:border-l-0">
+			<p className="text-muted-foreground text-xs">{label}</p>
+			<p
+				className={cn(
+					'mt-1 font-semibold text-xl tabular-nums tracking-tight',
+					accent && 'text-warning-muted-foreground'
+				)}
+			>
+				{value}
+			</p>
 		</div>
 	);
 }
