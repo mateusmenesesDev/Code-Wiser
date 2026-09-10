@@ -44,6 +44,7 @@ interface SprintSidebarProps {
 	canManageSprints: boolean;
 	epics: EpicsApiOutput;
 	selectedSprintId: string | null;
+	selectedEpicId: string | null;
 	currentView: string | null;
 	onSelectBoard: () => void;
 	onSelectReports: () => void;
@@ -51,6 +52,7 @@ interface SprintSidebarProps {
 	onSelectBacklog: () => void;
 	onSelectRoadmap: () => void;
 	onSelectVersions: () => void;
+	onSelectEpic: (id: string) => void;
 }
 
 const statusOrder: SprintStatusEnum[] = [
@@ -75,10 +77,14 @@ const StatusIcon = ({ status }: { status: SprintStatusEnum }) => {
 
 const EpicEntry = ({
 	epic,
+	isSelected,
+	onSelect,
 	onEdit,
 	onDelete
 }: {
 	epic: EpicsApiOutput[number];
+	isSelected: boolean;
+	onSelect: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
 }) => {
@@ -86,41 +92,56 @@ const EpicEntry = ({
 	const status = epic.status ?? 'PLANNED';
 
 	return (
-		<div className="group rounded-lg border border-transparent px-3 py-2 hover:border-border hover:bg-muted/50">
-			<div className="flex items-start gap-2">
-				<Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-epic" />
-				<div className="min-w-0 flex-1">
-					<div className="flex items-center justify-between gap-2">
-						<span className="truncate font-medium text-sm">{epic.title}</span>
-						<Badge
-							variant={status === 'COMPLETED' ? 'success' : 'secondary'}
-							className="shrink-0 px-1.5 py-0 text-[10px]"
-						>
-							{status === 'IN_PROGRESS'
-								? 'In progress'
-								: status === 'PLANNED'
-									? 'Planned'
-									: 'Completed'}
-						</Badge>
-					</div>
-					{epic.startDate && epic.endDate && (
-						<div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
-							<Clock className="h-3 w-3" />
-							{dayjs(epic.startDate).format('MMM D')} –{' '}
-							{dayjs(epic.endDate).format('MMM D')}
+		<div
+			className={cn(
+				'group rounded-lg border px-3 py-2 transition-colors',
+				isSelected
+					? 'border-epic-border bg-epic-muted/50'
+					: 'border-transparent hover:border-border hover:bg-muted/50'
+			)}
+		>
+			<button
+				type="button"
+				onClick={onSelect}
+				aria-label={`Show tasks in ${epic.title}`}
+				aria-pressed={isSelected}
+				className="w-full text-left"
+			>
+				<div className="flex items-start gap-2">
+					<Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-epic" />
+					<div className="min-w-0 flex-1">
+						<div className="flex items-center justify-between gap-2">
+							<span className="truncate font-medium text-sm">{epic.title}</span>
+							<Badge
+								variant={status === 'COMPLETED' ? 'success' : 'secondary'}
+								className="shrink-0 px-1.5 py-0 text-[10px]"
+							>
+								{status === 'IN_PROGRESS'
+									? 'In progress'
+									: status === 'PLANNED'
+										? 'Planned'
+										: 'Completed'}
+							</Badge>
 						</div>
-					)}
-					<div className="mt-2 flex items-center gap-2">
-						<Progress
-							value={progress}
-							className="h-1 flex-1 bg-epic-muted [&>div]:bg-epic"
-						/>
-						<span className="text-[10px] text-muted-foreground">
-							{progress}%
-						</span>
+						{epic.startDate && epic.endDate && (
+							<div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+								<Clock className="h-3 w-3" />
+								{dayjs(epic.startDate).format('MMM D')} –{' '}
+								{dayjs(epic.endDate).format('MMM D')}
+							</div>
+						)}
+						<div className="mt-2 flex items-center gap-2">
+							<Progress
+								value={progress}
+								className="h-1 flex-1 bg-epic-muted [&>div]:bg-epic"
+							/>
+							<span className="text-[10px] text-muted-foreground">
+								{progress}%
+							</span>
+						</div>
 					</div>
 				</div>
-			</div>
+			</button>
 			<div className="mt-1 flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 				<Button
 					variant="ghost"
@@ -324,13 +345,15 @@ export default function SprintSidebar({
 	canManageSprints,
 	epics,
 	selectedSprintId,
+	selectedEpicId,
 	currentView,
 	onSelectBoard,
 	onSelectReports,
 	onSelectSprint,
 	onSelectBacklog,
 	onSelectRoadmap,
-	onSelectVersions
+	onSelectVersions,
+	onSelectEpic
 }: SprintSidebarProps) {
 	const [collapsed, setCollapsed] = useState(false);
 	const [epicId] = useQueryState('epicId');
@@ -526,6 +549,8 @@ export default function SprintSidebar({
 							<EpicEntry
 								key={epic.id}
 								epic={epic}
+								isSelected={selectedEpicId === epic.id}
+								onSelect={() => onSelectEpic(epic.id)}
 								onEdit={() => {
 									setSelectedEpicForEdit(epic);
 									openEpicDialog('epic');

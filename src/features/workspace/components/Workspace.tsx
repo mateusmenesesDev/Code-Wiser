@@ -50,7 +50,7 @@ const Workspace = () => {
 	const { data: projectInfo } = api.project.getWorkspaceInfo.useQuery({
 		id: projectId
 	});
-	const { filterTasks } = useKanbanFilters();
+	const { filterTasks, epicFilter, setEpicFilter } = useKanbanFilters();
 	const { moveTaskMutation } = useKanbanMutations(projectId);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -162,6 +162,7 @@ const Workspace = () => {
 						selectedSprintId={
 							view === 'reports' ? (reportSprintId ?? null) : sprintId
 						}
+						selectedEpicId={epicFilter === 'all' ? null : epicFilter}
 						currentView={view}
 						onSelectBoard={() => setViewParams({ view: null, sprintId: null })}
 						onSelectReports={() =>
@@ -182,6 +183,13 @@ const Workspace = () => {
 						onSelectVersions={() =>
 							setViewParams({ view: 'versions', sprintId: null })
 						}
+						onSelectEpic={(id) => {
+							setEpicFilter(epicFilter === id ? 'all' : id);
+							setViewParams({
+								view: view === 'list' ? 'list' : null,
+								sprintId: null
+							});
+						}}
 					/>
 				)}
 				<div className="flex-1 overflow-hidden">
