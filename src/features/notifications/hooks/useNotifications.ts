@@ -34,6 +34,13 @@ export function useNotifications() {
 		}
 	});
 
+	const clearAllMutation = api.notification.clearAll.useMutation({
+		onSuccess: () => {
+			void utils.notification.getNotifications.invalidate();
+			void utils.notification.getUnreadCount.invalidate();
+		}
+	});
+
 	const deleteMutation = api.notification.delete.useMutation({
 		onSuccess: () => {
 			void utils.notification.getNotifications.invalidate();
@@ -49,6 +56,10 @@ export function useNotifications() {
 		markAllAsReadMutation.mutate();
 	};
 
+	const clearAll = () => {
+		clearAllMutation.mutate();
+	};
+
 	const deleteNotification = (notificationId: string) => {
 		deleteMutation.mutate({ notificationId });
 	};
@@ -59,9 +70,11 @@ export function useNotifications() {
 		isLoading: isLoadingNotifications || isLoadingUnreadCount,
 		markAsRead,
 		markAllAsRead,
+		clearAll,
 		deleteNotification,
 		isMarkingAsRead: markAsReadMutation.isPending,
 		isMarkingAllAsRead: markAllAsReadMutation.isPending,
+		isClearingAll: clearAllMutation.isPending,
 		isDeleting: deleteMutation.isPending
 	};
 }

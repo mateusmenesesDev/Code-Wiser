@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '~/common/components/ui/button';
 import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
@@ -25,6 +26,8 @@ export function NotificationItem({
 	onClick,
 	onDelete
 }: NotificationItemProps) {
+	const t = useTranslations('notifications');
+
 	const handleDelete = (e: React.MouseEvent) => {
 		e.stopPropagation();
 		onDelete(notification.id);
@@ -69,8 +72,9 @@ export function NotificationItem({
 				size="icon"
 				className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
 				onClick={handleDelete}
+				aria-label={t('delete')}
 			>
-				<X className="h-4 w-4" />
+				<X className="h-4 w-4" aria-hidden="true" />
 			</Button>
 		</div>
 	);

@@ -41,6 +41,16 @@ export const notificationMutations = {
 		return { success: true };
 	}),
 
+	clearAll: protectedProcedure.mutation(async ({ ctx }) => {
+		await ctx.db.notification.deleteMany({
+			where: {
+				userId: ctx.session.userId
+			}
+		});
+
+		return { success: true };
+	}),
+
 	delete: protectedProcedure
 		.input(deleteNotificationSchema)
 		.mutation(async ({ ctx, input }) => {

@@ -3,6 +3,7 @@
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { Bell } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { RouterOutputs } from '~/trpc/react';
 import { NotificationItem } from './NotificationItem';
 
@@ -57,11 +58,13 @@ export function NotificationList({
 	onNotificationClick,
 	onDelete
 }: NotificationListProps) {
+	const t = useTranslations('notifications');
+
 	if (notifications.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center py-8 text-center">
 				<Bell className="mb-2 h-8 w-8 text-muted-foreground" />
-				<p className="text-muted-foreground text-sm">No notifications</p>
+				<p className="text-muted-foreground text-sm">{t('empty')}</p>
 			</div>
 		);
 	}
@@ -73,7 +76,7 @@ export function NotificationList({
 			{grouped.today.length > 0 && (
 				<div className="mb-4">
 					<h3 className="mb-2 px-2 font-semibold text-muted-foreground text-xs">
-						Today
+						{t('today')}
 					</h3>
 					{grouped.today.map((notification) => (
 						<NotificationItem
@@ -89,7 +92,7 @@ export function NotificationList({
 			{grouped.yesterday.length > 0 && (
 				<div className="mb-4">
 					<h3 className="mb-2 px-2 font-semibold text-muted-foreground text-xs">
-						Yesterday
+						{t('yesterday')}
 					</h3>
 					{grouped.yesterday.map((notification) => (
 						<NotificationItem
@@ -105,7 +108,7 @@ export function NotificationList({
 			{grouped.thisWeek.length > 0 && (
 				<div className="mb-4">
 					<h3 className="mb-2 px-2 font-semibold text-muted-foreground text-xs">
-						This Week
+						{t('thisWeek')}
 					</h3>
 					{grouped.thisWeek.map((notification) => (
 						<NotificationItem
@@ -121,7 +124,7 @@ export function NotificationList({
 			{grouped.older.length > 0 && (
 				<div className="mb-4">
 					<h3 className="mb-2 px-2 font-semibold text-muted-foreground text-xs">
-						Older
+						{t('older')}
 					</h3>
 					{grouped.older.map((notification) => (
 						<NotificationItem

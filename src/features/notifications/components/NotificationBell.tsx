@@ -1,7 +1,9 @@
 'use client';
 
 import { Bell } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -19,14 +21,17 @@ type Notification =
 
 export function NotificationBell() {
 	const router = useRouter();
+	const t = useTranslations('notifications');
 	const {
 		notifications,
 		unreadCount,
 		isLoading,
 		markAsRead,
 		markAllAsRead,
+		clearAll,
 		deleteNotification,
-		isMarkingAllAsRead
+		isMarkingAllAsRead,
+		isClearingAll
 	} = useNotifications();
 
 	const handleNotificationClick = (notification: Notification) => {
@@ -54,24 +59,44 @@ export function NotificationBell() {
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-80">
-				<div className="flex items-center justify-between px-3 py-2">
-					<h2 className="font-semibold">Notifications</h2>
-					{unreadCount > 0 && (
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={markAllAsRead}
-							disabled={isMarkingAllAsRead}
-							className="h-7 text-xs"
-						>
-							Mark all as read
-						</Button>
-					)}
+				<div className="flex items-center justify-between gap-2 px-3 py-2">
+					<h2 className="font-semibold">{t('title')}</h2>
+					<div className="flex items-center gap-1">
+						{unreadCount > 0 && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={markAllAsRead}
+								disabled={isMarkingAllAsRead || isClearingAll}
+								className="h-7 px-2 text-xs"
+							>
+								{t('markAllAsRead')}
+							</Button>
+						)}
+						{notifications.length > 0 && (
+							<ConfirmationDialog
+								title={t('clearAllTitle')}
+								description={t('clearAllDescription')}
+								cancelLabel={t('cancel')}
+								confirmLabel={t('confirmClearAll')}
+								onConfirm={clearAll}
+							>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={isClearingAll || isMarkingAllAsRead}
+									className="h-7 px-2 text-destructive text-xs hover:text-destructive"
+								>
+									{t('clearAll')}
+								</Button>
+							</ConfirmationDialog>
+						)}
+					</div>
 				</div>
 				<DropdownMenuSeparator />
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
-						<p className="text-muted-foreground text-sm">Loading...</p>
+						<p className="text-muted-foreground text-sm">{t('loading')}</p>
 					</div>
 				) : (
 					<NotificationList

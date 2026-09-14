@@ -18,6 +18,22 @@
 		"saveLanguageError": "Could not save your language preference.",
 		"viewPricing": "View pricing and upgrade"
 	},
+	"notifications": {
+		"title": "Notifications",
+		"markAllAsRead": "Mark all as read",
+		"clearAll": "Clear all",
+		"clearAllTitle": "Clear all notifications?",
+		"clearAllDescription": "All of your notifications will be permanently removed.",
+		"cancel": "Cancel",
+		"confirmClearAll": "Clear all",
+		"loading": "Loading...",
+		"empty": "No notifications",
+		"today": "Today",
+		"yesterday": "Yesterday",
+		"thisWeek": "This week",
+		"older": "Older",
+		"delete": "Delete notification"
+	},
 	"navigation": {
 		"dashboard": "Dashboard",
 		"projectCatalog": "Project catalog",

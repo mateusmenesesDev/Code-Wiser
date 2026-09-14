@@ -18,6 +18,22 @@
 		"saveLanguageError": "Não foi possível salvar sua preferência de idioma.",
 		"viewPricing": "Ver preços e fazer upgrade"
 	},
+	"notifications": {
+		"title": "Notificações",
+		"markAllAsRead": "Marcar todas como lidas",
+		"clearAll": "Limpar todas",
+		"clearAllTitle": "Limpar todas as notificações?",
+		"clearAllDescription": "Todas as suas notificações serão removidas permanentemente.",
+		"cancel": "Cancelar",
+		"confirmClearAll": "Limpar todas",
+		"loading": "Carregando...",
+		"empty": "Nenhuma notificação",
+		"today": "Hoje",
+		"yesterday": "Ontem",
+		"thisWeek": "Esta semana",
+		"older": "Mais antigas",
+		"delete": "Excluir notificação"
+	},
 	"navigation": {
 		"dashboard": "Dashboard",
 		"projectCatalog": "Catálogo de projetos",
