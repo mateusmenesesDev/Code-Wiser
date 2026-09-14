@@ -1,9 +1,16 @@
 import { TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
-import { Check, Loader2, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { Check, ListPlus, Loader2, MoreHorizontal, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useQueryState } from 'nuqs';
 import { toast } from 'sonner';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger
+} from '~/common/components/ui/dropdown-menu';
 import { Input } from '~/common/components/ui/input';
 import { api } from '~/trpc/react';
 
@@ -18,26 +25,47 @@ interface TaskSubtasksProps {
 	projectId: string;
 	isTemplate: boolean;
 	subtasks?: TaskSubtask[];
+	emptyAction?: 'input' | 'menu';
+	openSubtasks?: boolean;
 }
 
 export function TaskSubtasks({
 	parentTaskId,
 	projectId,
 	isTemplate,
-	subtasks = []
+	subtasks = [],
+	emptyAction = 'input',
+	openSubtasks = false
 }: TaskSubtasksProps) {
 	const [title, setTitle] = useState('');
+	const [isAdding, setIsAdding] = useState(
+		subtasks.length > 0 || emptyAction === 'input'
+	);
+	const [updatingSubtaskId, setUpdatingSubtaskId] = useState<string | null>(
+		null
+	);
+	const [, setTaskId] = useQueryState('taskId');
 	const utils = api.useUtils();
+	const invalidateSubtasks = () =>
+		Promise.all([
+			utils.task.getById.invalidate({ id: parentTaskId }),
+			utils.kanban.getKanbanData.invalidate({ projectId })
+		]);
 	const createSubtask = api.task.create.useMutation({
 		onSuccess: async () => {
 			setTitle('');
-			await Promise.all([
-				utils.task.getById.invalidate({ id: parentTaskId }),
-				utils.kanban.getKanbanData.invalidate({ projectId })
-			]);
+			await invalidateSubtasks();
 		},
 		onError: (error) => toast.error(error.message || 'Failed to create subtask')
 	});
+	const updateSubtask = api.task.update.useMutation({
+		onSuccess: invalidateSubtasks,
+		onError: (error) => toast.error(error.message || 'Failed to complete subtask')
+	});
+
+	useEffect(() => {
+		if (subtasks.length > 0) setIsAdding(true);
+	}, [subtasks.length]);
 
 	const create = () => {
 		const trimmedTitle = title.trim();
@@ -54,9 +82,60 @@ export function TaskSubtasks({
 		});
 	};
 
+	const complete = (subtaskId: string) => {
+		if (updateSubtask.isPending) return;
+
+		setUpdatingSubtaskId(subtaskId);
+		updateSubtask.mutate(
+			{
+				id: subtaskId,
+				isTemplate,
+				status: TaskStatusEnum.DONE
+			},
+			{ onSettled: () => setUpdatingSubtaskId(null) }
+		);
+	};
+
+	const openSubtask = (subtaskId: string) => {
+		void setTaskId(subtaskId);
+	};
+
 	const completedCount = subtasks.filter(
 		(subtask) => subtask.status === TaskStatusEnum.DONE
 	).length;
+	const showEmptyMenu =
+		emptyAction === 'menu' && subtasks.length === 0 && !isAdding;
+
+	if (showEmptyMenu) {
+		return (
+			<div
+				className="pointer-events-none absolute top-0 right-0 z-10 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+				onClick={(event) => event.stopPropagation()}
+				onKeyDown={(event) => event.stopPropagation()}
+				onPointerDown={(event) => event.stopPropagation()}
+			>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7 bg-background/80"
+							aria-label="Task options"
+						>
+							<MoreHorizontal className="h-4 w-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-44">
+						<DropdownMenuItem onSelect={() => setIsAdding(true)}>
+							<ListPlus className="mr-2 h-4 w-4" />
+							Create subtask
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
+		);
+	}
 
 	return (
 		<div
@@ -78,53 +157,80 @@ export function TaskSubtasks({
 
 			{subtasks.length > 0 && (
 				<ul className="space-y-1" aria-label="Subtasks">
-					{subtasks.map((subtask) => (
-						<li
-							key={subtask.id}
-							className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs"
-						>
-							{subtask.status === TaskStatusEnum.DONE ? (
-								<Check className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-							) : (
-								<span className="h-3.5 w-3.5 shrink-0 rounded-full border" />
-							)}
-							<span className="truncate">{subtask.title}</span>
-						</li>
-					))}
+					{subtasks.map((subtask) => {
+						const isComplete = subtask.status === TaskStatusEnum.DONE;
+						const isUpdating = updatingSubtaskId === subtask.id;
+
+						return (
+							<li
+								key={subtask.id}
+								className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs"
+							>
+								<button
+									type="button"
+									className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border transition-colors hover:border-primary disabled:cursor-default disabled:opacity-70"
+									disabled={isComplete || updateSubtask.isPending}
+									onClick={() => complete(subtask.id)}
+									aria-label={
+										isComplete ? 'Subtask completed' : 'Complete subtask'
+									}
+								>
+									{isUpdating ? (
+										<Loader2 className="h-3.5 w-3.5 animate-spin" />
+									) : (
+										isComplete && <Check className="h-3.5 w-3.5" />
+									)}
+								</button>
+								{openSubtasks ? (
+									<button
+										type="button"
+										className="min-w-0 flex-1 truncate text-left hover:text-foreground"
+										onClick={() => openSubtask(subtask.id)}
+									>
+										{subtask.title}
+									</button>
+								) : (
+									<span className="min-w-0 flex-1 truncate">{subtask.title}</span>
+								)}
+							</li>
+						);
+					})}
 				</ul>
 			)}
 
-			<div className="flex items-center gap-1.5">
-				<Input
-					value={title}
-					onChange={(event) => setTitle(event.target.value)}
-					onKeyDown={(event) => {
-						if (event.key === 'Enter') {
-							event.preventDefault();
-							create();
-						}
-					}}
-					placeholder="Add a subtask"
-					aria-label="New subtask title"
-					disabled={createSubtask.isPending}
-					className="h-8 text-xs"
-				/>
-				<Button
-					type="button"
-					variant="outline"
-					size="icon"
-					className="h-8 w-8 shrink-0"
-					onClick={create}
-					disabled={!title.trim() || createSubtask.isPending}
-					aria-label="Add subtask"
-				>
-					{createSubtask.isPending ? (
-						<Loader2 className="h-3.5 w-3.5 animate-spin" />
-					) : (
-						<Plus className="h-3.5 w-3.5" />
-					)}
-				</Button>
-			</div>
+			{isAdding && (
+				<div className="flex items-center gap-1.5">
+					<Input
+						value={title}
+						onChange={(event) => setTitle(event.target.value)}
+						onKeyDown={(event) => {
+							if (event.key === 'Enter') {
+								event.preventDefault();
+								create();
+							}
+						}}
+						placeholder="Add a subtask"
+						aria-label="New subtask title"
+						disabled={createSubtask.isPending}
+						className="h-8 text-xs"
+					/>
+					<Button
+						type="button"
+						variant="outline"
+						size="icon"
+						className="h-8 w-8 shrink-0"
+						onClick={create}
+						disabled={!title.trim() || createSubtask.isPending}
+						aria-label="Add subtask"
+					>
+						{createSubtask.isPending ? (
+							<Loader2 className="h-3.5 w-3.5 animate-spin" />
+						) : (
+							<Plus className="h-3.5 w-3.5" />
+						)}
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }

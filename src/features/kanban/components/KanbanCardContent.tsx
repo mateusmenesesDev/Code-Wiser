@@ -68,6 +68,8 @@ export default function KanbanCardContent({
 					projectId={projectId}
 					isTemplate={false}
 					subtasks={task.subtasks}
+					emptyAction="menu"
+					openSubtasks
 				/>
 			</div>{' '}
 		</KanbanCard>
