@@ -18,3 +18,7 @@ export {
 	notifyTaskStatusChanged,
 	notifyTaskBlocked
 } from './taskNotifications';
+export {
+	notifyRemediationActionSubmitted,
+	notifyRemediationActionCompleted
+} from './remediationNotifications';

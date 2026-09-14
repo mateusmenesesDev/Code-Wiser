@@ -81,6 +81,9 @@ model User {
   mentorshipBookings           MentorshipBooking[]
   competencyAssessmentsReceived CompetencyMentorAssessment[] @relation("CompetencyAssessmentLearner")
   competencyAssessmentsGiven    CompetencyMentorAssessment[] @relation("CompetencyAssessmentAssessor")
+  remediationActions            RemediationAction[]          @relation("RemediationActionLearner")
+  remediationActionsCreated     RemediationAction[]          @relation("RemediationActionCreator")
+  remediationActionsCompleted   RemediationAction[]          @relation("RemediationActionCompleter")
   challengeProgress            UserChallengeProgress[]
   exerciseReviewSubmissions    ExerciseReviewSubmission[] @relation("ExerciseReviewSubmissions")
   exerciseReviewDecisions      ExerciseReviewDecision[]   @relation("ExerciseReviewDecisions")

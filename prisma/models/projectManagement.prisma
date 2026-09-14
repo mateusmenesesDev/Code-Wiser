@@ -47,7 +47,8 @@ model Task {
   milestoneId String?
   milestone   Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
 
-  reviews PullRequestReview[]
+  reviews            PullRequestReview[]
+  remediationActions RemediationAction[]
 
   comments           Comment[]
   attachments        TaskAttachment[]
@@ -270,7 +271,9 @@ model PullRequestReview {
   isActive             Boolean @default(true)
   feedbackAssistedByAi Boolean @default(false)
 
-  analyses PrReviewAnalysis[]
+  analyses            PrReviewAnalysis[]
+  remediationActions  RemediationAction[] @relation("RemediationActionSourceReview")
+  reassessmentActions RemediationAction[] @relation("RemediationActionReassessmentReview")
 
   @@index([taskId, requestedById, isActive])
   @@index([reviewedById])

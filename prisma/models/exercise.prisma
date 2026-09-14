@@ -61,9 +61,10 @@ model ExerciseChallenge {
   trackId String
   track   ExerciseTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
-  progress      UserChallengeProgress[]
-  decisions     ExerciseReviewDecision[]
-  competencies  CompetencyExerciseChallenge[]
+  progress           UserChallengeProgress[]
+  decisions          ExerciseReviewDecision[]
+  competencies       CompetencyExerciseChallenge[]
+  remediationActions RemediationAction[]
 
   @@unique([trackId, slug])
   @@index([trackId, difficulty, sortOrder])
@@ -135,8 +136,9 @@ model ExerciseReviewDecision {
   challengeId String
   challenge   ExerciseChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
-  reviewedById String?
-  reviewedBy   User?   @relation("ExerciseReviewDecisions", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedById       String?
+  reviewedBy         User?               @relation("ExerciseReviewDecisions", fields: [reviewedById], references: [id], onDelete: SetNull)
+  remediationActions RemediationAction[]
 
   @@unique([submissionId, challengeId])
   @@index([challengeId, status])

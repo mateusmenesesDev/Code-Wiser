@@ -229,6 +229,17 @@ describe('PR review lifecycle', () => {
 				reviewedAt: expect.any(Date)
 			}
 		});
+		expect(mockDb.remediationAction.updateMany).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: expect.objectContaining({
+					OR: [
+						{ sourcePrReviewId: 'review-1' },
+						{ reassessmentReviewId: 'review-1' }
+					]
+				}),
+				data: expect.objectContaining({ status: 'COMPLETED' })
+			})
+		);
 	});
 
 	it('closes a changes-requested review before creating the next version', async () => {
@@ -541,6 +552,16 @@ describe('PR review lifecycle', () => {
 				feedbackAssistedByAi: true
 			})
 		});
+		expect(mockDb.remediationAction.upsert).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { sourcePrReviewId: 'review-1' },
+				create: expect.objectContaining({
+					targetType: 'TASK',
+					learnerId: 'user-1',
+					taskId: 'task-1'
+				})
+			})
+		);
 	});
 
 	it('returns an idempotent retry without creating or charging again', async () => {

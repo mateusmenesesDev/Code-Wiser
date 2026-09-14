@@ -231,4 +231,50 @@ describe('exercise progress', () => {
 		expect(result.status).toBe('IN_REVIEW');
 		expect(result.activePrUrl).toBe('https://github.com/org/react/pull/12');
 	});
+
+	it('opens a remediation action when a mentor requests exercise changes', async () => {
+		authState.userId = 'admin-1';
+		authState.isAdmin = true;
+		caller = createCaller(await createTRPCContext({ headers: new Headers() }));
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+		mockDb.exerciseReviewDecision.findUnique.mockResolvedValue({
+			id: '66666666-6666-4666-8666-666666666666',
+			status: 'PENDING',
+			challengeId: 'challenge-1',
+			challenge: {
+				title: 'Counter',
+				slug: 'counter',
+				track: { slug: 'react' }
+			},
+			submission: {
+				id: 'submission-1',
+				submittedById: 'learner-1',
+				decisions: [
+					{ id: '66666666-6666-4666-8666-666666666666', status: 'PENDING' }
+				]
+			}
+		} as never);
+		mockDb.user.findUnique.mockResolvedValue({ name: 'Mentor' } as never);
+
+		await caller.decideChallengeReview({
+			decisionId: '66666666-6666-4666-8666-666666666666',
+			status: 'CHANGES_REQUESTED',
+			mentorComment: 'Add a regression test for the reset behavior.'
+		});
+
+		expect(mockDb.remediationAction.upsert).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: {
+					sourceExerciseDecisionId: '66666666-6666-4666-8666-666666666666'
+				},
+				create: expect.objectContaining({
+					targetType: 'EXERCISE',
+					learnerId: 'learner-1',
+					challengeId: 'challenge-1'
+				})
+			})
+		);
+	});
 });

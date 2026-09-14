@@ -26,6 +26,7 @@ import { Card, CardContent } from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
 import { Skeleton } from '~/common/components/ui/skeleton';
 import { CompetencyMatrix } from '~/features/competencies/components/CompetencyMatrix';
+import { RemediationActions } from '~/features/remediation/components/RemediationActions';
 import { api } from '~/trpc/react';
 import { type DashboardOverview, getNextAction } from '../utils/nextAction';
 
@@ -276,6 +277,8 @@ function DashboardContent({
 			)}
 
 			<CompetencyMatrix userId={userId} />
+
+			{!overview.viewedUser && <RemediationActions />}
 
 			<section
 				aria-label={t('overview')}

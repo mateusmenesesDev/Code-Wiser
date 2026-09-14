@@ -1,7 +1,9 @@
 import {
 	PRReviewAnalysisStatus,
 	PRReviewFindingDecision,
-	PullRequestReviewStatusEnum
+	PullRequestReviewStatusEnum,
+	RemediationActionStatus,
+	RemediationActionTargetType
 } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import {
@@ -332,16 +334,35 @@ export const prReviewMutations = {
 				await assertProjectIsActive(ctx.db, activeReview.task.project.id);
 			}
 
-			const decision = await ctx.db.pullRequestReview.updateMany({
-				where: {
-					id: activeReview.id,
-					status: activeReview.status
-				},
-				data: {
-					status: PullRequestReviewStatusEnum.APPROVED,
-					reviewedById: ctx.session.userId,
-					reviewedAt: new Date()
+			const decision = await ctx.db.$transaction(async (tx) => {
+				const saved = await tx.pullRequestReview.updateMany({
+					where: {
+						id: activeReview.id,
+						status: activeReview.status
+					},
+					data: {
+						status: PullRequestReviewStatusEnum.APPROVED,
+						reviewedById: ctx.session.userId,
+						reviewedAt: new Date()
+					}
+				});
+				if (saved.count === 1) {
+					await tx.remediationAction.updateMany({
+						where: {
+							OR: [
+								{ sourcePrReviewId: activeReview.id },
+								{ reassessmentReviewId: activeReview.id }
+							],
+							status: { not: RemediationActionStatus.CANCELLED }
+						},
+						data: {
+							status: RemediationActionStatus.COMPLETED,
+							completedAt: new Date(),
+							completedById: ctx.session.userId
+						}
+					});
 				}
+				return saved;
 			});
 			if (decision.count !== 1) {
 				throw new TRPCError({
@@ -469,18 +490,49 @@ export const prReviewMutations = {
 				}
 			}
 
-			const decision = await ctx.db.pullRequestReview.updateMany({
-				where: {
-					id: activeReview.id,
-					status: PullRequestReviewStatusEnum.PENDING
-				},
-				data: {
-					status: PullRequestReviewStatusEnum.CHANGES_REQUESTED,
-					comment: comment || null,
-					feedbackAssistedByAi: Boolean(analysisId),
-					reviewedById: ctx.session.userId,
-					reviewedAt: new Date()
+			const decision = await ctx.db.$transaction(async (tx) => {
+				const saved = await tx.pullRequestReview.updateMany({
+					where: {
+						id: activeReview.id,
+						status: PullRequestReviewStatusEnum.PENDING
+					},
+					data: {
+						status: PullRequestReviewStatusEnum.CHANGES_REQUESTED,
+						comment: comment || null,
+						feedbackAssistedByAi: Boolean(analysisId),
+						reviewedById: ctx.session.userId,
+						reviewedAt: new Date()
+					}
+				});
+				if (saved.count === 1) {
+					await tx.remediationAction.upsert({
+						where: { sourcePrReviewId: activeReview.id },
+						update: {
+							description:
+								comment?.trim() ||
+								'Review the requested changes, update the code, and request another review.',
+							status: RemediationActionStatus.OPEN,
+							evidenceNote: null,
+							submittedAt: null,
+							completedAt: null,
+							completedById: null,
+							reviewerNote: null,
+							reassessmentReviewId: null
+						},
+						create: {
+							title: `Address feedback on ${activeReview.task.title}`,
+							description:
+								comment?.trim() ||
+								'Review the requested changes, update the code, and request another review.',
+							targetType: RemediationActionTargetType.TASK,
+							learnerId: activeReview.requestedById,
+							createdById: ctx.session.userId,
+							taskId: activeReview.task.id,
+							sourcePrReviewId: activeReview.id
+						}
+					});
 				}
+				return saved;
 			});
 			if (decision.count !== 1) {
 				throw new TRPCError({
@@ -663,7 +715,7 @@ export const prReviewMutations = {
 					});
 				}
 
-				await tx.pullRequestReview.create({
+				const createdReview = await tx.pullRequestReview.create({
 					data: {
 						taskId,
 						prUrl: reviewUrl,
@@ -686,6 +738,29 @@ export const prReviewMutations = {
 							: {})
 					}
 				});
+
+				if (
+					activeReview?.status === PullRequestReviewStatusEnum.CHANGES_REQUESTED
+				) {
+					await tx.remediationAction.updateMany({
+						where: {
+							sourcePrReviewId: activeReview.id,
+							status: {
+								notIn: [
+									RemediationActionStatus.COMPLETED,
+									RemediationActionStatus.CANCELLED
+								]
+							}
+						},
+						data: {
+							status: RemediationActionStatus.SUBMITTED,
+							reassessmentReviewId: createdReview.id,
+							submittedAt: new Date()
+						}
+					});
+				}
+
+				return createdReview;
 			});
 
 			await notifyPRRequested({

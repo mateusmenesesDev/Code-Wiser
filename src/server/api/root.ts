@@ -17,6 +17,7 @@ import { planningPokerRouter } from './routers/planningPoker/planningPokerRouter
 import { prReviewRouter } from './routers/prReview/prReviewRouter';
 import { productVersionRouter } from './routers/productVersion';
 import { projectRouter } from './routers/project';
+import { remediationRouter } from './routers/remediation/remediationRouter';
 import { retrospectiveRouter } from './routers/retrospective';
 import { searchRouter } from './routers/search/search.router';
 import { sprintRouter } from './routers/sprint/sprint.router';
@@ -32,6 +33,7 @@ import { userRouter } from './routers/user';
 export const appRouter = createTRPCRouter({
 	user: userRouter,
 	project: projectRouter,
+	remediation: remediationRouter,
 	productVersion: productVersionRouter,
 	projectTemplate: projectTemplateRouter,
 	task: taskRouter,

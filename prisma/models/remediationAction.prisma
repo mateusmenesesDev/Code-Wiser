@@ -1,0 +1,61 @@
+enum RemediationActionTargetType {
+  TASK
+  EXERCISE
+  MENTORSHIP
+
+  @@schema("public")
+}
+
+enum RemediationActionStatus {
+  OPEN
+  IN_PROGRESS
+  SUBMITTED
+  COMPLETED
+  CANCELLED
+
+  @@schema("public")
+}
+
+model RemediationAction {
+  id           String                      @id @default(cuid())
+  createdAt    DateTime                    @default(now())
+  updatedAt    DateTime                    @updatedAt
+  title        String
+  description  String
+  targetType   RemediationActionTargetType
+  status       RemediationActionStatus     @default(OPEN)
+  dueAt        DateTime?
+  evidenceNote String?
+  submittedAt  DateTime?
+  completedAt  DateTime?
+  reviewerNote String?
+
+  learnerId     String
+  createdById   String
+  completedById String?
+  taskId        String?
+  challengeId   String?
+  bookingId     String?
+
+  sourcePrReviewId         String? @unique
+  reassessmentReviewId     String? @unique
+  sourceExerciseDecisionId String? @unique
+
+  learner                User                    @relation("RemediationActionLearner", fields: [learnerId], references: [id], onDelete: Cascade)
+  createdBy              User                    @relation("RemediationActionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  completedBy            User?                   @relation("RemediationActionCompleter", fields: [completedById], references: [id], onDelete: SetNull)
+  task                   Task?                   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  challenge              ExerciseChallenge?      @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  booking                MentorshipBooking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sourcePrReview         PullRequestReview?      @relation("RemediationActionSourceReview", fields: [sourcePrReviewId], references: [id], onDelete: Cascade)
+  reassessmentReview     PullRequestReview?      @relation("RemediationActionReassessmentReview", fields: [reassessmentReviewId], references: [id], onDelete: SetNull)
+  sourceExerciseDecision ExerciseReviewDecision? @relation(fields: [sourceExerciseDecisionId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId])
+  @@index([learnerId, status, updatedAt])
+  @@index([taskId, status])
+  @@index([challengeId, status])
+  @@index([bookingId, status])
+  @@index([reassessmentReviewId])
+  @@schema("public")
+}

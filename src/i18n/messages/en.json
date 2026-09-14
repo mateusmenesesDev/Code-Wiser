@@ -36,6 +36,24 @@
 		"enableDesktop": "Enable desktop notifications",
 		"desktopBlocked": "Notifications are blocked in your browser. Allow them in the site settings."
 	},
+	"remediation": {
+		"title": "Actions from feedback",
+		"description": "Work through the requested correction, then submit evidence for review.",
+		"start": "Start action",
+		"submit": "Submit for review",
+		"submitted": "Evidence submitted for review",
+		"awaitingReview": "Your evidence is waiting for mentor review.",
+		"evidencePlaceholder": "Describe what you changed and how you checked it",
+		"openTarget": "Open related work",
+		"due": "Due {date}",
+		"status": {
+			"OPEN": "Open",
+			"IN_PROGRESS": "In progress",
+			"SUBMITTED": "Awaiting review",
+			"COMPLETED": "Completed",
+			"CANCELLED": "Cancelled"
+		}
+	},
 	"navigation": {
 		"dashboard": "Dashboard",
 		"projectCatalog": "Project catalog",

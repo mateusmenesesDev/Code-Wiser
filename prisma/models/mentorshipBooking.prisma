@@ -34,8 +34,9 @@ model MentorshipBooking {
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
 
-  user                  User                              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
   competencyAssessments CompetencyMentorAssessment[]
+  remediationActions    RemediationAction[]
 
   @@index([userId])
   @@index([userId, scheduledAt])

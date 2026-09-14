@@ -34,6 +34,9 @@ describe('mentorship history', () => {
 	beforeEach(() => {
 		authState.userId = 'learner-1';
 		authState.isAdmin = false;
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
 		mockDb.mentorshipBooking.findMany.mockResolvedValue([]);
 		mockDb.mentorshipBooking.findUnique.mockResolvedValue({
 			id: 'booking-1'

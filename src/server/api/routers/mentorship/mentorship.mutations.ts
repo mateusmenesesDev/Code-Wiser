@@ -1,3 +1,7 @@
+import {
+	RemediationActionStatus,
+	RemediationActionTargetType
+} from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { env } from '~/env';
@@ -410,61 +414,115 @@ export const mentorshipMutations = {
 				...(input.status ? { status: input.status } : {})
 			};
 
-			if (input.competencyAssessments === undefined) {
-				return ctx.db.mentorshipBooking.update({
-					where: { id: input.bookingId },
-					data: bookingData
+			const competencyIds =
+				input.competencyAssessments?.map(
+					(assessment) => assessment.competencyId
+				) ?? [];
+			if (input.competencyAssessments !== undefined) {
+				const competencies = await ctx.db.competency.findMany({
+					where: { id: { in: competencyIds }, isActive: true },
+					select: { id: true }
 				});
-			}
-
-			const competencyIds = input.competencyAssessments.map(
-				(assessment) => assessment.competencyId
-			);
-			const competencies = await ctx.db.competency.findMany({
-				where: { id: { in: competencyIds }, isActive: true },
-				select: { id: true }
-			});
-			if (competencies.length !== new Set(competencyIds).size) {
-				throw new TRPCError({
-					code: 'BAD_REQUEST',
-					message:
-						'Each competency assessment must reference an active competency'
-				});
+				if (competencies.length !== new Set(competencyIds).size) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message:
+							'Each competency assessment must reference an active competency'
+					});
+				}
 			}
 
 			return ctx.db.$transaction(async (tx) => {
-				await tx.competencyMentorAssessment.deleteMany({
-					where: {
-						bookingId: input.bookingId,
-						...(competencyIds.length
-							? { competencyId: { notIn: competencyIds } }
-							: {})
-					}
-				});
-				for (const assessment of input.competencyAssessments ?? []) {
-					await tx.competencyMentorAssessment.upsert({
+				if (input.competencyAssessments !== undefined) {
+					await tx.competencyMentorAssessment.deleteMany({
 						where: {
-							bookingId_competencyId: {
-								bookingId: input.bookingId,
-								competencyId: assessment.competencyId
-							}
-						},
-						update: {
-							state: assessment.state,
-							note: assessment.note || null,
-							assessedAt: new Date(),
-							assessedById: ctx.session.userId
-						},
-						create: {
-							state: assessment.state,
-							note: assessment.note || null,
-							competencyId: assessment.competencyId,
-							learnerId: booking.userId,
 							bookingId: input.bookingId,
-							assessedById: ctx.session.userId
+							...(competencyIds.length
+								? { competencyId: { notIn: competencyIds } }
+								: {})
 						}
 					});
+					for (const assessment of input.competencyAssessments) {
+						await tx.competencyMentorAssessment.upsert({
+							where: {
+								bookingId_competencyId: {
+									bookingId: input.bookingId,
+									competencyId: assessment.competencyId
+								}
+							},
+							update: {
+								state: assessment.state,
+								note: assessment.note || null,
+								assessedAt: new Date(),
+								assessedById: ctx.session.userId
+							},
+							create: {
+								state: assessment.state,
+								note: assessment.note || null,
+								competencyId: assessment.competencyId,
+								learnerId: booking.userId,
+								bookingId: input.bookingId,
+								assessedById: ctx.session.userId
+							}
+						});
+					}
 				}
+
+				if (followUp) {
+					const remediationStatus =
+						input.actionStatus === 'COMPLETED'
+							? RemediationActionStatus.COMPLETED
+							: input.actionStatus === 'CANCELLED'
+								? RemediationActionStatus.CANCELLED
+								: input.actionStatus === 'IN_PROGRESS'
+									? RemediationActionStatus.IN_PROGRESS
+									: RemediationActionStatus.OPEN;
+					await tx.remediationAction.upsert({
+						where: { bookingId: input.bookingId },
+						update: {
+							title: `Follow up: ${followUp}`,
+							description: followUp,
+							targetType: RemediationActionTargetType.MENTORSHIP,
+							status: remediationStatus,
+							dueAt: bookingData.actionDueAt,
+							completedAt:
+								remediationStatus === RemediationActionStatus.COMPLETED
+									? new Date()
+									: null,
+							completedById:
+								remediationStatus === RemediationActionStatus.COMPLETED
+									? ctx.session.userId
+									: null
+						},
+						create: {
+							title: `Follow up: ${followUp}`,
+							description: followUp,
+							targetType: RemediationActionTargetType.MENTORSHIP,
+							status: remediationStatus,
+							dueAt: bookingData.actionDueAt,
+							completedAt:
+								remediationStatus === RemediationActionStatus.COMPLETED
+									? new Date()
+									: null,
+							completedById:
+								remediationStatus === RemediationActionStatus.COMPLETED
+									? ctx.session.userId
+									: null,
+							learnerId: booking.userId,
+							createdById: ctx.session.userId,
+							bookingId: input.bookingId
+						}
+					});
+				} else {
+					await tx.remediationAction.updateMany({
+						where: {
+							bookingId: input.bookingId,
+							status: { not: RemediationActionStatus.COMPLETED }
+						},
+						data: { status: RemediationActionStatus.CANCELLED }
+					});
+				}
+
 				return tx.mentorshipBooking.update({
 					where: { id: input.bookingId },
 					data: bookingData

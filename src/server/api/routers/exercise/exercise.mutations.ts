@@ -1,5 +1,7 @@
 import {
 	ExerciseReviewDecisionStatus,
+	RemediationActionStatus,
+	RemediationActionTargetType,
 	UserChallengeProgressStatus
 } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
@@ -407,6 +409,19 @@ export const exerciseMutations = {
 					});
 				}
 
+				await tx.remediationAction.updateMany({
+					where: {
+						sourceExerciseDecisionId: {
+							in: changesRequested.map((item) => item.id)
+						},
+						status: { not: RemediationActionStatus.CANCELLED }
+					},
+					data: {
+						status: RemediationActionStatus.SUBMITTED,
+						submittedAt: new Date()
+					}
+				});
+
 				return tx.exerciseReviewSubmission.update({
 					where: { id: submission.id },
 					data: {
@@ -512,6 +527,46 @@ export const exerciseMutations = {
 					},
 					data: { status: progressStatus }
 				});
+
+				if (input.status === ExerciseReviewDecisionStatus.CHANGES_REQUESTED) {
+					await tx.remediationAction.upsert({
+						where: { sourceExerciseDecisionId: decision.id },
+						update: {
+							description:
+								input.mentorComment?.trim() ||
+								'Review the mentor feedback, update the code, and submit the exercise again.',
+							status: RemediationActionStatus.OPEN,
+							evidenceNote: null,
+							submittedAt: null,
+							completedAt: null,
+							completedById: null,
+							reviewerNote: null
+						},
+						create: {
+							title: `Address feedback on ${decision.challenge.title}`,
+							description:
+								input.mentorComment?.trim() ||
+								'Review the mentor feedback, update the code, and submit the exercise again.',
+							targetType: RemediationActionTargetType.EXERCISE,
+							learnerId: decision.submission.submittedById,
+							createdById: reviewerId,
+							challengeId: decision.challengeId,
+							sourceExerciseDecisionId: decision.id
+						}
+					});
+				} else {
+					await tx.remediationAction.updateMany({
+						where: {
+							sourceExerciseDecisionId: decision.id,
+							status: { not: RemediationActionStatus.CANCELLED }
+						},
+						data: {
+							status: RemediationActionStatus.COMPLETED,
+							completedAt: new Date(),
+							completedById: reviewerId
+						}
+					});
+				}
 
 				await tx.exerciseReviewSubmission.update({
 					where: { id: decision.submission.id },

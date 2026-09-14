@@ -36,6 +36,24 @@
 		"enableDesktop": "Ativar notificações no computador",
 		"desktopBlocked": "As notificações estão bloqueadas no navegador. Permita-as nas configurações do site."
 	},
+	"remediation": {
+		"title": "Ações do feedback",
+		"description": "Resolva a correção solicitada e envie a evidência para nova avaliação.",
+		"start": "Iniciar ação",
+		"submit": "Enviar para avaliação",
+		"submitted": "Evidência enviada para avaliação",
+		"awaitingReview": "Sua evidência está aguardando a avaliação do mentor.",
+		"evidencePlaceholder": "Descreva o que você alterou e como verificou a correção",
+		"openTarget": "Abrir trabalho relacionado",
+		"due": "Prazo: {date}",
+		"status": {
+			"OPEN": "Aberta",
+			"IN_PROGRESS": "Em andamento",
+			"SUBMITTED": "Aguardando avaliação",
+			"COMPLETED": "Concluída",
+			"CANCELLED": "Cancelada"
+		}
+	},
 	"navigation": {
 		"dashboard": "Dashboard",
 		"projectCatalog": "Catálogo de projetos",
