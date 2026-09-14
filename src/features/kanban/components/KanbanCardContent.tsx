@@ -36,13 +36,23 @@ export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 					{task.title}
 				</p>
 				<div className="flex items-center justify-between gap-2">
-					<Badge
-						variant={getBadgeTaskPriorityColor(
-							task.priority as TaskPriorityEnum
+					<div className="flex items-center gap-2">
+						<Badge
+							variant={getBadgeTaskPriorityColor(
+								task.priority as TaskPriorityEnum
+							)}
+						>
+							{task.priority}
+						</Badge>
+						{task.storyPoints != null && task.storyPoints > 0 && (
+							<Badge
+								variant="secondary"
+								className="px-1.5 py-0 font-mono text-xs tabular-nums"
+							>
+								{task.storyPoints}
+							</Badge>
 						)}
-					>
-						{task.priority}
-					</Badge>
+					</div>
 
 					<AssigneeAvatars assignees={task.assignees ?? []} />
 				</div>

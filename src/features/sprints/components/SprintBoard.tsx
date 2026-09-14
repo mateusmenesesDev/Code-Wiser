@@ -19,7 +19,6 @@ import {
 	KanbanBoard,
 	KanbanCards,
 	KanbanHeader,
-	type KanbanItemProps,
 	KanbanProvider
 } from '~/common/components/ui/kanban';
 import { Progress } from '~/common/components/ui/progress';
@@ -304,7 +303,7 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 											)}
 										</KanbanHeader>
 										<KanbanCards id={column.id}>
-											{(task) => <SprintKanbanCard task={task} />}
+											{(task) => <KanbanCardContent task={task} />}
 										</KanbanCards>
 									</KanbanBoard>
 								);
@@ -323,23 +322,3 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 		</div>
 	);
 }
-
-const SprintKanbanCard = ({ task }: { task: KanbanItemProps }) => {
-	const storyPoints = (task as { storyPoints?: number | null }).storyPoints;
-
-	return (
-		<div className="relative">
-			<KanbanCardContent task={task} />
-			{storyPoints != null && storyPoints > 0 && (
-				<div className="absolute right-2 bottom-2">
-					<Badge
-						variant="secondary"
-						className="px-1.5 py-0 font-mono text-xs tabular-nums"
-					>
-						{storyPoints}
-					</Badge>
-				</div>
-			)}
-		</div>
-	);
-};
