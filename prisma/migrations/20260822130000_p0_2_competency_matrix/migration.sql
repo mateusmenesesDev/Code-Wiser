@@ -58,6 +58,11 @@ ALTER TABLE "CompetencyLearningOutcome" SET (schema_locked = false);
 ALTER TABLE "CompetencyMilestone" SET (schema_locked = false);
 ALTER TABLE "CompetencyReviewCategory" SET (schema_locked = false);
 ALTER TABLE "CompetencyMentorAssessment" SET (schema_locked = false);
+ALTER TABLE "ExerciseChallenge" SET (schema_locked = false);
+ALTER TABLE "LearningOutcome" SET (schema_locked = false);
+ALTER TABLE "Milestone" SET (schema_locked = false);
+ALTER TABLE "MentorshipBooking" SET (schema_locked = false);
+ALTER TABLE "User" SET (schema_locked = false);
 
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "Competency_slug_key" ON "Competency"("slug");
@@ -69,6 +74,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS "CompetencyMentorAssessment_bookingId_competen
 CREATE INDEX IF NOT EXISTS "CompetencyMentorAssessment_learnerId_competencyId_assessedAt_idx" ON "CompetencyMentorAssessment"("learnerId", "competencyId", "assessedAt");
 
 -- CreateForeignKey
+ALTER TABLE "CompetencyExerciseChallenge" DROP CONSTRAINT IF EXISTS "CompetencyExerciseChallenge_competencyId_fkey";
+ALTER TABLE "CompetencyExerciseChallenge" DROP CONSTRAINT IF EXISTS "CompetencyExerciseChallenge_challengeId_fkey";
+ALTER TABLE "CompetencyLearningOutcome" DROP CONSTRAINT IF EXISTS "CompetencyLearningOutcome_competencyId_fkey";
+ALTER TABLE "CompetencyLearningOutcome" DROP CONSTRAINT IF EXISTS "CompetencyLearningOutcome_learningOutcomeId_fkey";
+ALTER TABLE "CompetencyMilestone" DROP CONSTRAINT IF EXISTS "CompetencyMilestone_competencyId_fkey";
+ALTER TABLE "CompetencyMilestone" DROP CONSTRAINT IF EXISTS "CompetencyMilestone_milestoneId_fkey";
+ALTER TABLE "CompetencyMentorAssessment" DROP CONSTRAINT IF EXISTS "CompetencyMentorAssessment_competencyId_fkey";
+ALTER TABLE "CompetencyMentorAssessment" DROP CONSTRAINT IF EXISTS "CompetencyMentorAssessment_learnerId_fkey";
+ALTER TABLE "CompetencyMentorAssessment" DROP CONSTRAINT IF EXISTS "CompetencyMentorAssessment_bookingId_fkey";
+ALTER TABLE "CompetencyMentorAssessment" DROP CONSTRAINT IF EXISTS "CompetencyMentorAssessment_assessedById_fkey";
 ALTER TABLE "CompetencyExerciseChallenge" ADD CONSTRAINT "CompetencyExerciseChallenge_competencyId_fkey" FOREIGN KEY ("competencyId") REFERENCES "Competency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "CompetencyExerciseChallenge" ADD CONSTRAINT "CompetencyExerciseChallenge_challengeId_fkey" FOREIGN KEY ("challengeId") REFERENCES "ExerciseChallenge"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "CompetencyLearningOutcome" ADD CONSTRAINT "CompetencyLearningOutcome_competencyId_fkey" FOREIGN KEY ("competencyId") REFERENCES "Competency"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -141,3 +156,8 @@ ALTER TABLE "CompetencyLearningOutcome" SET (schema_locked = true);
 ALTER TABLE "CompetencyMilestone" SET (schema_locked = true);
 ALTER TABLE "CompetencyReviewCategory" SET (schema_locked = true);
 ALTER TABLE "CompetencyMentorAssessment" SET (schema_locked = true);
+ALTER TABLE "ExerciseChallenge" SET (schema_locked = true);
+ALTER TABLE "LearningOutcome" SET (schema_locked = true);
+ALTER TABLE "Milestone" SET (schema_locked = true);
+ALTER TABLE "MentorshipBooking" SET (schema_locked = true);
+ALTER TABLE "User" SET (schema_locked = true);
