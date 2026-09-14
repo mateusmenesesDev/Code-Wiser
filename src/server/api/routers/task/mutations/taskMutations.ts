@@ -1,4 +1,5 @@
 import {
+	MentorAttentionSourceType,
 	Prisma,
 	SprintChangeTypeEnum,
 	SprintStatusEnum,
@@ -12,6 +13,7 @@ import {
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
+import { completeMentorAttention } from '~/server/services/mentorAttention/mentorAttention.service';
 import {
 	notifyTaskAssigned,
 	notifyTaskBlocked,
@@ -572,6 +574,14 @@ export const taskMutations = {
 						}
 					}
 				});
+				if (oldBlocked && rest.blocked === false) {
+					await completeMentorAttention(
+						tx,
+						MentorAttentionSourceType.BLOCKED_TASK,
+						id,
+						ctx.session.userId
+					);
+				}
 
 				const nextSprintId =
 					sprintId === undefined ? existingTask.sprintId : sprintId;
