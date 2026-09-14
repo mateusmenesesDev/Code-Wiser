@@ -1,4 +1,4 @@
-import { TaskPriorityEnum, TaskStatusEnum } from '@prisma/client';
+import { TaskPriorityEnum, TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import type { z } from 'zod';
 import type {
 	createTaskSchema,
@@ -37,7 +37,7 @@ export const resetFormData = (
 			id: task.id,
 			title: task.title,
 			description: task.description ?? undefined,
-			type: task.type ?? undefined,
+			type: task.parentTaskId ? TaskTypeEnum.SUBTASK : (task.type ?? undefined),
 			priority: task.priority ?? undefined,
 			tags: task.tags || [],
 			epicId: task.epicId || undefined,

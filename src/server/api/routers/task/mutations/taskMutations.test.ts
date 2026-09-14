@@ -138,6 +138,59 @@ describe('task status transitions', () => {
 		});
 	});
 
+	it('updates a parent-linked task without requiring its stored type to be SUBTASK', async () => {
+		mockDb.task.findUnique.mockResolvedValueOnce({
+			id: 'subtask-1',
+			projectId: 'project-1',
+			projectTemplateId: null,
+			parentTaskId: 'task-1',
+			status: TaskStatusEnum.BACKLOG,
+			blocked: false,
+			storyPoints: null,
+			sprintId: null,
+			type: TaskTypeEnum.TASK,
+			productVersionId: null,
+			title: 'Subtask',
+			sprint: null,
+			project: {
+				id: 'project-1',
+				title: 'Project 1',
+				memberships: [{ userId: 'user-1' }]
+			},
+			assignees: []
+		} as never);
+		mockDb.project.findUnique
+			.mockResolvedValueOnce({
+				memberships: [
+					{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }
+				]
+			} as never)
+			.mockResolvedValueOnce({ canceledAt: null } as never);
+		mockDb.task.update.mockResolvedValue({
+			id: 'subtask-1',
+			title: 'Updated subtask',
+			assignees: [],
+			project: { id: 'project-1', title: 'Project 1' }
+		} as never);
+		mockDb.user.findUnique.mockResolvedValue({ name: 'User 1' } as never);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+		await caller.update({
+			id: 'subtask-1',
+			projectId: 'project-1',
+			title: 'Updated subtask',
+			isTemplate: false
+		});
+
+		expect(mockDb.task.update).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({ title: 'Updated subtask' })
+			})
+		);
+	});
+
 	it('keeps the mover assigned when the status is changed through task.update', async () => {
 		mockDb.task.findUnique.mockResolvedValueOnce({
 			id: 'task-1',

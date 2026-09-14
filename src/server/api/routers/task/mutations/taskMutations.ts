@@ -395,7 +395,20 @@ export const taskMutations = {
 				});
 			}
 
-			const nextType = type ?? existingTask.type ?? TaskTypeEnum.USER_STORY;
+			if (
+				existingTask.parentTaskId &&
+				type !== undefined &&
+				type !== TaskTypeEnum.SUBTASK
+			) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'A subtask must keep its parent task'
+				});
+			}
+
+			const nextType = existingTask.parentTaskId
+				? TaskTypeEnum.SUBTASK
+				: (type ?? existingTask.type ?? TaskTypeEnum.USER_STORY);
 
 			await assertProjectResourceAccess(ctx, existingTask);
 			if (Boolean(existingTask.projectTemplateId) !== isTemplate) {
