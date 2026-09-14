@@ -32,7 +32,9 @@
 		"yesterday": "Yesterday",
 		"thisWeek": "This week",
 		"older": "Older",
-		"delete": "Delete notification"
+		"delete": "Delete notification",
+		"enableDesktop": "Enable desktop notifications",
+		"desktopBlocked": "Notifications are blocked in your browser. Allow them in the site settings."
 	},
 	"navigation": {
 		"dashboard": "Dashboard",

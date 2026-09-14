@@ -31,7 +31,10 @@ export function NotificationBell() {
 		clearAll,
 		deleteNotification,
 		isMarkingAllAsRead,
-		isClearingAll
+		isClearingAll,
+		browserNotificationsSupported,
+		browserNotificationPermission,
+		requestBrowserNotificationPermission
 	} = useNotifications();
 
 	const handleNotificationClick = (notification: Notification) => {
@@ -94,6 +97,26 @@ export function NotificationBell() {
 					</div>
 				</div>
 				<DropdownMenuSeparator />
+				{browserNotificationsSupported &&
+					browserNotificationPermission !== 'granted' && (
+						<div className="border-b px-3 py-2">
+							{browserNotificationPermission === 'default' ? (
+								<Button
+									variant="ghost"
+									className="h-auto w-full justify-start px-0 text-left text-xs"
+									onClick={() => {
+										void requestBrowserNotificationPermission();
+									}}
+								>
+									{t('enableDesktop')}
+								</Button>
+							) : (
+								<p className="text-muted-foreground text-xs">
+									{t('desktopBlocked')}
+								</p>
+							)}
+						</div>
+					)}
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
 						<p className="text-muted-foreground text-sm">{t('loading')}</p>

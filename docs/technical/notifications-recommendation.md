@@ -240,3 +240,19 @@ await ctx.realtime.trigger(`user-${prAuthorId}`, "notification", {
 - Se tiver orçamento para plano adicional
 
 Para notificações in-app (ícone de sino), a construção própria é a melhor escolha.
+
+## Notificação no computador com a aba aberta
+
+A interface do sino também pode solicitar permissão para usar a Notifications API do navegador. Quando ativada, uma nova notificação persistida gera um aviso do sistema operacional enquanto o CodeWise estiver aberto em uma aba em segundo plano ou quando a janela não estiver em foco.
+
+### Comportamento
+
+- A permissão é solicitada somente após o usuário clicar em **Ativar notificações no computador**.
+- O navegador precisa suportar a Notifications API e a aplicação precisa estar em um contexto seguro (`HTTPS` ou `localhost`).
+- A carga inicial da lista nunca dispara notificações antigas.
+- Cada atualização mostra no máximo três avisos, evitando uma sequência excessiva após um período offline.
+- A notificação abre o link associado ao clicar.
+- Enquanto a aba está em primeiro plano, o aviso do sistema não é exibido; o sino continua sendo a superfície principal.
+- A aba precisa permanecer aberta. Service worker e notificações com a aplicação fechada ficam fora deste escopo.
+
+A descoberta de novas notificações reutiliza o polling atual de cinco minutos. Portanto, o aviso pode levar até cinco minutos para aparecer. Para entrega instantânea, a próxima evolução é publicar eventos de notificação em um canal privado do Pusher, mantendo a Notifications API apenas como apresentação no cliente.

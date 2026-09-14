@@ -32,7 +32,9 @@
 		"yesterday": "Ontem",
 		"thisWeek": "Esta semana",
 		"older": "Mais antigas",
-		"delete": "Excluir notificação"
+		"delete": "Excluir notificação",
+		"enableDesktop": "Ativar notificações no computador",
+		"desktopBlocked": "As notificações estão bloqueadas no navegador. Permita-as nas configurações do site."
 	},
 	"navigation": {
 		"dashboard": "Dashboard",

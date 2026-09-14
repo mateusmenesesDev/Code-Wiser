@@ -1,4 +1,5 @@
 import { api } from '~/trpc/react';
+import { useBrowserNotifications } from './useBrowserNotifications';
 
 const POLLING_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
@@ -64,10 +65,17 @@ export function useNotifications() {
 		deleteMutation.mutate({ notificationId });
 	};
 
+	const isLoading = isLoadingNotifications || isLoadingUnreadCount;
+	const browserNotifications = useBrowserNotifications(
+		notificationsData?.notifications ?? [],
+		isLoading
+	);
+
 	return {
 		notifications: notificationsData?.notifications ?? [],
 		unreadCount: unreadCountData?.count ?? 0,
-		isLoading: isLoadingNotifications || isLoadingUnreadCount,
+		isLoading,
+		...browserNotifications,
 		markAsRead,
 		markAllAsRead,
 		clearAll,
