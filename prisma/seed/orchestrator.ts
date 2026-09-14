@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { createCategories } from './generators/categoryGenerator';
+import { createCompetencies } from './generators/competencyGenerator';
 import { createExerciseTracks } from './generators/exerciseGenerator';
 import { createTechnologies } from './generators/technologyGenerator';
 import { createProjectTemplates } from './generators/templateGenerator';
@@ -22,12 +23,16 @@ export async function orchestrateSeedDataCreation(prisma: PrismaClient) {
 		seedLogger.info('Generating exercise tracks...', 1);
 		const exerciseTracks = await createExerciseTracks(prisma);
 
+		seedLogger.info('Generating competencies...', 1);
+		const competencies = await createCompetencies(prisma);
+
 		seedLogger.summary({
 			categories: categories.length,
 			technologies: technologies.length,
 			templates: templates.length,
 			tasks: totalTasks,
 			exerciseTracks: exerciseTracks.length,
+			competencies: competencies.length,
 			sprints: {
 				count: Object.values(sprintsByDifficulty).reduce(
 					(acc, curr) => acc + curr,

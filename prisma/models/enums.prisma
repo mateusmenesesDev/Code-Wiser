@@ -146,6 +146,13 @@ enum PRReviewFindingCategory {
   @@schema("public")
 }
 
+enum CompetencyProgressState {
+  IN_DEVELOPMENT
+  DEMONSTRATED
+
+  @@schema("public")
+}
+
 enum PlanningPokerSessionStatusEnum {
   ACTIVE
   COMPLETED

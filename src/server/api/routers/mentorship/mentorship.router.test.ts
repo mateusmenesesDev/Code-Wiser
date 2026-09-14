@@ -118,6 +118,52 @@ describe('mentorship history', () => {
 		});
 	});
 
+	it('stores competency assessments with the session record', async () => {
+		authState.userId = 'admin-1';
+		authState.isAdmin = true;
+		mockDb.mentorshipBooking.findUnique.mockResolvedValue({
+			id: 'booking-1',
+			userId: 'learner-1'
+		} as never);
+		mockDb.competency.findMany.mockResolvedValue([
+			{ id: 'competency-1' }
+		] as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb as never)
+		);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.updateSessionNotes({
+			bookingId: '11111111-1111-4111-8111-111111111111',
+			objective: null,
+			sessionNotes: 'Discussed testing boundaries',
+			mentorPrivateNote: null,
+			followUp: null,
+			actionDueAt: null,
+			actionStatus: null,
+			competencyAssessments: [
+				{
+					competencyId: 'competency-1',
+					state: 'IN_DEVELOPMENT',
+					note: 'Needs more integration test practice'
+				}
+			]
+		});
+
+		expect(mockDb.competencyMentorAssessment.upsert).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: {
+					bookingId_competencyId: {
+						bookingId: '11111111-1111-4111-8111-111111111111',
+						competencyId: 'competency-1'
+					}
+				}
+			})
+		);
+	});
+
 	it('does not allow action metadata without an agreed action', async () => {
 		authState.userId = 'admin-1';
 		authState.isAdmin = true;

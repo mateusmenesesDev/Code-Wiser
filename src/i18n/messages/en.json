@@ -130,6 +130,24 @@
 		"recommendedNextActions": "Recommended next actions",
 		"recommendedDescription": "Preview of the recommendation system currently in development.",
 		"soon": "Soon",
+		"competencies": {
+			"title": "Competency matrix",
+			"description": "Your progress is based on work reviewed in projects, exercises, pull requests, and mentorship.",
+			"evidence": "Evidence",
+			"mappedResources": "{count} mapped learning signals",
+			"noEvidence": "No verified evidence yet. Complete a mapped activity to start building this competency.",
+			"states": {
+				"NOT_EVALUATED": "Not evaluated",
+				"IN_DEVELOPMENT": "In development",
+				"DEMONSTRATED": "Demonstrated"
+			},
+			"sources": {
+				"EXERCISE": "Exercise",
+				"PROJECT": "Project",
+				"PR_REVIEW": "Pull request review",
+				"MENTOR": "Mentorship"
+			}
+		},
 		"diagnosis": {
 			"title": "Create your learning baseline",
 			"description": "Answer a few questions so your first activity matches your goals and available time.",

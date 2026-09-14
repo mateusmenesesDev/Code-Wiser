@@ -130,6 +130,24 @@
 		"recommendedNextActions": "Próximas ações recomendadas",
 		"recommendedDescription": "Prévia do sistema de recomendações que está em desenvolvimento.",
 		"soon": "Em breve",
+		"competencies": {
+			"title": "Matriz de competências",
+			"description": "Seu progresso é baseado no trabalho revisado em projetos, exercícios, pull requests e mentorias.",
+			"evidence": "Evidências",
+			"mappedResources": "{count} sinais de aprendizado relacionados",
+			"noEvidence": "Ainda não há evidência verificada. Conclua uma atividade relacionada para começar a desenvolver esta competência.",
+			"states": {
+				"NOT_EVALUATED": "Não avaliada",
+				"IN_DEVELOPMENT": "Em desenvolvimento",
+				"DEMONSTRATED": "Demonstrada"
+			},
+			"sources": {
+				"EXERCISE": "Exercício",
+				"PROJECT": "Projeto",
+				"PR_REVIEW": "Review de pull request",
+				"MENTOR": "Mentoria"
+			}
+		},
 		"diagnosis": {
 			"title": "Crie sua linha de base de aprendizado",
 			"description": "Responda algumas perguntas para que sua primeira atividade combine com seus objetivos e seu tempo disponível.",

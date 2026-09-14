@@ -108,7 +108,10 @@ export const mentorshipQueries = {
 					mentorPrivateNote: true,
 					actionDueAt: true,
 					actionStatus: true,
-					user: { select: { id: true, name: true, email: true } }
+					user: { select: { id: true, name: true, email: true } },
+					competencyAssessments: {
+						select: { competencyId: true, state: true, note: true }
+					}
 				}
 			});
 

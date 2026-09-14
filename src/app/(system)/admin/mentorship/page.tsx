@@ -13,6 +13,7 @@ import {
 	CardHeader,
 	CardTitle
 } from '~/common/components/ui/card';
+import { Input } from '~/common/components/ui/input';
 import {
 	Select,
 	SelectContent,
@@ -29,6 +30,12 @@ type SessionStatus =
 	| 'CANCELLED'
 	| 'MENTOR_CANCELLED';
 type ActionStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+type CompetencyAssessmentState = 'IN_DEVELOPMENT' | 'DEMONSTRATED';
+type CompetencyAssessment = {
+	competencyId: string;
+	state: CompetencyAssessmentState;
+	note: string;
+};
 
 function toDateTimeLocal(value: Date | null) {
 	if (!value) return '';
@@ -48,6 +55,9 @@ export default function AdminMentorshipPage() {
 		'NONE'
 	);
 	const [status, setStatus] = useState<SessionStatus>('SCHEDULED');
+	const [competencyAssessments, setCompetencyAssessments] = useState<
+		CompetencyAssessment[]
+	>([]);
 	const {
 		data: booking,
 		isLoading,
@@ -56,6 +66,7 @@ export default function AdminMentorshipPage() {
 		{ bookingId: bookingId ?? '' },
 		{ enabled: Boolean(bookingId) }
 	);
+	const { data: competencyCatalog } = api.competency.getCatalog.useQuery();
 
 	useEffect(() => {
 		if (booking) {
@@ -66,6 +77,13 @@ export default function AdminMentorshipPage() {
 			setActionDueAt(toDateTimeLocal(booking.actionDueAt));
 			setActionStatus(booking.actionStatus ?? 'NONE');
 			setStatus(booking.status);
+			setCompetencyAssessments(
+				booking.competencyAssessments.map((assessment) => ({
+					competencyId: assessment.competencyId,
+					state: assessment.state,
+					note: assessment.note ?? ''
+				}))
+			);
 		}
 	}, [booking]);
 
@@ -243,6 +261,86 @@ export default function AdminMentorshipPage() {
 							</Select>
 						</div>
 					</div>
+					<div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+						<div>
+							<h2 className="font-semibold text-base">Competency evidence</h2>
+							<p className="mt-1 text-muted-foreground text-sm">
+								Record only competencies discussed and supported by this
+								session.
+							</p>
+						</div>
+						<div className="space-y-3">
+							{competencyCatalog?.map((competency) => {
+								const assessment = competencyAssessments.find(
+									(item) => item.competencyId === competency.id
+								);
+								return (
+									<div
+										key={competency.id}
+										className="grid gap-3 rounded-md border bg-background p-3 sm:grid-cols-[minmax(0,1fr)_180px]"
+									>
+										<div>
+											<p className="font-medium text-sm">{competency.name}</p>
+											<p className="mt-1 text-muted-foreground text-xs">
+												{competency.description}
+											</p>
+											{assessment && (
+												<Input
+													className="mt-2"
+													value={assessment.note}
+													maxLength={2000}
+													placeholder="Evidence note (optional)"
+													onChange={(event) =>
+														setCompetencyAssessments((current) =>
+															current.map((item) =>
+																item.competencyId === competency.id
+																	? { ...item, note: event.target.value }
+																	: item
+															)
+														)
+													}
+												/>
+											)}
+										</div>
+										<Select
+											value={assessment?.state ?? 'NONE'}
+											onValueChange={(value) =>
+												setCompetencyAssessments((current) =>
+													value === 'NONE'
+														? current.filter(
+																(item) => item.competencyId !== competency.id
+															)
+														: [
+																...current.filter(
+																	(item) => item.competencyId !== competency.id
+																),
+																{
+																	competencyId: competency.id,
+																	state: value as CompetencyAssessmentState,
+																	note: assessment?.note ?? ''
+																}
+															]
+												)
+											}
+										>
+											<SelectTrigger>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="NONE">Not assessed</SelectItem>
+												<SelectItem value="IN_DEVELOPMENT">
+													In development
+												</SelectItem>
+												<SelectItem value="DEMONSTRATED">
+													Demonstrated
+												</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								);
+							})}
+						</div>
+					</div>
 					<div className="flex flex-wrap gap-2">
 						<Button
 							onClick={() =>
@@ -260,7 +358,14 @@ export default function AdminMentorshipPage() {
 										followUp.trim() && actionStatus !== 'NONE'
 											? actionStatus
 											: null,
-									status
+									status,
+									competencyAssessments: competencyAssessments.map(
+										({ competencyId, state, note }) => ({
+											competencyId,
+											state,
+											note: note.trim() || null
+										})
+									)
 								})
 							}
 							disabled={updateMutation.isPending}

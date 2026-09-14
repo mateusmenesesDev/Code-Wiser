@@ -9,8 +9,8 @@ import {
 } from '~/server/services/calcom/calcomService';
 import {
 	canBookForWeek,
-	isDateInCurrentWeek,
-	getWeekBoundaries
+	getWeekBoundaries,
+	isDateInCurrentWeek
 } from '~/server/services/mentorship/mentorshipService';
 import { adminProcedure, mentorshipProcedure } from '../../trpc';
 
@@ -239,7 +239,10 @@ export const mentorshipMutations = {
 			});
 
 			if (!booking) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Booking not found' });
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Booking not found'
+				});
 			}
 
 			if (booking.userId !== userId) {
@@ -270,7 +273,8 @@ export const mentorshipMutations = {
 				throw new TRPCError({
 					code: 'FORBIDDEN',
 					message:
-						newBookingCheck.reason ?? 'Cannot reschedule to this week (limit reached)'
+						newBookingCheck.reason ??
+						'Cannot reschedule to this week (limit reached)'
 				});
 			}
 
@@ -283,7 +287,8 @@ export const mentorshipMutations = {
 
 				const newCalUid = calBooking.uid;
 				const newMeetingUrl =
-					(calBooking as { meetingUrl?: string | null }).meetingUrl ?? undefined;
+					(calBooking as { meetingUrl?: string | null }).meetingUrl ??
+					undefined;
 
 				await ctx.db.mentorshipBooking.update({
 					where: { id: booking.id },
@@ -356,13 +361,23 @@ export const mentorshipMutations = {
 					.nullable(),
 				status: z
 					.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'MENTOR_CANCELLED'])
+					.optional(),
+				competencyAssessments: z
+					.array(
+						z.object({
+							competencyId: z.string().min(1),
+							state: z.enum(['IN_DEVELOPMENT', 'DEMONSTRATED']),
+							note: z.string().trim().max(2000).nullable()
+						})
+					)
+					.max(20)
 					.optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			const booking = await ctx.db.mentorshipBooking.findUnique({
 				where: { id: input.bookingId },
-				select: { id: true }
+				select: { id: true, userId: true }
 			});
 
 			if (!booking) {
@@ -381,21 +396,79 @@ export const mentorshipMutations = {
 				});
 			}
 
-			return ctx.db.mentorshipBooking.update({
-				where: { id: input.bookingId },
-				data: {
-					objective: input.objective || null,
-					followUp,
-					sessionNotes: input.sessionNotes || null,
-					mentorPrivateNote: input.mentorPrivateNote || null,
-					actionDueAt: followUp
-						? input.actionDueAt
-							? new Date(input.actionDueAt)
-							: null
-						: null,
-					actionStatus: followUp ? (input.actionStatus ?? 'PENDING') : null,
-					...(input.status ? { status: input.status } : {})
+			const bookingData = {
+				objective: input.objective || null,
+				followUp,
+				sessionNotes: input.sessionNotes || null,
+				mentorPrivateNote: input.mentorPrivateNote || null,
+				actionDueAt: followUp
+					? input.actionDueAt
+						? new Date(input.actionDueAt)
+						: null
+					: null,
+				actionStatus: followUp ? (input.actionStatus ?? 'PENDING') : null,
+				...(input.status ? { status: input.status } : {})
+			};
+
+			if (input.competencyAssessments === undefined) {
+				return ctx.db.mentorshipBooking.update({
+					where: { id: input.bookingId },
+					data: bookingData
+				});
+			}
+
+			const competencyIds = input.competencyAssessments.map(
+				(assessment) => assessment.competencyId
+			);
+			const competencies = await ctx.db.competency.findMany({
+				where: { id: { in: competencyIds }, isActive: true },
+				select: { id: true }
+			});
+			if (competencies.length !== new Set(competencyIds).size) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message:
+						'Each competency assessment must reference an active competency'
+				});
+			}
+
+			return ctx.db.$transaction(async (tx) => {
+				await tx.competencyMentorAssessment.deleteMany({
+					where: {
+						bookingId: input.bookingId,
+						...(competencyIds.length
+							? { competencyId: { notIn: competencyIds } }
+							: {})
+					}
+				});
+				for (const assessment of input.competencyAssessments ?? []) {
+					await tx.competencyMentorAssessment.upsert({
+						where: {
+							bookingId_competencyId: {
+								bookingId: input.bookingId,
+								competencyId: assessment.competencyId
+							}
+						},
+						update: {
+							state: assessment.state,
+							note: assessment.note || null,
+							assessedAt: new Date(),
+							assessedById: ctx.session.userId
+						},
+						create: {
+							state: assessment.state,
+							note: assessment.note || null,
+							competencyId: assessment.competencyId,
+							learnerId: booking.userId,
+							bookingId: input.bookingId,
+							assessedById: ctx.session.userId
+						}
+					});
 				}
+				return tx.mentorshipBooking.update({
+					where: { id: input.bookingId },
+					data: bookingData
+				});
 			});
 		})
 };

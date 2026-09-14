@@ -78,6 +78,14 @@ async function resetDatabase(options: ResetOptions) {
 
 	try {
 		// Always delete dependent data first
+		console.log('🧹 Clearing competencies...');
+		await prisma.competencyMentorAssessment.deleteMany();
+		await prisma.competencyExerciseChallenge.deleteMany();
+		await prisma.competencyLearningOutcome.deleteMany();
+		await prisma.competencyMilestone.deleteMany();
+		await prisma.competencyReviewCategory.deleteMany();
+		await prisma.competency.deleteMany();
+
 		console.log('🧹 Clearing exercise reviews...');
 		await prisma.exerciseReviewDecision.deleteMany();
 		await prisma.exerciseReviewSubmission.deleteMany();

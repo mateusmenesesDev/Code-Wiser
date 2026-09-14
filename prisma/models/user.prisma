@@ -79,6 +79,8 @@ model User {
   projectInvitationsReceived   ProjectInvitation[]        @relation("ProjectInvitationsReceived")
   projectInvitationsSent       ProjectInvitation[]        @relation("ProjectInvitationsSent")
   mentorshipBookings           MentorshipBooking[]
+  competencyAssessmentsReceived CompetencyMentorAssessment[] @relation("CompetencyAssessmentLearner")
+  competencyAssessmentsGiven    CompetencyMentorAssessment[] @relation("CompetencyAssessmentAssessor")
   challengeProgress            UserChallengeProgress[]
   exerciseReviewSubmissions    ExerciseReviewSubmission[] @relation("ExerciseReviewSubmissions")
   exerciseReviewDecisions      ExerciseReviewDecision[]   @relation("ExerciseReviewDecisions")

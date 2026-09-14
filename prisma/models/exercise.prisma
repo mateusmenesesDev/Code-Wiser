@@ -61,8 +61,9 @@ model ExerciseChallenge {
   trackId String
   track   ExerciseTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
-  progress  UserChallengeProgress[]
-  decisions ExerciseReviewDecision[]
+  progress      UserChallengeProgress[]
+  decisions     ExerciseReviewDecision[]
+  competencies  CompetencyExerciseChallenge[]
 
   @@unique([trackId, slug])
   @@index([trackId, difficulty, sortOrder])

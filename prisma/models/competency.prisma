@@ -1,0 +1,87 @@
+model Competency {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  exerciseChallenges CompetencyExerciseChallenge[]
+  learningOutcomes   CompetencyLearningOutcome[]
+  milestones         CompetencyMilestone[]
+  reviewCategories   CompetencyReviewCategory[]
+  mentorAssessments  CompetencyMentorAssessment[]
+
+  @@index([isActive, sortOrder])
+  @@schema("public")
+}
+
+model CompetencyExerciseChallenge {
+  competencyId String
+  challengeId  String
+
+  competency Competency        @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  challenge  ExerciseChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@id([competencyId, challengeId])
+  @@index([challengeId])
+  @@schema("public")
+}
+
+model CompetencyLearningOutcome {
+  competencyId     String
+  learningOutcomeId String
+
+  competency     Competency     @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  learningOutcome LearningOutcome @relation(fields: [learningOutcomeId], references: [id], onDelete: Cascade)
+
+  @@id([competencyId, learningOutcomeId])
+  @@index([learningOutcomeId])
+  @@schema("public")
+}
+
+model CompetencyMilestone {
+  competencyId String
+  milestoneId  String
+
+  competency Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  milestone  Milestone  @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@id([competencyId, milestoneId])
+  @@index([milestoneId])
+  @@schema("public")
+}
+
+model CompetencyReviewCategory {
+  competencyId String
+  category     PRReviewFindingCategory
+
+  competency Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  @@id([competencyId, category])
+  @@schema("public")
+}
+
+model CompetencyMentorAssessment {
+  id          String                 @id @default(cuid())
+  state       CompetencyProgressState
+  note        String?
+  assessedAt  DateTime               @default(now())
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  competencyId String
+  learnerId    String
+  bookingId    String
+  assessedById String
+
+  competency Competency        @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  learner    User              @relation("CompetencyAssessmentLearner", fields: [learnerId], references: [id], onDelete: Cascade)
+  booking    MentorshipBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  assessedBy User              @relation("CompetencyAssessmentAssessor", fields: [assessedById], references: [id], onDelete: Restrict)
+
+  @@unique([bookingId, competencyId])
+  @@index([learnerId, competencyId, assessedAt])
+  @@schema("public")
+}

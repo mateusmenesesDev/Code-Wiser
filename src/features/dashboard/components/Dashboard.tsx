@@ -25,6 +25,7 @@ import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
 import { Skeleton } from '~/common/components/ui/skeleton';
+import { CompetencyMatrix } from '~/features/competencies/components/CompetencyMatrix';
 import { api } from '~/trpc/react';
 import { type DashboardOverview, getNextAction } from '../utils/nextAction';
 
@@ -103,7 +104,13 @@ function StatCard({
 	);
 }
 
-function DashboardContent({ overview }: { overview: DashboardOverview }) {
+function DashboardContent({
+	overview,
+	userId
+}: {
+	overview: DashboardOverview;
+	userId?: string;
+}) {
 	const t = useTranslations('dashboard');
 	const locale = useLocale();
 	const { user } = useUser();
@@ -267,6 +274,8 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 					</CardContent>
 				</Card>
 			)}
+
+			<CompetencyMatrix userId={userId} />
 
 			<section
 				aria-label={t('overview')}
@@ -657,5 +666,5 @@ export default function Dashboard({
 				</CardContent>
 			</Card>
 		);
-	return <DashboardContent overview={data} />;
+	return <DashboardContent overview={data} userId={userId} />;
 }
