@@ -615,7 +615,8 @@ export const mentorAttentionRouter = createTRPCRouter({
 			const page = items.slice(0, input.limit).map((item) => {
 				const sourceType = sourceTypeFor(item.source);
 				const assignment = assignmentsByKey.get(sourceKey(sourceType, item.id));
-				const dueAt = assignment?.dueAt ?? dueAtFor(sourceType, item.createdAt);
+				const slaStart = assignment?.sourceCreatedAt ?? item.createdAt;
+				const dueAt = assignment?.dueAt ?? dueAtFor(sourceType, slaStart);
 				const isOverdue =
 					!assignment?.completedAt && dueAt.getTime() < now.getTime();
 
@@ -629,7 +630,7 @@ export const mentorAttentionRouter = createTRPCRouter({
 							(sourceType === MentorAttentionSourceType.PR_REVIEW ||
 								sourceType === MentorAttentionSourceType.EXERCISE_REVIEW)),
 					slaHours: Math.round(
-						(dueAt.getTime() - item.createdAt.getTime()) / 3_600_000
+						(dueAt.getTime() - slaStart.getTime()) / 3_600_000
 					),
 					assignedMentor: assignment?.assignedMentor ?? null,
 					isAssignedToCurrentMentor:

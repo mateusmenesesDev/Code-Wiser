@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
-import { processMentorAttentionReminders } from './mentorAttentionReminders';
 import { completeMentorAttention } from './mentorAttention.service';
+import { processMentorAttentionReminders } from './mentorAttentionReminders';
 
 const createNotificationMock = vi.hoisted(() => vi.fn());
 
