@@ -1,11 +1,30 @@
+import {
+	MentorAttentionSourceType,
+	Prisma,
+	type PrismaClient
+} from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { adminProcedure, createTRPCRouter } from '~/server/api/trpc';
+import {
+	MENTOR_ATTENTION_CAPACITY,
+	dueAtFor,
+	isUniqueConstraintError,
+	minutesBetween
+} from '~/server/services/mentorAttention/mentorAttention.service';
 
 const QUEUE_LIMIT = 20;
 const INACTIVITY_DAYS = 14;
 const UPCOMING_SESSION_DAYS = 14;
 const HIGH_PRIORITY_SESSION_DAYS = 3;
+
+const attentionSourceSchema = z.enum([
+	'PR_REVIEW',
+	'EXERCISE_REVIEW',
+	'BLOCKED_TASK',
+	'INACTIVE_STUDENT',
+	'MENTORSHIP_SESSION'
+]);
 
 const queueTypeSchema = z.enum([
 	'PR_REVIEW',
@@ -94,6 +113,85 @@ function ageInHours(createdAt: Date, now: Date) {
 		0,
 		Math.floor((now.getTime() - createdAt.getTime()) / 3_600_000)
 	);
+}
+
+function sourceTypeFor(source: QueueSource) {
+	return {
+		prReview: MentorAttentionSourceType.PR_REVIEW,
+		exerciseReview: MentorAttentionSourceType.EXERCISE_REVIEW,
+		blockedTask: MentorAttentionSourceType.BLOCKED_TASK,
+		inactiveStudent: MentorAttentionSourceType.INACTIVE_STUDENT,
+		mentorshipSession: MentorAttentionSourceType.MENTORSHIP_SESSION
+	}[source];
+}
+
+function sourceKey(sourceType: MentorAttentionSourceType, sourceId: string) {
+	return `${sourceType}:${sourceId}`;
+}
+
+async function getActiveClaimSource(
+	db: PrismaClient,
+	sourceType: MentorAttentionSourceType,
+	sourceId: string,
+	now: Date
+) {
+	if (sourceType === MentorAttentionSourceType.PR_REVIEW) {
+		const review = await db.pullRequestReview.findFirst({
+			where: {
+				id: sourceId,
+				isActive: true,
+				status: 'PENDING',
+				task: { projectId: { not: null } }
+			},
+			select: { createdAt: true }
+		});
+		return review ? { sourceCreatedAt: review.createdAt } : null;
+	}
+
+	if (sourceType === MentorAttentionSourceType.EXERCISE_REVIEW) {
+		const submission = await db.exerciseReviewSubmission.findFirst({
+			where: { id: sourceId, needsAttention: true },
+			select: { createdAt: true }
+		});
+		return submission ? { sourceCreatedAt: submission.createdAt } : null;
+	}
+
+	if (sourceType === MentorAttentionSourceType.BLOCKED_TASK) {
+		const task = await db.task.findFirst({
+			where: { id: sourceId, blocked: true, project: { canceledAt: null } },
+			select: { updatedAt: true }
+		});
+		return task ? { sourceCreatedAt: task.updatedAt } : null;
+	}
+
+	if (sourceType === MentorAttentionSourceType.INACTIVE_STUDENT) {
+		const inactivityCutoff = new Date(
+			now.getTime() - INACTIVITY_DAYS * 86_400_000
+		);
+		const student = await db.user.findFirst({
+			where: {
+				id: sourceId,
+				isOrgAdmin: false,
+				updatedAt: { lt: inactivityCutoff }
+			},
+			select: { updatedAt: true }
+		});
+		return student ? { sourceCreatedAt: student.updatedAt } : null;
+	}
+
+	const session = await db.mentorshipBooking.findFirst({
+		where: {
+			id: sourceId,
+			status: 'SCHEDULED',
+			scheduledAt: {
+				gte: now,
+				lt: new Date(now.getTime() + UPCOMING_SESSION_DAYS * 86_400_000)
+			},
+			OR: [{ objective: null }, { objective: '' }]
+		},
+		select: { createdAt: true }
+	});
+	return session ? { sourceCreatedAt: session.createdAt } : null;
 }
 
 export const mentorAttentionRouter = createTRPCRouter({
@@ -494,7 +592,55 @@ export const mentorAttentionRouter = createTRPCRouter({
 				return priorityDiff || a.createdAt.getTime() - b.createdAt.getTime();
 			});
 
-			const page = items.slice(0, input.limit);
+			const assignmentRows = items.length
+				? await ctx.db.mentorAttentionAssignment.findMany({
+						where: {
+							OR: items.map((item) => ({
+								sourceType: sourceTypeFor(item.source),
+								sourceId: item.id
+							}))
+						},
+						include: {
+							assignedMentor: { select: { id: true, name: true, email: true } }
+						}
+					})
+				: [];
+			const assignmentsByKey = new Map(
+				assignmentRows.map((assignment) => [
+					sourceKey(assignment.sourceType, assignment.sourceId),
+					assignment
+				])
+			);
+
+			const page = items.slice(0, input.limit).map((item) => {
+				const sourceType = sourceTypeFor(item.source);
+				const assignment = assignmentsByKey.get(sourceKey(sourceType, item.id));
+				const dueAt = assignment?.dueAt ?? dueAtFor(sourceType, item.createdAt);
+				const isOverdue =
+					!assignment?.completedAt && dueAt.getTime() < now.getTime();
+
+				return {
+					...item,
+					dueAt,
+					isOverdue,
+					isEscalated:
+						Boolean(assignment?.escalatedAt) ||
+						(isOverdue &&
+							(sourceType === MentorAttentionSourceType.PR_REVIEW ||
+								sourceType === MentorAttentionSourceType.EXERCISE_REVIEW)),
+					slaHours: Math.round(
+						(dueAt.getTime() - item.createdAt.getTime()) / 3_600_000
+					),
+					assignedMentor: assignment?.assignedMentor ?? null,
+					isAssignedToCurrentMentor:
+						assignment?.assignedMentorId === ctx.session.userId,
+					claimedAt: assignment?.claimedAt ?? null,
+					firstResponseAt: assignment?.firstResponseAt ?? null,
+					firstResponseMinutes: assignment?.firstResponseMinutes ?? null,
+					completedAt: assignment?.completedAt ?? null,
+					completionMinutes: assignment?.completionMinutes ?? null
+				};
+			});
 			const consumedBySource = new Map<QueueSource, string>();
 			for (const item of page) consumedBySource.set(item.source, item.id);
 
@@ -516,5 +662,180 @@ export const mentorAttentionRouter = createTRPCRouter({
 				: undefined;
 
 			return { items: page, nextCursor };
+		}),
+
+	getSummary: adminProcedure.query(async ({ ctx }) => {
+		const [
+			activeCount,
+			firstResponseCount,
+			completionCount,
+			responseAverage,
+			completionAverage
+		] = await Promise.all([
+			ctx.db.mentorAttentionAssignment.count({
+				where: {
+					assignedMentorId: ctx.session.userId,
+					completedAt: null
+				}
+			}),
+			ctx.db.mentorAttentionAssignment.count({
+				where: { firstResponseAt: { not: null } }
+			}),
+			ctx.db.mentorAttentionAssignment.count({
+				where: { completedAt: { not: null } }
+			}),
+			ctx.db.mentorAttentionAssignment.aggregate({
+				where: { firstResponseMinutes: { not: null } },
+				_avg: { firstResponseMinutes: true }
+			}),
+			ctx.db.mentorAttentionAssignment.aggregate({
+				where: { completionMinutes: { not: null } },
+				_avg: { completionMinutes: true }
+			})
+		]);
+
+		return {
+			capacity: {
+				limit: MENTOR_ATTENTION_CAPACITY,
+				active: activeCount,
+				remaining: Math.max(0, MENTOR_ATTENTION_CAPACITY - activeCount)
+			},
+			metrics: {
+				firstResponseCount,
+				completionCount,
+				averageFirstResponseMinutes:
+					responseAverage._avg.firstResponseMinutes ?? null,
+				averageCompletionMinutes:
+					completionAverage._avg.completionMinutes ?? null
+			}
+		};
+	}),
+
+	claim: adminProcedure
+		.input(
+			z.object({
+				sourceType: attentionSourceSchema,
+				sourceId: z.string().min(1)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+			const source = await getActiveClaimSource(
+				ctx.db,
+				input.sourceType,
+				input.sourceId,
+				now
+			);
+			if (!source) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'This attention item is no longer available'
+				});
+			}
+
+			try {
+				return await ctx.db.$transaction(async (tx) => {
+					const existing = await tx.mentorAttentionAssignment.findUnique({
+						where: {
+							sourceType_sourceId: {
+								sourceType: input.sourceType,
+								sourceId: input.sourceId
+							}
+						}
+					});
+
+					if (existing?.completedAt) {
+						throw new TRPCError({
+							code: 'CONFLICT',
+							message: 'This attention item has already been completed'
+						});
+					}
+					if (existing?.assignedMentorId) {
+						if (existing.assignedMentorId === ctx.session.userId) {
+							return { success: true, assignment: existing };
+						}
+						throw new TRPCError({
+							code: 'CONFLICT',
+							message:
+								'This attention item is already assigned to another mentor'
+						});
+					}
+
+					await tx.$queryRaw(
+						Prisma.sql`SELECT "id" FROM "public"."User" WHERE "id" = ${ctx.session.userId} FOR UPDATE`
+					);
+					const activeCount = await tx.mentorAttentionAssignment.count({
+						where: {
+							assignedMentorId: ctx.session.userId,
+							completedAt: null
+						}
+					});
+					if (activeCount >= MENTOR_ATTENTION_CAPACITY) {
+						throw new TRPCError({
+							code: 'CONFLICT',
+							message: `Mentor capacity reached (${MENTOR_ATTENTION_CAPACITY} active items)`
+						});
+					}
+
+					const firstResponseAt = existing?.firstResponseAt ?? now;
+					const data = {
+						sourceType: input.sourceType,
+						sourceId: input.sourceId,
+						sourceCreatedAt: source.sourceCreatedAt,
+						dueAt:
+							existing?.dueAt ??
+							dueAtFor(input.sourceType, source.sourceCreatedAt),
+						assignedMentorId: ctx.session.userId,
+						claimedAt: now,
+						firstResponseAt,
+						firstResponseMinutes:
+							existing?.firstResponseMinutes ??
+							minutesBetween(source.sourceCreatedAt, firstResponseAt)
+					};
+
+					const assignment = existing
+						? await tx.mentorAttentionAssignment.update({
+								where: { id: existing.id },
+								data
+							})
+						: await tx.mentorAttentionAssignment.create({ data });
+
+					return { success: true, assignment };
+				});
+			} catch (error) {
+				if (isUniqueConstraintError(error)) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'This attention item was claimed by another mentor'
+					});
+				}
+				throw error;
+			}
+		}),
+
+	release: adminProcedure
+		.input(
+			z.object({
+				sourceType: attentionSourceSchema,
+				sourceId: z.string().min(1)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const result = await ctx.db.mentorAttentionAssignment.updateMany({
+				where: {
+					sourceType: input.sourceType,
+					sourceId: input.sourceId,
+					assignedMentorId: ctx.session.userId,
+					completedAt: null
+				},
+				data: { assignedMentorId: null, claimedAt: null }
+			});
+			if (result.count === 0) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'This attention item is not assigned to you'
+				});
+			}
+			return { success: true };
 		})
 });

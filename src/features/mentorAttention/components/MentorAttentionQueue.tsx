@@ -1,6 +1,15 @@
 'use client';
 
-import { AlertCircle, ArrowUpRight, Clock3, Search } from 'lucide-react';
+import {
+	AlertCircle,
+	ArrowUpRight,
+	BarChart3,
+	Clock3,
+	LockKeyhole,
+	Search,
+	Timer,
+	Unlock
+} from 'lucide-react';
 import Link from 'next/link';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useState } from 'react';
@@ -66,9 +75,35 @@ function priorityVariant(priority: string) {
 			: 'secondary';
 }
 
+function minutesLabel(minutes: number | null) {
+	if (minutes === null) return '—';
+	if (minutes < 60) return `${minutes}m`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours}h`;
+	return `${Math.floor(hours / 24)}d`;
+}
+
 export default function MentorAttentionQueue() {
 	const [filters, setFilters] = useQueryStates(filtersSearchParams);
 	const [searchInput, setSearchInput] = useState(filters.search);
+	const utils = api.useUtils();
+	const summary = api.mentorAttention.getSummary.useQuery();
+	const claim = api.mentorAttention.claim.useMutation({
+		onSuccess: async () => {
+			await Promise.all([
+				utils.mentorAttention.getQueue.invalidate(),
+				utils.mentorAttention.getSummary.invalidate()
+			]);
+		}
+	});
+	const release = api.mentorAttention.release.useMutation({
+		onSuccess: async () => {
+			await Promise.all([
+				utils.mentorAttention.getQueue.invalidate(),
+				utils.mentorAttention.getSummary.invalidate()
+			]);
+		}
+	});
 	const type = filters.type || 'all';
 	const priority = filters.priority || 'all';
 	const search = filters.search || undefined;
@@ -112,6 +147,42 @@ export default function MentorAttentionQueue() {
 					mentorship follow-up.
 				</p>
 			</div>
+
+			{summary.data && (
+				<Card className="mb-6">
+					<CardContent className="grid gap-4 p-5 md:grid-cols-3">
+						<div className="flex items-center gap-3">
+							<LockKeyhole className="h-5 w-5 text-muted-foreground" />
+							<div>
+								<p className="text-muted-foreground text-sm">My active load</p>
+								<p className="font-semibold">
+									{summary.data.capacity.active} / {summary.data.capacity.limit}
+								</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-3">
+							<Timer className="h-5 w-5 text-muted-foreground" />
+							<div>
+								<p className="text-muted-foreground text-sm">First response</p>
+								<p className="font-semibold">
+									{minutesLabel(
+										summary.data.metrics.averageFirstResponseMinutes
+									)}
+								</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-3">
+							<BarChart3 className="h-5 w-5 text-muted-foreground" />
+							<div>
+								<p className="text-muted-foreground text-sm">Completion time</p>
+								<p className="font-semibold">
+									{minutesLabel(summary.data.metrics.averageCompletionMinutes)}
+								</p>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			)}
 
 			<Card className="mb-6">
 				<CardHeader>
@@ -203,9 +274,11 @@ export default function MentorAttentionQueue() {
 									<TableHead>Item</TableHead>
 									<TableHead>Learner</TableHead>
 									<TableHead>Age</TableHead>
+									<TableHead>SLA</TableHead>
 									<TableHead>Priority</TableHead>
+									<TableHead>Owner</TableHead>
 									<TableHead>Next action</TableHead>
-									<TableHead className="text-right">Open</TableHead>
+									<TableHead className="text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -226,17 +299,73 @@ export default function MentorAttentionQueue() {
 											{ageLabel(item.ageInHours)}
 										</TableCell>
 										<TableCell>
+											<Badge
+												variant={item.isOverdue ? 'destructive' : 'outline'}
+											>
+												{item.isEscalated
+													? 'Escalated'
+													: item.isOverdue
+														? 'Overdue'
+														: `Due ${new Date(item.dueAt).toLocaleDateString()}`}
+											</Badge>
+										</TableCell>
+										<TableCell>
 											<Badge variant={priorityVariant(item.priority)}>
 												{item.priority}
 											</Badge>
 										</TableCell>
+										<TableCell>
+											{item.assignedMentor ? (
+												<span className="text-sm">
+													{item.assignedMentor.name ||
+														item.assignedMentor.email}
+												</span>
+											) : (
+												<span className="text-muted-foreground text-sm">
+													Unclaimed
+												</span>
+											)}
+										</TableCell>
 										<TableCell>{item.nextAction}</TableCell>
 										<TableCell className="text-right">
-											<Button asChild variant="outline" size="sm">
-												<Link href={item.directUrl}>
-													Open <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-												</Link>
-											</Button>
+											<div className="flex justify-end gap-2">
+												{item.isAssignedToCurrentMentor ? (
+													<Button
+														variant="ghost"
+														size="sm"
+														disabled={release.isPending}
+														onClick={() =>
+															release.mutate({
+																sourceType: item.type,
+																sourceId: item.id
+															})
+														}
+													>
+														<Unlock className="mr-1 h-3.5 w-3.5" />
+														Release
+													</Button>
+												) : !item.assignedMentor ? (
+													<Button
+														variant="secondary"
+														size="sm"
+														disabled={claim.isPending}
+														onClick={() =>
+															claim.mutate({
+																sourceType: item.type,
+																sourceId: item.id
+															})
+														}
+													>
+														<LockKeyhole className="mr-1 h-3.5 w-3.5" />
+														Claim
+													</Button>
+												) : null}
+												<Button asChild variant="outline" size="sm">
+													<Link href={item.directUrl}>
+														Open <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+													</Link>
+												</Button>
+											</div>
 										</TableCell>
 									</TableRow>
 								))}

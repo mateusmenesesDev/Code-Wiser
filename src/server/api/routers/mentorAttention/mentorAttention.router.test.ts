@@ -33,6 +33,11 @@ describe('mentorAttention.getQueue', () => {
 		mockDb.task.findMany.mockResolvedValue([]);
 		mockDb.user.findMany.mockResolvedValue([]);
 		mockDb.mentorshipBooking.findMany.mockResolvedValue([]);
+		mockDb.mentorAttentionAssignment.findMany.mockResolvedValue([]);
+		mockDb.mentorAttentionAssignment.count.mockResolvedValue(0);
+		mockDb.mentorAttentionAssignment.aggregate.mockResolvedValue({
+			_avg: { firstResponseMinutes: null, completionMinutes: null }
+		} as never);
 	});
 
 	it('combines bounded attention sources and returns direct actions', async () => {
@@ -86,6 +91,104 @@ describe('mentorAttention.getQueue', () => {
 		expect(mockDb.exerciseReviewSubmission.findMany).toHaveBeenCalledWith(
 			expect.objectContaining({ take: 11 })
 		);
+	});
+
+	it('claims an available item and records first response time', async () => {
+		const createdAt = new Date('2026-08-13T08:00:00.000Z');
+		const claimedAt = new Date('2026-08-13T10:00:00.000Z');
+		vi.useFakeTimers();
+		vi.setSystemTime(claimedAt);
+		mockDb.pullRequestReview.findFirst.mockResolvedValue({
+			createdAt
+		} as never);
+		mockDb.mentorAttentionAssignment.findUnique.mockResolvedValue(null);
+		mockDb.mentorAttentionAssignment.count.mockResolvedValue(0);
+		mockDb.mentorAttentionAssignment.create.mockResolvedValue({
+			id: 'assignment-1'
+		} as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+		const result = await caller.claim({
+			sourceType: 'PR_REVIEW',
+			sourceId: 'pr-1'
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockDb.mentorAttentionAssignment.create).toHaveBeenCalledWith({
+			data: expect.objectContaining({
+				sourceType: 'PR_REVIEW',
+				sourceId: 'pr-1',
+				assignedMentorId: 'admin-1',
+				firstResponseMinutes: 120
+			})
+		});
+		vi.useRealTimers();
+	});
+
+	it('enforces the fixed active-item capacity', async () => {
+		mockDb.pullRequestReview.findFirst.mockResolvedValue({
+			createdAt: new Date('2026-08-13T08:00:00.000Z')
+		} as never);
+		mockDb.mentorAttentionAssignment.findUnique.mockResolvedValue(null);
+		mockDb.mentorAttentionAssignment.count.mockResolvedValue(5);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.claim({ sourceType: 'PR_REVIEW', sourceId: 'pr-1' })
+		).rejects.toMatchObject({ code: 'CONFLICT' });
+		expect(mockDb.mentorAttentionAssignment.create).not.toHaveBeenCalled();
+	});
+
+	it('returns mentor capacity and response metrics', async () => {
+		mockDb.mentorAttentionAssignment.count
+			.mockResolvedValueOnce(2)
+			.mockResolvedValueOnce(7)
+			.mockResolvedValueOnce(4);
+		mockDb.mentorAttentionAssignment.aggregate
+			.mockResolvedValueOnce({ _avg: { firstResponseMinutes: 90 } } as never)
+			.mockResolvedValueOnce({ _avg: { completionMinutes: 360 } } as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(caller.getSummary()).resolves.toEqual({
+			capacity: { limit: 5, active: 2, remaining: 3 },
+			metrics: {
+				firstResponseCount: 7,
+				completionCount: 4,
+				averageFirstResponseMinutes: 90,
+				averageCompletionMinutes: 360
+			}
+		});
+	});
+
+	it('releases only an item owned by the current mentor', async () => {
+		mockDb.mentorAttentionAssignment.updateMany.mockResolvedValue({ count: 1 });
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.release({
+				sourceType: 'EXERCISE_REVIEW',
+				sourceId: 'submission-1'
+			})
+		).resolves.toEqual({ success: true });
+		expect(mockDb.mentorAttentionAssignment.updateMany).toHaveBeenCalledWith({
+			where: expect.objectContaining({ assignedMentorId: 'admin-1' }),
+			data: { assignedMentorId: null, claimedAt: null }
+		});
 	});
 
 	it('rejects non-admin callers before reading queue sources', async () => {

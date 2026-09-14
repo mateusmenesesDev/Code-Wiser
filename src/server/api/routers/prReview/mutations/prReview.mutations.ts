@@ -1,4 +1,5 @@
 import {
+	MentorAttentionSourceType,
 	PRReviewAnalysisStatus,
 	PRReviewFindingDecision,
 	PullRequestReviewStatusEnum,
@@ -21,6 +22,7 @@ import {
 	getPullRequestSnapshotForRepository,
 	githubPullRequestRefFromUrl
 } from '~/server/services/github/github';
+import { completeMentorAttention } from '~/server/services/mentorAttention/mentorAttention.service';
 import {
 	notifyPRRequested,
 	notifyPRResponse
@@ -334,6 +336,7 @@ export const prReviewMutations = {
 				await assertProjectIsActive(ctx.db, activeReview.task.project.id);
 			}
 
+			const reviewedAt = new Date();
 			const decision = await ctx.db.$transaction(async (tx) => {
 				const saved = await tx.pullRequestReview.updateMany({
 					where: {
@@ -343,7 +346,7 @@ export const prReviewMutations = {
 					data: {
 						status: PullRequestReviewStatusEnum.APPROVED,
 						reviewedById: ctx.session.userId,
-						reviewedAt: new Date()
+						reviewedAt
 					}
 				});
 				if (saved.count === 1) {
@@ -357,10 +360,17 @@ export const prReviewMutations = {
 						},
 						data: {
 							status: RemediationActionStatus.COMPLETED,
-							completedAt: new Date(),
+							completedAt: reviewedAt,
 							completedById: ctx.session.userId
 						}
 					});
+					await completeMentorAttention(
+						tx,
+						MentorAttentionSourceType.PR_REVIEW,
+						activeReview.id,
+						ctx.session.userId,
+						reviewedAt
+					);
 				}
 				return saved;
 			});
@@ -490,6 +500,7 @@ export const prReviewMutations = {
 				}
 			}
 
+			const reviewedAt = new Date();
 			const decision = await ctx.db.$transaction(async (tx) => {
 				const saved = await tx.pullRequestReview.updateMany({
 					where: {
@@ -501,7 +512,7 @@ export const prReviewMutations = {
 						comment: comment || null,
 						feedbackAssistedByAi: Boolean(analysisId),
 						reviewedById: ctx.session.userId,
-						reviewedAt: new Date()
+						reviewedAt
 					}
 				});
 				if (saved.count === 1) {
@@ -531,6 +542,13 @@ export const prReviewMutations = {
 							sourcePrReviewId: activeReview.id
 						}
 					});
+					await completeMentorAttention(
+						tx,
+						MentorAttentionSourceType.PR_REVIEW,
+						activeReview.id,
+						ctx.session.userId,
+						reviewedAt
+					);
 				}
 				return saved;
 			});

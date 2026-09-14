@@ -52,6 +52,13 @@ CREATE TABLE IF NOT EXISTS "CompetencyMentorAssessment" (
     CONSTRAINT "CompetencyMentorAssessment_pkey" PRIMARY KEY ("id")
 );
 
+ALTER TABLE "Competency" SET (schema_locked = false);
+ALTER TABLE "CompetencyExerciseChallenge" SET (schema_locked = false);
+ALTER TABLE "CompetencyLearningOutcome" SET (schema_locked = false);
+ALTER TABLE "CompetencyMilestone" SET (schema_locked = false);
+ALTER TABLE "CompetencyReviewCategory" SET (schema_locked = false);
+ALTER TABLE "CompetencyMentorAssessment" SET (schema_locked = false);
+
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "Competency_slug_key" ON "Competency"("slug");
 CREATE INDEX IF NOT EXISTS "Competency_isActive_sortOrder_idx" ON "Competency"("isActive", "sortOrder");
@@ -127,3 +134,10 @@ FROM "ExerciseChallenge" challenge
 JOIN "ExerciseTrack" track ON track."id" = challenge."trackId"
 WHERE track."slug" = 'nextjs' AND challenge."slug" IN ('server-component-page', 'route-handler-crud')
 ON CONFLICT ("competencyId", "challengeId") DO NOTHING;
+
+ALTER TABLE "Competency" SET (schema_locked = true);
+ALTER TABLE "CompetencyExerciseChallenge" SET (schema_locked = true);
+ALTER TABLE "CompetencyLearningOutcome" SET (schema_locked = true);
+ALTER TABLE "CompetencyMilestone" SET (schema_locked = true);
+ALTER TABLE "CompetencyReviewCategory" SET (schema_locked = true);
+ALTER TABLE "CompetencyMentorAssessment" SET (schema_locked = true);

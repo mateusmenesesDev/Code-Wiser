@@ -1,4 +1,5 @@
 import {
+	MentorAttentionSourceType,
 	RemediationActionStatus,
 	RemediationActionTargetType
 } from '@prisma/client';
@@ -11,6 +12,7 @@ import {
 	createBooking,
 	rescheduleBooking as rescheduleCalcomBooking
 } from '~/server/services/calcom/calcomService';
+import { completeMentorAttention } from '~/server/services/mentorAttention/mentorAttention.service';
 import {
 	canBookForWeek,
 	getWeekBoundaries,
@@ -497,6 +499,7 @@ export const mentorshipMutations = {
 				}
 			}
 
+			const completedAt = new Date();
 			return ctx.db.$transaction(async (tx) => {
 				if (input.competencyAssessments !== undefined) {
 					await tx.competencyMentorAssessment.deleteMany({
@@ -590,10 +593,20 @@ export const mentorshipMutations = {
 					});
 				}
 
-				return tx.mentorshipBooking.update({
+				const updatedBooking = await tx.mentorshipBooking.update({
 					where: { id: input.bookingId },
 					data: bookingData
 				});
+				if (input.objective?.trim()) {
+					await completeMentorAttention(
+						tx,
+						MentorAttentionSourceType.MENTORSHIP_SESSION,
+						input.bookingId,
+						ctx.session.userId,
+						completedAt
+					);
+				}
+				return updatedBooking;
 			});
 		})
 };

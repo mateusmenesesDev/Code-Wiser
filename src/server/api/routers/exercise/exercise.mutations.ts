@@ -1,5 +1,6 @@
 import {
 	ExerciseReviewDecisionStatus,
+	MentorAttentionSourceType,
 	RemediationActionStatus,
 	RemediationActionTargetType,
 	UserChallengeProgressStatus
@@ -24,6 +25,10 @@ import {
 	GitHubServiceError,
 	getPullRequestSnapshotForRepository
 } from '~/server/services/github/github';
+import {
+	completeMentorAttention,
+	dueAtFor
+} from '~/server/services/mentorAttention/mentorAttention.service';
 import {
 	notifyExerciseChallengeResponse,
 	notifyExercisePrUpdated,
@@ -387,6 +392,7 @@ export const exerciseMutations = {
 				});
 			}
 
+			const reviewStartedAt = new Date();
 			const updated = await ctx.db.$transaction(async (tx) => {
 				for (const decision of changesRequested) {
 					await tx.exerciseReviewDecision.update({
@@ -422,13 +428,35 @@ export const exerciseMutations = {
 					}
 				});
 
-				return tx.exerciseReviewSubmission.update({
+				const updatedSubmission = await tx.exerciseReviewSubmission.update({
 					where: { id: submission.id },
 					data: {
 						needsAttention: true,
 						updateNote: input.updateNote?.trim() || null
 					}
 				});
+				await tx.mentorAttentionAssignment.updateMany({
+					where: {
+						sourceType: MentorAttentionSourceType.EXERCISE_REVIEW,
+						sourceId: submission.id
+					},
+					data: {
+						sourceCreatedAt: reviewStartedAt,
+						dueAt: dueAtFor(
+							MentorAttentionSourceType.EXERCISE_REVIEW,
+							reviewStartedAt
+						),
+						assignedMentorId: null,
+						claimedAt: null,
+						firstResponseAt: null,
+						firstResponseMinutes: null,
+						escalatedAt: null,
+						completedAt: null,
+						completionMinutes: null,
+						completedById: null
+					}
+				});
+				return updatedSubmission;
 			});
 
 			await notifyExercisePrUpdated({
@@ -507,13 +535,14 @@ export const exerciseMutations = {
 				select: { name: true }
 			});
 
+			const reviewedAt = new Date();
 			const updated = await ctx.db.$transaction(async (tx) => {
 				const saved = await tx.exerciseReviewDecision.update({
 					where: { id: decision.id },
 					data: {
 						status: input.status,
 						mentorComment: input.mentorComment?.trim() || null,
-						reviewedAt: new Date(),
+						reviewedAt,
 						reviewedById: reviewerId
 					}
 				});
@@ -572,6 +601,15 @@ export const exerciseMutations = {
 					where: { id: decision.submission.id },
 					data: { needsAttention: remainingPending }
 				});
+				if (!remainingPending) {
+					await completeMentorAttention(
+						tx,
+						MentorAttentionSourceType.EXERCISE_REVIEW,
+						decision.submission.id,
+						reviewerId,
+						reviewedAt
+					);
+				}
 
 				return saved;
 			});

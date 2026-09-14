@@ -89,6 +89,8 @@ model User {
   exerciseReviewDecisions      ExerciseReviewDecision[]   @relation("ExerciseReviewDecisions")
   feedbackReports              FeedbackReport[]
   creditCheckouts              CreditCheckout[]
+  mentorAttentionAssignments  MentorAttentionAssignment[] @relation("MentorAttentionAssignments")
+  mentorAttentionCompletions  MentorAttentionAssignment[] @relation("MentorAttentionCompletions")
 
   @@index([isOrgAdmin])
   @@index([updatedAt])
