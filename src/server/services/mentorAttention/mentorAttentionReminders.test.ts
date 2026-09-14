@@ -26,6 +26,7 @@ describe('processMentorAttentionReminders', () => {
 		] as never);
 		mockDb.exerciseReviewSubmission.findMany.mockResolvedValue([]);
 		mockDb.user.findMany.mockResolvedValue([{ id: 'admin-1' }] as never);
+		mockDb.mentorAttentionAssignment.findMany.mockResolvedValue([]);
 		mockDb.mentorAttentionAssignment.updateMany.mockResolvedValue({ count: 0 });
 	});
 
@@ -53,6 +54,42 @@ describe('processMentorAttentionReminders', () => {
 			link: '/workspace/project-1?taskId=task-1',
 			dedupeKey: 'mentor-review-overdue:PR_REVIEW:pr-1:2026-08-13'
 		});
+	});
+
+	it('completes an inactive-student assignment after renewed activity', async () => {
+		mockDb.pullRequestReview.findMany.mockResolvedValue([]);
+		mockDb.mentorAttentionAssignment.findMany.mockResolvedValue([
+			{
+				sourceId: 'learner-1',
+				sourceCreatedAt: new Date('2026-08-12T08:00:00.000Z')
+			}
+		] as never);
+		mockDb.user.findMany
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([
+				{ id: 'learner-1', updatedAt: new Date('2026-08-13T07:00:00.000Z') }
+			] as never);
+		mockDb.mentorAttentionAssignment.findUnique.mockResolvedValue({
+			id: 'assignment-1',
+			sourceCreatedAt: new Date('2026-08-12T08:00:00.000Z'),
+			completedAt: null
+		} as never);
+		mockDb.mentorAttentionAssignment.update.mockResolvedValue({} as never);
+
+		await processMentorAttentionReminders(
+			mockDb,
+			new Date('2026-08-13T08:00:00.000Z')
+		);
+
+		expect(mockDb.mentorAttentionAssignment.update).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { id: 'assignment-1' },
+				data: expect.objectContaining({
+					completedById: null,
+					completionMinutes: 1440
+				})
+			})
+		);
 	});
 
 	it('records completion latency for a claimed item', async () => {

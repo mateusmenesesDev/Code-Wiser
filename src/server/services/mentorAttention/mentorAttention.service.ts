@@ -34,7 +34,7 @@ export async function completeMentorAttention(
 	db: AttentionDb,
 	sourceType: MentorAttentionSourceType,
 	sourceId: string,
-	completedById: string,
+	completedById: string | null,
 	completedAt = new Date()
 ) {
 	const assignment = await db.mentorAttentionAssignment.findUnique({

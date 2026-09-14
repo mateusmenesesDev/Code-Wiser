@@ -578,8 +578,8 @@ export const taskMutations = {
 					await completeMentorAttention(
 						tx,
 						MentorAttentionSourceType.BLOCKED_TASK,
-						id,
-						ctx.session.userId
+						id as string,
+						ctx.session.userId as string
 					);
 				}
 

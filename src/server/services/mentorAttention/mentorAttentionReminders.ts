@@ -1,7 +1,8 @@
-import type { PrismaClient } from '@prisma/client';
+import { MentorAttentionSourceType, type PrismaClient } from '@prisma/client';
 import { createNotification } from '~/server/services/notification/base';
 import {
 	REVIEW_SLA_HOURS,
+	completeMentorAttention,
 	isUniqueConstraintError
 } from './mentorAttention.service';
 
@@ -16,45 +17,54 @@ export async function processMentorAttentionReminders(
 	now = new Date()
 ) {
 	const cutoff = new Date(now.getTime() - REVIEW_SLA_HOURS * 3_600_000);
-	const [prReviews, exerciseReviews, admins] = await Promise.all([
-		db.pullRequestReview.findMany({
-			where: {
-				isActive: true,
-				status: 'PENDING',
-				createdAt: { lt: cutoff },
-				task: { projectId: { not: null } }
-			},
-			orderBy: { createdAt: 'asc' },
-			take: MAX_OVERDUE_REVIEWS,
-			select: {
-				id: true,
-				createdAt: true,
-				requestedBy: { select: { name: true, email: true } },
-				task: {
-					select: {
-						id: true,
-						title: true,
-						project: { select: { id: true, title: true } }
+	const [prReviews, exerciseReviews, admins, inactiveAssignments] =
+		await Promise.all([
+			db.pullRequestReview.findMany({
+				where: {
+					isActive: true,
+					status: 'PENDING',
+					createdAt: { lt: cutoff },
+					task: { projectId: { not: null } }
+				},
+				orderBy: { createdAt: 'asc' },
+				take: MAX_OVERDUE_REVIEWS,
+				select: {
+					id: true,
+					createdAt: true,
+					requestedBy: { select: { name: true, email: true } },
+					task: {
+						select: {
+							id: true,
+							title: true,
+							project: { select: { id: true, title: true } }
+						}
 					}
 				}
-			}
-		}),
-		db.exerciseReviewSubmission.findMany({
-			where: { needsAttention: true, createdAt: { lt: cutoff } },
-			orderBy: { createdAt: 'asc' },
-			take: MAX_OVERDUE_REVIEWS,
-			select: {
-				id: true,
-				createdAt: true,
-				submittedBy: { select: { name: true, email: true } },
-				track: { select: { name: true } }
-			}
-		}),
-		db.user.findMany({
-			where: { isOrgAdmin: true },
-			select: { id: true }
-		})
-	]);
+			}),
+			db.exerciseReviewSubmission.findMany({
+				where: { needsAttention: true, createdAt: { lt: cutoff } },
+				orderBy: { createdAt: 'asc' },
+				take: MAX_OVERDUE_REVIEWS,
+				select: {
+					id: true,
+					createdAt: true,
+					submittedBy: { select: { name: true, email: true } },
+					track: { select: { name: true } }
+				}
+			}),
+			db.user.findMany({
+				where: { isOrgAdmin: true },
+				select: { id: true }
+			}),
+			db.mentorAttentionAssignment.findMany({
+				where: {
+					sourceType: MentorAttentionSourceType.INACTIVE_STUDENT,
+					completedAt: null
+				},
+				take: MAX_OVERDUE_REVIEWS,
+				select: { sourceId: true, sourceCreatedAt: true }
+			})
+		]);
 
 	const reviews = [
 		...prReviews.map((review) => ({
@@ -111,6 +121,28 @@ export async function processMentorAttentionReminders(
 				}
 				failures += 1;
 				console.error('Failed to create overdue mentor review alert:', error);
+			}
+		}
+	}
+
+	if (inactiveAssignments.length > 0) {
+		const activeLearners = await db.user.findMany({
+			where: { id: { in: inactiveAssignments.map((item) => item.sourceId) } },
+			select: { id: true, updatedAt: true }
+		});
+		const activeLearnersById = new Map(
+			activeLearners.map((learner) => [learner.id, learner.updatedAt])
+		);
+		for (const assignment of inactiveAssignments) {
+			const updatedAt = activeLearnersById.get(assignment.sourceId);
+			if (updatedAt && updatedAt > assignment.sourceCreatedAt) {
+				await completeMentorAttention(
+					db,
+					MentorAttentionSourceType.INACTIVE_STUDENT,
+					assignment.sourceId,
+					null,
+					now
+				);
 			}
 		}
 	}
