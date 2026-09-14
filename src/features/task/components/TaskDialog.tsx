@@ -1,11 +1,6 @@
 import { useCallback, useState } from 'react';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle
-} from '~/common/components/ui/dialog';
+import { Dialog, DialogContent } from '~/common/components/ui/dialog';
 import { TaskComments } from './TaskComments';
 import { TaskDialogContent } from './TaskDialogContent';
 
@@ -40,14 +35,8 @@ export function TaskDialog({ taskId, projectId, onClose }: TaskDialogProps) {
 			<Dialog open={isOpen} onOpenChange={(open) => !open && guardedClose()}>
 				<DialogContent
 					data-testid="task-dialog"
-					className="max-h-[90vh] max-w-7xl overflow-y-auto"
+					className="flex h-[90vh] max-h-[90vh] max-w-7xl flex-col overflow-hidden"
 				>
-					<DialogHeader>
-						<DialogTitle className="pr-8 font-semibold text-xl">
-							{actualTaskId ? 'Edit Task' : 'Create Task'}
-						</DialogTitle>
-					</DialogHeader>
-
 					<TaskDialogContent
 						taskId={actualTaskId}
 						projectId={projectId}
