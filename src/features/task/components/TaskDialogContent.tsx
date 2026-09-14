@@ -8,6 +8,7 @@ import {
 } from '@prisma/client';
 import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useQueryState } from 'nuqs';
 import type { FieldErrors } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -181,6 +182,23 @@ export function TaskDialogContent({
 	}, [form, projectId, task, isTemplate]);
 
 	const { isDirty } = form.formState;
+	const [, setTaskId] = useQueryState('taskId');
+	const [pendingSubtaskId, setPendingSubtaskId] = useState<string | null>(null);
+
+	const openSubtask = (subtaskId: string) => {
+		if (isDirty) {
+			setPendingSubtaskId(subtaskId);
+			return;
+		}
+		void setTaskId(subtaskId);
+	};
+
+	const confirmOpenSubtask = () => {
+		const subtaskId = pendingSubtaskId;
+		setPendingSubtaskId(null);
+		if (subtaskId) void setTaskId(subtaskId);
+	};
+
 	useEffect(() => {
 		onDirtyChange?.(isDirty);
 	}, [isDirty, onDirtyChange]);
@@ -376,6 +394,8 @@ export function TaskDialogContent({
 								projectId={projectId}
 								isTemplate={isTemplate}
 								subtasks={task.subtasks}
+								openSubtasks
+								onOpenSubtask={openSubtask}
 							/>
 						)}
 
@@ -1003,6 +1023,16 @@ export function TaskDialogContent({
 					</div>
 				</div>
 			</form>
+			<ConfirmationDialog
+				open={pendingSubtaskId !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingSubtaskId(null);
+				}}
+				title="Discard changes?"
+				description="Your unsaved changes will be lost if you open this subtask."
+				confirmLabel="Discard and open"
+				onConfirm={confirmOpenSubtask}
+			/>
 		</FormProvider>
 	);
 }

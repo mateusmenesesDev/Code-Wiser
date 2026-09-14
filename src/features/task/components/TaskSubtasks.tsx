@@ -35,6 +35,7 @@ interface TaskSubtasksProps {
 	subtasks?: TaskSubtask[];
 	emptyAction?: 'input' | 'menu';
 	openSubtasks?: boolean;
+	onOpenSubtask?: (subtaskId: string) => void;
 }
 
 export function TaskSubtasks({
@@ -43,7 +44,8 @@ export function TaskSubtasks({
 	isTemplate,
 	subtasks = [],
 	emptyAction = 'input',
-	openSubtasks = false
+	openSubtasks = false,
+	onOpenSubtask
 }: TaskSubtasksProps) {
 	const [title, setTitle] = useState('');
 	const [isAdding, setIsAdding] = useState(
@@ -118,6 +120,10 @@ export function TaskSubtasks({
 	};
 
 	const openSubtask = (subtaskId: string) => {
+		if (onOpenSubtask) {
+			onOpenSubtask(subtaskId);
+			return;
+		}
 		void setTaskId(subtaskId);
 	};
 
