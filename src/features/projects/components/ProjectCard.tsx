@@ -46,6 +46,8 @@ type ProjectCardProps = {
 	projectId?: string;
 	userHasMentorship: boolean;
 	isUserMentorshipLoading: boolean;
+	diagnosisComplete?: boolean;
+	isDiagnosisLoading?: boolean;
 };
 
 export function ProjectCard({
@@ -53,7 +55,9 @@ export function ProjectCard({
 	userCredits,
 	userHasMentorship,
 	isUserMentorshipLoading,
-	projectId
+	projectId,
+	diagnosisComplete,
+	isDiagnosisLoading
 }: ProjectCardProps) {
 	const router = useRouter();
 	const { user } = useAuth();
@@ -71,6 +75,11 @@ export function ProjectCard({
 	const handleCreateProject = async () => {
 		if (!user) {
 			openDialog('signIn');
+			return;
+		}
+
+		if (diagnosisComplete === false) {
+			router.push('/onboarding/diagnosis?returnTo=/projects');
 			return;
 		}
 
@@ -270,6 +279,7 @@ export function ProjectCard({
 							onClick={handleCreateProject}
 							disabled={
 								isCreateProjectPending ||
+								Boolean(user && isDiagnosisLoading) ||
 								Boolean(user && isMentorshipProject && isUserMentorshipLoading)
 							}
 							variant="secondary"

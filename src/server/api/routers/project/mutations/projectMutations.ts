@@ -17,6 +17,7 @@ import {
 	assertProjectIsActive,
 	assertProjectPermission
 } from '~/server/utils/auth';
+import { assertDiagnosisComplete } from '~/server/utils/diagnosis';
 
 const canceledProjectError = () =>
 	new TRPCError({
@@ -106,6 +107,8 @@ export const projectMutations = {
 						message: 'User not found'
 					});
 				}
+
+				assertDiagnosisComplete(user.diagnosisCompletedAt);
 
 				if (!projectTemplate) {
 					throw new TRPCError({

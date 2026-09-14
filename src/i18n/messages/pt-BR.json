@@ -130,6 +130,11 @@
 		"recommendedNextActions": "Próximas ações recomendadas",
 		"recommendedDescription": "Prévia do sistema de recomendações que está em desenvolvimento.",
 		"soon": "Em breve",
+		"diagnosis": {
+			"title": "Crie sua linha de base de aprendizado",
+			"description": "Responda algumas perguntas para que sua primeira atividade combine com seus objetivos e seu tempo disponível.",
+			"action": "Fazer diagnóstico"
+		},
 		"actions": {
 			"finish": "Concluir",
 			"review": "Revisar feedback de",
@@ -239,6 +244,72 @@
 		"upcomingSessionsDescription": "Suas chamadas de mentoria agendadas aparecem aqui. Você pode reagendar ou cancelar quando necessário.",
 		"bookSessionTitle": "Agende uma sessão de mentoria",
 		"bookSessionDescription": "Escolha um horário disponível no calendário para agendar sua próxima sessão individual."
+	},
+	"diagnosis": {
+		"badge": "Linha de base",
+		"timeEstimate": "Cerca de 3 minutos",
+		"title": "Conte-nos como podemos orientar você",
+		"description": "Este diagnóstico curto dá contexto para seu primeiro projeto ou exercício. Não existem respostas certas ou erradas.",
+		"saved": "Diagnóstico salvo. Sua jornada de aprendizado pode começar.",
+		"saving": "Salvando...",
+		"submit": "Salvar e continuar",
+		"privacy": "Você poderá atualizar estas respostas quando seus objetivos mudarem.",
+		"signInRequired": "Entre na sua conta para concluir o diagnóstico.",
+		"prompt": {
+			"title": "Conclua seu diagnóstico de aprendizado",
+			"description": "Responda algumas perguntas para que sua primeira atividade combine com seus objetivos e seu tempo disponível.",
+			"action": "Fazer diagnóstico"
+		},
+		"learningGoal": {
+			"label": "Qual é seu principal objetivo agora?",
+			"description": "Escolha o resultado mais importante para seu próximo ciclo de aprendizado.",
+			"options": {
+				"GET_FIRST_JOB": "Conseguir meu primeiro emprego como desenvolvedor",
+				"GROW_IN_CURRENT_ROLE": "Crescer na minha função atual",
+				"CHANGE_SPECIALTY": "Mudar minha especialidade",
+				"BUILD_PORTFOLIO": "Construir um portfólio mais forte",
+				"PREPARE_FOR_INTERVIEWS": "Me preparar para entrevistas técnicas",
+				"EXPLORE_DEVELOPMENT": "Explorar desenvolvimento de software"
+			}
+		},
+		"level": {
+			"label": "Como você descreve seu nível atual?",
+			"description": "Use seu próprio julgamento. Esta resposta é um ponto de partida, não uma nota.",
+			"options": {
+				"BEGINNER": "Iniciante",
+				"INTERMEDIATE": "Intermediário",
+				"ADVANCED": "Avançado"
+			}
+		},
+		"technologies": {
+			"label": "Quais tecnologias despertam seu interesse?",
+			"description": "Escolha até cinco tecnologias que você gostaria de praticar.",
+			"options": {
+				"JAVASCRIPT": "JavaScript",
+				"TYPESCRIPT": "TypeScript",
+				"REACT": "React",
+				"NEXT_JS": "Next.js",
+				"NODE_JS": "Node.js",
+				"PYTHON": "Python",
+				"SQL": "SQL",
+				"TESTING": "Testes"
+			}
+		},
+		"availability": {
+			"label": "Quanto tempo você pode dedicar por semana?",
+			"description": "Uma faixa aproximada ajuda a evitar recomendações que não cabem na sua rotina.",
+			"options": {
+				"UNDER_3": "Até 3 horas",
+				"FROM_4_TO_7": "De 4 a 7 horas",
+				"FROM_8_TO_12": "De 8 a 12 horas",
+				"OVER_12": "Mais de 12 horas"
+			}
+		},
+		"experience": {
+			"label": "Que experiência relevante você já tem?",
+			"description": "Conte sobre projetos, trabalho, estudos ou qualquer coisa que ajude a entender seu ponto de partida.",
+			"placeholder": "Por exemplo: construí pequenos projetos em React e concluí um curso de programação."
+		}
 	},
 	"validation": {
 		"required": "Este campo é obrigatório.",

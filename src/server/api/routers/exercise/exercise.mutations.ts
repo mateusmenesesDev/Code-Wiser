@@ -19,14 +19,15 @@ import {
 	updateExerciseTrackSchema
 } from '~/features/exercises/schemas/exercise.schema';
 import {
+	GitHubServiceError,
+	getPullRequestSnapshotForRepository
+} from '~/server/services/github/github';
+import {
 	notifyExerciseChallengeResponse,
 	notifyExercisePrUpdated,
 	notifyExerciseReviewRequested
 } from '~/server/services/notification/exerciseNotifications';
-import {
-	GitHubServiceError,
-	getPullRequestSnapshotForRepository
-} from '~/server/services/github/github';
+import { assertDiagnosisComplete } from '~/server/utils/diagnosis';
 import {
 	adminProcedure,
 	mentorshipProcedure,
@@ -99,6 +100,15 @@ export const exerciseMutations = {
 			if (!userId) {
 				throw new TRPCError({ code: 'UNAUTHORIZED' });
 			}
+
+			const user = await ctx.db.user.findUnique({
+				where: { id: userId },
+				select: { diagnosisCompletedAt: true }
+			});
+			if (!user) {
+				throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+			}
+			assertDiagnosisComplete(user.diagnosisCompletedAt);
 
 			const challenge = await ctx.db.exerciseChallenge.findFirst({
 				where: {

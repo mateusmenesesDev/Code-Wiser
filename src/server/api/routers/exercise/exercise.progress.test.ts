@@ -42,6 +42,9 @@ describe('exercise progress', () => {
 	});
 
 	it('starts a challenge by creating IN_PROGRESS progress for the authenticated user', async () => {
+		mockDb.user.findUnique.mockResolvedValue({
+			diagnosisCompletedAt: new Date('2026-08-22T12:00:00.000Z')
+		} as never);
 		mockDb.exerciseChallenge.findFirst.mockResolvedValue({
 			id: '22222222-2222-2222-2222-222222222222',
 			isArchived: false,
@@ -70,6 +73,18 @@ describe('exercise progress', () => {
 			})
 		});
 		expect(result.status).toBe('IN_PROGRESS');
+	});
+
+	it('requires a completed diagnosis before starting a challenge', async () => {
+		mockDb.user.findUnique.mockResolvedValue({
+			diagnosisCompletedAt: null
+		} as never);
+
+		await expect(
+			caller.startChallenge({
+				id: '22222222-2222-2222-2222-222222222222'
+			})
+		).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
 	});
 
 	it('rejects startChallenge for unauthenticated users', async () => {

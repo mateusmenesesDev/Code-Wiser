@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeft, Copy, GitPullRequest, Play, RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -33,6 +34,7 @@ export default function ExerciseChallengePage({
 	trackSlug,
 	challengeSlug
 }: ExerciseChallengePageProps) {
+	const tDiagnosis = useTranslations('diagnosis');
 	const { user } = useAuth();
 	const { openDialog } = useDialog('signIn');
 	const utils = api.useUtils();
@@ -54,7 +56,15 @@ export default function ExerciseChallengePage({
 		undefined,
 		{ enabled: Boolean(user) }
 	);
+	const { data: onboardingStatus } = api.onboarding.getStatus.useQuery(
+		undefined,
+		{ enabled: Boolean(user) }
+	);
 	const hasActiveMentorship = mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+	const needsDiagnosis =
+		Boolean(user) &&
+		Boolean(onboardingStatus) &&
+		!onboardingStatus?.diagnosisCompletedAt;
 	const isArchived =
 		Boolean(challenge?.isArchived) || Boolean(challenge?.track.isArchived);
 	const canRequestReview =
@@ -111,7 +121,10 @@ export default function ExerciseChallengePage({
 		challenge.setupInstructions &&
 		challenge.acceptanceCriteria;
 	const canStart =
-		Boolean(user) && !isArchived && challenge.status === 'NOT_STARTED';
+		Boolean(user) &&
+		!needsDiagnosis &&
+		!isArchived &&
+		challenge.status === 'NOT_STARTED';
 
 	return (
 		<div className="container mx-auto px-4 py-8">
@@ -150,8 +163,28 @@ export default function ExerciseChallengePage({
 				</div>
 			</div>
 
-			{(canStart || canRequestReview || canNotifyPrUpdate) && (
+			{(canStart ||
+				canRequestReview ||
+				canNotifyPrUpdate ||
+				needsDiagnosis) && (
 				<div className="mb-6 space-y-3">
+					{needsDiagnosis && (
+						<div className="space-y-2 rounded-md border border-info-border bg-info-muted p-4">
+							<p className="font-medium text-sm">
+								{tDiagnosis('prompt.title')}
+							</p>
+							<p className="text-muted-foreground text-sm">
+								{tDiagnosis('prompt.description')}
+							</p>
+							<Button asChild variant="outline" size="sm">
+								<Link
+									href={`/onboarding/diagnosis?returnTo=/exercises/${trackSlug}/${challengeSlug}`}
+								>
+									{tDiagnosis('prompt.action')}
+								</Link>
+							</Button>
+						</div>
+					)}
 					<div className="flex flex-wrap gap-3">
 						{canStart && (
 							<Button

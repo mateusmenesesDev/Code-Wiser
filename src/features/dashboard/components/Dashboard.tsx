@@ -7,6 +7,7 @@ import {
 	CalendarClock,
 	CheckCircle2,
 	CircleDot,
+	ClipboardCheck,
 	Clock3,
 	Code2,
 	FolderKanban,
@@ -17,8 +18,8 @@ import {
 	Video
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
@@ -106,7 +107,17 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 	const t = useTranslations('dashboard');
 	const locale = useLocale();
 	const { user } = useUser();
-	const nextAction = getNextAction(overview);
+	const { data: onboardingStatus } = api.onboarding.getStatus.useQuery(
+		undefined,
+		{ enabled: !overview.viewedUser }
+	);
+	const needsDiagnosis =
+		!overview.viewedUser &&
+		onboardingStatus &&
+		!onboardingStatus.diagnosisCompletedAt;
+	const nextAction = needsDiagnosis
+		? { href: '/onboarding/diagnosis?returnTo=/' }
+		: getNextAction(overview);
 	const project = overview.projects[0];
 	const currentSprint = overview.currentSprint;
 	const firstName =
@@ -226,10 +237,36 @@ function DashboardContent({ overview }: { overview: DashboardOverview }) {
 				>
 					<Link href={nextAction?.href ?? '/projects'}>
 						<Play className="mr-2 h-4 w-4 fill-current" aria-hidden="true" />
-						{t('continueProject')}
+						{needsDiagnosis ? t('diagnosis.action') : t('continueProject')}
 					</Link>
 				</Button>
 			</header>
+
+			{needsDiagnosis && (
+				<Card className="border-info-border bg-info-muted shadow-none">
+					<CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex items-start gap-3">
+							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background text-info">
+								<ClipboardCheck className="h-5 w-5" aria-hidden="true" />
+							</div>
+							<div>
+								<h2 className="font-semibold text-sm">
+									{t('diagnosis.title')}
+								</h2>
+								<p className="mt-1 text-muted-foreground text-sm">
+									{t('diagnosis.description')}
+								</p>
+							</div>
+						</div>
+						<Button asChild variant="outline" className="shrink-0">
+							<Link href="/onboarding/diagnosis?returnTo=/">
+								{t('diagnosis.action')}
+								<ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+							</Link>
+						</Button>
+					</CardContent>
+				</Card>
+			)}
 
 			<section
 				aria-label={t('overview')}

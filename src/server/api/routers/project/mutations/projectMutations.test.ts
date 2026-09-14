@@ -51,7 +51,8 @@ describe('project.createProject', () => {
 		mockDb.user.findUnique.mockResolvedValue({
 			id: 'admin-user-id',
 			credits: 0,
-			mentorshipStatus: 'ACTIVE'
+			mentorshipStatus: 'ACTIVE',
+			diagnosisCompletedAt: new Date('2026-08-22T12:00:00.000Z')
 		} as never);
 		mockDb.projectTemplate.findUnique.mockResolvedValue({
 			id: 'template-id',
@@ -238,7 +239,8 @@ describe('project.createProject', () => {
 		mockDb.user.findUnique.mockResolvedValue({
 			id: 'admin-user-id',
 			credits: 5,
-			mentorshipStatus: 'INACTIVE'
+			mentorshipStatus: 'INACTIVE',
+			diagnosisCompletedAt: new Date('2026-08-22T12:00:00.000Z')
 		} as never);
 		mockDb.projectTemplate.findUnique.mockResolvedValue({
 			id: 'template-id',
@@ -271,6 +273,23 @@ describe('project.createProject', () => {
 			})
 		).rejects.toMatchObject({ code: 'BAD_REQUEST' });
 		expect(mockDb.projectCreditPaymentEvidence.create).not.toHaveBeenCalled();
+	});
+
+	it('requires a completed diagnosis before starting a project', async () => {
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+		mockDb.user.findUnique.mockResolvedValue({
+			id: 'admin-user-id',
+			diagnosisCompletedAt: null
+		} as never);
+
+		await expect(
+			caller.createProject({
+				projectTemplateId: 'template-id',
+				idempotencyKey: '44444444-4444-4444-8444-444444444444'
+			})
+		).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
 	});
 });
 

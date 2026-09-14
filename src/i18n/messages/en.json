@@ -130,6 +130,11 @@
 		"recommendedNextActions": "Recommended next actions",
 		"recommendedDescription": "Preview of the recommendation system currently in development.",
 		"soon": "Soon",
+		"diagnosis": {
+			"title": "Create your learning baseline",
+			"description": "Answer a few questions so your first activity matches your goals and available time.",
+			"action": "Complete diagnosis"
+		},
 		"actions": {
 			"finish": "Finish",
 			"review": "Review feedback on",
@@ -239,6 +244,72 @@
 		"upcomingSessionsDescription": "Your scheduled mentorship calls appear here. You can reschedule or cancel when needed.",
 		"bookSessionTitle": "Book a mentorship session",
 		"bookSessionDescription": "Pick an available slot on the calendar to schedule your next one-on-one session."
+	},
+	"diagnosis": {
+		"badge": "Learning baseline",
+		"timeEstimate": "About 3 minutes",
+		"title": "Help us understand how to guide you",
+		"description": "This short diagnosis gives us context for your first project or exercise. There are no right or wrong answers.",
+		"saved": "Diagnosis saved. Your learning path can now begin.",
+		"saving": "Saving...",
+		"submit": "Save and continue",
+		"privacy": "You can update these answers later as your goals change.",
+		"signInRequired": "Sign in to complete your learning diagnosis.",
+		"prompt": {
+			"title": "Complete your learning diagnosis first",
+			"description": "Answer a few questions so your first activity matches your goals and available time.",
+			"action": "Complete diagnosis"
+		},
+		"learningGoal": {
+			"label": "What is your main goal right now?",
+			"description": "Choose the outcome that matters most for your next learning cycle.",
+			"options": {
+				"GET_FIRST_JOB": "Get my first developer job",
+				"GROW_IN_CURRENT_ROLE": "Grow in my current role",
+				"CHANGE_SPECIALTY": "Change my specialty",
+				"BUILD_PORTFOLIO": "Build a stronger portfolio",
+				"PREPARE_FOR_INTERVIEWS": "Prepare for technical interviews",
+				"EXPLORE_DEVELOPMENT": "Explore software development"
+			}
+		},
+		"level": {
+			"label": "How do you describe your current level?",
+			"description": "Use your own judgment. This answer is a starting point, not a grade.",
+			"options": {
+				"BEGINNER": "Beginner",
+				"INTERMEDIATE": "Intermediate",
+				"ADVANCED": "Advanced"
+			}
+		},
+		"technologies": {
+			"label": "Which technologies interest you?",
+			"description": "Choose up to five technologies you would like to practice.",
+			"options": {
+				"JAVASCRIPT": "JavaScript",
+				"TYPESCRIPT": "TypeScript",
+				"REACT": "React",
+				"NEXT_JS": "Next.js",
+				"NODE_JS": "Node.js",
+				"PYTHON": "Python",
+				"SQL": "SQL",
+				"TESTING": "Testing"
+			}
+		},
+		"availability": {
+			"label": "How much time can you dedicate each week?",
+			"description": "A rough range helps us avoid recommending more work than fits your routine.",
+			"options": {
+				"UNDER_3": "Up to 3 hours",
+				"FROM_4_TO_7": "4 to 7 hours",
+				"FROM_8_TO_12": "8 to 12 hours",
+				"OVER_12": "More than 12 hours"
+			}
+		},
+		"experience": {
+			"label": "What relevant experience do you already have?",
+			"description": "Tell us about projects, work, studies, or anything else that helps us understand your starting point.",
+			"placeholder": "For example: I have built small React projects and completed a programming course."
+		}
 	},
 	"validation": {
 		"required": "This field is required.",

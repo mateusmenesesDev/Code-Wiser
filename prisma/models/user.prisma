@@ -52,6 +52,13 @@ model User {
   normalOnboardingCompletedAt     DateTime?
   mentorshipOnboardingCompletedAt DateTime?
 
+  learningGoal            String?
+  selfReportedLevel      String?
+  interestedTechnologies String[] @default([])
+  weeklyAvailabilityBand String?
+  priorExperience        String?
+  diagnosisCompletedAt   DateTime?
+
   tasks                        Task[]
   sprintChanges                SprintChange[]
   projectMemberships           ProjectMembership[]

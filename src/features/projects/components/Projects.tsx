@@ -2,6 +2,8 @@
 
 import { ProjectMethodologyEnum } from '@prisma/client';
 import { Award, Code2, Search, Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '~/common/components/ui/button';
 import { Checkbox } from '~/common/components/ui/checkbox';
@@ -19,7 +21,9 @@ import {
 	SelectValue
 } from '~/common/components/ui/select';
 import { useUser } from '~/common/hooks/useUser';
+import { useAuth } from '~/features/auth/hooks/useAuth';
 import { OnboardingTour } from '~/features/onboarding/OnboardingTour';
+import { api } from '~/trpc/react';
 import { useProject } from '../hooks/useProject';
 import { useProjectFilter } from '../hooks/useProjectFilter';
 import type {
@@ -55,7 +59,11 @@ export default function Projects({
 		setSortFilter
 	} = useProjectFilter();
 
+	const tDiagnosis = useTranslations('diagnosis');
+	const { user } = useAuth();
 	const { userCredits, userHasMentorship, isUserMentorshipLoading } = useUser();
+	const { data: onboardingStatus, isLoading: isDiagnosisLoading } =
+		api.onboarding.getStatus.useQuery(undefined, { enabled: Boolean(user) });
 	const {
 		filteredProjects,
 		filterOptions,
@@ -95,6 +103,19 @@ export default function Projects({
 			<div className="mb-4 flex justify-end">
 				<OnboardingTour flow="normal" />
 			</div>
+			{user && onboardingStatus && !onboardingStatus.diagnosisCompletedAt && (
+				<div className="mb-8 rounded-xl border border-info-border bg-info-muted p-4 text-sm">
+					<p className="font-medium">{tDiagnosis('prompt.title')}</p>
+					<p className="mt-1 text-muted-foreground">
+						{tDiagnosis('prompt.description')}
+					</p>
+					<Button asChild variant="outline" className="mt-3">
+						<Link href="/onboarding/diagnosis?returnTo=/projects">
+							{tDiagnosis('prompt.action')}
+						</Link>
+					</Button>
+				</div>
+			)}
 
 			{/* Hero Section */}
 			<div className="mb-12 animate-fade-in text-center">
@@ -317,6 +338,12 @@ export default function Projects({
 										projectId={
 											userProjects?.find((p) => p.title === project.title)?.id
 										}
+										diagnosisComplete={
+											onboardingStatus
+												? onboardingStatus.diagnosisCompletedAt != null
+												: undefined
+										}
+										isDiagnosisLoading={isDiagnosisLoading}
 									/>
 								</div>
 							))}
