@@ -87,6 +87,14 @@ type TaskFormData =
 	| z.infer<typeof createTaskSchema>
 	| z.infer<typeof updateTaskSchema>;
 
+const priorityLabels: Record<TaskPriorityEnum, string> = {
+	[TaskPriorityEnum.LOWEST]: 'Lowest',
+	[TaskPriorityEnum.LOW]: 'Low',
+	[TaskPriorityEnum.MEDIUM]: 'Medium',
+	[TaskPriorityEnum.HIGH]: 'High',
+	[TaskPriorityEnum.HIGHEST]: 'Highest'
+};
+
 export function TaskDialogContent({
 	taskId,
 	projectId,
@@ -304,12 +312,27 @@ export function TaskDialogContent({
 		toast.error(msg);
 	};
 
+	const priorityWatch = form.watch('priority');
 	const storyPointsWatch = normalizeStoryPointsForForm(
 		form.watch('storyPoints')
 	);
 	const storyPointsIsFibonacci =
 		storyPointsWatch == null ||
 		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
+	const setPriority = (priority: TaskPriorityEnum) => {
+		if (priority === priorityWatch) return;
+		form.setValue('priority', priority, { shouldDirty: true });
+	};
+	const setStoryPoints = (storyPoints: number | undefined) => {
+		if (storyPoints === undefined) {
+			const raw = form.getValues('storyPoints') as unknown;
+			if (raw === undefined || raw === null || raw === '') return;
+			form.setValue('storyPoints', undefined, { shouldDirty: true });
+			return;
+		}
+		if (storyPoints === storyPointsWatch) return;
+		form.setValue('storyPoints', storyPoints, { shouldDirty: true });
+	};
 
 	return (
 		<FormProvider {...form}>
@@ -343,7 +366,7 @@ export function TaskDialogContent({
 					<TabsList
 						className={cn(
 							'grid h-auto w-full',
-							isTemplate ? 'grid-cols-4' : 'grid-cols-5'
+							isTemplate ? 'grid-cols-3' : 'grid-cols-4'
 						)}
 					>
 						<TabsTrigger
@@ -351,12 +374,6 @@ export function TaskDialogContent({
 							className="px-1 text-xs sm:px-3 sm:text-sm"
 						>
 							Overview
-						</TabsTrigger>
-						<TabsTrigger
-							value="planning"
-							className="px-1 text-xs sm:px-3 sm:text-sm"
-						>
-							Planning
 						</TabsTrigger>
 						{!isTemplate && (
 							<TabsTrigger
@@ -384,7 +401,7 @@ export function TaskDialogContent({
 						value="overview"
 						className="min-h-0 flex-1 overflow-y-auto pr-1"
 					>
-						<div className="space-y-6">
+						<div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,1fr)]">
 							{/* Main Content */}
 							<div className="space-y-6">
 								{/* Title */}
@@ -397,7 +414,7 @@ export function TaskDialogContent({
 										data-testid="task-title-input"
 										{...form.register('title')}
 										placeholder="Task title"
-										className="w-full"
+										className="h-9 w-full text-sm"
 									/>
 									{form.formState.errors.title && (
 										<p className="mt-1 text-destructive text-sm">
@@ -476,6 +493,365 @@ export function TaskDialogContent({
 									/>
 								)}
 							</div>
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+								{/* Planning fields */}
+								{/* Status */}
+								<div>
+									<Label htmlFor="status" className="mb-2 block">
+										Status
+									</Label>
+									<Select
+										value={form.watch('status')}
+										onValueChange={(value) => {
+											const next = value as TaskStatusEnum;
+											if (next === form.getValues('status')) return;
+											form.setValue('status', next, { shouldDirty: true });
+										}}
+									>
+										<SelectTrigger
+											aria-label="Task status"
+											className="h-8 text-xs"
+										>
+											<SelectValue placeholder="Select status" />
+										</SelectTrigger>
+										<SelectContent>
+											{Object.values(TaskStatusEnum).map((status) => (
+												<SelectItem key={status} value={status}>
+													{getStatusLabel(status)}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+
+								{/* Priority */}
+								<fieldset className="space-y-2">
+									<legend className="font-medium text-sm">Priority</legend>
+									<div className="flex flex-wrap gap-1.5">
+										{Object.values(TaskPriorityEnum).map((priority) => (
+											<Button
+												key={priority}
+												type="button"
+												variant="outline"
+												size="sm"
+												className={cn(
+													'h-7 rounded-full px-2.5 text-xs',
+													priorityWatch === priority &&
+														'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+												)}
+												aria-pressed={priorityWatch === priority}
+												onClick={() => setPriority(priority)}
+											>
+												{priorityLabels[priority]}
+											</Button>
+										))}
+									</div>
+								</fieldset>
+
+								{/* Assignees */}
+								{!isTemplate && (
+									<AssigneesInput
+										value={form.watch('assigneeIds') ?? []}
+										onChange={(assigneeIds) =>
+											form.setValue('assigneeIds', assigneeIds, {
+												shouldDirty: true
+											})
+										}
+										members={projectMembers}
+										isLoading={isLoadingMembers}
+									/>
+								)}
+
+								{/* Due Date */}
+								<div>
+									<Label htmlFor="dueDate" className="mb-2 block">
+										Due Date
+									</Label>
+									<Input
+										id="dueDate"
+										type="date"
+										className="h-8 text-xs"
+										value={(() => {
+											const dueDate = form.watch('dueDate');
+											if (
+												dueDate instanceof Date &&
+												!Number.isNaN(dueDate.getTime())
+											) {
+												return dueDate.toISOString().slice(0, 10);
+											}
+											return typeof dueDate === 'string' ? dueDate : '';
+										})()}
+										onChange={(event) => {
+											const next = event.target.value;
+											form.setValue(
+												'dueDate',
+												next.trim() !== '' ? new Date(next) : undefined,
+												{ shouldDirty: true }
+											);
+										}}
+									/>
+								</div>
+
+								{/* Story Points */}
+								<fieldset className="space-y-2">
+									<legend className="font-medium text-sm">Story Points</legend>
+									<div className="flex flex-wrap gap-1.5">
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className={cn(
+												'h-7 rounded-full px-2.5 text-xs',
+												storyPointsWatch == null &&
+													'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+											)}
+											aria-pressed={storyPointsWatch == null}
+											onClick={() => setStoryPoints(undefined)}
+										>
+											None
+										</Button>
+										{FIBONACCI_STORY_POINTS.map((points) => (
+											<Button
+												key={points}
+												type="button"
+												variant="outline"
+												size="sm"
+												className={cn(
+													'h-7 min-w-8 rounded-full px-2 text-xs',
+													storyPointsWatch === points &&
+														'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+												)}
+												aria-pressed={storyPointsWatch === points}
+												onClick={() => setStoryPoints(points)}
+											>
+												{points}
+											</Button>
+										))}
+										{!storyPointsIsFibonacci && storyPointsWatch != null && (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												className="h-7 min-w-8 rounded-full bg-primary px-2 text-primary-foreground text-xs hover:bg-primary/90"
+												aria-pressed
+												onClick={() => setStoryPoints(storyPointsWatch)}
+											>
+												{storyPointsWatch}
+											</Button>
+										)}
+									</div>
+								</fieldset>
+
+								{/* Product Version */}
+								{(form.watch('type') == null ||
+									form.watch('type') === TaskTypeEnum.USER_STORY) && (
+									<FormField
+										control={form.control}
+										name="productVersionId"
+										render={({ field }) => {
+											const versions = productVersionData?.versions ?? [];
+											const selectValue =
+												field.value &&
+												versions.some((version) => version.id === field.value)
+													? field.value
+													: 'none';
+
+											return (
+												<FormItem>
+													<FormLabel>Version</FormLabel>
+													<Select
+														value={selectValue}
+														onValueChange={(value) =>
+															field.onChange(value === 'none' ? null : value)
+														}
+														disabled={versions.length === 0}
+													>
+														<FormControl>
+															<SelectTrigger className="h-8 text-xs">
+																<SelectValue
+																	placeholder={
+																		versions.length === 0
+																			? 'No versions available'
+																			: 'Select version'
+																	}
+																/>
+															</SelectTrigger>
+														</FormControl>
+														<SelectContent>
+															<SelectItem value="none">No version</SelectItem>
+															{versions.map((version) => (
+																<SelectItem key={version.id} value={version.id}>
+																	{version.name}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</FormItem>
+											);
+										}}
+									/>
+								)}
+
+								{/* Epic */}
+								<FormField
+									control={form.control}
+									name="epicId"
+									render={({ field }) => {
+										// Ensure value is a valid string or 'none'
+										const selectValue =
+											field.value && typeof field.value === 'string'
+												? epics?.some((e) => e.id === field.value)
+													? field.value
+													: 'none'
+												: 'none';
+
+										return (
+											<FormItem>
+												<FormLabel>Epic</FormLabel>
+												<Select
+													key={`epic-select-${task?.id || 'new'}-${epics?.length || 0}-${selectValue}`}
+													value={selectValue}
+													onValueChange={(value) =>
+														field.onChange(value === 'none' ? null : value)
+													}
+													disabled={epics?.length === 0}
+												>
+													<FormControl>
+														<SelectTrigger className="h-8 text-xs">
+															<SelectValue
+																placeholder={
+																	epics?.length === 0
+																		? 'No epics available'
+																		: 'Select epic'
+																}
+															/>
+														</SelectTrigger>
+													</FormControl>
+													<SelectContent>
+														<SelectItem value="none">No epic</SelectItem>
+														{epics?.map((epic) => (
+															<SelectItem key={epic.id} value={epic.id}>
+																{epic.title}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormItem>
+										);
+									}}
+								/>
+
+								{/* Sprint */}
+								<FormField
+									control={form.control}
+									name="sprintId"
+									render={({ field }) => {
+										// Ensure value is a valid string or 'none'
+										const selectValue =
+											field.value && typeof field.value === 'string'
+												? sprints?.some((s) => s.id === field.value)
+													? field.value
+													: 'none'
+												: 'none';
+
+										return (
+											<FormItem>
+												<FormLabel>Sprint</FormLabel>
+												<Select
+													key={`sprint-select-${task?.id || 'new'}-${sprints?.length || 0}-${selectValue}`}
+													value={selectValue}
+													onValueChange={(value) =>
+														field.onChange(value === 'none' ? null : value)
+													}
+													disabled={sprints?.length === 0}
+												>
+													<FormControl>
+														<SelectTrigger className="h-8 text-xs">
+															<SelectValue
+																placeholder={
+																	sprints?.length === 0
+																		? 'No sprints available'
+																		: 'Select sprint'
+																}
+															/>
+														</SelectTrigger>
+													</FormControl>
+													<SelectContent>
+														<SelectItem value="none">No sprint</SelectItem>
+														{sprints?.map((sprint) => (
+															<SelectItem key={sprint.id} value={sprint.id}>
+																{sprint.title}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormItem>
+										);
+									}}
+								/>
+
+								{/* Blocked Status Toggle */}
+								<div className="space-y-3 rounded-lg border bg-muted/20 p-4 sm:col-span-2">
+									<div className="flex items-center space-x-2">
+										<Switch
+											id="blocked"
+											checked={form.watch('blocked') ?? false}
+											onCheckedChange={(checked) => {
+												if (checked === (form.getValues('blocked') ?? false))
+													return;
+												form.setValue('blocked', checked, {
+													shouldDirty: true
+												});
+												if (!checked) {
+													form.setValue('blockedReason', undefined, {
+														shouldDirty: true
+													});
+												}
+											}}
+										/>
+										<Label htmlFor="blocked" className="font-medium text-sm">
+											This task is blocked
+										</Label>
+									</div>
+									<p className="text-muted-foreground text-xs">
+										Mark this task as blocked if it cannot proceed
+									</p>
+
+									{form.watch('blocked') && (
+										<div className="space-y-2">
+											<Label
+												htmlFor="blockedReason"
+												className="font-medium text-sm"
+											>
+												Blocked Reason
+											</Label>
+											<Textarea
+												id="blockedReason"
+												{...form.register('blockedReason')}
+												placeholder="Explain why this task is blocked..."
+												className="min-h-[80px]"
+											/>
+										</div>
+									)}
+								</div>
+
+								{/* Tags */}
+								<div>
+									<TagsInput
+										value={form.watch('tags') || []}
+										onChange={(tags) => {
+											const prev = form.getValues('tags') || [];
+											if (
+												prev.length === tags.length &&
+												prev.every((t, i) => t === tags[i])
+											) {
+												return;
+											}
+											form.setValue('tags', tags, { shouldDirty: true });
+										}}
+									/>
+								</div>
+							</div>
 						</div>
 					</TabsContent>
 
@@ -527,7 +903,7 @@ export function TaskDialogContent({
 													value={prUrl}
 													onChange={(e) => setPrUrl(e.target.value)}
 													placeholder="https://github.com/user/repo/pull/123"
-													className="flex-1"
+													className="h-9 flex-1 text-sm"
 												/>
 												{activeReview &&
 													prUrl.trim() &&
@@ -662,368 +1038,6 @@ export function TaskDialogContent({
 					>
 						{/* Comments - use taskId directly to allow parallel fetching */}
 						<TaskComments taskId={taskId || ''} isEditing={!!task} />
-					</TabsContent>
-
-					<TabsContent
-						value="planning"
-						className="min-h-0 flex-1 overflow-y-auto pr-1"
-					>
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							{/* Sidebar */}
-							{/* Status */}
-							<div>
-								<Label htmlFor="status" className="mb-2 block">
-									Status
-								</Label>
-								<Select
-									value={form.watch('status')}
-									onValueChange={(value) => {
-										const next = value as TaskStatusEnum;
-										if (next === form.getValues('status')) return;
-										form.setValue('status', next, { shouldDirty: true });
-									}}
-								>
-									<SelectTrigger aria-label="Task status">
-										<SelectValue placeholder="Select status" />
-									</SelectTrigger>
-									<SelectContent>
-										{Object.values(TaskStatusEnum).map((status) => (
-											<SelectItem key={status} value={status}>
-												{getStatusLabel(status)}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							{/* Priority */}
-							<div>
-								<Label htmlFor="priority" className="mb-2 block">
-									Priority
-								</Label>
-								<Select
-									value={form.watch('priority')}
-									onValueChange={(value) => {
-										const next = value as TaskPriorityEnum;
-										if (next === form.getValues('priority')) return;
-										form.setValue('priority', next, { shouldDirty: true });
-									}}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select priority" />
-									</SelectTrigger>
-									<SelectContent>
-										{Object.values(TaskPriorityEnum).map((priority) => (
-											<SelectItem key={priority} value={priority}>
-												{priority}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							{/* Assignees */}
-							{!isTemplate && (
-								<AssigneesInput
-									value={form.watch('assigneeIds') ?? []}
-									onChange={(assigneeIds) =>
-										form.setValue('assigneeIds', assigneeIds, {
-											shouldDirty: true
-										})
-									}
-									members={projectMembers}
-									isLoading={isLoadingMembers}
-								/>
-							)}
-
-							{/* Due Date */}
-							<div>
-								<Label htmlFor="dueDate" className="mb-2 block">
-									Due Date
-								</Label>
-								<Input
-									id="dueDate"
-									type="date"
-									value={(() => {
-										const dueDate = form.watch('dueDate');
-										if (
-											dueDate instanceof Date &&
-											!Number.isNaN(dueDate.getTime())
-										) {
-											return dueDate.toISOString().slice(0, 10);
-										}
-										return typeof dueDate === 'string' ? dueDate : '';
-									})()}
-									onChange={(event) => {
-										const next = event.target.value;
-										form.setValue(
-											'dueDate',
-											next.trim() !== '' ? new Date(next) : undefined,
-											{ shouldDirty: true }
-										);
-									}}
-								/>
-							</div>
-
-							{/* Story Points */}
-							<div>
-								<Label htmlFor="storyPoints" className="mb-2 block">
-									Story Points
-								</Label>
-								<Select
-									value={
-										storyPointsWatch == null ? 'none' : String(storyPointsWatch)
-									}
-									onValueChange={(value) => {
-										const current = normalizeStoryPointsForForm(
-											form.getValues('storyPoints')
-										);
-										if (value === 'none') {
-											const raw = form.getValues('storyPoints') as unknown;
-											if (raw === undefined || raw === null || raw === '') {
-												return;
-											}
-											form.setValue('storyPoints', undefined, {
-												shouldDirty: true
-											});
-											return;
-										}
-										const parsed = Number.parseInt(value, 10);
-										if (!Number.isFinite(parsed)) return;
-										if (parsed === current) return;
-										form.setValue('storyPoints', parsed, { shouldDirty: true });
-									}}
-								>
-									<SelectTrigger id="storyPoints">
-										<SelectValue placeholder="Fibonacci estimate" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="none">None</SelectItem>
-										{FIBONACCI_STORY_POINTS.map((n) => (
-											<SelectItem key={n} value={String(n)}>
-												{n}
-											</SelectItem>
-										))}
-										{!storyPointsIsFibonacci && storyPointsWatch != null && (
-											<SelectItem value={String(storyPointsWatch)}>
-												{storyPointsWatch} (not in Fibonacci — pick a standard
-												value)
-											</SelectItem>
-										)}
-									</SelectContent>
-								</Select>
-							</div>
-
-							{/* Product Version */}
-							{(form.watch('type') == null ||
-								form.watch('type') === TaskTypeEnum.USER_STORY) && (
-								<FormField
-									control={form.control}
-									name="productVersionId"
-									render={({ field }) => {
-										const versions = productVersionData?.versions ?? [];
-										const selectValue =
-											field.value &&
-											versions.some((version) => version.id === field.value)
-												? field.value
-												: 'none';
-
-										return (
-											<FormItem>
-												<FormLabel>Version</FormLabel>
-												<Select
-													value={selectValue}
-													onValueChange={(value) =>
-														field.onChange(value === 'none' ? null : value)
-													}
-													disabled={versions.length === 0}
-												>
-													<FormControl>
-														<SelectTrigger>
-															<SelectValue
-																placeholder={
-																	versions.length === 0
-																		? 'No versions available'
-																		: 'Select version'
-																}
-															/>
-														</SelectTrigger>
-													</FormControl>
-													<SelectContent>
-														<SelectItem value="none">No version</SelectItem>
-														{versions.map((version) => (
-															<SelectItem key={version.id} value={version.id}>
-																{version.name}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</FormItem>
-										);
-									}}
-								/>
-							)}
-
-							{/* Epic */}
-							<FormField
-								control={form.control}
-								name="epicId"
-								render={({ field }) => {
-									// Ensure value is a valid string or 'none'
-									const selectValue =
-										field.value && typeof field.value === 'string'
-											? epics?.some((e) => e.id === field.value)
-												? field.value
-												: 'none'
-											: 'none';
-
-									return (
-										<FormItem>
-											<FormLabel>Epic</FormLabel>
-											<Select
-												key={`epic-select-${task?.id || 'new'}-${epics?.length || 0}-${selectValue}`}
-												value={selectValue}
-												onValueChange={(value) =>
-													field.onChange(value === 'none' ? null : value)
-												}
-												disabled={epics?.length === 0}
-											>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue
-															placeholder={
-																epics?.length === 0
-																	? 'No epics available'
-																	: 'Select epic'
-															}
-														/>
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													<SelectItem value="none">No epic</SelectItem>
-													{epics?.map((epic) => (
-														<SelectItem key={epic.id} value={epic.id}>
-															{epic.title}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</FormItem>
-									);
-								}}
-							/>
-
-							{/* Sprint */}
-							<FormField
-								control={form.control}
-								name="sprintId"
-								render={({ field }) => {
-									// Ensure value is a valid string or 'none'
-									const selectValue =
-										field.value && typeof field.value === 'string'
-											? sprints?.some((s) => s.id === field.value)
-												? field.value
-												: 'none'
-											: 'none';
-
-									return (
-										<FormItem>
-											<FormLabel>Sprint</FormLabel>
-											<Select
-												key={`sprint-select-${task?.id || 'new'}-${sprints?.length || 0}-${selectValue}`}
-												value={selectValue}
-												onValueChange={(value) =>
-													field.onChange(value === 'none' ? null : value)
-												}
-												disabled={sprints?.length === 0}
-											>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue
-															placeholder={
-																sprints?.length === 0
-																	? 'No sprints available'
-																	: 'Select sprint'
-															}
-														/>
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													<SelectItem value="none">No sprint</SelectItem>
-													{sprints?.map((sprint) => (
-														<SelectItem key={sprint.id} value={sprint.id}>
-															{sprint.title}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</FormItem>
-									);
-								}}
-							/>
-
-							{/* Blocked Status Toggle */}
-							<div className="space-y-3 rounded-lg border bg-muted/20 p-4">
-								<div className="flex items-center space-x-2">
-									<Switch
-										id="blocked"
-										checked={form.watch('blocked') ?? false}
-										onCheckedChange={(checked) => {
-											if (checked === (form.getValues('blocked') ?? false))
-												return;
-											form.setValue('blocked', checked, {
-												shouldDirty: true
-											});
-											if (!checked) {
-												form.setValue('blockedReason', undefined, {
-													shouldDirty: true
-												});
-											}
-										}}
-									/>
-									<Label htmlFor="blocked" className="font-medium text-sm">
-										This task is blocked
-									</Label>
-								</div>
-								<p className="text-muted-foreground text-xs">
-									Mark this task as blocked if it cannot proceed
-								</p>
-
-								{form.watch('blocked') && (
-									<div className="space-y-2">
-										<Label
-											htmlFor="blockedReason"
-											className="font-medium text-sm"
-										>
-											Blocked Reason
-										</Label>
-										<Textarea
-											id="blockedReason"
-											{...form.register('blockedReason')}
-											placeholder="Explain why this task is blocked..."
-											className="min-h-[80px]"
-										/>
-									</div>
-								)}
-							</div>
-
-							{/* Tags */}
-							<div>
-								<TagsInput
-									value={form.watch('tags') || []}
-									onChange={(tags) => {
-										const prev = form.getValues('tags') || [];
-										if (
-											prev.length === tags.length &&
-											prev.every((t, i) => t === tags[i])
-										) {
-											return;
-										}
-										form.setValue('tags', tags, { shouldDirty: true });
-									}}
-								/>
-							</div>
-						</div>
 					</TabsContent>
 				</Tabs>
 
