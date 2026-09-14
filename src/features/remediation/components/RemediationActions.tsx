@@ -15,21 +15,7 @@ import {
 } from '~/common/components/ui/card';
 import { Textarea } from '~/common/components/ui/textarea';
 import { api } from '~/trpc/react';
-
-function getActionHref(action: {
-	targetType: string;
-	task?: { id: string; projectId: string | null } | null;
-	challenge?: { slug: string; track: { slug: string } } | null;
-	bookingId: string | null;
-}) {
-	if (action.targetType === 'TASK' && action.task?.projectId) {
-		return `/workspace/${action.task.projectId}?taskId=${action.task.id}`;
-	}
-	if (action.targetType === 'EXERCISE' && action.challenge) {
-		return `/exercises/${action.challenge.track.slug}/${action.challenge.slug}`;
-	}
-	return action.targetType === 'MENTORSHIP' ? '/mentorship' : '/';
-}
+import { getRemediationActionHref } from '../utils/getRemediationActionHref';
 
 export function RemediationActions() {
 	const t = useTranslations('remediation');
@@ -156,7 +142,7 @@ export function RemediationActions() {
 								)}
 								{!isCompleted && (
 									<Button asChild variant="ghost" size="sm" className="px-0">
-										<Link href={getActionHref(action)}>
+										<Link href={getRemediationActionHref(action)}>
 											{t('openTarget')}
 											<ArrowRight className="ml-2 h-4 w-4" />
 										</Link>

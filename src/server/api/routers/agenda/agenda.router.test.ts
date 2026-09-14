@@ -44,6 +44,7 @@ describe('agenda procedures', () => {
 		mockDb.user.findUnique.mockResolvedValue({
 			taskDeadlineRemindersEnabled: true
 		} as never);
+		mockDb.remediationAction.findMany.mockResolvedValue([]);
 		mockDb.task.findMany.mockResolvedValue([
 			{
 				id: 'task-1',
@@ -73,6 +74,7 @@ describe('agenda procedures', () => {
 		});
 
 		expect(result.tasks).toHaveLength(1);
+		expect(result.remediationActions).toEqual([]);
 		expect(result.projects).toEqual([{ id: 'project-1', title: 'Portal' }]);
 		expect(result.remindersEnabled).toBe(true);
 		expect(mockDb.task.findMany).toHaveBeenCalledWith(
@@ -85,6 +87,44 @@ describe('agenda procedures', () => {
 						lt: new Date('2026-08-14T00:00:00.000Z'),
 						not: null
 					}
+				})
+			})
+		);
+	});
+
+	it('returns due remediation actions for the selected period', async () => {
+		mockDb.remediationAction.findMany.mockResolvedValue([
+			{
+				id: 'action-1',
+				title: 'Add integration tests',
+				description: 'Cover the error path.',
+				targetType: 'TASK',
+				status: 'IN_PROGRESS',
+				dueAt: new Date('2026-08-13T00:00:00.000Z'),
+				task: { id: 'task-1', title: 'Build form', projectId: 'project-1' },
+				challenge: null,
+				booking: null
+			}
+		] as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		const result = await caller.getOverview({
+			period: 'today',
+			date: '2026-08-13'
+		});
+
+		expect(result.remediationActions).toHaveLength(1);
+		expect(result.remediationActions[0]).toMatchObject({
+			id: 'action-1',
+			targetType: 'TASK'
+		});
+		expect(mockDb.remediationAction.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: expect.objectContaining({
+					learnerId: 'user-1',
+					status: { in: ['OPEN', 'IN_PROGRESS'] }
 				})
 			})
 		);

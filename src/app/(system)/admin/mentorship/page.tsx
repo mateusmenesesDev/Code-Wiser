@@ -29,13 +29,22 @@ type SessionStatus =
 	| 'COMPLETED'
 	| 'CANCELLED'
 	| 'MENTOR_CANCELLED';
-type ActionStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+type ActionStatus =
+	| 'PENDING'
+	| 'IN_PROGRESS'
+	| 'SUBMITTED'
+	| 'COMPLETED'
+	| 'CANCELLED';
 type CompetencyAssessmentState = 'IN_DEVELOPMENT' | 'DEMONSTRATED';
 type CompetencyAssessment = {
 	competencyId: string;
 	state: CompetencyAssessmentState;
 	note: string;
 };
+type ActionTarget =
+	| { type: 'MENTORSHIP' }
+	| { type: 'TASK'; taskId: string }
+	| { type: 'EXERCISE'; challengeId: string };
 
 function toDateTimeLocal(value: Date | null) {
 	if (!value) return '';
@@ -54,6 +63,9 @@ export default function AdminMentorshipPage() {
 	const [actionStatus, setActionStatus] = useState<ActionStatus | 'NONE'>(
 		'NONE'
 	);
+	const [actionTarget, setActionTarget] = useState<ActionTarget>({
+		type: 'MENTORSHIP'
+	});
 	const [status, setStatus] = useState<SessionStatus>('SCHEDULED');
 	const [competencyAssessments, setCompetencyAssessments] = useState<
 		CompetencyAssessment[]
@@ -75,7 +87,19 @@ export default function AdminMentorshipPage() {
 			setMentorPrivateNote(booking.mentorPrivateNote ?? '');
 			setFollowUp(booking.followUp ?? '');
 			setActionDueAt(toDateTimeLocal(booking.actionDueAt));
-			setActionStatus(booking.actionStatus ?? 'NONE');
+			const previousAction = booking.remediationActions[0];
+			setActionStatus(
+				previousAction?.status === 'OPEN'
+					? 'PENDING'
+					: (previousAction?.status ?? booking.actionStatus ?? 'NONE')
+			);
+			setActionTarget(
+				previousAction?.task
+					? { type: 'TASK', taskId: previousAction.task.id }
+					: previousAction?.challenge
+						? { type: 'EXERCISE', challengeId: previousAction.challenge.id }
+						: { type: 'MENTORSHIP' }
+			);
 			setStatus(booking.status);
 			setCompetencyAssessments(
 				booking.competencyAssessments.map((assessment) => ({
@@ -139,6 +163,38 @@ export default function AdminMentorshipPage() {
 					{booking.status}
 				</Badge>
 			</div>
+
+			{booking.remediationActions[0] && (
+				<Card className="mb-6 border-info-border bg-info-muted">
+					<CardHeader>
+						<CardTitle>Follow-up review</CardTitle>
+						<CardDescription>
+							Review the learner's previous action before recording this
+							session.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-2 text-sm">
+						<div className="flex flex-wrap gap-2">
+							<strong>{booking.remediationActions[0].title}</strong>
+							<Badge variant="outline">
+								{booking.remediationActions[0].status}
+							</Badge>
+						</div>
+						{booking.remediationActions[0].evidenceNote && (
+							<p>
+								<strong>Evidence:</strong>{' '}
+								{booking.remediationActions[0].evidenceNote}
+							</p>
+						)}
+						{booking.remediationActions[0].reviewerNote && (
+							<p className="text-muted-foreground">
+								<strong>Review note:</strong>{' '}
+								{booking.remediationActions[0].reviewerNote}
+							</p>
+						)}
+					</CardContent>
+				</Card>
+			)}
 
 			<Card>
 				<CardHeader>
@@ -204,7 +260,53 @@ export default function AdminMentorshipPage() {
 							placeholder="What will the learner do next?"
 						/>
 					</div>
-					<div className="grid gap-4 sm:grid-cols-3">
+					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+						<div className="space-y-2">
+							<label htmlFor="action-target" className="font-medium text-sm">
+								Learning target
+							</label>
+							<Select
+								value={
+									actionTarget.type === 'TASK'
+										? `TASK:${actionTarget.taskId}`
+										: actionTarget.type === 'EXERCISE'
+											? `EXERCISE:${actionTarget.challengeId}`
+											: 'MENTORSHIP'
+								}
+								onValueChange={(value) => {
+									const [type, id] = value.split(':');
+									setActionTarget(
+										type === 'TASK' && id
+											? { type: 'TASK', taskId: id }
+											: type === 'EXERCISE' && id
+												? { type: 'EXERCISE', challengeId: id }
+												: { type: 'MENTORSHIP' }
+									);
+								}}
+							>
+								<SelectTrigger id="action-target">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="MENTORSHIP">
+										Mentorship follow-up
+									</SelectItem>
+									{booking.actionOptions.tasks.map((task) => (
+										<SelectItem key={task.id} value={`TASK:${task.id}`}>
+											Task: {task.title} ({task.project?.title})
+										</SelectItem>
+									))}
+									{booking.actionOptions.challenges.map((challenge) => (
+										<SelectItem
+											key={challenge.id}
+											value={`EXERCISE:${challenge.id}`}
+										>
+											Exercise: {challenge.title} ({challenge.track.name})
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						<div className="space-y-2">
 							<label htmlFor="action-due-at" className="font-medium text-sm">
 								Action deadline
@@ -234,6 +336,7 @@ export default function AdminMentorshipPage() {
 									<SelectItem value="NONE">No action</SelectItem>
 									<SelectItem value="PENDING">Pending</SelectItem>
 									<SelectItem value="IN_PROGRESS">In progress</SelectItem>
+									<SelectItem value="SUBMITTED">Awaiting review</SelectItem>
 									<SelectItem value="COMPLETED">Completed</SelectItem>
 									<SelectItem value="CANCELLED">Cancelled</SelectItem>
 								</SelectContent>
@@ -358,6 +461,7 @@ export default function AdminMentorshipPage() {
 										followUp.trim() && actionStatus !== 'NONE'
 											? actionStatus
 											: null,
+									actionTarget: followUp.trim() ? actionTarget : null,
 									status,
 									competencyAssessments: competencyAssessments.map(
 										({ competencyId, state, note }) => ({

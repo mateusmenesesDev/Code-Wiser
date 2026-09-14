@@ -10,6 +10,7 @@ enum MentorshipBookingStatus {
 enum MentorshipActionStatus {
   PENDING
   IN_PROGRESS
+  SUBMITTED
   COMPLETED
   CANCELLED
 

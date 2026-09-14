@@ -84,11 +84,25 @@ export const mentorshipQueries = {
 				followUp: true,
 				sessionNotes: true,
 				actionDueAt: true,
-				actionStatus: true
+				actionStatus: true,
+				remediationActions: {
+					orderBy: { createdAt: 'desc' },
+					take: 1,
+					select: { status: true }
+				}
 			}
 		});
 
-		return bookings;
+		return bookings.map(({ remediationActions, ...booking }) => {
+			const action = remediationActions?.[0];
+			return {
+				...booking,
+				actionStatus:
+					action?.status === 'OPEN'
+						? 'PENDING'
+						: (action?.status ?? booking.actionStatus)
+			};
+		});
 	}),
 
 	adminGetBooking: adminProcedure
@@ -111,6 +125,29 @@ export const mentorshipQueries = {
 					user: { select: { id: true, name: true, email: true } },
 					competencyAssessments: {
 						select: { competencyId: true, state: true, note: true }
+					},
+					remediationActions: {
+						orderBy: { createdAt: 'desc' },
+						take: 1,
+						select: {
+							id: true,
+							title: true,
+							targetType: true,
+							status: true,
+							dueAt: true,
+							evidenceNote: true,
+							completedAt: true,
+							reviewerNote: true,
+							task: { select: { id: true, title: true, projectId: true } },
+							challenge: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+									track: { select: { slug: true, name: true } }
+								}
+							}
+						}
 					}
 				}
 			});
@@ -122,6 +159,53 @@ export const mentorshipQueries = {
 				});
 			}
 
-			return booking;
+			const currentActionTaskId = booking.remediationActions[0]?.task?.id;
+			const currentActionChallengeId =
+				booking.remediationActions[0]?.challenge?.id;
+			const [tasks, challenges] = await Promise.all([
+				ctx.db.task.findMany({
+					where: {
+						OR: [
+							{ status: { not: 'DONE' } },
+							...(currentActionTaskId ? [{ id: currentActionTaskId }] : [])
+						],
+						project: {
+							canceledAt: null,
+							memberships: {
+								some: { userId: booking.user.id, status: 'ACTIVE' }
+							}
+						}
+					},
+					orderBy: [{ dueDate: 'asc' }, { title: 'asc' }],
+					take: 100,
+					select: {
+						id: true,
+						title: true,
+						projectId: true,
+						project: { select: { title: true } }
+					}
+				}),
+				ctx.db.exerciseChallenge.findMany({
+					where: {
+						OR: [
+							{ isArchived: false },
+							...(currentActionChallengeId
+								? [{ id: currentActionChallengeId }]
+								: [])
+						],
+						track: { isPublished: true, isArchived: false }
+					},
+					orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+					take: 100,
+					select: {
+						id: true,
+						title: true,
+						slug: true,
+						track: { select: { name: true, slug: true } }
+					}
+				})
+			]);
+
+			return { ...booking, actionOptions: { tasks, challenges } };
 		})
 };

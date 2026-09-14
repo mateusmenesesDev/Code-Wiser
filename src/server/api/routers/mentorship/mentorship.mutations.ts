@@ -18,6 +18,12 @@ import {
 } from '~/server/services/mentorship/mentorshipService';
 import { adminProcedure, mentorshipProcedure } from '../../trpc';
 
+const actionTargetSchema = z.discriminatedUnion('type', [
+	z.object({ type: z.literal('MENTORSHIP') }),
+	z.object({ type: z.literal('TASK'), taskId: z.string().min(1) }),
+	z.object({ type: z.literal('EXERCISE'), challengeId: z.string().min(1) })
+]);
+
 export const mentorshipMutations = {
 	bookSession: mentorshipProcedure
 		.input(
@@ -361,8 +367,15 @@ export const mentorshipMutations = {
 				mentorPrivateNote: z.string().trim().max(5000).nullable(),
 				actionDueAt: z.string().datetime().nullable(),
 				actionStatus: z
-					.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
+					.enum([
+						'PENDING',
+						'IN_PROGRESS',
+						'SUBMITTED',
+						'COMPLETED',
+						'CANCELLED'
+					])
 					.nullable(),
+				actionTarget: actionTargetSchema.nullable().optional(),
 				status: z
 					.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'MENTOR_CANCELLED'])
 					.optional(),
@@ -400,6 +413,9 @@ export const mentorshipMutations = {
 				});
 			}
 
+			const actionTarget = followUp
+				? (input.actionTarget ?? { type: 'MENTORSHIP' as const })
+				: null;
 			const bookingData = {
 				objective: input.objective || null,
 				followUp,
@@ -412,6 +428,55 @@ export const mentorshipMutations = {
 					: null,
 				actionStatus: followUp ? (input.actionStatus ?? 'PENDING') : null,
 				...(input.status ? { status: input.status } : {})
+			};
+
+			if (actionTarget?.type === 'TASK') {
+				const task = await ctx.db.task.findFirst({
+					where: {
+						id: actionTarget.taskId,
+						project: {
+							canceledAt: null,
+							memberships: {
+								some: { userId: booking.userId, status: 'ACTIVE' }
+							}
+						}
+					},
+					select: { id: true }
+				});
+				if (!task) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'The selected task is not available to this learner'
+					});
+				}
+			}
+			if (actionTarget?.type === 'EXERCISE') {
+				const challenge = await ctx.db.exerciseChallenge.findFirst({
+					where: {
+						id: actionTarget.challengeId,
+						isArchived: false,
+						track: { isPublished: true, isArchived: false }
+					},
+					select: { id: true }
+				});
+				if (!challenge) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'The selected exercise is not available'
+					});
+				}
+			}
+
+			const actionTargetData = {
+				targetType:
+					actionTarget?.type === 'TASK'
+						? RemediationActionTargetType.TASK
+						: actionTarget?.type === 'EXERCISE'
+							? RemediationActionTargetType.EXERCISE
+							: RemediationActionTargetType.MENTORSHIP,
+				taskId: actionTarget?.type === 'TASK' ? actionTarget.taskId : null,
+				challengeId:
+					actionTarget?.type === 'EXERCISE' ? actionTarget.challengeId : null
 			};
 
 			const competencyIds =
@@ -474,15 +539,17 @@ export const mentorshipMutations = {
 							? RemediationActionStatus.COMPLETED
 							: input.actionStatus === 'CANCELLED'
 								? RemediationActionStatus.CANCELLED
-								: input.actionStatus === 'IN_PROGRESS'
-									? RemediationActionStatus.IN_PROGRESS
-									: RemediationActionStatus.OPEN;
+								: input.actionStatus === 'SUBMITTED'
+									? RemediationActionStatus.SUBMITTED
+									: input.actionStatus === 'IN_PROGRESS'
+										? RemediationActionStatus.IN_PROGRESS
+										: RemediationActionStatus.OPEN;
 					await tx.remediationAction.upsert({
 						where: { bookingId: input.bookingId },
 						update: {
 							title: `Follow up: ${followUp}`,
 							description: followUp,
-							targetType: RemediationActionTargetType.MENTORSHIP,
+							...actionTargetData,
 							status: remediationStatus,
 							dueAt: bookingData.actionDueAt,
 							completedAt:
@@ -497,7 +564,7 @@ export const mentorshipMutations = {
 						create: {
 							title: `Follow up: ${followUp}`,
 							description: followUp,
-							targetType: RemediationActionTargetType.MENTORSHIP,
+							...actionTargetData,
 							status: remediationStatus,
 							dueAt: bookingData.actionDueAt,
 							completedAt:

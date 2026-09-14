@@ -1,6 +1,13 @@
 'use client';
 
-import { AlertCircle, Bell, CalendarDays, Clock3, Filter } from 'lucide-react';
+import {
+	AlertCircle,
+	ArrowRight,
+	Bell,
+	CalendarDays,
+	Clock3,
+	Filter
+} from 'lucide-react';
 import Link from 'next/link';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
@@ -24,6 +31,7 @@ import {
 } from '~/common/components/ui/select';
 import { Skeleton } from '~/common/components/ui/skeleton';
 import { Switch } from '~/common/components/ui/switch';
+import { getRemediationActionHref } from '~/features/remediation/utils/getRemediationActionHref';
 import { type RouterOutputs, api } from '~/trpc/react';
 import type { AgendaPeriod } from '../schemas/agenda.schema';
 
@@ -64,6 +72,7 @@ function statusLabel(status: string | null) {
 
 type AgendaOverview = RouterOutputs['agenda']['getOverview'];
 type AgendaTask = AgendaOverview['tasks'][number];
+type AgendaRemediationAction = AgendaOverview['remediationActions'][number];
 
 function AgendaTaskRow({ task }: { task: AgendaTask }) {
 	return (
@@ -101,6 +110,35 @@ function AgendaTaskRow({ task }: { task: AgendaTask }) {
 				<Button asChild variant="outline" size="sm">
 					<Link href={`/workspace/${task.projectId}?taskId=${task.id}`}>
 						Open task
+					</Link>
+				</Button>
+			</div>
+		</div>
+	);
+}
+
+function AgendaRemediationRow({
+	action
+}: {
+	action: AgendaRemediationAction;
+}) {
+	return (
+		<div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="min-w-0 space-y-1">
+				<div className="flex flex-wrap items-center gap-2">
+					<p className="font-medium">{action.title}</p>
+					<Badge variant="outline">{statusLabel(action.status)}</Badge>
+				</div>
+				<p className="text-muted-foreground text-sm">{action.description}</p>
+			</div>
+			<div className="flex shrink-0 items-center gap-3">
+				<span className="text-muted-foreground text-sm">
+					{formatDueDate(action.dueAt)}
+				</span>
+				<Button asChild variant="outline" size="sm">
+					<Link href={getRemediationActionHref(action)}>
+						Open action
+						<ArrowRight className="ml-2 h-4 w-4" />
 					</Link>
 				</Button>
 			</div>
@@ -300,6 +338,29 @@ export default function AgendaPage() {
 					)}
 				</CardContent>
 			</Card>
+
+			{data?.remediationActions.length ? (
+				<Card>
+					<CardHeader>
+						<CardTitle level={2} className="text-lg">
+							Feedback actions
+						</CardTitle>
+						<CardDescription>
+							Follow-ups due in this agenda period.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-3">
+						{data.remediationActions.map((action) => (
+							<AgendaRemediationRow key={action.id} action={action} />
+						))}
+						{data.hasMoreRemediationActions && (
+							<p className="text-muted-foreground text-sm">
+								More feedback actions match this period.
+							</p>
+						)}
+					</CardContent>
+				</Card>
+			) : null}
 
 			<Card>
 				<CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">

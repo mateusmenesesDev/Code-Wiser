@@ -39,11 +39,13 @@ describe('mentorship history', () => {
 		);
 		mockDb.mentorshipBooking.findMany.mockResolvedValue([]);
 		mockDb.mentorshipBooking.findUnique.mockResolvedValue({
-			id: 'booking-1'
+			id: 'booking-1',
+			userId: 'learner-1'
 		} as never);
 		mockDb.mentorshipBooking.update.mockResolvedValue({
 			id: 'booking-1'
 		} as never);
+		mockDb.task.findFirst.mockResolvedValue({ id: 'task-1' } as never);
 	});
 
 	it('returns a bounded learner-safe history projection without requiring active mentorship', async () => {
@@ -103,10 +105,22 @@ describe('mentorship history', () => {
 			mentorPrivateNote: '  Needs more confidence with testing  ',
 			followUp: '  Add integration tests  ',
 			actionDueAt: '2026-08-27T12:00:00.000Z',
+			actionTarget: { type: 'TASK', taskId: 'task-1' },
 			actionStatus: 'PENDING',
 			status: 'COMPLETED'
 		});
 
+		expect(mockDb.remediationAction.upsert).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: { bookingId: '11111111-1111-4111-8111-111111111111' },
+				create: expect.objectContaining({
+					targetType: 'TASK',
+					taskId: 'task-1',
+					challengeId: null,
+					learnerId: 'learner-1'
+				})
+			})
+		);
 		expect(mockDb.mentorshipBooking.update).toHaveBeenCalledWith({
 			where: { id: '11111111-1111-4111-8111-111111111111' },
 			data: {
