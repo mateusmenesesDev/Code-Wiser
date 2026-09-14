@@ -87,14 +87,6 @@ type TaskFormData =
 	| z.infer<typeof createTaskSchema>
 	| z.infer<typeof updateTaskSchema>;
 
-const priorityLabels: Record<TaskPriorityEnum, string> = {
-	[TaskPriorityEnum.LOWEST]: 'Lowest',
-	[TaskPriorityEnum.LOW]: 'Low',
-	[TaskPriorityEnum.MEDIUM]: 'Medium',
-	[TaskPriorityEnum.HIGH]: 'High',
-	[TaskPriorityEnum.HIGHEST]: 'Highest'
-};
-
 export function TaskDialogContent({
 	taskId,
 	projectId,
@@ -312,27 +304,12 @@ export function TaskDialogContent({
 		toast.error(msg);
 	};
 
-	const priorityWatch = form.watch('priority');
 	const storyPointsWatch = normalizeStoryPointsForForm(
 		form.watch('storyPoints')
 	);
 	const storyPointsIsFibonacci =
 		storyPointsWatch == null ||
 		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
-	const setPriority = (priority: TaskPriorityEnum) => {
-		if (priority === priorityWatch) return;
-		form.setValue('priority', priority, { shouldDirty: true });
-	};
-	const setStoryPoints = (storyPoints: number | undefined) => {
-		if (storyPoints === undefined) {
-			const raw = form.getValues('storyPoints') as unknown;
-			if (raw === undefined || raw === null || raw === '') return;
-			form.setValue('storyPoints', undefined, { shouldDirty: true });
-			return;
-		}
-		if (storyPoints === storyPointsWatch) return;
-		form.setValue('storyPoints', storyPoints, { shouldDirty: true });
-	};
 
 	return (
 		<FormProvider {...form}>
@@ -525,28 +502,30 @@ export function TaskDialogContent({
 								</div>
 
 								{/* Priority */}
-								<fieldset className="space-y-2">
-									<legend className="font-medium text-sm">Priority</legend>
-									<div className="flex flex-wrap gap-1.5">
-										{Object.values(TaskPriorityEnum).map((priority) => (
-											<Button
-												key={priority}
-												type="button"
-												variant="outline"
-												size="sm"
-												className={cn(
-													'h-7 rounded-full px-2.5 text-xs',
-													priorityWatch === priority &&
-														'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
-												)}
-												aria-pressed={priorityWatch === priority}
-												onClick={() => setPriority(priority)}
-											>
-												{priorityLabels[priority]}
-											</Button>
-										))}
-									</div>
-								</fieldset>
+								<div>
+									<Label htmlFor="priority" className="mb-2 block">
+										Priority
+									</Label>
+									<Select
+										value={form.watch('priority')}
+										onValueChange={(value) => {
+											const next = value as TaskPriorityEnum;
+											if (next === form.getValues('priority')) return;
+											form.setValue('priority', next, { shouldDirty: true });
+										}}
+									>
+										<SelectTrigger className="h-8 text-xs">
+											<SelectValue placeholder="Select priority" />
+										</SelectTrigger>
+										<SelectContent>
+											{Object.values(TaskPriorityEnum).map((priority) => (
+												<SelectItem key={priority} value={priority}>
+													{priority}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
 
 								{/* Assignees */}
 								{!isTemplate && (
@@ -593,54 +572,57 @@ export function TaskDialogContent({
 								</div>
 
 								{/* Story Points */}
-								<fieldset className="space-y-2">
-									<legend className="font-medium text-sm">Story Points</legend>
-									<div className="flex flex-wrap gap-1.5">
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className={cn(
-												'h-7 rounded-full px-2.5 text-xs',
-												storyPointsWatch == null &&
-													'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+								<div>
+									<Label htmlFor="storyPoints" className="mb-2 block">
+										Story Points
+									</Label>
+									<Select
+										value={
+											storyPointsWatch == null
+												? 'none'
+												: String(storyPointsWatch)
+										}
+										onValueChange={(value) => {
+											const current = normalizeStoryPointsForForm(
+												form.getValues('storyPoints')
+											);
+											if (value === 'none') {
+												const raw = form.getValues('storyPoints') as unknown;
+												if (raw === undefined || raw === null || raw === '') {
+													return;
+												}
+												form.setValue('storyPoints', undefined, {
+													shouldDirty: true
+												});
+												return;
+											}
+											const parsed = Number.parseInt(value, 10);
+											if (!Number.isFinite(parsed)) return;
+											if (parsed === current) return;
+											form.setValue('storyPoints', parsed, {
+												shouldDirty: true
+											});
+										}}
+									>
+										<SelectTrigger className="h-8 text-xs" id="storyPoints">
+											<SelectValue placeholder="Fibonacci estimate" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">None</SelectItem>
+											{FIBONACCI_STORY_POINTS.map((n) => (
+												<SelectItem key={n} value={String(n)}>
+													{n}
+												</SelectItem>
+											))}
+											{!storyPointsIsFibonacci && storyPointsWatch != null && (
+												<SelectItem value={String(storyPointsWatch)}>
+													{storyPointsWatch} (not in Fibonacci — pick a standard
+													value)
+												</SelectItem>
 											)}
-											aria-pressed={storyPointsWatch == null}
-											onClick={() => setStoryPoints(undefined)}
-										>
-											None
-										</Button>
-										{FIBONACCI_STORY_POINTS.map((points) => (
-											<Button
-												key={points}
-												type="button"
-												variant="outline"
-												size="sm"
-												className={cn(
-													'h-7 min-w-8 rounded-full px-2 text-xs',
-													storyPointsWatch === points &&
-														'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
-												)}
-												aria-pressed={storyPointsWatch === points}
-												onClick={() => setStoryPoints(points)}
-											>
-												{points}
-											</Button>
-										))}
-										{!storyPointsIsFibonacci && storyPointsWatch != null && (
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												className="h-7 min-w-8 rounded-full bg-primary px-2 text-primary-foreground text-xs hover:bg-primary/90"
-												aria-pressed
-												onClick={() => setStoryPoints(storyPointsWatch)}
-											>
-												{storyPointsWatch}
-											</Button>
-										)}
-									</div>
-								</fieldset>
+										</SelectContent>
+									</Select>
+								</div>
 
 								{/* Product Version */}
 								{(form.watch('type') == null ||
