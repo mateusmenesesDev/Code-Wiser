@@ -7,9 +7,16 @@ import {
 } from '~/common/components/ui/kanban';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import { AssigneeAvatars } from '~/features/task/components/AssigneeAvatars';
+import { TaskSubtasks } from '~/features/task/components/TaskSubtasks';
 import { formatPublicTaskId } from '~/lib/publicTaskId';
 
-export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
+export default function KanbanCardContent({
+	task,
+	projectId
+}: {
+	task: KanbanItemProps;
+	projectId: string;
+}) {
 	const [, setTaskId] = useQueryState('taskId');
 	const publicTaskId = formatPublicTaskId(
 		task.project?.publicCode,
@@ -56,6 +63,12 @@ export default function KanbanCardContent({ task }: { task: KanbanItemProps }) {
 
 					<AssigneeAvatars assignees={task.assignees ?? []} />
 				</div>
+				<TaskSubtasks
+					parentTaskId={task.id}
+					projectId={projectId}
+					isTemplate={false}
+					subtasks={task.subtasks}
+				/>
 			</div>{' '}
 		</KanbanCard>
 	);

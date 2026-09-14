@@ -51,6 +51,10 @@ describe('task.getById', () => {
 		);
 
 		await expect(caller.getById({ id: 'task-1' })).resolves.toBeTruthy();
+		const args = mockDb.task.findUnique.mock.calls.at(-1)?.[0] as {
+			include: { subtasks?: unknown };
+		};
+		expect(args.include.subtasks).toBeTruthy();
 	});
 
 	it('rejects a non-member even when the task id is known', async () => {

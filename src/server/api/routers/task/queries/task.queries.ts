@@ -35,6 +35,14 @@ export const taskQueries = {
 							id: true,
 							title: true
 						}
+					},
+					subtasks: {
+						orderBy: { createdAt: 'asc' },
+						select: {
+							id: true,
+							title: true,
+							status: true
+						}
 					}
 				}
 			});
@@ -56,8 +64,8 @@ export const taskQueries = {
 
 			const tasks = await ctx.db.task.findMany({
 				where: input.isTemplate
-					? { projectTemplateId: input.projectId }
-					: { projectId: input.projectId },
+					? { projectTemplateId: input.projectId, parentTaskId: null }
+					: { projectId: input.projectId, parentTaskId: null },
 				include: {
 					project: { select: { publicCode: true } },
 					projectTemplate: { select: { publicCode: true } },

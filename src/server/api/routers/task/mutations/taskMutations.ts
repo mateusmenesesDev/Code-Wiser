@@ -46,6 +46,42 @@ const createRelationshipUpdate = (
 	return id ? { connect: { id } } : { disconnect: true };
 };
 
+const assertTaskParentBelongsToResource = async (
+	ctx: ResourceAccessContext,
+	parentTaskId: string,
+	projectId: string,
+	isTemplate: boolean
+) => {
+	const parentTask = await ctx.db.task.findUnique({
+		where: { id: parentTaskId },
+		select: {
+			projectId: true,
+			projectTemplateId: true,
+			parentTaskId: true
+		}
+	});
+
+	const belongsToResource = isTemplate
+		? parentTask?.projectTemplateId === projectId &&
+			parentTask.projectId === null
+		: parentTask?.projectId === projectId &&
+			parentTask.projectTemplateId === null;
+
+	if (!parentTask || !belongsToResource) {
+		throw new TRPCError({
+			code: 'BAD_REQUEST',
+			message: 'Parent task does not belong to this project'
+		});
+	}
+
+	if (parentTask.parentTaskId) {
+		throw new TRPCError({
+			code: 'BAD_REQUEST',
+			message: 'Subtasks cannot contain other subtasks'
+		});
+	}
+};
+
 const assertTaskRelationsBelongToResource = async (
 	ctx: ResourceAccessContext,
 	projectId: string,
@@ -120,13 +156,37 @@ export const taskMutations = {
 				assigneeIds,
 				type,
 				productVersionId,
+				parentTaskId,
 				...rest
 			} = input;
+			const taskType = type ?? TaskTypeEnum.USER_STORY;
+
+			if (taskType === TaskTypeEnum.SUBTASK && !parentTaskId) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Subtasks must have a parent task'
+				});
+			}
+			if (parentTaskId && taskType !== TaskTypeEnum.SUBTASK) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'A parent task can only be assigned to a subtask'
+				});
+			}
 
 			if (isTemplate) {
 				await userHasAccessToProjectTemplate(ctx, projectId);
 			} else {
 				await userHasAccessToProject(ctx, projectId);
+			}
+
+			if (parentTaskId) {
+				await assertTaskParentBelongsToResource(
+					ctx,
+					parentTaskId,
+					projectId,
+					isTemplate
+				);
 			}
 
 			await assertTaskRelationsBelongToResource(
@@ -136,7 +196,7 @@ export const taskMutations = {
 				epicId,
 				sprintId,
 				productVersionId,
-				type ?? TaskTypeEnum.USER_STORY
+				taskType
 			);
 
 			if (sprintId) {
@@ -207,6 +267,9 @@ export const taskMutations = {
 								...(isTemplate
 									? { projectTemplate: { connect: { id: projectId } } }
 									: { project: { connect: { id: projectId } } }),
+								parentTask: parentTaskId
+									? { connect: { id: parentTaskId } }
+									: undefined,
 								assignees: assigneeIds?.length
 									? { connect: assigneeIds.map((id) => ({ id })) }
 									: undefined,
@@ -299,6 +362,7 @@ export const taskMutations = {
 					sprintId: true,
 					type: true,
 					productVersionId: true,
+					parentTaskId: true,
 					title: true,
 					sprint: {
 						select: { id: true, status: true }
@@ -329,11 +393,22 @@ export const taskMutations = {
 				});
 			}
 
+			const nextType = type ?? existingTask.type ?? TaskTypeEnum.USER_STORY;
+
 			await assertProjectResourceAccess(ctx, existingTask);
 			if (Boolean(existingTask.projectTemplateId) !== isTemplate) {
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
 					message: 'Task resource type does not match the request'
+				});
+			}
+			if (
+				(existingTask.parentTaskId && nextType !== TaskTypeEnum.SUBTASK) ||
+				(!existingTask.parentTaskId && nextType === TaskTypeEnum.SUBTASK)
+			) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'A subtask must keep its parent task'
 				});
 			}
 			if (
@@ -369,7 +444,7 @@ export const taskMutations = {
 				productVersionId === undefined
 					? existingTask.productVersionId
 					: productVersionId,
-				type ?? existingTask.type
+				nextType
 			);
 
 			const targetSprint = sprintId

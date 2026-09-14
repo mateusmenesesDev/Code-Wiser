@@ -275,7 +275,12 @@ const Workspace = () => {
 										</KanbanHeader>
 										<KanbanCards id={column.id}>
 											{(task) => {
-												return <KanbanCardContent task={task} />;
+												return (
+													<KanbanCardContent
+														task={task}
+														projectId={projectId}
+													/>
+												);
 											}}
 										</KanbanCards>
 									</KanbanBoard>

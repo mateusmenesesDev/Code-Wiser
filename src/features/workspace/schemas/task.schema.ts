@@ -55,7 +55,10 @@ export const baseTaskSchema = z.object({
 
 export const createTaskSchema = baseTaskSchema
 	.omit({ id: true })
-	.extend({ isTemplate: z.boolean() });
+	.extend({
+		isTemplate: z.boolean(),
+		parentTaskId: z.string().optional()
+	});
 
 export const updateTaskSchema = baseTaskSchema
 	.partial()

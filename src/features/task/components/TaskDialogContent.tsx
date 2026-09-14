@@ -64,6 +64,7 @@ import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
 import { TaskAttachments } from './TaskAttachments';
 import { TaskComments } from './TaskComments';
+import { TaskSubtasks } from './TaskSubtasks';
 
 interface TaskDialogProps {
 	taskId?: string;
@@ -368,6 +369,15 @@ export function TaskDialogContent({
 								</Button>
 							</Protect>
 						</div>
+
+						{isEditing && (
+							<TaskSubtasks
+								parentTaskId={task.id}
+								projectId={projectId}
+								isTemplate={isTemplate}
+								subtasks={task.subtasks}
+							/>
+						)}
 
 						{/* Code Review Request Section */}
 						{!isTemplate && (

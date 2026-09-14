@@ -40,6 +40,10 @@ model Task {
   projectTemplateId String?
   projectTemplate   ProjectTemplate? @relation(fields: [projectTemplateId], references: [id])
 
+  parentTaskId String?
+  parentTask   Task?  @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks     Task[] @relation("TaskSubtasks")
+
   epicId      String?
   epic        Epic?      @relation(fields: [epicId], references: [id])
   sprintId    String?
@@ -62,6 +66,7 @@ model Task {
   @@index([blocked, updatedAt])
   @@index([projectId, status, kanbanRank])
   @@index([projectTemplateId, status, kanbanRank])
+  @@index([parentTaskId])
   @@schema("public")
 }
 

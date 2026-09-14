@@ -16,6 +16,7 @@ export const getKanbanQueries = {
 			const kanbanData = await ctx.db.task.findMany({
 				where: {
 					projectId: input.projectId,
+					parentTaskId: null,
 					...(input.includeBacklog
 						? {}
 						: { status: { not: TaskStatusEnum.BACKLOG } }),
@@ -60,6 +61,14 @@ export const getKanbanQueries = {
 						select: {
 							id: true,
 							title: true
+						}
+					},
+					subtasks: {
+						orderBy: { createdAt: 'asc' },
+						select: {
+							id: true,
+							title: true,
+							status: true
 						}
 					}
 				},

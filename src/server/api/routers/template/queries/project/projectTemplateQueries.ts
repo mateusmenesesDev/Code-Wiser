@@ -145,6 +145,7 @@ export const projectTemplateQueries = {
 						learningOutcomes: true,
 						milestones: true,
 						tasks: {
+							where: { parentTaskId: null },
 							include: {
 								assignees: {
 									select: {

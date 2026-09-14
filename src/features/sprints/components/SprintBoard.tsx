@@ -303,7 +303,9 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 											)}
 										</KanbanHeader>
 										<KanbanCards id={column.id}>
-											{(task) => <KanbanCardContent task={task} />}
+											{(task) => (
+												<KanbanCardContent task={task} projectId={projectId} />
+											)}
 										</KanbanCards>
 									</KanbanBoard>
 								);

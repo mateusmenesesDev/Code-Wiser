@@ -285,41 +285,59 @@ export const projectMutations = {
 						}
 
 						if (templateTasks.length > 0) {
-							const createdTaskIds: string[] = [];
-							await prisma.task.createMany({
-								data: templateTasks.map((task) => {
-									const {
-										id: _taskId,
-										epicId,
-										sprintId,
-										milestoneId,
-										productVersionId,
-										kanbanRank: sourceKanbanRank,
-										projectTemplateId,
-										...taskData
-									} = task;
-									const newId = randomUUID();
-									createdTaskIds.push(newId);
+							const taskIdMap = new Map(
+								templateTasks.map((task) => [task.id, randomUUID()])
+							);
+							const createdTaskIds = templateTasks.map(
+								(task) => taskIdMap.get(task.id) as string
+							);
+							const taskRows = templateTasks.map((task) => {
+								const {
+									id: _taskId,
+									epicId,
+									sprintId,
+									milestoneId,
+									productVersionId,
+									parentTaskId,
+									kanbanRank: sourceKanbanRank,
+									projectTemplateId: _projectTemplateId,
+									...taskData
+								} = task;
 
-									return {
-										...taskData,
-										id: newId,
-										projectId: newProject.id,
-										kanbanRank:
-											sourceKanbanRank ??
-											BigInt((taskData.order ?? 0) + 1) * KANBAN_RANK_STEP,
-										epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
-										sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
-										milestoneId: milestoneId
-											? (milestoneIdMap[milestoneId] ?? null)
-											: null,
-										productVersionId: productVersionId
-											? (productVersionIdMap[productVersionId] ?? null)
-											: null,
-										projectTemplateId: null
-									};
-								})
+								return {
+									...taskData,
+									id: taskIdMap.get(task.id) as string,
+									projectId: newProject.id,
+									parentTaskId: parentTaskId
+										? (taskIdMap.get(parentTaskId) ?? null)
+										: null,
+									kanbanRank:
+										sourceKanbanRank ??
+										BigInt((taskData.order ?? 0) + 1) * KANBAN_RANK_STEP,
+									epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
+									sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
+									milestoneId: milestoneId
+										? (milestoneIdMap[milestoneId] ?? null)
+										: null,
+									productVersionId: productVersionId
+										? (productVersionIdMap[productVersionId] ?? null)
+										: null,
+									projectTemplateId: null
+								};
 							});
+
+							const topLevelTaskRows = taskRows.filter(
+								(task) => task.parentTaskId === null
+							);
+							const subtaskRows = taskRows.filter(
+								(task) => task.parentTaskId !== null
+							);
+							if (topLevelTaskRows.length > 0) {
+								await prisma.task.createMany({ data: topLevelTaskRows });
+							}
+							if (subtaskRows.length > 0) {
+								await prisma.task.createMany({ data: subtaskRows });
+							}
 
 							await prisma.user.update({
 								where: { id: user.id },

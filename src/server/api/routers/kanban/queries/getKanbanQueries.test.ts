@@ -41,10 +41,14 @@ describe('kanban.getKanbanData', () => {
 
 		await caller.getKanbanData({ projectId: 'project-1' });
 		const args = mockDb.task.findMany.mock.calls[0]?.[0] as {
-			where: { status?: { not?: TaskStatusEnum } };
+			where: {
+				status?: { not?: TaskStatusEnum };
+				parentTaskId?: string | null;
+			};
 		};
 
 		expect(args.where.status).toEqual({ not: TaskStatusEnum.BACKLOG });
+		expect(args.where.parentTaskId).toBeNull();
 	});
 
 	it('can include backlog tasks for a planning board', async () => {
@@ -57,10 +61,11 @@ describe('kanban.getKanbanData', () => {
 			includeBacklog: true
 		});
 		const args = mockDb.task.findMany.mock.calls[0]?.[0] as {
-			where: { status?: unknown };
+			where: { status?: unknown; parentTaskId?: string | null };
 		};
 
 		expect(args.where.status).toBeUndefined();
+		expect(args.where.parentTaskId).toBeNull();
 	});
 
 	it('returns product version ids so version filters can match tasks', async () => {
@@ -74,6 +79,7 @@ describe('kanban.getKanbanData', () => {
 		};
 
 		expect(args.select.productVersionId).toBe(true);
+		expect(args.select.subtasks).toBeTruthy();
 		expect(tasks[0]).toMatchObject({ productVersionId: 'version-1' });
 	});
 });

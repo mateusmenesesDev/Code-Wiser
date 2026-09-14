@@ -1,4 +1,4 @@
-import { TaskStatusEnum } from '@prisma/client';
+import { TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
@@ -25,6 +25,62 @@ vi.mock('~/server/services/notification/notificationService', () => ({
 	notifyTaskBlocked: vi.fn().mockResolvedValue(undefined),
 	notifyTaskStatusChanged: vi.fn().mockResolvedValue(undefined)
 }));
+
+describe('task subtasks', () => {
+	const createCaller = createCallerFactory(taskRouter);
+
+	it('requires a parent task for subtasks', async () => {
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.create({
+				projectId: 'project-1',
+				title: 'Subtask without parent',
+				type: TaskTypeEnum.SUBTASK,
+				isTemplate: false
+			})
+		).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+	});
+
+	it('connects a new subtask to a parent in the same project', async () => {
+		mockDb.project.findUnique
+			.mockResolvedValueOnce({
+				memberships: [{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
+			} as never)
+			.mockResolvedValueOnce({ canceledAt: null } as never);
+		mockDb.task.findUnique.mockResolvedValue({
+			projectId: 'project-1',
+			projectTemplateId: null,
+			parentTaskId: null
+		} as never);
+		mockDb.project.update.mockResolvedValue({ nextTaskNumber: 2 } as never);
+		mockDb.task.findFirst.mockResolvedValue(null);
+		mockDb.task.create.mockResolvedValue({ id: 'subtask-1', storyPoints: null } as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+		await caller.create({
+			projectId: 'project-1',
+			title: 'Implement the endpoint',
+			type: TaskTypeEnum.SUBTASK,
+			parentTaskId: 'task-1',
+			isTemplate: false
+		});
+		expect(mockDb.task.create).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					parentTask: { connect: { id: 'task-1' } }
+				})
+			})
+		);
+	});
+});
 
 describe('task status transitions', () => {
 	const createCaller = createCallerFactory(taskRouter);

@@ -20,6 +20,20 @@ describe('task schema product versions', () => {
 	});
 });
 
+describe('task schema subtasks', () => {
+	it('accepts a parent task when creating a subtask', () => {
+		const result = createTaskSchema.safeParse({
+			projectId: 'project-1',
+			title: 'Implement the endpoint',
+			type: 'SUBTASK',
+			parentTaskId: 'task-1',
+			isTemplate: false
+		});
+
+		expect(result.success).toBe(true);
+	});
+});
+
 describe('task schema assignees', () => {
 	it('accepts multiple assigneeIds on create', () => {
 		const result = createTaskSchema.safeParse({
