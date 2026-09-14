@@ -1,8 +1,16 @@
 import { TaskStatusEnum, TaskTypeEnum } from '@prisma/client';
-import { Check, ListPlus, Loader2, MoreHorizontal, Plus } from 'lucide-react';
+import {
+	Check,
+	ListPlus,
+	Loader2,
+	MoreHorizontal,
+	Plus,
+	Trash2
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useQueryState } from 'nuqs';
 import { toast } from 'sonner';
+import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
@@ -44,6 +52,11 @@ export function TaskSubtasks({
 	const [updatingSubtaskId, setUpdatingSubtaskId] = useState<string | null>(
 		null
 	);
+	const [deletingSubtaskId, setDeletingSubtaskId] = useState<string | null>(
+		null
+	);
+	const [subtaskToDelete, setSubtaskToDelete] =
+		useState<TaskSubtask | null>(null);
 	const [, setTaskId] = useQueryState('taskId');
 	const utils = api.useUtils();
 	const invalidateSubtasks = () =>
@@ -62,10 +75,18 @@ export function TaskSubtasks({
 		onSuccess: invalidateSubtasks,
 		onError: (error) => toast.error(error.message || 'Failed to complete subtask')
 	});
+	const deleteSubtask = api.task.delete.useMutation({
+		onSuccess: invalidateSubtasks,
+		onError: (error) => toast.error(error.message || 'Failed to delete subtask')
+	});
 
 	useEffect(() => {
-		if (subtasks.length > 0) setIsAdding(true);
-	}, [subtasks.length]);
+		if (subtasks.length > 0) {
+			setIsAdding(true);
+		} else if (emptyAction === 'menu') {
+			setIsAdding(false);
+		}
+	}, [emptyAction, subtasks.length]);
 
 	const create = () => {
 		const trimmedTitle = title.trim();
@@ -98,6 +119,21 @@ export function TaskSubtasks({
 
 	const openSubtask = (subtaskId: string) => {
 		void setTaskId(subtaskId);
+	};
+
+	const deleteSelectedSubtask = () => {
+		if (!subtaskToDelete || deleteSubtask.isPending) return;
+
+		setDeletingSubtaskId(subtaskToDelete.id);
+		deleteSubtask.mutate(
+			{ taskId: subtaskToDelete.id },
+			{
+				onSettled: () => {
+					setDeletingSubtaskId(null);
+					setSubtaskToDelete(null);
+				}
+			}
+		);
 	};
 
 	const completedCount = subtasks.filter(
@@ -160,16 +196,19 @@ export function TaskSubtasks({
 					{subtasks.map((subtask) => {
 						const isComplete = subtask.status === TaskStatusEnum.DONE;
 						const isUpdating = updatingSubtaskId === subtask.id;
+						const isDeleting = deletingSubtaskId === subtask.id;
 
 						return (
 							<li
 								key={subtask.id}
-								className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs"
+								className="group flex min-w-0 items-center gap-2 text-muted-foreground text-xs"
 							>
 								<button
 									type="button"
 									className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border transition-colors hover:border-primary disabled:cursor-default disabled:opacity-70"
-									disabled={isComplete || updateSubtask.isPending}
+									disabled={
+										isComplete || updateSubtask.isPending || deleteSubtask.isPending
+									}
 									onClick={() => complete(subtask.id)}
 									aria-label={
 										isComplete ? 'Subtask completed' : 'Complete subtask'
@@ -192,6 +231,36 @@ export function TaskSubtasks({
 								) : (
 									<span className="min-w-0 flex-1 truncate">{subtask.title}</span>
 								)}
+								<div className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="h-5 w-5"
+												disabled={isDeleting || deleteSubtask.isPending}
+												aria-label={`Options for ${subtask.title}`}
+											>
+												{isDeleting ? (
+													<Loader2 className="h-3.5 w-3.5 animate-spin" />
+												) : (
+													<MoreHorizontal className="h-3.5 w-3.5" />
+												)}
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end" className="w-36">
+											<DropdownMenuItem
+												className="text-destructive"
+												disabled={deleteSubtask.isPending}
+												onSelect={() => setSubtaskToDelete(subtask)}
+											>
+												<Trash2 className="mr-2 h-3.5 w-3.5" />
+												Delete subtask
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</div>
 							</li>
 						);
 					})}
@@ -231,6 +300,17 @@ export function TaskSubtasks({
 					</Button>
 				</div>
 			)}
+
+			<ConfirmationDialog
+				open={subtaskToDelete !== null}
+				onOpenChange={(open) => {
+					if (!open) setSubtaskToDelete(null);
+				}}
+				title="Delete subtask?"
+				description={`Delete "${subtaskToDelete?.title ?? ''}"? This action cannot be undone.`}
+				confirmLabel="Delete"
+				onConfirm={deleteSelectedSubtask}
+			/>
 		</div>
 	);
 }
