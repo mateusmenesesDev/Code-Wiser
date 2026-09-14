@@ -106,11 +106,13 @@
 			"exerciseSubmitTitle": "Submit your exercise for review",
 			"reviewChangesTitle": "Update your pull request",
 			"projectTitle": "Continue your learning project",
+			"recommendationTitle": "Follow your learning recommendation",
 			"emptyTitle": "Choose your next challenge",
 			"emptyDescription": "Start with a hands-on exercise or project.",
 			"openTask": "Open task",
 			"openExercise": "Open exercise",
 			"openProject": "Open project",
+			"openRecommendation": "Open recommendation",
 			"browseExercises": "Browse exercises"
 		},
 		"greeting": {
@@ -147,8 +149,21 @@
 			"noProject": "No active project yet",
 			"noProjectDescription": "Start a project to see your progress here."
 		},
-		"recommendedNextActions": "Recommended next actions",
-		"recommendedDescription": "Preview of the recommendation system currently in development.",
+		"recommendedNextActions": "Your next learning step",
+		"recommendedDescription": "A deterministic recommendation based on your goals, evidence, feedback, and available time.",
+		"recommendation": {
+			"competency": "Builds {name}",
+			"time": "Fits your availability: {value}",
+			"empty": "Complete your diagnosis or start an exercise to get a tailored next step.",
+			"reasons": {
+				"remediation": "This action continues a correction from recent feedback.",
+				"feedback": "Your recent feedback points to {competency}.",
+				"feedbackWithText": "Your recent feedback points to {competency}: {feedback}",
+				"goal": "This step targets {competency}, which supports your current goal.",
+				"currentActivity": "Continue the activity already in progress before starting something new.",
+				"baseline": "This is the next mapped competency in your learning baseline."
+			}
+		},
 		"soon": "Soon",
 		"competencies": {
 			"title": "Competency matrix",

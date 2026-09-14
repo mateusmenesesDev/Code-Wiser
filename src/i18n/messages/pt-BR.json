@@ -106,11 +106,13 @@
 			"exerciseSubmitTitle": "Envie seu exercício para review",
 			"reviewChangesTitle": "Atualize seu pull request",
 			"projectTitle": "Continue seu projeto de aprendizagem",
+			"recommendationTitle": "Siga sua recomendação de aprendizado",
 			"emptyTitle": "Escolha seu próximo desafio",
 			"emptyDescription": "Comece com um exercício ou projeto prático.",
 			"openTask": "Abrir tarefa",
 			"openExercise": "Abrir exercício",
 			"openProject": "Abrir projeto",
+			"openRecommendation": "Abrir recomendação",
 			"browseExercises": "Ver exercícios"
 		},
 		"greeting": {
@@ -147,8 +149,21 @@
 			"noProject": "Nenhum projeto ativo ainda",
 			"noProjectDescription": "Comece um projeto para acompanhar seu progresso aqui."
 		},
-		"recommendedNextActions": "Próximas ações recomendadas",
-		"recommendedDescription": "Prévia do sistema de recomendações que está em desenvolvimento.",
+		"recommendedNextActions": "Seu próximo passo de aprendizado",
+		"recommendedDescription": "Uma recomendação determinística baseada nos seus objetivos, evidências, feedback e tempo disponível.",
+		"recommendation": {
+			"competency": "Desenvolve {name}",
+			"time": "Cabe na sua disponibilidade: {value}",
+			"empty": "Conclua seu diagnóstico ou comece um exercício para receber um próximo passo personalizado.",
+			"reasons": {
+				"remediation": "Esta ação continua uma correção indicada em um feedback recente.",
+				"feedback": "Seu feedback recente aponta para {competency}.",
+				"feedbackWithText": "Seu feedback recente aponta para {competency}: {feedback}",
+				"goal": "Este passo desenvolve {competency}, que apoia seu objetivo atual.",
+				"currentActivity": "Continue a atividade já em andamento antes de começar algo novo.",
+				"baseline": "Este é o próximo sinal mapeado na sua linha de base de aprendizado."
+			}
+		},
 		"soon": "Em breve",
 		"competencies": {
 			"title": "Matriz de competências",

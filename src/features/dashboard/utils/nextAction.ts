@@ -59,6 +59,15 @@ export function getNextAction(
 		};
 	}
 
+	if (overview.learningRecommendation) {
+		return {
+			description: overview.learningRecommendation.title,
+			titleKey: 'recommendationTitle',
+			labelKey: 'openRecommendation',
+			href: overview.learningRecommendation.href
+		};
+	}
+
 	return {
 		description: 'Start with a hands-on exercise or project.',
 		titleKey: 'emptyTitle',

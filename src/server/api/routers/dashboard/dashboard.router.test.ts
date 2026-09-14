@@ -27,6 +27,12 @@ describe('dashboard.getOverview', () => {
 	beforeEach(() => {
 		authState.userId = 'user-1';
 		authState.isAdmin = false;
+		mockDb.competency.findMany.mockResolvedValue([]);
+		mockDb.userChallengeProgress.findMany.mockResolvedValue([]);
+		mockDb.projectMembership.findMany.mockResolvedValue([]);
+		mockDb.pullRequestReview.findMany.mockResolvedValue([]);
+		mockDb.exerciseReviewDecision.findFirst.mockResolvedValue(null);
+		mockDb.remediationAction.findMany.mockResolvedValue([]);
 	});
 
 	it('returns the authenticated learner overview with project progress', async () => {
@@ -98,6 +104,80 @@ describe('dashboard.getOverview', () => {
 			progress: 40
 		});
 		expect(result.notifications).toEqual([]);
+	});
+
+	it('returns an exercise recommendation grounded in recent review feedback', async () => {
+		mockDb.user.findUnique.mockResolvedValue({
+			name: 'Learner',
+			email: 'learner@example.com',
+			learningGoal: 'PREPARE_FOR_INTERVIEWS',
+			weeklyAvailabilityBand: 'UNDER_3',
+			interestedTechnologies: ['REACT']
+		} as never);
+		mockDb.task.findFirst.mockResolvedValue(null);
+		mockDb.project.findMany.mockResolvedValue([]);
+		mockDb.userChallengeProgress.findFirst.mockResolvedValue(null);
+		mockDb.pullRequestReview.findFirst.mockResolvedValue({
+			id: 'review-1',
+			status: 'CHANGES_REQUESTED',
+			reviewedAt: new Date('2026-08-23T12:00:00.000Z'),
+			updatedAt: new Date('2026-08-23T12:00:00.000Z'),
+			comment: 'Add integration coverage.',
+			task: {
+				id: 'task-1',
+				title: 'Build form',
+				projectId: null,
+				project: null
+			},
+			analyses: [{ findings: [{ category: 'TESTS', editedCategory: null }] }]
+		} as never);
+		mockDb.mentorshipBooking.findFirst.mockResolvedValue(null);
+		mockDb.notification.findMany.mockResolvedValue([]);
+		mockDb.competency.findMany.mockResolvedValue([
+			{
+				slug: 'testing',
+				name: 'Testing',
+				description: 'Use tests to protect behavior.',
+				sortOrder: 1,
+				exerciseChallenges: [
+					{
+						challengeId: 'challenge-1',
+						challenge: {
+							id: 'challenge-1',
+							title: 'Todo list tests',
+							slug: 'todo-list',
+							difficulty: 'EASY',
+							sortOrder: 0,
+							isArchived: false,
+							track: {
+								name: 'React',
+								slug: 'react',
+								isPublished: true,
+								isArchived: false
+							},
+							progress: []
+						}
+					}
+				],
+				learningOutcomes: [],
+				milestones: [],
+				reviewCategories: [{ category: 'TESTS' }],
+				mentorAssessments: []
+			}
+		] as never);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+		const result = await caller.getOverview();
+
+		expect(result.learningRecommendation).toMatchObject({
+			kind: 'EXERCISE',
+			title: 'Todo list tests',
+			competency: { slug: 'testing' },
+			reason: 'FEEDBACK',
+			feedback: 'Add integration coverage.'
+		});
 	});
 
 	it('lets admins view another user dashboard', async () => {

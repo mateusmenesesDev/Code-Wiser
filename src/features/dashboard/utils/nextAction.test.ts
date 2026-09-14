@@ -10,7 +10,8 @@ const emptyOverview = (): DashboardOverview =>
 		activeReview: null,
 		latestDecision: null,
 		booking: null,
-		notifications: []
+		notifications: [],
+		learningRecommendation: null
 	}) as DashboardOverview;
 
 describe('getNextAction', () => {
@@ -57,6 +58,26 @@ describe('getNextAction', () => {
 		expect(getNextAction(overview)).toMatchObject({
 			titleKey: 'exerciseChangesTitle',
 			href: '/exercises/react/counter'
+		});
+	});
+
+	it('opens an adaptive recommendation before the empty-state fallback', () => {
+		const overview = emptyOverview();
+		overview.learningRecommendation = {
+			kind: 'EXERCISE',
+			title: 'Todo list tests',
+			description: 'Use tests to protect behavior.',
+			href: '/exercises/react/todo-list',
+			competency: { slug: 'testing', name: 'Testing' },
+			reason: 'GOAL',
+			feedback: null,
+			availabilityBand: 'UNDER_3'
+		};
+
+		expect(getNextAction(overview)).toMatchObject({
+			titleKey: 'recommendationTitle',
+			labelKey: 'openRecommendation',
+			href: '/exercises/react/todo-list'
 		});
 	});
 

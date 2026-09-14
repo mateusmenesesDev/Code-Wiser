@@ -38,7 +38,26 @@ describe('competency.getMatrix', () => {
 				slug: 'testing',
 				name: 'Testing',
 				description: 'Protect behavior with tests.',
-				exerciseChallenges: [{ challengeId: 'challenge-1' }],
+				exerciseChallenges: [
+					{
+						challengeId: 'challenge-1',
+						challenge: {
+							id: 'challenge-1',
+							title: 'Todo List',
+							slug: 'todo-list',
+							difficulty: 'EASY',
+							sortOrder: 0,
+							isArchived: false,
+							track: {
+								name: 'React',
+								slug: 'react',
+								isPublished: true,
+								isArchived: false
+							},
+							progress: []
+						}
+					}
+				],
 				learningOutcomes: [],
 				milestones: [],
 				reviewCategories: [{ category: 'TESTS' }],

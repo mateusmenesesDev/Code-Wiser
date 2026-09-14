@@ -3,16 +3,13 @@
 import { useUser } from '@clerk/nextjs';
 import {
 	ArrowRight,
-	BookOpen,
 	CalendarClock,
 	CheckCircle2,
 	CircleDot,
 	ClipboardCheck,
 	Clock3,
-	Code2,
 	FolderKanban,
 	GitPullRequest,
-	MessageSquare,
 	Play,
 	Timer,
 	Video
@@ -154,71 +151,43 @@ function DashboardContent({
 			? t('changesRequested')
 			: t('waitingForReview')
 		: t('stats.noPendingReviews');
-	const recommendedActions: Array<{
-		icon: LucideIcon;
-		title: string;
-		description: string;
-		priority: 'critical' | 'high' | 'medium';
-		priorityLabel: string;
-	}> = [];
-
-	if (overview.urgentTask?.project) {
-		recommendedActions.push({
-			icon: Code2,
-			title: `${t('actions.finish')} ${overview.urgentTask.title}`,
-			description: overview.urgentTask.project.title,
-			priority:
-				overview.urgentTask.priority === 'HIGH' ||
-				overview.urgentTask.priority === 'HIGHEST'
-					? 'critical'
-					: overview.urgentTask.priority === 'MEDIUM'
-						? 'high'
-						: 'medium',
-			priorityLabel:
-				overview.urgentTask.priority === 'HIGH' ||
-				overview.urgentTask.priority === 'HIGHEST'
-					? t('priority.critical')
-					: overview.urgentTask.priority === 'MEDIUM'
-						? t('priority.high')
-						: t('priority.medium')
-		});
-	}
-	if (overview.activeReview?.task.project) {
-		recommendedActions.push({
-			icon: MessageSquare,
-			title: `${t('actions.review')} ${overview.activeReview.task.title}`,
-			description: t('actions.reviewDescription'),
-			priority: 'high',
-			priorityLabel: t('priority.high')
-		});
-	}
-	if (overview.exercise) {
-		recommendedActions.push({
-			icon: BookOpen,
-			title: `${t('actions.continue')} ${overview.exercise.challenge.title}`,
-			description: overview.exercise.challenge.track.name,
-			priority: 'medium',
-			priorityLabel: t('priority.medium')
-		});
-	}
-	if (overview.booking) {
-		recommendedActions.push({
-			icon: CalendarClock,
-			title: t('actions.prepareMentoring'),
-			description: formatSession(overview.booking.scheduledAt, locale),
-			priority: 'medium',
-			priorityLabel: t('priority.medium')
-		});
-	}
-	if (recommendedActions.length === 0) {
-		recommendedActions.push({
-			icon: FolderKanban,
-			title: t('actions.browseProjects'),
-			description: t('actions.browseProjectsDescription'),
-			priority: 'medium',
-			priorityLabel: t('priority.medium')
-		});
-	}
+	const recommendation = overview.learningRecommendation;
+	const continueLabel = needsDiagnosis
+		? t('diagnosis.action')
+		: nextAction &&
+				'labelKey' in nextAction &&
+				nextAction.labelKey === 'openRecommendation'
+			? t('nextAction.openRecommendation')
+			: t('continueProject');
+	const recommendationReason = recommendation
+		? recommendation.reason === 'REMEDIATION'
+			? t('recommendation.reasons.remediation')
+			: recommendation.reason === 'FEEDBACK'
+				? recommendation.feedback
+					? t('recommendation.reasons.feedbackWithText', {
+							competency: recommendation.competency?.name ?? '',
+							feedback: recommendation.feedback
+						})
+					: t('recommendation.reasons.feedback', {
+							competency: recommendation.competency?.name ?? ''
+						})
+				: recommendation.reason === 'GOAL'
+					? t('recommendation.reasons.goal', {
+							competency: recommendation.competency?.name ?? ''
+						})
+					: recommendation.reason === 'CURRENT_ACTIVITY'
+						? t('recommendation.reasons.currentActivity')
+						: t('recommendation.reasons.baseline')
+		: null;
+	const availabilityLabel = recommendation?.availabilityBand
+		? t(
+				`diagnosis.availability.options.${recommendation.availabilityBand}` as
+					| 'diagnosis.availability.options.UNDER_3'
+					| 'diagnosis.availability.options.FROM_4_TO_7'
+					| 'diagnosis.availability.options.FROM_8_TO_12'
+					| 'diagnosis.availability.options.OVER_12'
+			)
+		: null;
 
 	return (
 		<div className="mx-auto max-w-[1336px] space-y-7 text-foreground">
@@ -245,7 +214,7 @@ function DashboardContent({
 				>
 					<Link href={nextAction?.href ?? '/projects'}>
 						<Play className="mr-2 h-4 w-4 fill-current" aria-hidden="true" />
-						{needsDiagnosis ? t('diagnosis.action') : t('continueProject')}
+						{continueLabel}
 					</Link>
 				</Button>
 			</header>
@@ -472,44 +441,56 @@ function DashboardContent({
 								{t('recommendedDescription')}
 							</p>
 						</div>
-						<div className="space-y-2">
-							{recommendedActions.map((action) => {
-								const Icon = action.icon;
-								const tone =
-									action.priority === 'critical'
-										? 'border-destructive/30 bg-destructive/10 text-destructive'
-										: action.priority === 'high'
-											? 'border-warning-border bg-warning-muted text-warning-muted-foreground'
-											: 'border-info-border bg-info-muted text-info-muted-foreground';
-								return (
-									<div
-										key={action.title}
-										className="flex items-center gap-3 rounded-2xl border border-border border-dashed bg-muted/50 p-4 opacity-75"
-									>
-										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-											<Icon className="h-4 w-4" aria-hidden="true" />
+						{recommendation ? (
+							<Link
+								href={recommendation.href}
+								className="block rounded-2xl border border-info-border bg-info-muted p-4 transition-colors hover:bg-info-muted/70"
+							>
+								<div className="flex items-start gap-3">
+									<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-background text-info">
+										<Play className="h-4 w-4" aria-hidden="true" />
+									</span>
+									<span className="min-w-0 flex-1">
+										<span className="block font-medium text-sm">
+											{recommendation.title}
 										</span>
-										<span className="min-w-0 flex-1">
-											<span className="block truncate font-medium text-sm">
-												{action.title}
-											</span>
-											<span className="mt-1 block truncate text-muted-foreground text-xs">
-												{action.description}
-											</span>
-											<span className="mt-2 flex items-center gap-2">
-												<Badge className={`${tone} border text-[10px]`}>
-													{action.priorityLabel}
-												</Badge>
-											</span>
+										<span className="mt-1 block text-muted-foreground text-sm">
+											{recommendation.description}
 										</span>
-										<span className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
-											<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-											{t('soon')}
-										</span>
-									</div>
-								);
-							})}
-						</div>
+										{recommendation.competency && (
+											<Badge className="mt-3 border-transparent bg-background text-info">
+												{t('recommendation.competency', {
+													name: recommendation.competency.name
+												})}
+											</Badge>
+										)}
+										{recommendationReason && (
+											<span className="mt-3 block text-muted-foreground text-xs">
+												{recommendationReason}
+											</span>
+										)}
+										{availabilityLabel && (
+											<span className="mt-2 flex items-center gap-1 text-muted-foreground text-xs">
+												<Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+												{t('recommendation.time', {
+													value: availabilityLabel
+												})}
+											</span>
+										)}
+									</span>
+									<ArrowRight
+										className="mt-1 h-4 w-4 shrink-0 text-info"
+										aria-hidden="true"
+									/>
+								</div>
+							</Link>
+						) : (
+							<Card className="shadow-none">
+								<CardContent className="p-4 text-muted-foreground text-sm">
+									{t('recommendation.empty')}
+								</CardContent>
+							</Card>
+						)}
 					</section>
 				</div>
 

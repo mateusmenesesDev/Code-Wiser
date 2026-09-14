@@ -1,6 +1,8 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure } from '~/server/api/trpc';
+import { getCompetencyLearningContext } from '~/server/services/competency/competencyMatrix';
+import { buildLearningRecommendation } from '~/server/utils/learningRecommendation';
 import { buildEnrolledProjectStats } from '../project/queries/enrolledProjectStats';
 
 const dashboardOverviewProcedure = protectedProcedure.input(
@@ -22,12 +24,20 @@ export const dashboardRouter = {
 		}
 
 		const userId = requestedUserId ?? ctx.session.userId;
-		const viewedUser = isViewingAnotherUser
-			? await ctx.db.user.findUnique({
-					where: { id: userId },
-					select: { name: true, email: true }
-				})
-			: null;
+		const profile = await ctx.db.user.findUnique({
+			where: { id: userId },
+			select: {
+				name: true,
+				email: true,
+				learningGoal: true,
+				weeklyAvailabilityBand: true,
+				interestedTechnologies: true
+			}
+		});
+		const viewedUser =
+			isViewingAnotherUser && profile
+				? { name: profile.name, email: profile.email }
+				: null;
 
 		if (isViewingAnotherUser && !viewedUser) {
 			throw new TRPCError({
@@ -45,7 +55,10 @@ export const dashboardRouter = {
 			activeReview,
 			latestDecision,
 			booking,
-			notifications
+			notifications,
+			latestExerciseDecision,
+			remediationActions,
+			competencyContext
 		] = await Promise.all([
 			ctx.db.task.findFirst({
 				where: {
@@ -162,12 +175,24 @@ export const dashboardRouter = {
 				select: {
 					id: true,
 					status: true,
+					updatedAt: true,
 					reviewedAt: true,
 					comment: true,
 					task: {
 						select: {
+							id: true,
 							title: true,
+							projectId: true,
 							project: { select: { id: true, title: true } }
+						}
+					},
+					analyses: {
+						where: { status: 'COMPLETED' },
+						select: {
+							findings: {
+								where: { decision: { not: 'DISCARDED' } },
+								select: { category: true, editedCategory: true }
+							}
 						}
 					}
 				}
@@ -198,7 +223,42 @@ export const dashboardRouter = {
 					message: true,
 					link: true
 				}
-			})
+			}),
+			ctx.db.exerciseReviewDecision.findFirst({
+				where: {
+					submission: { submittedById: userId },
+					status: { in: ['APPROVED', 'CHANGES_REQUESTED'] }
+				},
+				orderBy: { updatedAt: 'desc' },
+				take: 1,
+				select: {
+					status: true,
+					updatedAt: true,
+					reviewedAt: true,
+					mentorComment: true,
+					challenge: { select: { title: true } }
+				}
+			}),
+			ctx.db.remediationAction.findMany({
+				where: {
+					learnerId: userId,
+					status: { in: ['OPEN', 'IN_PROGRESS', 'SUBMITTED'] }
+				},
+				orderBy: [{ dueAt: 'asc' }, { updatedAt: 'desc' }],
+				take: 20,
+				select: {
+					title: true,
+					description: true,
+					status: true,
+					targetType: true,
+					task: { select: { id: true, projectId: true } },
+					challenge: {
+						select: { slug: true, track: { select: { slug: true } } }
+					},
+					bookingId: true
+				}
+			}),
+			getCompetencyLearningContext(ctx.db, userId)
 		]);
 
 		const projectIds = projects.map((project) => project.id);
@@ -249,6 +309,68 @@ export const dashboardRouter = {
 					totalPoints: currentSprint.committedPoints ?? sprintPoints ?? 0
 				}
 			: null;
+		const feedbackCandidates = [
+			latestDecision
+				? {
+						date: latestDecision.reviewedAt ?? latestDecision.updatedAt,
+						categories: latestDecision.analyses.flatMap((analysis) =>
+							analysis.findings.map(
+								(finding) => finding.editedCategory ?? finding.category
+							)
+						),
+						text: latestDecision.comment
+					}
+				: null,
+			latestExerciseDecision
+				? {
+						date:
+							latestExerciseDecision.reviewedAt ??
+							latestExerciseDecision.updatedAt,
+						categories: [],
+						text: latestExerciseDecision.mentorComment
+					}
+				: null
+		].filter(
+			(candidate): candidate is NonNullable<typeof candidate> =>
+				candidate !== null
+		);
+		const recentFeedback =
+			feedbackCandidates.sort(
+				(left, right) => right.date.getTime() - left.date.getTime()
+			)[0] ?? null;
+		const learningRecommendation = buildLearningRecommendation({
+			learningGoal: profile?.learningGoal ?? null,
+			weeklyAvailabilityBand: profile?.weeklyAvailabilityBand ?? null,
+			interestedTechnologies: profile?.interestedTechnologies ?? [],
+			matrix: competencyContext.matrix,
+			competencies: competencyContext.competencies,
+			remediations: remediationActions,
+			feedback: recentFeedback
+				? {
+						categories: recentFeedback.categories,
+						text: recentFeedback.text
+					}
+				: null,
+			activity: {
+				task: urgentTask?.project
+					? {
+							id: urgentTask.id,
+							title: urgentTask.title,
+							projectId: urgentTask.project.id
+						}
+					: null,
+				exercise: exercise
+					? {
+							title: exercise.challenge.title,
+							slug: exercise.challenge.slug,
+							trackSlug: exercise.challenge.track.slug
+						}
+					: null,
+				project: projects[0]
+					? { id: projects[0].id, title: projects[0].title }
+					: null
+			}
+		});
 
 		return {
 			...(viewedUser ? { viewedUser } : {}),
@@ -311,6 +433,7 @@ export const dashboardRouter = {
 							})
 				};
 			}),
+			learningRecommendation,
 			exercise,
 			activeReview,
 			latestDecision,
