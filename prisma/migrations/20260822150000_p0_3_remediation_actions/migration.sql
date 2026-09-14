@@ -31,6 +31,14 @@ CREATE TABLE IF NOT EXISTS "RemediationAction" (
     CONSTRAINT "RemediationAction_pkey" PRIMARY KEY ("id")
 );
 
+ALTER TABLE "RemediationAction" SET (schema_locked = false);
+ALTER TABLE "User" SET (schema_locked = false);
+ALTER TABLE "Task" SET (schema_locked = false);
+ALTER TABLE "ExerciseChallenge" SET (schema_locked = false);
+ALTER TABLE "MentorshipBooking" SET (schema_locked = false);
+ALTER TABLE "PullRequestReview" SET (schema_locked = false);
+ALTER TABLE "ExerciseReviewDecision" SET (schema_locked = false);
+
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "RemediationAction_sourcePrReviewId_key" ON "RemediationAction"("sourcePrReviewId");
 CREATE UNIQUE INDEX IF NOT EXISTS "RemediationAction_reassessmentReviewId_key" ON "RemediationAction"("reassessmentReviewId");
@@ -43,6 +51,15 @@ CREATE INDEX IF NOT EXISTS "RemediationAction_bookingId_status_idx" ON "Remediat
 CREATE INDEX IF NOT EXISTS "RemediationAction_reassessmentReviewId_idx" ON "RemediationAction"("reassessmentReviewId");
 
 -- AddForeignKey
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_learnerId_fkey";
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_createdById_fkey";
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_completedById_fkey";
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_taskId_fkey";
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_challengeId_fkey";
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_bookingId_fkey";
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_sourcePrReviewId_fkey";
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_reassessmentReviewId_fkey";
+ALTER TABLE "RemediationAction" DROP CONSTRAINT IF EXISTS "RemediationAction_sourceExerciseDecisionId_fkey";
 ALTER TABLE "RemediationAction" ADD CONSTRAINT "RemediationAction_learnerId_fkey" FOREIGN KEY ("learnerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "RemediationAction" ADD CONSTRAINT "RemediationAction_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "RemediationAction" ADD CONSTRAINT "RemediationAction_completedById_fkey" FOREIGN KEY ("completedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -52,3 +69,11 @@ ALTER TABLE "RemediationAction" ADD CONSTRAINT "RemediationAction_bookingId_fkey
 ALTER TABLE "RemediationAction" ADD CONSTRAINT "RemediationAction_sourcePrReviewId_fkey" FOREIGN KEY ("sourcePrReviewId") REFERENCES "PullRequestReview"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "RemediationAction" ADD CONSTRAINT "RemediationAction_reassessmentReviewId_fkey" FOREIGN KEY ("reassessmentReviewId") REFERENCES "PullRequestReview"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "RemediationAction" ADD CONSTRAINT "RemediationAction_sourceExerciseDecisionId_fkey" FOREIGN KEY ("sourceExerciseDecisionId") REFERENCES "ExerciseReviewDecision"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "RemediationAction" SET (schema_locked = true);
+ALTER TABLE "User" SET (schema_locked = true);
+ALTER TABLE "Task" SET (schema_locked = true);
+ALTER TABLE "ExerciseChallenge" SET (schema_locked = true);
+ALTER TABLE "MentorshipBooking" SET (schema_locked = true);
+ALTER TABLE "PullRequestReview" SET (schema_locked = true);
+ALTER TABLE "ExerciseReviewDecision" SET (schema_locked = true);
