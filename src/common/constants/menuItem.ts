@@ -24,12 +24,9 @@ export type NavigationItem = {
 	permission?: ClerkAuthorization['permission'];
 };
 
-export type NavigationAudience = 'admin' | 'mentor';
-
 export type NavigationGroup = {
 	labelKey: string;
 	Icon: LucideIcon;
-	audience: NavigationAudience;
 	items: NavigationItem[];
 };
 
@@ -88,7 +85,6 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
 		labelKey: 'people',
 		Icon: UserCog,
-		audience: 'admin',
 		items: [
 			{
 				href: '/admin/users',
@@ -113,7 +109,6 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
 		labelKey: 'content',
 		Icon: FolderOpen,
-		audience: 'admin',
 		items: [
 			{
 				href: '/admin/templates',
@@ -132,7 +127,6 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
 		labelKey: 'reviews',
 		Icon: ClipboardCheck,
-		audience: 'mentor',
 		items: [
 			{
 				href: '/admin/attention',
@@ -163,7 +157,6 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
 		labelKey: 'feedbackGroup',
 		Icon: MessageSquare,
-		audience: 'admin',
 		items: [
 			{
 				href: '/admin/feedback',

@@ -318,9 +318,9 @@ export default function NavigationSidebar() {
 			isSignedIn: !!isSignedIn,
 			hasMentorship: hasActiveMentorship,
 			hasProjectMentorship: !previewMode && hasProjectMentorship === true,
-			hasAdminRole: () => isAdminAccount && userView !== 'student',
+			hasAdminRole: () => isAdminAccount,
 			hasPermission: (permission: ClerkAuthorization['permission']) =>
-				isAdminAccount && userView !== 'student' && has({ permission })
+				isAdminAccount && has({ permission })
 		}),
 		[
 			has,
@@ -328,30 +328,24 @@ export default function NavigationSidebar() {
 			hasProjectMentorship,
 			isAdminAccount,
 			isSignedIn,
-			previewMode,
-			userView
+			previewMode
 		]
 	);
 	const workItems = WORK_NAV_ITEMS.filter((item) =>
 		isNavigationItemVisible(item, visibility)
 	);
 	const adminDashboard =
-		userView === 'admin' &&
 		isLoaded &&
 		isSignedIn &&
 		isNavigationItemVisible(ADMIN_DASHBOARD, visibility)
 			? ADMIN_DASHBOARD
 			: undefined;
-	const adminGroups = ADMIN_NAV_GROUPS.filter(
-		({ audience }) => userView === 'admin' || audience === 'mentor'
-	)
-		.map((group) => ({
-			group,
-			items: group.items.filter((item) =>
-				isNavigationItemVisible(item, visibility)
-			)
-		}))
-		.filter(({ items }) => items.length > 0);
+	const adminGroups = ADMIN_NAV_GROUPS.map((group) => ({
+		group,
+		items: group.items.filter((item) =>
+			isNavigationItemVisible(item, visibility)
+		)
+	})).filter(({ items }) => items.length > 0);
 	const searchableItems = [
 		...workItems,
 		...(adminDashboard ? [adminDashboard] : []),
