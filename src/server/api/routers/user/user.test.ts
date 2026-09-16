@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
 import { userRouter } from './user';
@@ -20,6 +20,10 @@ vi.mock('@clerk/nextjs/server', () => ({
 
 vi.mock('~/server/db', () => ({
 	db: mockDb
+}));
+
+vi.mock('~/env', () => ({
+	env: { CLERK_SECRET_KEY: 'test-secret' }
 }));
 
 vi.mock('~/server/services/mentorship/mentorshipService', () => ({
@@ -79,5 +83,82 @@ describe('user credit operations', () => {
 			data: {}
 		});
 		expect(mockDb.creditTransaction.createMany).not.toHaveBeenCalled();
+	});
+});
+
+describe('user impersonation', () => {
+	const createCaller = createCallerFactory(userRouter);
+
+	beforeEach(() => {
+		vi.stubGlobal('fetch', vi.fn());
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('requires an admin session', async () => {
+		const context = await createTRPCContext({ headers: new Headers() });
+		const caller = createCaller({ ...context, isAdmin: false });
+
+		await expect(
+			caller.impersonate({ userId: 'target-user-id' })
+		).rejects.toMatchObject({ code: 'FORBIDDEN' });
+	});
+
+	it('rejects an unknown target user', async () => {
+		mockDb.user.findUnique.mockResolvedValueOnce(null);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.impersonate({ userId: 'missing-user-id' })
+		).rejects.toMatchObject({ code: 'NOT_FOUND' });
+	});
+
+	it('creates an actor token for a known target user', async () => {
+		mockDb.user.findUnique.mockResolvedValueOnce({
+			id: 'target-user-id'
+		} as never);
+		vi.mocked(fetch)
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify({ token: 'actor-token' }), { status: 200 })
+			)
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify({ token: 'admin-token' }), { status: 200 })
+			);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.impersonate({ userId: 'target-user-id' })
+		).resolves.toEqual({ token: 'actor-token', restoreToken: 'admin-token' });
+		expect(fetch).toHaveBeenNthCalledWith(
+			1,
+			'https://api.clerk.com/v1/actor_tokens',
+			expect.objectContaining({
+				method: 'POST',
+				headers: {
+					Authorization: 'Bearer test-secret',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					user_id: 'target-user-id',
+					actor: { sub: 'admin-user-id' }
+				})
+			})
+		);
+		expect(fetch).toHaveBeenNthCalledWith(
+			2,
+			'https://api.clerk.com/v1/sign_in_tokens',
+			expect.objectContaining({
+				body: JSON.stringify({
+					user_id: 'admin-user-id',
+					expires_in_seconds: 300
+				})
+			})
+		);
 	});
 });

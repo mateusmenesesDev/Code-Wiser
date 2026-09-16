@@ -1,4 +1,7 @@
+import { useClerk, useSession, useSignIn } from '@clerk/nextjs';
 import { ChevronDown, LogIn, User } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import {
 	Avatar,
 	AvatarFallback,
@@ -17,6 +20,61 @@ import { useAuth } from '~/features/auth/hooks/useAuth';
 
 export default function HeaderAvatarMenu() {
 	const { user, signOut } = useAuth();
+	const { session } = useSession();
+	const { setActive } = useClerk();
+	const { isLoaded: isSignInLoaded, signIn } = useSignIn();
+	const [isReturningToAdmin, setIsReturningToAdmin] = useState(false);
+
+	const returnToAdmin = async () => {
+		const adminSessionId = sessionStorage.getItem(
+			'code-wiser:admin-session-id'
+		);
+		const adminSignInToken = sessionStorage.getItem(
+			'code-wiser:admin-session-token'
+		);
+
+		if (!adminSessionId && !adminSignInToken) {
+			toast.error('The original admin session is no longer available');
+			return;
+		}
+
+		setIsReturningToAdmin(true);
+		try {
+			let restored = false;
+			if (adminSessionId) {
+				try {
+					await setActive({ session: adminSessionId });
+					restored = true;
+				} catch {
+					// Fall back to the short-lived recovery ticket when the old session expired.
+				}
+			}
+
+			if (!restored) {
+				if (!adminSignInToken || !isSignInLoaded) {
+					throw new Error('Admin recovery session is not ready');
+				}
+
+				const { createdSessionId } = await signIn.create({
+					strategy: 'ticket',
+					ticket: adminSignInToken
+				});
+
+				if (!createdSessionId) {
+					throw new Error('Clerk did not create the admin recovery session');
+				}
+
+				await setActive({ session: createdSessionId });
+			}
+
+			sessionStorage.removeItem('code-wiser:admin-session-id');
+			sessionStorage.removeItem('code-wiser:admin-session-token');
+			window.location.assign('/');
+		} catch {
+			setIsReturningToAdmin(false);
+			toast.error('Could not restore the original admin session');
+		}
+	};
 
 	return (
 		<DropdownMenu>
@@ -36,9 +94,26 @@ export default function HeaderAvatarMenu() {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-48 border bg-background">
 				<DropdownMenuLabel>{user?.fullName ?? 'Account'}</DropdownMenuLabel>
+				{session?.actor && (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							onClick={() => void returnToAdmin()}
+							disabled={isReturningToAdmin}
+							className="flex cursor-pointer items-center gap-2"
+						>
+							<LogIn className="h-4 w-4" aria-hidden="true" />
+							Return to admin
+						</DropdownMenuItem>
+					</>
+				)}
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
-					onClick={signOut}
+					onClick={() => {
+						sessionStorage.removeItem('code-wiser:admin-session-id');
+						sessionStorage.removeItem('code-wiser:admin-session-token');
+						void signOut();
+					}}
 					className="flex cursor-pointer items-center gap-2 text-destructive"
 				>
 					<LogIn className="h-4 w-4 rotate-180" aria-hidden="true" />

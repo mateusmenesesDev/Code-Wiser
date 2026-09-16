@@ -1,6 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+import { env } from '~/env';
 import { applyCreditTransaction } from '~/server/services/creditLedger';
 import { adminResetUserSessions } from '~/server/services/mentorship/mentorshipService';
 import {
@@ -13,6 +14,85 @@ import {
 	protectedProcedure
 } from '../../trpc';
 import { deleteUser, getAllUsers, updateUserAdmin } from './queries';
+
+const clerkTokenResponseSchema = z.object({
+	token: z.string().min(1)
+});
+
+const createClerkToken = async (
+	endpoint: string,
+	body: Record<string, unknown>,
+	failureMessage: string
+) => {
+	if (!env.CLERK_SECRET_KEY) {
+		throw new TRPCError({
+			code: 'PRECONDITION_FAILED',
+			message: 'User impersonation is not configured'
+		});
+	}
+
+	let response: Response;
+	try {
+		response = await fetch(`https://api.clerk.com/v1/${endpoint}`, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${env.CLERK_SECRET_KEY}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(body),
+			signal: AbortSignal.timeout(10_000)
+		});
+	} catch {
+		throw new TRPCError({
+			code: 'INTERNAL_SERVER_ERROR',
+			message: failureMessage
+		});
+	}
+
+	if (!response.ok) {
+		throw new TRPCError({
+			code: 'INTERNAL_SERVER_ERROR',
+			message: failureMessage
+		});
+	}
+
+	let payload: unknown;
+	try {
+		payload = await response.json();
+	} catch {
+		throw new TRPCError({
+			code: 'INTERNAL_SERVER_ERROR',
+			message: failureMessage
+		});
+	}
+
+	const result = clerkTokenResponseSchema.safeParse(payload);
+	if (!result.success) {
+		throw new TRPCError({
+			code: 'INTERNAL_SERVER_ERROR',
+			message: failureMessage
+		});
+	}
+
+	return result.data.token;
+};
+
+const createActorToken = (actorId: string, userId: string) =>
+	createClerkToken(
+		'actor_tokens',
+		{
+			user_id: userId,
+			actor: { sub: actorId }
+		},
+		'Failed to create user impersonation session'
+	);
+
+const createAdminSignInToken = (adminUserId: string) =>
+	createClerkToken(
+		'sign_in_tokens',
+		{ user_id: adminUserId, expires_in_seconds: 300 },
+		'Failed to create the admin recovery session'
+	);
 
 export const userRouter = createTRPCRouter({
 	getById: adminProcedure.input(z.string()).query(async ({ input, ctx }) => {
@@ -48,6 +128,36 @@ export const userRouter = createTRPCRouter({
 
 		return user;
 	}),
+
+	impersonate: adminProcedure
+		.input(z.object({ userId: z.string().min(1) }))
+		.mutation(async ({ input, ctx }) => {
+			if (input.userId === ctx.session.userId) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'You cannot impersonate yourself'
+				});
+			}
+
+			const targetUser = await ctx.db.user.findUnique({
+				where: { id: input.userId },
+				select: { id: true }
+			});
+
+			if (!targetUser) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'User not found'
+				});
+			}
+
+			const [token, restoreToken] = await Promise.all([
+				createActorToken(ctx.session.userId, targetUser.id),
+				createAdminSignInToken(ctx.session.userId)
+			]);
+
+			return { token, restoreToken };
+		}),
 
 	delete: adminProcedure.input(z.string()).mutation(async ({ input, ctx }) => {
 		// Check if user exists in database first

@@ -1,7 +1,7 @@
 'use client';
 
-import { Protect } from '@clerk/nextjs';
-import { Edit, Eye, Search, Trash2 } from 'lucide-react';
+import { Protect, useAuth, useSignIn } from '@clerk/nextjs';
+import { Edit, Eye, LogIn, Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -37,7 +37,6 @@ import {
 	TableRow
 } from '~/common/components/ui/table';
 import { api } from '~/trpc/react';
-import { UserPreviewSelector } from '~/features/userPreview/UserPreviewProvider';
 import { EditUserDialog } from './EditUserDialog';
 
 export default function AdminUsersPage() {
@@ -49,6 +48,8 @@ export default function AdminUsersPage() {
 		'all' | 'ACTIVE' | 'INACTIVE'
 	>('all');
 	const [editingUser, setEditingUser] = useState<string | null>(null);
+	const { sessionId, userId: currentUserId } = useAuth();
+	const { isLoaded: isSignInLoaded, signIn, setActive } = useSignIn();
 
 	useEffect(() => {
 		if (requestedUserId) setEditingUser(requestedUserId);
@@ -59,6 +60,8 @@ export default function AdminUsersPage() {
 		mentorshipStatus:
 			mentorshipStatusFilter !== 'all' ? mentorshipStatusFilter : undefined
 	});
+
+	const impersonateUserMutation = api.user.impersonate.useMutation();
 
 	const deleteUserMutation = api.user.delete.useMutation({
 		onSuccess: async () => {
@@ -74,6 +77,39 @@ export default function AdminUsersPage() {
 
 	const handleDeleteUser = (userId: string) => {
 		deleteUserMutation.mutate(userId);
+	};
+
+	const handleImpersonateUser = async (userId: string) => {
+		if (!isSignInLoaded || !sessionId || impersonateUserMutation.isPending) {
+			return;
+		}
+
+		try {
+			const { token, restoreToken } = await impersonateUserMutation.mutateAsync(
+				{ userId }
+			);
+			sessionStorage.setItem('code-wiser:admin-session-id', sessionId);
+			sessionStorage.setItem('code-wiser:admin-session-token', restoreToken);
+
+			const { createdSessionId } = await signIn.create({
+				strategy: 'ticket',
+				ticket: token
+			});
+
+			if (!createdSessionId) {
+				throw new Error('Clerk did not create an impersonation session');
+			}
+
+			await setActive({ session: createdSessionId });
+			window.location.assign('/');
+		} catch (error) {
+			sessionStorage.removeItem('code-wiser:admin-session-id');
+			toast.error(
+				error instanceof Error
+					? error.message
+					: 'Failed to impersonate this user'
+			);
+		}
 	};
 
 	const clearFilters = () => {
@@ -112,8 +148,6 @@ export default function AdminUsersPage() {
 						Manage users, credits, and mentorship status
 					</p>
 				</div>
-
-				<UserPreviewSelector />
 
 				{/* Filters */}
 				<Card className="mb-6">
@@ -264,6 +298,19 @@ export default function AdminUsersPage() {
 											</TableCell>
 											<TableCell className="text-right">
 												<div className="flex items-center justify-end gap-2">
+													<Button
+														variant="ghost"
+														size="sm"
+														disabled={
+															impersonateUserMutation.isPending ||
+															user.id === currentUserId
+														}
+														onClick={() => void handleImpersonateUser(user.id)}
+														aria-label={`Impersonate ${user.name || user.email}`}
+														title="Impersonate user"
+													>
+														<LogIn className="h-4 w-4" />
+													</Button>
 													<Button asChild variant="ghost" size="sm">
 														<Link
 															href={`/?userId=${encodeURIComponent(user.id)}`}

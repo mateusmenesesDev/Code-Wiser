@@ -18,6 +18,8 @@ export const env = createEnv({
 		STRIPE_CREDITS_3000_PRICE_ID: z.string(),
 		STRIPE_WEBHOOK_SECRET: z.string(),
 		CLERK_WEBHOOK_SECRET: z.string(),
+		// Required only when the admin impersonation flow is enabled.
+		CLERK_SECRET_KEY: z.string().trim().min(1).optional(),
 		// Real-time communication (Pusher)
 		PUSHER_APP_ID: z.string(),
 		PUSHER_SECRET: z.string(),
@@ -72,6 +74,7 @@ export const env = createEnv({
 		STRIPE_CREDITS_3000_PRICE_ID: process.env.STRIPE_CREDITS_3000_PRICE_ID,
 		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 		CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
+		CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
 		// Real-time communication (Pusher)
 		PUSHER_APP_ID: process.env.PUSHER_APP_ID,
 		PUSHER_SECRET: process.env.PUSHER_SECRET,
