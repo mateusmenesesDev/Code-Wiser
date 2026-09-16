@@ -53,11 +53,16 @@ describe('task.getById', () => {
 		await expect(caller.getById({ id: 'task-1' })).resolves.toBeTruthy();
 		const args = mockDb.task.findUnique.mock.calls.at(-1)?.[0] as {
 			include: {
+				parentTask?: { select?: { id?: boolean; title?: boolean } };
 				subtasks?: {
 					select?: { assignees?: { select?: { id?: boolean; name?: boolean } } };
 				};
 			};
 		};
+		expect(args.include.parentTask?.select).toEqual({
+			id: true,
+			title: true
+		});
 		expect(args.include.subtasks?.select?.assignees?.select).toEqual({
 			id: true,
 			name: true

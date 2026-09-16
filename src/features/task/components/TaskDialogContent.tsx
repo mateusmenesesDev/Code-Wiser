@@ -6,9 +6,9 @@ import {
 	TaskStatusEnum,
 	TaskTypeEnum
 } from '@prisma/client';
-import { Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ChevronRight, Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useQueryState } from 'nuqs';
+import { useEffect, useRef, useState } from 'react';
 import type { FieldErrors } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -25,13 +25,13 @@ import {
 import { Input } from '~/common/components/ui/input';
 import { Label } from '~/common/components/ui/label';
 import { Switch } from '~/common/components/ui/switch';
-import { Textarea } from '~/common/components/ui/textarea';
 import {
 	Tabs,
 	TabsContent,
 	TabsList,
 	TabsTrigger
 } from '~/common/components/ui/tabs';
+import { Textarea } from '~/common/components/ui/textarea';
 import { useTask } from '~/features/task/hooks/useTask';
 import {
 	FIBONACCI_STORY_POINTS,
@@ -189,20 +189,20 @@ export function TaskDialogContent({
 
 	const { isDirty } = form.formState;
 	const [, setTaskId] = useQueryState('taskId');
-	const [pendingSubtaskId, setPendingSubtaskId] = useState<string | null>(null);
+	const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
 
-	const openSubtask = (subtaskId: string) => {
+	const openTask = (nextTaskId: string) => {
 		if (isDirty) {
-			setPendingSubtaskId(subtaskId);
+			setPendingTaskId(nextTaskId);
 			return;
 		}
-		void setTaskId(subtaskId);
+		void setTaskId(nextTaskId);
 	};
 
-	const confirmOpenSubtask = () => {
-		const subtaskId = pendingSubtaskId;
-		setPendingSubtaskId(null);
-		if (subtaskId) void setTaskId(subtaskId);
+	const confirmOpenTask = () => {
+		const nextTaskId = pendingTaskId;
+		setPendingTaskId(null);
+		if (nextTaskId) void setTaskId(nextTaskId);
 	};
 
 	useEffect(() => {
@@ -310,10 +310,31 @@ export function TaskDialogContent({
 	const storyPointsIsFibonacci =
 		storyPointsWatch == null ||
 		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
+	const parentTask = task?.parentTask;
 
 	return (
 		<FormProvider {...form}>
 			<DialogHeader className="shrink-0">
+				{isEditing && parentTask && (
+					<nav
+						aria-label="Breadcrumb"
+						className="flex min-w-0 items-center gap-1 text-muted-foreground text-xs"
+					>
+						<button
+							data-testid="task-parent-breadcrumb"
+							type="button"
+							className="min-w-0 max-w-[min(24rem,70vw)] truncate text-left hover:text-foreground hover:underline"
+							onClick={() => openTask(parentTask.id)}
+							aria-label={`Open parent task: ${parentTask.title}`}
+						>
+							{parentTask.title}
+						</button>
+						<ChevronRight className="h-3 w-3 shrink-0" aria-hidden="true" />
+						<span className="min-w-0 truncate" aria-current="page">
+							{task.title}
+						</span>
+					</nav>
+				)}
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 pr-8">
 					<DialogTitle className="font-semibold text-xl">
 						{taskId ? 'Edit Task' : 'Create Task'}
@@ -466,7 +487,7 @@ export function TaskDialogContent({
 										isTemplate={isTemplate}
 										subtasks={task.subtasks}
 										openSubtasks
-										onOpenSubtask={openSubtask}
+										onOpenSubtask={openTask}
 									/>
 								)}
 							</div>
@@ -1091,14 +1112,14 @@ export function TaskDialogContent({
 				</div>
 			</form>
 			<ConfirmationDialog
-				open={pendingSubtaskId !== null}
+				open={pendingTaskId !== null}
 				onOpenChange={(open) => {
-					if (!open) setPendingSubtaskId(null);
+					if (!open) setPendingTaskId(null);
 				}}
 				title="Discard changes?"
-				description="Your unsaved changes will be lost if you open this subtask."
+				description="Your unsaved changes will be lost if you open another task."
 				confirmLabel="Discard and open"
-				onConfirm={confirmOpenSubtask}
+				onConfirm={confirmOpenTask}
 			/>
 		</FormProvider>
 	);

@@ -51,6 +51,24 @@ test('completes the main project and code-review journey', async ({
 	await taskCard.click();
 	await expect(taskDialog).toBeVisible();
 
+	const subtaskTitle = `${fixture.taskTitle} subtask`;
+	await taskDialog
+		.getByRole('textbox', { name: 'New subtask title' })
+		.fill(subtaskTitle);
+	await taskDialog.getByRole('button', { name: 'Add subtask' }).click();
+	await expect(
+		taskDialog.getByRole('button', { name: subtaskTitle, exact: true })
+	).toBeVisible();
+	await taskDialog
+		.getByRole('button', { name: subtaskTitle, exact: true })
+		.click();
+	await expect(taskDialog.getByTestId('task-parent-breadcrumb')).toBeVisible();
+	await expect(taskDialog.getByTestId('task-parent-breadcrumb')).toContainText(
+		fixture.taskTitle
+	);
+	await taskDialog.getByTestId('task-parent-breadcrumb').click();
+	await expect(taskDialog.getByTestId('task-parent-breadcrumb')).toBeHidden();
+
 	await taskDialog.getByRole('combobox', { name: 'Task assignees' }).click();
 	await page
 		.getByRole('option', { name: fixture.userName, exact: true })
