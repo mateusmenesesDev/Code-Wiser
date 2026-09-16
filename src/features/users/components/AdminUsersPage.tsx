@@ -1,6 +1,6 @@
 'use client';
 
-import { Protect, useAuth, useSignIn } from '@clerk/nextjs';
+import { Protect, useAuth, useClerk, useSignIn } from '@clerk/nextjs';
 import { Edit, Eye, LogIn, Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -49,6 +49,7 @@ export default function AdminUsersPage() {
 	>('all');
 	const [editingUser, setEditingUser] = useState<string | null>(null);
 	const { sessionId, userId: currentUserId } = useAuth();
+	const { signOut } = useClerk();
 	const { isLoaded: isSignInLoaded, signIn, setActive } = useSignIn();
 
 	useEffect(() => {
@@ -84,12 +85,19 @@ export default function AdminUsersPage() {
 			return;
 		}
 
+		let recoveryToken: string | null = null;
+		let hasSignedOut = false;
+
 		try {
 			const { token, restoreToken } = await impersonateUserMutation.mutateAsync(
 				{ userId }
 			);
+			recoveryToken = restoreToken;
 			sessionStorage.setItem('code-wiser:admin-session-id', sessionId);
 			sessionStorage.setItem('code-wiser:admin-session-token', restoreToken);
+
+			await signOut({ sessionId });
+			hasSignedOut = true;
 
 			const { createdSessionId } = await signIn.create({
 				strategy: 'ticket',
@@ -103,7 +111,31 @@ export default function AdminUsersPage() {
 			await setActive({ session: createdSessionId });
 			window.location.assign('/');
 		} catch (error) {
+			let recoveredAdminSession = false;
+			if (hasSignedOut && recoveryToken) {
+				try {
+					const { createdSessionId } = await signIn.create({
+						strategy: 'ticket',
+						ticket: recoveryToken
+					});
+					if (createdSessionId) {
+						await setActive({ session: createdSessionId });
+						recoveredAdminSession = true;
+					}
+				} catch {
+					// The admin can still sign in again if Clerk rejects the recovery ticket.
+				}
+			}
+
+			if (recoveredAdminSession) {
+				sessionStorage.removeItem('code-wiser:admin-session-id');
+				sessionStorage.removeItem('code-wiser:admin-session-token');
+				window.location.assign('/');
+				return;
+			}
+
 			sessionStorage.removeItem('code-wiser:admin-session-id');
+			sessionStorage.removeItem('code-wiser:admin-session-token');
 			toast.error(
 				error instanceof Error
 					? error.message

@@ -1,4 +1,4 @@
-import { useClerk, useSession, useSignIn } from '@clerk/nextjs';
+import { useClerk, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs';
 import { ChevronDown, LogIn, User } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -20,7 +20,7 @@ import { useAuth } from '~/features/auth/hooks/useAuth';
 
 export default function HeaderAvatarMenu() {
 	const { user, signOut } = useAuth();
-	const { session } = useSession();
+	const { actor } = useClerkAuth();
 	const { setActive } = useClerk();
 	const { isLoaded: isSignInLoaded, signIn } = useSignIn();
 	const [isReturningToAdmin, setIsReturningToAdmin] = useState(false);
@@ -89,12 +89,17 @@ export default function HeaderAvatarMenu() {
 					<span className="hidden font-medium text-sm sm:block">
 						{user?.fullName}
 					</span>
+					{actor && (
+						<span className="hidden rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-900 text-xs md:inline">
+							Impersonating
+						</span>
+					)}
 					<ChevronDown className="h-4 w-4" aria-hidden="true" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-48 border bg-background">
 				<DropdownMenuLabel>{user?.fullName ?? 'Account'}</DropdownMenuLabel>
-				{session?.actor && (
+				{actor && (
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
