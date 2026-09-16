@@ -1,6 +1,6 @@
-import { api } from '~/trpc/react';
-import { getUserPreviewProfile } from '~/features/userPreview/userPreview';
 import { useUserPreview } from '~/features/userPreview/UserPreviewProvider';
+import { getUserPreviewProfile } from '~/features/userPreview/userPreview';
+import { api } from '~/trpc/react';
 
 export function useUser() {
 	const { mode } = useUserPreview();
@@ -13,10 +13,12 @@ export function useUser() {
 	const previewProfile = mode ? getUserPreviewProfile(mode) : null;
 
 	return {
-		userCredits: previewProfile?.credits ?? userCreditsQuery.data?.credits ?? 0,
-		userHasMentorship:
-			previewProfile?.hasMentorship ??
-			userMentorshipQuery.data?.mentorshipStatus === 'ACTIVE',
+		userCredits: mode
+			? (previewProfile?.credits ?? 0)
+			: (userCreditsQuery.data?.credits ?? 0),
+		userHasMentorship: mode
+			? (previewProfile?.hasMentorship ?? false)
+			: userMentorshipQuery.data?.mentorshipStatus === 'ACTIVE',
 		isUserCreditsLoading: !mode && userCreditsQuery.isLoading,
 		isUserCreditsError: !mode && userCreditsQuery.isError,
 		isUserMentorshipLoading: !mode && userMentorshipQuery.isLoading

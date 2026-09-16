@@ -1,28 +1,31 @@
 'use client';
 
 import { useAuth } from '@clerk/nextjs';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle
-} from '~/common/components/ui/card';
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from '~/common/components/ui/select';
 import {
-	getUserPreviewProfile,
-	isUserPreviewMode,
-	USER_PREVIEW_PROFILES,
 	USER_PREVIEW_STORAGE_KEY,
-	type UserPreviewMode
+	type UserPreviewMode,
+	type UserViewMode,
+	isUserPreviewMode,
+	isUserViewMode
 } from './userPreview';
 
 type UserPreviewContextValue = {
+	isAdmin: boolean;
 	mode: UserPreviewMode | null;
-	startPreview: (mode: UserPreviewMode) => void;
+	view: UserViewMode;
+	setView: (view: UserViewMode) => void;
 	stopPreview: () => void;
 };
 
@@ -49,16 +52,27 @@ export function UserPreviewProvider({
 		}
 
 		const storedMode = window.localStorage.getItem(USER_PREVIEW_STORAGE_KEY);
-		if (isUserPreviewMode(storedMode)) setMode(storedMode);
+		if (isUserPreviewMode(storedMode)) {
+			setMode(storedMode);
+		} else if (storedMode) {
+			window.localStorage.removeItem(USER_PREVIEW_STORAGE_KEY);
+		}
 	}, [isAdmin, isLoaded]);
 
-	const value = useMemo(
+	const value = useMemo<UserPreviewContextValue>(
 		() => ({
+			isAdmin,
 			mode: isAdmin ? mode : null,
-			startPreview: (nextMode: UserPreviewMode) => {
+			view: isAdmin ? (mode ?? 'admin') : 'student',
+			setView: (view: UserViewMode) => {
 				if (!isAdmin) return;
-				setMode(nextMode);
-				window.localStorage.setItem(USER_PREVIEW_STORAGE_KEY, nextMode);
+				if (view === 'admin') {
+					setMode(null);
+					window.localStorage.removeItem(USER_PREVIEW_STORAGE_KEY);
+					return;
+				}
+				setMode(view);
+				window.localStorage.setItem(USER_PREVIEW_STORAGE_KEY, view);
 			},
 			stopPreview: () => {
 				setMode(null);
@@ -89,8 +103,6 @@ export function UserPreviewBanner() {
 
 	if (!mode) return null;
 
-	const profile = getUserPreviewProfile(mode);
-
 	return (
 		<div className="border-amber-300 border-b bg-amber-50 px-4 py-2 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
 			<div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-2 text-sm">
@@ -98,12 +110,7 @@ export function UserPreviewBanner() {
 					<Badge variant="outline" className="border-current">
 						{t('badge')}
 					</Badge>
-					<span>
-						{t('activeAs', { profile: t(`${mode}.label`) })} ·{' '}
-						{profile.hasMentorship
-							? t('mentorshipAccess')
-							: t('creditsAccess', { credits: profile.credits })}
-					</span>
+					<span>{t('activeAs', { profile: t(`${mode}.label`) })}</span>
 				</div>
 				<Button
 					variant="ghost"
@@ -120,34 +127,34 @@ export function UserPreviewBanner() {
 
 export function UserPreviewSelector() {
 	const t = useTranslations('userPreview');
-	const { mode, startPreview, stopPreview } = useUserPreview();
+	const pathname = usePathname();
+	const router = useRouter();
+	const { isAdmin, view, setView } = useUserPreview();
+
+	if (!isAdmin) return null;
 
 	return (
-		<Card className="mb-6 border-dashed">
-			<CardHeader>
-				<CardTitle level={2} className="text-lg">
-					{t('title')}
-				</CardTitle>
-				<CardDescription>{t('description')}</CardDescription>
-			</CardHeader>
-			<CardContent className="flex flex-wrap gap-3">
-				{(Object.keys(USER_PREVIEW_PROFILES) as UserPreviewMode[]).map(
-					(previewMode) => (
-						<Button
-							key={previewMode}
-							variant={mode === previewMode ? 'default' : 'outline'}
-							onClick={() => startPreview(previewMode)}
-						>
-							{t(`${previewMode}.button`)}
-						</Button>
-					)
-				)}
-				{mode && (
-					<Button variant="ghost" onClick={stopPreview}>
-						{t('exit')}
-					</Button>
-				)}
-			</CardContent>
-		</Card>
+		<Select
+			value={view}
+			onValueChange={(value) => {
+				if (!isUserViewMode(value)) return;
+				setView(value);
+				if ((value === 'admin') !== pathname.startsWith('/admin')) {
+					router.push(value === 'admin' ? '/admin' : '/');
+				}
+			}}
+		>
+			<SelectTrigger
+				className="h-8 w-[7.5rem] border-muted-foreground/30 px-2 text-xs sm:w-32"
+				aria-label={t('selectLabel')}
+			>
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent align="end">
+				<SelectItem value="admin">{t('views.admin')}</SelectItem>
+				<SelectItem value="mentor">{t('views.mentor')}</SelectItem>
+				<SelectItem value="student">{t('views.student')}</SelectItem>
+			</SelectContent>
+		</Select>
 	);
 }

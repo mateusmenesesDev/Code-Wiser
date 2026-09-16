@@ -238,3 +238,104 @@ describe('dashboard.getOverview', () => {
 		expect(mockDb.project.findMany).not.toHaveBeenCalled();
 	});
 });
+
+describe('dashboard.recordRecommendationEvent', () => {
+	const createCaller = createCallerFactory(dashboard);
+
+	it('records a recommendation start and the first learning action idempotently', async () => {
+		authState.userId = 'learner-1';
+		authState.isAdmin = false;
+		mockDb.learningJourneyEvent.upsert.mockResolvedValue({} as never);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+		await expect(
+			caller.recordRecommendationEvent({
+				eventType: 'STARTED',
+				recommendationKey: 'EXERCISE|GOAL|/exercises/react/testing|testing'
+			})
+		).resolves.toEqual({ success: true });
+
+		expect(mockDb.learningJourneyEvent.upsert).toHaveBeenCalledTimes(2);
+		expect(mockDb.learningJourneyEvent.upsert).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({
+				where: {
+					eventKey:
+						'recommendation:RECOMMENDATION_STARTED:learner-1:EXERCISE|GOAL|/exercises/react/testing|testing'
+				}
+			})
+		);
+		expect(mockDb.learningJourneyEvent.upsert).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({
+				where: { eventKey: 'first-action:learner-1' }
+			})
+		);
+	});
+});
+
+describe('dashboard.getLearningMetrics', () => {
+	const createCaller = createCallerFactory(dashboard);
+
+	it('returns bounded learning health counts to admins', async () => {
+		authState.userId = 'admin-1';
+		authState.isAdmin = true;
+		mockDb.user.count.mockResolvedValue(12);
+		mockDb.competencyMentorAssessment.findMany
+			.mockResolvedValueOnce([
+				{ learnerId: 'learner-1' },
+				{ learnerId: 'learner-2' }
+			] as never)
+			.mockResolvedValueOnce([] as never);
+		vi.mocked(mockDb.remediationAction.groupBy).mockResolvedValue([
+			{ status: 'OPEN', _count: { _all: 3 } },
+			{ status: 'COMPLETED', _count: { _all: 5 } }
+		] as never);
+		mockDb.remediationAction.count.mockResolvedValue(4);
+		mockDb.mentorAttentionAssignment.count.mockResolvedValue(2);
+		mockDb.mentorAttentionAssignment.aggregate.mockResolvedValue({
+			_avg: { firstResponseMinutes: 90, completionMinutes: 180 }
+		} as never);
+		mockDb.learningJourneyEvent.count.mockResolvedValue(0);
+		mockDb.learningJourneyEvent.findMany.mockResolvedValue([] as never);
+		vi.mocked(mockDb.cohortPeerReview.groupBy).mockResolvedValue([
+			{ status: 'SUBMITTED', _count: { _all: 7 } }
+		] as never);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(caller.getLearningMetrics()).resolves.toEqual({
+			diagnosedLearners: 12,
+			learnersWithDemonstratedCompetency: 2,
+			remediationByStatus: { OPEN: 3, COMPLETED: 5 },
+			remediationReassessments: 4,
+			overdueMentorAttentionItems: 2,
+			peerReviewsByStatus: { SUBMITTED: 7 },
+			journeyFunnel: {
+				firstActionLearners: 0,
+				recommendationImpressions: 0,
+				recommendationStarts: 0,
+				remediationCompleted: 5,
+				secondEvaluationsApproved: 0
+			},
+			journeyRates: {
+				diagnosisToFirstAction: 0,
+				recommendationImpressionToStart: null,
+				remediationCompletion: 63,
+				secondEvaluationApproval: 0
+			},
+			journeyTiming: {
+				averageSignupToFirstActionMinutes: null,
+				averageDiagnosisToEvidenceMinutes: null,
+				averageReviewResponseMinutes: 90,
+				averageReviewCompletionMinutes: 180,
+				reviewResponseCount: 2,
+				reviewCompletionCount: 2
+			}
+		});
+	});
+});

@@ -1,0 +1,54 @@
+model LearningPlan {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title     String
+  objective String?
+
+  learnerId   String  @unique
+  createdById String?
+
+  learner   User  @relation("LearningPlanLearner", fields: [learnerId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("LearningPlanCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  items     LearningPlanItem[]
+
+  @@schema("public")
+}
+
+model LearningPlanItem {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  position   Int
+  title      String
+  reason     String
+  dueAt      DateTime?
+  status     LearningPlanItemStatus     @default(PLANNED)
+  targetType LearningPlanItemTargetType
+  targetId   String?
+  targetHref String?
+
+  planId String
+  plan   LearningPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  dependencies LearningPlanItemDependency[] @relation("LearningPlanItemDependencies")
+  dependents   LearningPlanItemDependency[] @relation("LearningPlanItemDependents")
+
+  @@unique([planId, position])
+  @@index([planId, status, position])
+  @@schema("public")
+}
+
+model LearningPlanItemDependency {
+  itemId            String
+  prerequisiteItemId String
+
+  item            LearningPlanItem @relation("LearningPlanItemDependencies", fields: [itemId], references: [id], onDelete: Cascade)
+  prerequisite    LearningPlanItem @relation("LearningPlanItemDependents", fields: [prerequisiteItemId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, prerequisiteItemId])
+  @@index([prerequisiteItemId])
+  @@schema("public")
+}

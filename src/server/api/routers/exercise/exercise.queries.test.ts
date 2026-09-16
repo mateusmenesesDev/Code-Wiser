@@ -3,12 +3,14 @@ import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
 import { exerciseRouter } from './exercise.router';
 
+const authState = vi.hoisted(() => ({ userId: null as string | null }));
+
 vi.mock('@clerk/nextjs/server', () => ({
 	auth: () => ({
-		userId: null,
+		userId: authState.userId,
 		sessionClaims: null,
-		sessionId: null,
-		getToken: () => Promise.resolve(null),
+		sessionId: authState.userId ? 'test-session-id' : null,
+		getToken: () => Promise.resolve(authState.userId ? 'test-token' : null),
 		has: () => false
 	})
 }));
@@ -26,6 +28,7 @@ describe('exercise public queries', () => {
 	let caller: ReturnType<typeof createCaller>;
 
 	beforeEach(async () => {
+		authState.userId = null;
 		caller = createCaller(
 			await createTRPCContext({
 				headers: new Headers()
@@ -137,6 +140,55 @@ describe('exercise public queries', () => {
 			'medium-one',
 			'hard-one'
 		]);
+	});
+
+	it('returns the active submission CI status to a signed-in learner', async () => {
+		authState.userId = 'user-1';
+		caller = createCaller(
+			await createTRPCContext({
+				headers: new Headers()
+			})
+		);
+		mockDb.exerciseChallenge.findFirst.mockResolvedValue({
+			id: 'c-1',
+			title: 'Counter',
+			slug: 'counter',
+			difficulty: 'EASY',
+			sortOrder: 0,
+			isArchived: false,
+			description: 'Build a counter',
+			setupInstructions: 'npm install',
+			acceptanceCriteria: 'Tests pass',
+			track: {
+				id: 'track-1',
+				name: 'React',
+				slug: 'react',
+				repoUrl: 'https://github.com/org/react-exercises',
+				githubRepository: null,
+				isPublished: true,
+				isArchived: false
+			}
+		} as never);
+		mockDb.userChallengeProgress.findUnique.mockResolvedValue({
+			status: 'IN_REVIEW'
+		} as never);
+		mockDb.exerciseReviewDecision.findFirst
+			.mockResolvedValueOnce({
+				status: 'PENDING',
+				submission: {
+					id: 'submission-1',
+					prUrl: 'https://github.com/org/react-exercises/pull/1',
+					githubChecksStatus: 'FAILURE'
+				}
+			} as never)
+			.mockResolvedValueOnce(null);
+
+		const result = await caller.getPublishedChallengeBySlug({
+			trackSlug: 'react',
+			challengeSlug: 'counter'
+		});
+
+		expect(result.activeGithubChecksStatus).toBe('FAILURE');
 	});
 
 	it('hides challenge brief fields for anonymous users', async () => {

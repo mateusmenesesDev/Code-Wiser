@@ -17,6 +17,18 @@ A principal oportunidade não é adicionar mais recursos de gestão de projetos.
 
 Os módulos necessários já existem, mas ainda armazenam e exibem seus dados de forma relativamente separada.
 
+## Estado atual
+
+A baseline das dez recomendações foi implementada. O detalhe operacional está em `docs/implemented-features.md`.
+
+- **P0:** diagnóstico, matriz de competências e remediação.
+- **P1:** follow-up de mentoria, ownership/SLA, recomendação adaptativa e checks de CI.
+- **P2:** templates versionados, portfólio verificável, cohorts, projetos colaborativos e peer review moderado.
+- **Operação:** métricas administrativas básicas, reset scripts, documentação de domínio e privacy boundaries.
+- **Analytics da jornada:** eventos idempotentes, funil, taxas de conversão e tempos médios no dashboard administrativo.
+
+As próximas features deste documento são incrementais sobre essa baseline, não substitutos dela.
+
 ## Diagnóstico do projeto
 
 ### Pontos fortes
@@ -26,22 +38,24 @@ Os módulos necessários já existem, mas ainda armazenam e exibem seus dados de
 - A fila de atenção do mentor reúne PR reviews, exercícios, tarefas bloqueadas, alunos inativos e sessões de mentoria (`src/server/api/routers/mentorAttention/mentorAttention.router.ts`).
 - O modelo de dados já preserva decisões importantes de segurança, idempotência financeira, histórico de review e privacidade de notas de mentoria.
 
-### Lacunas principais
+### Lacunas principais restantes
 
-1. **Não existe um modelo compartilhado de competência.**
-   Outcomes, milestones, desafios, findings de PR e avaliações de mentor não convergem para uma visão única do que o aluno sabe demonstrar (`prisma/models/projectBase.prisma`, `prisma/models/exercise.prisma`, `prisma/models/prReviewAnalysis.prisma`).
-2. **A próxima ação ainda é operacional.**
-   A regra atual prioriza tarefa urgente, exercício pendente, review com mudanças solicitadas ou projeto ativo (`src/features/dashboard/utils/nextAction.ts:13-68`). Ela não considera objetivo profissional, lacunas técnicas ou disponibilidade do aluno.
-3. **O feedback nem sempre vira trabalho rastreável.**
-   Uma review pode pedir mudanças, mas o produto ainda não transforma isso naturalmente em uma ação de aprendizagem que possa ser concluída e reavaliada.
-4. **A capacidade do mentor é um gargalo provável.**
-   A fila existe, mas ainda precisa de ownership, SLA, distribuição de carga e escalonamento.
-5. **A documentação de produto está divergente.**
-   `docs/planned-features.md` está vazio. Além disso, `NEW-FEATURES.MD` descreve alguns itens como concluídos e, em outros trechos, como pendentes. Isso dificulta decidir o que realmente deve ser construído.
+1. **A medição da jornada ainda exige evolução.**
+   A baseline agora registra primeira ação, início de recomendação, remediação, segunda avaliação e resposta de review. O próximo passo é usar esses sinais para melhorar qualidade, diagnóstico e planos explícitos.
+2. **O plano de aprendizagem precisa continuar sendo validado.**
+   Já existe um plano atual por aluno, com ações ordenadas, dependências, prazos e motivo. A próxima evolução é observar se essa estrutura melhora a execução antes de adicionar automação.
+3. **A qualidade de peer review ainda pode evoluir.**
+   Rubricas, exemplos, checklist e calibração antes do envio agora existem. A próxima evolução é avaliar a qualidade pedagógica do feedback sem transformar reputação em nota de competência.
+4. **O matching de reviewers precisa de apoio operacional.**
+   O admin ainda decide reviewer e PR, mas sugestões automáticas devem considerar carga, competência, disponibilidade e conflitos.
+5. **A cohort agora conduz o ciclo pedagógico básico.**
+   O admin agenda kickoff, checkpoints, entregas, encerramento e retrospectiva como eventos bounded da turma. Membros veem a timeline, os eventos aparecem na agenda e podem ser adicionados explicitamente ao plano de aprendizagem.
+6. **A cobertura editorial precisa ser monitorada.**
+   Ainda é necessário identificar competências sem desafios, outcomes, milestones ou critérios de avaliação suficientes.
 
 ## Features novas priorizadas
 
-As recomendações abaixo excluem itens já presentes no backlog ou em implementação, como busca do catálogo, UI completa de sprints e epics, histórico de créditos, papéis de projeto, localização, notificações completas, multi-mentor, calendário externo, gamificação e E2E no CI.
+As dez recomendações originais foram implementadas em uma baseline incremental. A próxima onda abaixo trata as lacunas que permanecem sem reabrir itens deliberadamente adiados, como gamificação, feed social, automação de aprovação e infraestrutura genérica.
 
 ### P0 — criar o núcleo pedagógico
 
@@ -196,21 +210,35 @@ O portfólio passa a funcionar como um relatório de evidências, não apenas co
 
 Criar grupos recorrentes de alunos, projetos colaborativos e revisões entre pares. Essa feature pode aumentar retenção e reduzir dependência do mentor, mas exige moderação, reputação e regras contra feedback de baixa qualidade.
 
-Só deve ser priorizada depois de resolver SLA de mentoria e o ciclo de remediação.
+A baseline foi implementada depois do SLA de mentoria e do ciclo de remediação: o admin vincula projetos `FREE` a uma turma, os membros ativos são inscritos respeitando `maxParticipants`, e peer reviews possuem denúncia, moderação e reputação derivada. Sugestões de matching administrativo agora consideram competência, carga, disponibilidade, autoria e conflitos de projeto; projetos pagos e reputação pedagógica continuam fora desta baseline.
 
-## Primeira entrega recomendada
+## Próxima onda recomendada
 
-Eu começaria por um único vertical slice:
+A baseline já testa a tese central. A próxima entrega deve fechar o ciclo de medição e qualidade sem criar um produto paralelo.
 
-1. definir de 8 a 12 competências;
-2. adicionar um diagnóstico curto no onboarding;
-3. mapear um track de exercícios e um template de projeto para essas competências;
-4. registrar evidências aprovadas;
-5. mostrar uma lacuna no dashboard;
-6. transformar uma decisão de review em uma ação de remediação;
-7. medir se a ação foi concluída e reavaliada.
+### P0 — medir o que já existe — implementado
 
-Essa entrega testa a tese central sem exigir um novo produto paralelo.
+A jornada agora registra eventos de primeira ação, impressão e início de recomendação, conclusão de remediação, segunda avaliação e resposta de review. O dashboard administrativo exibe funil, taxas, tempos médios e itens atrasados. A instrumentação é idempotente, limitada e não bloqueia a ação principal quando o registro analítico falha.
+
+### P1 — tornar o plano explícito — implementado
+
+O aluno e o admin/mentor podem manter o plano atual do aluno, com objetivo, ações ordenadas, dependências, prazos e motivo. Tarefas, exercícios e remediações são vinculados por snapshot de destino; ações personalizadas e sessões de mentoria também são suportadas. A recomendação automática continua sendo uma sugestão, não uma obrigação.
+
+### P1 — calibrar peer review — implementado
+
+Reviewers consultam rubricas por categoria, exemplos de feedback útil e um checklist antes do envio. Novos reviewers respondem três cenários e precisam acertar pelo menos dois antes de submeter feedback. A moderação continua disponível para exceções.
+
+### P1 — sugerir matching de reviewers — implementado
+
+O procedimento administrativo sugere até dez reviewers considerando competências demonstradas relacionadas ao projeto e aos findings do PR, assignments ativos, disponibilidade semanal autodeclarada, autoria, acesso ao repositório privado, papel no projeto, revisões já feitas no mesmo projeto e calibração. A interface exibe os motivos e permite usar qualquer sugestão ou manter a escolha manual. O admin mantém a decisão final e pode substituir a sugestão.
+
+### P2 — completar o ciclo da cohort — implementado
+
+Cohorts agora possuem eventos bounded de kickoff, checkpoints, entregas, encerramento e retrospectiva. O admin pode agendar, atualizar, completar e consultar a timeline; concluir o evento de encerramento conclui a cohort atomicamente. Membros ativos veem esses eventos na própria timeline e na agenda. Eventos planejados também aparecem como candidatos `COHORT_EVENT` no plano de aprendizagem, preservando a decisão explícita do aluno em vez de criar obrigações automáticas.
+
+### P2 — monitorar cobertura editorial
+
+Criar uma visão administrativa das competências sem desafios, outcomes, milestones, critérios ou evidências recentes, priorizando lacunas que afetam recomendações reais.
 
 ## Métricas de sucesso
 
@@ -238,14 +266,14 @@ Não usar quantidade de tarefas concluídas ou velocity como métrica principal 
 
 ## Estado de verificação do repositório
 
-A análise foi feita sobre o working tree atual, que contém alterações locais e protótipos não commitados.
+A análise e a implementação foram feitas sobre o working tree atual, que contém alterações locais e protótipos não commitados.
 
-- `bun run typecheck`: passou.
-- `bun run test --run`: 208 testes passaram; 17 suítes falharam durante a inicialização por variáveis de ambiente ausentes.
-- `bun run lint`: falhou no estado atual.
-- `bunx biome lint src prisma`: encontrou 7 problemas, principalmente parsing da sintaxe Tailwind no CSS e ordenação de classes.
+- `npm run typecheck`: passou.
+- `npx prisma validate`: passou.
+- Biome passou nos arquivos TypeScript alterados pela implementação.
+- `npx vitest run --maxWorkers=1 --minWorkers=1`: 279 testes passaram; 16 suítes falharam durante a coleta por variáveis de ambiente ausentes.
 
-Essas falhas não impedem a recomendação de produto, mas devem ser resolvidas antes de usar a saúde do repositório como sinal de prontidão para produção.
+As suítes que não coletaram dependem de variáveis como `DATABASE_URL`, chaves de integração e secrets externos. As migrations ainda precisam ser aplicadas e validadas em um banco real antes de produção.
 
 ## Fontes analisadas
 
@@ -260,9 +288,17 @@ Essas falhas não impedem a recomendação de produto, mas devem ser resolvidas 
 - `docs/adr/0004-internal-mentorship-scheduling.md`
 - `src/server/api/root.ts`
 - `src/server/api/routers/mentorAttention/mentorAttention.router.ts`
+- `src/server/api/routers/cohort/cohort.router.ts`
+- `src/features/cohorts/data/peerReviewCalibration.ts`
 - `src/features/dashboard/utils/nextAction.ts`
 - `prisma/models/project.prisma`
 - `prisma/models/projectBase.prisma`
 - `prisma/models/exercise.prisma`
 - `prisma/models/mentorshipBooking.prisma`
 - `prisma/models/prReviewAnalysis.prisma`
+  1. analytics da jornada;
+  2. plano de aprendizagem explícito;
+  3. calibração de peer review;
+  4. matching de reviewers;
+  5. ciclo completo de cohorts;
+  6. monitoramento de cobertura editorial.

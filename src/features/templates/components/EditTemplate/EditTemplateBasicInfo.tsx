@@ -152,7 +152,8 @@ export default function EditTemplateBasicInfo({
 	});
 
 	const onSubmit = (data: UpdateProjectTemplateBasicInfoInput) => {
-		updateTemplateMutation.mutate({ id: templateId, ...data });
+		const { id: _formTemplateId, ...templateData } = data;
+		updateTemplateMutation.mutate({ id: templateId, ...templateData });
 	};
 
 	return (

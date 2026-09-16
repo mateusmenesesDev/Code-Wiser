@@ -91,6 +91,19 @@ model User {
   creditCheckouts              CreditCheckout[]
   mentorAttentionAssignments  MentorAttentionAssignment[] @relation("MentorAttentionAssignments")
   mentorAttentionCompletions  MentorAttentionAssignment[] @relation("MentorAttentionCompletions")
+  learningJourneyEvents       LearningJourneyEvent[]
+  learningPlans               LearningPlan[]         @relation("LearningPlanLearner")
+  learningPlansCreated        LearningPlan[]         @relation("LearningPlanCreator")
+  cohortsCreated              Cohort[]                    @relation("CohortCreator")
+  cohortEventsCreated         CohortEvent[]                @relation("CohortEventCreator")
+  cohortMemberships           CohortMembership[]
+  peerReviewsGiven            CohortPeerReview[]          @relation("CohortPeerReviewReviewer")
+  peerReviewsReceived         CohortPeerReview[]          @relation("CohortPeerReviewAuthor")
+  peerReviewsDismissed        CohortPeerReview[]          @relation("CohortPeerReviewDismissal")
+  peerReviewCalibrations      CohortPeerReviewCalibration[] @relation("CohortPeerReviewCalibrationReviewer")
+  cohortProjectsAssigned      CohortProject[]             @relation("CohortProjectAssigner")
+  peerReviewReportsFiled      CohortPeerReviewReport[]    @relation("CohortPeerReviewReporter")
+  peerReviewReportsResolved   CohortPeerReviewReport[]    @relation("CohortPeerReviewReportResolver")
 
   @@index([isOrgAdmin])
   @@index([updatedAt])

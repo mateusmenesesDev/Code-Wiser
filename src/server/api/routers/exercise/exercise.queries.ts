@@ -218,6 +218,7 @@ export const exerciseQueries = {
 			let status: UserChallengeProgressStatus | null = null;
 			let hasProgress = false;
 			let activePrUrl: string | null = null;
+			let activeGithubChecksStatus: string | null = null;
 			let latestMentorFeedback: {
 				status: 'APPROVED' | 'CHANGES_REQUESTED' | 'PENDING';
 				mentorComment: string | null;
@@ -251,12 +252,19 @@ export const exerciseQueries = {
 					orderBy: { createdAt: 'desc' },
 					select: {
 						status: true,
-						submission: { select: { id: true, prUrl: true } }
+						submission: {
+							select: {
+								id: true,
+								prUrl: true,
+								githubChecksStatus: true
+							}
+						}
 					}
 				});
 
 				if (openDecision) {
 					activePrUrl = openDecision.submission.prUrl;
+					activeGithubChecksStatus = openDecision.submission.githubChecksStatus;
 					if (openDecision.status === 'CHANGES_REQUESTED') {
 						updatableSubmission = {
 							id: openDecision.submission.id,
@@ -308,6 +316,7 @@ export const exerciseQueries = {
 				isArchived: challenge.isArchived,
 				status,
 				activePrUrl,
+				activeGithubChecksStatus,
 				latestMentorFeedback,
 				updatableSubmission,
 				track: {

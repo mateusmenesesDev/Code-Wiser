@@ -12,7 +12,7 @@ import {
 	assertProjectIsActive,
 	assertProjectPermission,
 	assertProjectResourceAccess,
-	userHasAccessToProjectTemplate
+	assertProjectTemplateIsEditable
 } from '~/server/utils/auth';
 import { captureSprintSnapshot } from '../sprintMetrics';
 
@@ -21,7 +21,7 @@ const assertSprintManager = async (
 	resource: { projectId: string | null; projectTemplateId: string | null }
 ) => {
 	if (resource.projectTemplateId) {
-		await userHasAccessToProjectTemplate(ctx, resource.projectTemplateId);
+		await assertProjectTemplateIsEditable(ctx, resource.projectTemplateId);
 		return;
 	}
 
@@ -66,7 +66,7 @@ export const sprintMutations = {
 				input;
 
 			if (isTemplate) {
-				await userHasAccessToProjectTemplate(ctx, projectId);
+				await assertProjectTemplateIsEditable(ctx, projectId);
 			} else {
 				await assertSprintManager(ctx, { projectId, projectTemplateId: null });
 				await assertProjectIsActive(ctx.db, projectId);

@@ -1,4 +1,5 @@
 import {
+	LearningJourneyEventType,
 	MentorAttentionSourceType,
 	PRReviewAnalysisStatus,
 	PRReviewFindingDecision,
@@ -22,6 +23,12 @@ import {
 	getPullRequestSnapshotForRepository,
 	githubPullRequestRefFromUrl
 } from '~/server/services/github/github';
+import {
+	tryRecordLearningJourneyEvent,
+	remediationCompletionEventKey,
+	reviewResponseEventKey,
+	secondEvaluationEventKey
+} from '~/server/services/learningJourney/learningJourney.service';
 import { completeMentorAttention } from '~/server/services/mentorAttention/mentorAttention.service';
 import {
 	notifyPRRequested,
@@ -278,6 +285,12 @@ export const prReviewMutations = {
 					? { id: reviewIdentifier }
 					: { taskId: reviewIdentifier, isActive: true },
 				include: {
+					remediationActions: {
+						select: { id: true, status: true, learnerId: true }
+					},
+					reassessmentActions: {
+						select: { id: true, status: true, learnerId: true }
+					},
 					requestedBy: {
 						select: {
 							id: true,
@@ -337,6 +350,11 @@ export const prReviewMutations = {
 			}
 
 			const reviewedAt = new Date();
+			const reassessmentActions = activeReview.reassessmentActions ?? [];
+			const remediationActionsToComplete = [
+				...(activeReview.remediationActions ?? []),
+				...reassessmentActions
+			].filter((action) => action.status !== RemediationActionStatus.CANCELLED);
 			const decision = await ctx.db.$transaction(async (tx) => {
 				const saved = await tx.pullRequestReview.updateMany({
 					where: {
@@ -364,6 +382,34 @@ export const prReviewMutations = {
 							completedById: ctx.session.userId
 						}
 					});
+					for (const action of remediationActionsToComplete) {
+						await tryRecordLearningJourneyEvent(tx, {
+							userId: action.learnerId,
+							eventType: LearningJourneyEventType.REMEDIATION_COMPLETED,
+							eventKey: remediationCompletionEventKey(action.id),
+							entityType: 'REMEDIATION_ACTION',
+							entityId: action.id,
+							occurredAt: reviewedAt
+						});
+					}
+					await tryRecordLearningJourneyEvent(tx, {
+						userId: activeReview.requestedById,
+						eventType: LearningJourneyEventType.REVIEW_RESPONDED,
+						eventKey: reviewResponseEventKey('PR', activeReview.id),
+						entityType: 'PR_REVIEW',
+						entityId: activeReview.id,
+						occurredAt: reviewedAt
+					});
+					if (reassessmentActions.length > 0) {
+						await tryRecordLearningJourneyEvent(tx, {
+							userId: activeReview.requestedById,
+							eventType: LearningJourneyEventType.SECOND_EVALUATION_APPROVED,
+							eventKey: secondEvaluationEventKey('PR', activeReview.id),
+							entityType: 'PR_REVIEW',
+							entityId: activeReview.id,
+							occurredAt: reviewedAt
+						});
+					}
 					await completeMentorAttention(
 						tx,
 						MentorAttentionSourceType.PR_REVIEW,
@@ -541,6 +587,14 @@ export const prReviewMutations = {
 							taskId: activeReview.task.id,
 							sourcePrReviewId: activeReview.id
 						}
+					});
+					await tryRecordLearningJourneyEvent(tx, {
+						userId: activeReview.requestedById,
+						eventType: LearningJourneyEventType.REVIEW_RESPONDED,
+						eventKey: reviewResponseEventKey('PR', activeReview.id),
+						entityType: 'PR_REVIEW',
+						entityId: activeReview.id,
+						occurredAt: reviewedAt
 					});
 					await completeMentorAttention(
 						tx,

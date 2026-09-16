@@ -18,6 +18,23 @@
 		"saveLanguageError": "Could not save your language preference.",
 		"viewPricing": "View pricing and upgrade"
 	},
+	"exerciseChecks": {
+		"title": "CI checks",
+		"status": {
+			"SUCCESS": "Passed",
+			"FAILURE": "Failed",
+			"PENDING": "Running",
+			"NONE": "No checks found",
+			"UNAVAILABLE": "Unavailable"
+		},
+		"description": {
+			"SUCCESS": "All reported checks passed. Mentor review is still required.",
+			"FAILURE": "One or more checks failed. Fix the tests or lint before continuing.",
+			"PENDING": "Checks are still running. Wait for them to finish before continuing.",
+			"NONE": "No checks were reported for this commit. Mentor review remains manual.",
+			"UNAVAILABLE": "GitHub checks are unavailable. You can continue through the manual review flow."
+		}
+	},
 	"notifications": {
 		"title": "Notifications",
 		"markAllAsRead": "Mark all as read",
@@ -59,8 +76,11 @@
 		"projectCatalog": "Project catalog",
 		"exercises": "Exercises",
 		"myProjects": "My projects",
+		"cohorts": "Cohorts",
+		"learningPlans": "Learning plans",
 		"taskAgenda": "Task agenda",
 		"mentorship": "Mentorship",
+		"followUp": "Follow-up",
 		"people": "People",
 		"templates": "Templates",
 		"exerciseManagement": "Exercise management",
@@ -92,12 +112,78 @@
 		"closeSidebar": "Close sidebar",
 		"openSidebar": "Open sidebar"
 	},
+	"mentorFollowUp": {
+		"title": "Project follow-up",
+		"description": "See what needs your attention across the learners you mentor.",
+		"searchPlaceholder": "Search by learner",
+		"projectFilter": "All projects",
+		"empty": "Nothing needs your attention right now.",
+		"emptyDescription": "Your upcoming sessions and project context will appear here when available.",
+		"unavailable": "Follow-up is unavailable",
+		"unavailableDescription": "We could not load your project follow-up. Try again.",
+		"tryAgain": "Try again",
+		"lastActivity": "Last activity",
+		"noActivity": "No activity yet",
+		"nextSession": "Next session",
+		"noUpcomingSession": "No upcoming session",
+		"tasksComplete": "{completed} of {total} tasks",
+		"pending": "Pending actions",
+		"noPending": "No pending actions",
+		"projectItems": "Project items",
+		"overdue": "Overdue",
+		"pullRequestReview": "Pull Request review",
+		"overdueTask": "Overdue task",
+		"overdueSprint": "Overdue Sprint",
+		"sessionObjective": "Objective: {objective}",
+		"truncated": "Some results are not shown. Narrow the list with search or a project filter."
+	},
 	"auth": {
 		"welcomeBack": "Welcome back",
 		"signInDescription": "Sign in to your account to continue. Choose your preferred authentication method below.",
 		"signInWithGoogle": "Sign in with Google",
 		"signInWithGitHub": "Sign in with GitHub",
 		"secureAuthentication": "Secure authentication"
+	},
+	"learningPlan": {
+		"title": "Learning plan",
+		"description": "Make the next steps explicit without replacing the work they point to.",
+		"createDescription": "Create a short sequence of actions with a clear objective.",
+		"planTitlePlaceholder": "Plan title",
+		"objectivePlaceholder": "What should this plan help you achieve?",
+		"savePlan": "Save plan",
+		"addAction": "Add action",
+		"actionTitlePlaceholder": "Custom action title (optional for linked work)",
+		"reasonPlaceholder": "Why does this action matter now?",
+		"targetPlaceholder": "Choose a target",
+		"customTarget": "Custom action",
+		"dueDate": "Due date",
+		"dependsOn": "Depends on",
+		"noDependencies": "No prerequisites",
+		"saveAction": "Add to plan",
+		"open": "Open",
+		"start": "Start",
+		"complete": "Complete",
+		"skip": "Skip",
+		"reopen": "Reopen",
+		"moveUp": "Move up",
+		"moveDown": "Move down",
+		"saved": "Plan saved",
+		"actionSaved": "Action added to plan",
+		"statusUpdated": "Plan action updated",
+		"status": {
+			"PLANNED": "Planned",
+			"IN_PROGRESS": "In progress",
+			"COMPLETED": "Completed",
+			"SKIPPED": "Skipped"
+		},
+		"target": {
+			"TASK": "Task",
+			"EXERCISE": "Exercise",
+			"REMEDIATION": "Remediation",
+			"MENTORSHIP": "Mentorship",
+			"COHORT_EVENT": "Cohort event",
+			"CUSTOM": "Custom"
+		}
 	},
 	"dashboard": {
 		"nextAction": {
@@ -269,19 +355,19 @@
 	},
 	"userPreview": {
 		"badge": "Preview",
-		"title": "Test learner experience",
-		"description": "Preview learner navigation and access. Data and actions still belong to your admin account.",
 		"activeAs": "Viewing as {profile}",
-		"creditsAccess": "{credits} credits available",
-		"mentorshipAccess": "Active mentorship access",
 		"exit": "Exit preview",
-		"free": {
-			"label": "free learner with credits",
-			"button": "Free learner · 500 credits"
+		"selectLabel": "Switch view",
+		"views": {
+			"admin": "Admin",
+			"mentor": "Mentor",
+			"student": "Student"
 		},
-		"mentorship": {
-			"label": "mentorship learner",
-			"button": "Mentorship learner"
+		"mentor": {
+			"label": "mentor"
+		},
+		"student": {
+			"label": "student"
 		}
 	},
 	"onboarding": {

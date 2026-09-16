@@ -160,6 +160,65 @@ export default function PublicPortfolioPage({
 				</Card>
 			</section>
 
+			{portfolio.competencies.length > 0 && (
+				<section className="space-y-4">
+					<div>
+						<h2 className="font-semibold text-2xl">Verified competencies</h2>
+						<p className="mt-1 text-muted-foreground text-sm">
+							The skills connected to this project and the evidence behind them.
+						</p>
+					</div>
+					<div className="grid gap-4 md:grid-cols-2">
+						{portfolio.competencies.map((competency) => {
+							const demonstrated = competency.state === 'DEMONSTRATED';
+							return (
+								<Card key={competency.slug}>
+									<CardHeader className="pb-3">
+										<div className="flex items-start justify-between gap-3">
+											<div>
+												<CardTitle className="text-lg">
+													{competency.name}
+												</CardTitle>
+												<CardDescription className="mt-1">
+													{competency.description}
+												</CardDescription>
+											</div>
+											<Badge variant={demonstrated ? 'success' : 'outline'}>
+												{demonstrated ? 'Demonstrated' : 'In development'}
+											</Badge>
+										</div>
+									</CardHeader>
+									<CardContent>
+										<ul className="space-y-2">
+											{competency.evidence.map((evidence) => (
+												<li
+													key={`${evidence.detail}-${evidence.title}`}
+													className="flex items-start gap-2 text-sm"
+												>
+													{evidence.state === 'DEMONSTRATED' ? (
+														<CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+													) : (
+														<Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+													)}
+													<span>
+														<span className="block font-medium">
+															{evidence.title}
+														</span>
+														<span className="text-muted-foreground text-xs">
+															{evidence.detail}
+														</span>
+													</span>
+												</li>
+											))}
+										</ul>
+									</CardContent>
+								</Card>
+							);
+						})}
+					</div>
+				</section>
+			)}
+
 			<section className="space-y-6">
 				<div>
 					<h2 className="flex items-center gap-2 font-semibold text-2xl">

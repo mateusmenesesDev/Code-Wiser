@@ -17,12 +17,14 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { Badge } from '~/common/components/ui/badge';
 import { Button } from '~/common/components/ui/button';
 import { Card, CardContent } from '~/common/components/ui/card';
 import { Progress } from '~/common/components/ui/progress';
 import { Skeleton } from '~/common/components/ui/skeleton';
 import { CompetencyMatrix } from '~/features/competencies/components/CompetencyMatrix';
+import { LearningPlan } from '~/features/learningPlan/components/LearningPlan';
 import { RemediationActions } from '~/features/remediation/components/RemediationActions';
 import { api } from '~/trpc/react';
 import { type DashboardOverview, getNextAction } from '../utils/nextAction';
@@ -116,6 +118,20 @@ function DashboardContent({
 		undefined,
 		{ enabled: !overview.viewedUser }
 	);
+	const { mutate: recordRecommendationEvent } =
+		api.dashboard.recordRecommendationEvent.useMutation();
+	useEffect(() => {
+		if (!overview.viewedUser && overview.learningRecommendationKey) {
+			recordRecommendationEvent({
+				eventType: 'IMPRESSION',
+				recommendationKey: overview.learningRecommendationKey
+			});
+		}
+	}, [
+		overview.viewedUser,
+		overview.learningRecommendationKey,
+		recordRecommendationEvent
+	]);
 	const needsDiagnosis =
 		!overview.viewedUser &&
 		onboardingStatus &&
@@ -152,11 +168,22 @@ function DashboardContent({
 			: t('waitingForReview')
 		: t('stats.noPendingReviews');
 	const recommendation = overview.learningRecommendation;
+	const opensRecommendation =
+		!needsDiagnosis &&
+		nextAction &&
+		'labelKey' in nextAction &&
+		nextAction.labelKey === 'openRecommendation';
+	const startRecommendation = () => {
+		if (!overview.viewedUser && overview.learningRecommendationKey) {
+			recordRecommendationEvent({
+				eventType: 'STARTED',
+				recommendationKey: overview.learningRecommendationKey
+			});
+		}
+	};
 	const continueLabel = needsDiagnosis
 		? t('diagnosis.action')
-		: nextAction &&
-				'labelKey' in nextAction &&
-				nextAction.labelKey === 'openRecommendation'
+		: opensRecommendation
 			? t('nextAction.openRecommendation')
 			: t('continueProject');
 	const recommendationReason = recommendation
@@ -212,7 +239,10 @@ function DashboardContent({
 					asChild
 					className="h-10 rounded-lg bg-primary px-5 font-semibold text-primary-foreground hover:bg-primary/90"
 				>
-					<Link href={nextAction?.href ?? '/projects'}>
+					<Link
+						href={nextAction?.href ?? '/projects'}
+						onClick={opensRecommendation ? startRecommendation : undefined}
+					>
 						<Play className="mr-2 h-4 w-4 fill-current" aria-hidden="true" />
 						{continueLabel}
 					</Link>
@@ -246,6 +276,8 @@ function DashboardContent({
 			)}
 
 			<CompetencyMatrix userId={userId} />
+
+			{!overview.viewedUser && <LearningPlan />}
 
 			{!overview.viewedUser && <RemediationActions />}
 
@@ -444,6 +476,7 @@ function DashboardContent({
 						{recommendation ? (
 							<Link
 								href={recommendation.href}
+								onClick={startRecommendation}
 								className="block rounded-2xl border border-info-border bg-info-muted p-4 transition-colors hover:bg-info-muted/70"
 							>
 								<div className="flex items-start gap-3">

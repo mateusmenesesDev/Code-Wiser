@@ -5,6 +5,7 @@ import {
 	approvedCatalogInclude,
 	approvedCatalogInputSchema,
 	getApprovedCatalogOrderBy,
+	keepLatestTemplateVersions,
 	sortApprovedCatalog
 } from './approvedCatalogQuery';
 
@@ -13,8 +14,18 @@ export const projectTemplateQueries = {
 		.input(approvedCatalogInputSchema)
 		.query(async ({ ctx, input }) => {
 			const sort = input?.sort ?? 'relevance';
+			const approvedVersions = await ctx.db.projectTemplate.findMany({
+				where: { status: 'APPROVED' },
+				select: { id: true, templateKey: true, version: true }
+			});
+			const latestIds = keepLatestTemplateVersions(approvedVersions).map(
+				({ id }) => id
+			);
+			if (latestIds.length === 0) return [];
+
 			const projects = await ctx.db.projectTemplate.findMany({
 				where: {
+					id: { in: latestIds },
 					status: 'APPROVED',
 					...(input?.search
 						? {
@@ -59,22 +70,28 @@ export const projectTemplateQueries = {
 		}),
 
 	getFilterOptions: publicProcedure.query(async ({ ctx }) => {
-		const [categories, technologies] = await Promise.all([
-			ctx.db.category.findMany({
-				where: { ProjectTemplate: { some: { status: 'APPROVED' } } },
-				orderBy: { name: 'asc' },
-				select: { name: true }
-			}),
-			ctx.db.technology.findMany({
-				where: { ProjectTemplate: { some: { status: 'APPROVED' } } },
-				orderBy: { name: 'asc' },
-				select: { name: true }
-			})
-		]);
+		const approvedVersions = await ctx.db.projectTemplate.findMany({
+			where: { status: 'APPROVED' },
+			select: {
+				templateKey: true,
+				version: true,
+				category: { select: { name: true } },
+				technologies: { select: { name: true } }
+			}
+		});
+		const latestTemplates = keepLatestTemplateVersions(approvedVersions);
 
 		return {
-			categories: categories.map(({ name }) => name),
-			technologies: technologies.map(({ name }) => name)
+			categories: [
+				...new Set(latestTemplates.map(({ category }) => category.name))
+			].sort(),
+			technologies: [
+				...new Set(
+					latestTemplates.flatMap((template) =>
+						template.technologies.map(({ name }) => name)
+					)
+				)
+			].sort()
 		};
 	}),
 
@@ -83,10 +100,7 @@ export const projectTemplateQueries = {
 		.query(async ({ ctx, input }) => {
 			try {
 				const projectTemplate = await ctx.db.projectTemplate.findUnique({
-					where: {
-						id: input.id,
-						status: 'APPROVED'
-					},
+					where: { id: input.id, status: 'APPROVED' },
 					include: {
 						technologies: true,
 						category: true,
@@ -95,19 +109,22 @@ export const projectTemplateQueries = {
 						epics: true,
 						sprints: true,
 						images: {
-							orderBy: {
-								order: 'asc'
-							},
-							select: {
-								url: true,
-								alt: true,
-								id: true
-							}
+							orderBy: { order: 'asc' },
+							select: { url: true, alt: true, id: true }
 						}
 					}
 				});
+				if (!projectTemplate) return null;
 
-				return projectTemplate;
+				const latest = await ctx.db.projectTemplate.findFirst({
+					where: {
+						templateKey: projectTemplate.templateKey,
+						status: 'APPROVED'
+					},
+					orderBy: { version: 'desc' },
+					select: { id: true }
+				});
+				return latest?.id === projectTemplate.id ? projectTemplate : null;
 			} catch (error) {
 				console.error(error);
 				throw error;
@@ -118,16 +135,14 @@ export const projectTemplateQueries = {
 		.input(z.object({ status: z.nativeEnum(ProjectStatusEnum) }).optional())
 		.query(({ ctx, input }) =>
 			ctx.db.projectTemplate.findMany({
-				where: {
-					status: input?.status
-				},
-				orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+				where: { status: input?.status },
+				orderBy: [
+					{ sortOrder: 'asc' },
+					{ templateKey: 'asc' },
+					{ version: 'desc' }
+				],
 				include: {
-					category: {
-						select: {
-							name: true
-						}
-					},
+					category: { select: { name: true } },
 					technologies: true
 				}
 			})
@@ -147,24 +162,9 @@ export const projectTemplateQueries = {
 						tasks: {
 							where: { parentTaskId: null },
 							include: {
-								assignees: {
-									select: {
-										id: true,
-										name: true
-									}
-								},
-								sprint: {
-									select: {
-										id: true,
-										title: true
-									}
-								},
-								epic: {
-									select: {
-										id: true,
-										title: true
-									}
-								}
+								assignees: { select: { id: true, name: true } },
+								sprint: { select: { id: true, title: true } },
+								epic: { select: { id: true, title: true } }
 							},
 							orderBy: [{ status: 'asc' }, { createdAt: 'asc' }]
 						},
@@ -172,13 +172,8 @@ export const projectTemplateQueries = {
 						sprints: true,
 						productVersions: true,
 						images: {
-							orderBy: {
-								order: 'asc'
-							},
-							select: {
-								url: true,
-								alt: true
-							}
+							orderBy: { order: 'asc' },
+							select: { url: true, alt: true }
 						}
 					}
 				});
@@ -197,15 +192,8 @@ export const projectTemplateQueries = {
 				where: { id: input.projectTemplateId },
 				select: {
 					images: {
-						select: {
-							url: true,
-							alt: true,
-							id: true,
-							order: true
-						},
-						orderBy: {
-							order: 'asc'
-						}
+						select: { url: true, alt: true, id: true, order: true },
+						orderBy: { order: 'asc' }
 					}
 				}
 			});

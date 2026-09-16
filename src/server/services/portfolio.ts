@@ -1,5 +1,21 @@
 import type { PrismaClient } from '@prisma/client';
 import { getPortfolioCompletion } from '~/features/portfolio/utils/completion';
+import type { CompetencyState } from '~/server/utils/competencyMatrix';
+
+type PublicPortfolioCompetency = {
+	sortOrder: number;
+	slug: string;
+	name: string;
+	description: string;
+	state: Exclude<CompetencyState, 'NOT_EVALUATED'>;
+	evidence: Array<{
+		source: 'PROJECT' | 'PR_REVIEW';
+		state: Exclude<CompetencyState, 'NOT_EVALUATED'>;
+		title: string;
+		detail: string;
+		date: Date;
+	}>;
+};
 
 export async function getPublicPortfolioByCode(
 	db: PrismaClient,
@@ -28,6 +44,24 @@ export async function getPublicPortfolioByCode(
 				select: { id: true, name: true },
 				orderBy: { name: 'asc' }
 			},
+			learningOutcomes: {
+				select: {
+					value: true,
+					updatedAt: true,
+					competencies: {
+						select: {
+							competency: {
+								select: {
+									slug: true,
+									name: true,
+									description: true,
+									sortOrder: true
+								}
+							}
+						}
+					}
+				}
+			},
 			githubRepository: { select: { htmlUrl: true, private: true } },
 			tasks: {
 				select: {
@@ -39,7 +73,24 @@ export async function getPublicPortfolioByCode(
 					milestoneId: true,
 					reviews: {
 						where: { isActive: true },
-						select: { status: true }
+						select: {
+							status: true,
+							updatedAt: true,
+							githubTitle: true,
+							prUrl: true,
+							analyses: {
+								where: { status: 'COMPLETED' },
+								select: {
+									findings: {
+										where: { decision: { not: 'DISCARDED' } },
+										select: {
+											category: true,
+											editedCategory: true
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			},
@@ -50,14 +101,155 @@ export async function getPublicPortfolioByCode(
 					id: true,
 					title: true,
 					description: true,
+					completed: true,
+					updatedAt: true,
 					reviewedAt: true,
-					reviewedBy: { select: { name: true } }
+					reviewedBy: { select: { name: true } },
+					competencies: {
+						select: {
+							competency: {
+								select: {
+									slug: true,
+									name: true,
+									description: true,
+									sortOrder: true
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 	});
 
 	if (!project) return null;
+
+	const selectedReviews = project.tasks
+		.filter((task) => task.portfolioRelevant)
+		.flatMap((task) => task.reviews);
+	const reviewCategories = [
+		...new Set(
+			selectedReviews.flatMap((review) =>
+				review.analyses.flatMap((analysis) =>
+					analysis.findings.map(
+						(finding) => finding.editedCategory ?? finding.category
+					)
+				)
+			)
+		)
+	];
+	const reviewCompetencies =
+		reviewCategories.length > 0
+			? await db.competency.findMany({
+					where: {
+						isActive: true,
+						reviewCategories: {
+							some: { category: { in: reviewCategories } }
+						}
+					},
+					select: {
+						slug: true,
+						name: true,
+						description: true,
+						sortOrder: true,
+						reviewCategories: { select: { category: true } }
+					}
+				})
+			: [];
+
+	const competencyMap = new Map<string, PublicPortfolioCompetency>();
+	const addCompetencyEvidence = (
+		competency: {
+			slug: string;
+			name: string;
+			description: string;
+			sortOrder: number;
+		},
+		evidence: PublicPortfolioCompetency['evidence'][number]
+	) => {
+		const current = competencyMap.get(competency.slug);
+		if (current) {
+			current.evidence.push(evidence);
+			if (evidence.state === 'DEMONSTRATED') {
+				current.state = 'DEMONSTRATED';
+			}
+			return;
+		}
+
+		competencyMap.set(competency.slug, {
+			sortOrder: competency.sortOrder,
+			slug: competency.slug,
+			name: competency.name,
+			description: competency.description,
+			state: evidence.state,
+			evidence: [evidence]
+		});
+	};
+
+	for (const outcome of project.learningOutcomes) {
+		for (const { competency } of outcome.competencies) {
+			addCompetencyEvidence(competency, {
+				source: 'PROJECT',
+				state: project.portfolioEvaluatedAt ? 'DEMONSTRATED' : 'IN_DEVELOPMENT',
+				title: outcome.value,
+				detail: 'Learning outcome',
+				date: project.portfolioEvaluatedAt ?? outcome.updatedAt
+			});
+		}
+	}
+
+	for (const milestone of project.milestones) {
+		for (const { competency } of milestone.competencies) {
+			addCompetencyEvidence(competency, {
+				source: 'PROJECT',
+				state:
+					milestone.completed || milestone.reviewedAt
+						? 'DEMONSTRATED'
+						: 'IN_DEVELOPMENT',
+				title: milestone.title,
+				detail: 'Milestone',
+				date: milestone.reviewedAt ?? milestone.updatedAt
+			});
+		}
+	}
+
+	for (const competency of reviewCompetencies) {
+		for (const review of selectedReviews) {
+			const categories = new Set(
+				review.analyses.flatMap((analysis) =>
+					analysis.findings.map(
+						(finding) => finding.editedCategory ?? finding.category
+					)
+				)
+			);
+			if (
+				!competency.reviewCategories.some(({ category }) =>
+					categories.has(category)
+				)
+			) {
+				continue;
+			}
+			addCompetencyEvidence(competency, {
+				source: 'PR_REVIEW',
+				state: review.status === 'APPROVED' ? 'DEMONSTRATED' : 'IN_DEVELOPMENT',
+				title: review.githubTitle ?? review.prUrl,
+				detail: 'Pull request review',
+				date: review.updatedAt
+			});
+		}
+	}
+
+	const competencies = [...competencyMap.values()]
+		.sort(
+			(left, right) =>
+				left.sortOrder - right.sortOrder || left.name.localeCompare(right.name)
+		)
+		.map(({ sortOrder: _sortOrder, ...competency }) => ({
+			...competency,
+			evidence: competency.evidence
+				.sort((left, right) => right.date.getTime() - left.date.getTime())
+				.slice(0, 5)
+		}));
 
 	const incompleteTaskCount = project.tasks.filter(
 		(task) => task.status !== 'DONE'
@@ -126,6 +318,7 @@ export async function getPublicPortfolioByCode(
 		mentorFeedback: project.portfolioFeedback?.trim() || null,
 		mentorName: project.portfolioEvaluatedBy?.name ?? null,
 		evaluatedAt: project.portfolioEvaluatedAt,
+		competencies,
 		updatedAt: project.updatedAt,
 		completion
 	};

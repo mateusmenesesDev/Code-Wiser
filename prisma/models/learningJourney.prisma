@@ -1,0 +1,28 @@
+enum LearningJourneyEventType {
+  FIRST_ACTION
+  RECOMMENDATION_IMPRESSION
+  RECOMMENDATION_STARTED
+  REMEDIATION_COMPLETED
+  REVIEW_RESPONDED
+  SECOND_EVALUATION_APPROVED
+
+  @@schema("public")
+}
+
+model LearningJourneyEvent {
+  id               String                  @id @default(cuid())
+  createdAt        DateTime                @default(now())
+  occurredAt       DateTime                @default(now())
+  eventType        LearningJourneyEventType
+  eventKey         String                  @unique
+  entityType       String
+  entityId         String
+  recommendationKey String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([eventType, occurredAt])
+  @@index([userId, eventType, occurredAt])
+  @@schema("public")
+}

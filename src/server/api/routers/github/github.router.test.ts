@@ -3,6 +3,7 @@ import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
 import { githubRouter } from './github.router';
 
+const githubState = vi.hoisted(() => ({ configured: true }));
 const { listRepositories } = vi.hoisted(() => ({
 	listRepositories: vi.fn()
 }));
@@ -11,7 +12,7 @@ vi.mock('~/server/services/github/github', () => ({
 	GitHubServiceError: class GitHubServiceError extends Error {},
 	githubAppInstallUrl: () =>
 		'https://github.com/apps/codewise/installations/new',
-	isGitHubAppConfigured: () => true,
+	isGitHubAppConfigured: () => githubState.configured,
 	listInstallationRepositories: listRepositories,
 	getPullRequestSnapshot: vi.fn(),
 	listPullRequests: vi.fn()
@@ -35,6 +36,7 @@ describe('github router', () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		githubState.configured = true;
 		mockDb.project.findUnique.mockResolvedValue({
 			memberships: [{ role: 'OWNER', status: 'ACTIVE', joinedAt: new Date() }]
 		} as never);
@@ -93,5 +95,20 @@ describe('github router', () => {
 		await expect(
 			caller.listRepositories({ installationId: 'other-installation' })
 		).rejects.toMatchObject({ code: 'NOT_FOUND' });
+	});
+
+	it('does not call GitHub when the App is not configured', async () => {
+		githubState.configured = false;
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.listRepositories({ installationId: 'installation-1' })
+		).rejects.toMatchObject({
+			code: 'PRECONDITION_FAILED',
+			message: 'GitHub integration is not configured'
+		});
+		expect(listRepositories).not.toHaveBeenCalled();
 	});
 });

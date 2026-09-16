@@ -2,6 +2,7 @@ import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 import { agendaRouter } from './routers/agenda';
 import { aiRouter } from './routers/ai/ai.router';
 import { commentRouter } from './routers/comment';
+import { cohortRouter } from './routers/cohort/cohort.router';
 import { competency } from './routers/competency';
 import { dashboard } from './routers/dashboard';
 import { epicRouter } from './routers/epic/epic.router';
@@ -9,7 +10,9 @@ import { exerciseRouter } from './routers/exercise';
 import { feedbackRouter } from './routers/feedback';
 import { githubRouter } from './routers/github';
 import { kanbanRouter } from './routers/kanban';
+import { learningPlanRouter } from './routers/learningPlan/learningPlan.router';
 import { mentorAttentionRouter } from './routers/mentorAttention';
+import { mentorFollowUpRouter } from './routers/mentorFollowUp';
 import { mentorshipRouter } from './routers/mentorship/mentorship';
 import { notificationRouter } from './routers/notification/notificationRouter';
 import { onboardingRouter } from './routers/onboarding/onboarding.router';
@@ -41,9 +44,11 @@ export const appRouter = createTRPCRouter({
 	retrospective: retrospectiveRouter,
 	epic: epicRouter,
 	comment: commentRouter,
+	cohort: cohortRouter,
 	competency,
 	dashboard,
 	kanban: kanbanRouter,
+	learningPlan: learningPlanRouter,
 	ai: aiRouter,
 	agenda: agendaRouter,
 	prReview: prReviewRouter,
@@ -52,6 +57,7 @@ export const appRouter = createTRPCRouter({
 	onboarding: onboardingRouter,
 	mentorship: mentorshipRouter,
 	mentorAttention: mentorAttentionRouter,
+	mentorFollowUp: mentorFollowUpRouter,
 	exercise: exerciseRouter,
 	feedback: feedbackRouter,
 	github: githubRouter,

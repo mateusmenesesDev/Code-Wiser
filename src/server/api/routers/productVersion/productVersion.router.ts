@@ -12,6 +12,7 @@ import { protectedProcedure } from '~/server/api/trpc';
 import {
 	assertProjectIsActive,
 	assertProjectPermission,
+	assertProjectTemplateIsEditable,
 	userHasAccessToProject,
 	userHasAccessToProjectTemplate
 } from '~/server/utils/auth';
@@ -37,7 +38,11 @@ const assertResourceAccess = async (
 	requireActive = true
 ) => {
 	if (isTemplate) {
-		await userHasAccessToProjectTemplate(ctx, projectId);
+		if (manage) {
+			await assertProjectTemplateIsEditable(ctx, projectId);
+		} else {
+			await userHasAccessToProjectTemplate(ctx, projectId);
+		}
 		return;
 	}
 
@@ -91,7 +96,11 @@ const assertVersionAccess = async (
 		});
 	}
 	if (version.projectTemplateId) {
-		await userHasAccessToProjectTemplate(ctx, version.projectTemplateId);
+		if (manage) {
+			await assertProjectTemplateIsEditable(ctx, version.projectTemplateId);
+		} else {
+			await userHasAccessToProjectTemplate(ctx, version.projectTemplateId);
+		}
 		return;
 	}
 	if (!version.projectId) {
@@ -299,7 +308,7 @@ export const productVersionRouter = createTRPCRouter({
 				ctx,
 				input.projectId,
 				input.isTemplate,
-				false,
+				input.isTemplate,
 				true
 			);
 			const taskIds = input.updates.map((update) => update.taskId);

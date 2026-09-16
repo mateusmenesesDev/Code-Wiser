@@ -1,5 +1,6 @@
 import {
 	ExerciseReviewDecisionStatus,
+	LearningJourneyEventType,
 	MentorAttentionSourceType,
 	RemediationActionStatus,
 	RemediationActionTargetType,
@@ -23,8 +24,16 @@ import {
 } from '~/features/exercises/schemas/exercise.schema';
 import {
 	GitHubServiceError,
-	getPullRequestSnapshotForRepository
+	getPullRequestSnapshotForRepository,
+	isGitHubAppConfigured
 } from '~/server/services/github/github';
+import {
+	tryRecordFirstLearningAction,
+	tryRecordLearningJourneyEvent,
+	remediationCompletionEventKey,
+	reviewResponseEventKey,
+	secondEvaluationEventKey
+} from '~/server/services/learningJourney/learningJourney.service';
 import {
 	completeMentorAttention,
 	dueAtFor
@@ -45,6 +54,51 @@ const ACTIVE_REVIEW_STATUSES: UserChallengeProgressStatus[] = [
 	UserChallengeProgressStatus.IN_REVIEW,
 	UserChallengeProgressStatus.CHANGES_REQUESTED
 ];
+
+async function getExerciseReviewGitHubSnapshot(
+	repository: {
+		id?: string;
+		owner: string;
+		name: string;
+		installation: { githubInstallationId: string; active: boolean };
+	} | null,
+	prUrl: string
+): Promise<Awaited<
+	ReturnType<typeof getPullRequestSnapshotForRepository>
+> | null> {
+	if (!repository || !isGitHubAppConfigured()) return null;
+
+	try {
+		const snapshot = await getPullRequestSnapshotForRepository(
+			repository,
+			prUrl
+		);
+		if (snapshot.checksStatus === 'PENDING') {
+			throw new TRPCError({
+				code: 'PRECONDITION_FAILED',
+				message:
+					'GitHub checks are still running. Wait for tests and lint to finish before requesting review.'
+			});
+		}
+		if (snapshot.checksStatus === 'FAILURE') {
+			throw new TRPCError({
+				code: 'PRECONDITION_FAILED',
+				message:
+					'GitHub checks failed. Fix the failing tests or lint checks before requesting review.'
+			});
+		}
+		return snapshot;
+	} catch (error) {
+		if (error instanceof TRPCError) throw error;
+		if (error instanceof GitHubServiceError) {
+			throw new TRPCError({
+				code: 'BAD_REQUEST',
+				message: error.message
+			});
+		}
+		throw error;
+	}
+}
 
 async function ensureUniqueTrackSlug(
 	db: {
@@ -149,14 +203,17 @@ export const exerciseMutations = {
 				return existing;
 			}
 
-			return ctx.db.userChallengeProgress.create({
+			const startedAt = new Date();
+			const progress = await ctx.db.userChallengeProgress.create({
 				data: {
 					userId,
 					challengeId: challenge.id,
 					status: UserChallengeProgressStatus.IN_PROGRESS,
-					startedAt: new Date()
+					startedAt
 				}
 			});
+			await tryRecordFirstLearningAction(ctx.db, userId, startedAt);
+			return progress;
 		}),
 
 	requestReview: mentorshipProcedure
@@ -253,27 +310,11 @@ export const exerciseMutations = {
 				});
 			}
 
-			let submissionUrl = input.prUrl;
-			let githubSnapshot: Awaited<
-				ReturnType<typeof getPullRequestSnapshotForRepository>
-			> | null = null;
-			if (track.githubRepository) {
-				try {
-					githubSnapshot = await getPullRequestSnapshotForRepository(
-						track.githubRepository,
-						input.prUrl
-					);
-					submissionUrl = githubSnapshot.htmlUrl;
-				} catch (error) {
-					if (error instanceof GitHubServiceError) {
-						throw new TRPCError({
-							code: 'BAD_REQUEST',
-							message: error.message
-						});
-					}
-					throw error;
-				}
-			}
+			const githubSnapshot = await getExerciseReviewGitHubSnapshot(
+				track.githubRepository,
+				input.prUrl
+			);
+			const submissionUrl = githubSnapshot?.htmlUrl ?? input.prUrl;
 
 			const now = new Date();
 
@@ -360,7 +401,24 @@ export const exerciseMutations = {
 					submittedById: userId
 				},
 				include: {
-					track: { select: { name: true } },
+					track: {
+						select: {
+							name: true,
+							githubRepository: {
+								select: {
+									id: true,
+									owner: true,
+									name: true,
+									installation: {
+										select: {
+											githubInstallationId: true,
+											active: true
+										}
+									}
+								}
+							}
+						}
+					},
 					submittedBy: { select: { name: true } },
 					decisions: {
 						select: {
@@ -392,6 +450,27 @@ export const exerciseMutations = {
 				});
 			}
 
+			const githubSnapshot = await getExerciseReviewGitHubSnapshot(
+				submission.track.githubRepository,
+				submission.prUrl
+			);
+			const githubMetadata = submission.track.githubRepository
+				? {
+						prUrl: githubSnapshot?.htmlUrl ?? submission.prUrl,
+						githubRepositoryId:
+							githubSnapshot && submission.track.githubRepository
+								? submission.track.githubRepository.id
+								: null,
+						githubPullRequestNumber: githubSnapshot?.number ?? null,
+						githubTitle: githubSnapshot?.title ?? null,
+						githubState: githubSnapshot?.state ?? null,
+						githubAuthorLogin: githubSnapshot?.authorLogin ?? null,
+						githubCommitCount: githubSnapshot?.commitCount ?? null,
+						githubHeadSha: githubSnapshot?.headSha ?? null,
+						githubChecksStatus: githubSnapshot?.checksStatus ?? null,
+						githubLastSyncedAt: githubSnapshot ? new Date() : null
+					}
+				: {};
 			const reviewStartedAt = new Date();
 			const updated = await ctx.db.$transaction(async (tx) => {
 				for (const decision of changesRequested) {
@@ -432,7 +511,8 @@ export const exerciseMutations = {
 					where: { id: submission.id },
 					data: {
 						needsAttention: true,
-						updateNote: input.updateNote?.trim() || null
+						updateNote: input.updateNote?.trim() || null,
+						...githubMetadata
 					}
 				});
 				await tx.mentorAttentionAssignment.updateMany({
@@ -486,6 +566,9 @@ export const exerciseMutations = {
 			const decision = await ctx.db.exerciseReviewDecision.findUnique({
 				where: { id: input.decisionId },
 				include: {
+					remediationActions: {
+						select: { id: true, status: true, learnerId: true }
+					},
 					challenge: {
 						select: {
 							title: true,
@@ -523,6 +606,10 @@ export const exerciseMutations = {
 				input.status === ExerciseReviewDecisionStatus.APPROVED
 					? UserChallengeProgressStatus.APPROVED
 					: UserChallengeProgressStatus.CHANGES_REQUESTED;
+			const remediationActions = decision.remediationActions ?? [];
+			const secondEvaluation = remediationActions.some(
+				(action) => action.status === RemediationActionStatus.SUBMITTED
+			);
 
 			const remainingPending = decision.submission.decisions.some(
 				(item) =>
@@ -591,16 +678,48 @@ export const exerciseMutations = {
 						},
 						data: {
 							status: RemediationActionStatus.COMPLETED,
-							completedAt: new Date(),
+							completedAt: reviewedAt,
 							completedById: reviewerId
 						}
 					});
+					for (const action of remediationActions) {
+						if (action.status === RemediationActionStatus.CANCELLED) continue;
+						await tryRecordLearningJourneyEvent(tx, {
+							userId: action.learnerId,
+							eventType: LearningJourneyEventType.REMEDIATION_COMPLETED,
+							eventKey: remediationCompletionEventKey(action.id),
+							entityType: 'REMEDIATION_ACTION',
+							entityId: action.id,
+							occurredAt: reviewedAt
+						});
+					}
 				}
 
 				await tx.exerciseReviewSubmission.update({
 					where: { id: decision.submission.id },
 					data: { needsAttention: remainingPending }
 				});
+				await tryRecordLearningJourneyEvent(tx, {
+					userId: decision.submission.submittedById,
+					eventType: LearningJourneyEventType.REVIEW_RESPONDED,
+					eventKey: reviewResponseEventKey('EXERCISE', decision.id),
+					entityType: 'EXERCISE_REVIEW_DECISION',
+					entityId: decision.id,
+					occurredAt: reviewedAt
+				});
+				if (
+					input.status === ExerciseReviewDecisionStatus.APPROVED &&
+					secondEvaluation
+				) {
+					await tryRecordLearningJourneyEvent(tx, {
+						userId: decision.submission.submittedById,
+						eventType: LearningJourneyEventType.SECOND_EVALUATION_APPROVED,
+						eventKey: secondEvaluationEventKey('EXERCISE', decision.id),
+						entityType: 'EXERCISE_REVIEW_DECISION',
+						entityId: decision.id,
+						occurredAt: reviewedAt
+					});
+				}
 				if (!remainingPending) {
 					await completeMentorAttention(
 						tx,

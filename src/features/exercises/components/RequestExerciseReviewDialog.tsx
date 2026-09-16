@@ -101,7 +101,10 @@ export function RequestExerciseReviewDialog({
 					<DialogTitle>Request exercise review</DialogTitle>
 					<DialogDescription>
 						Paste your GitHub pull request URL and select which challenges this
-						PR covers. Approved challenges can be submitted again for a new
+						PR covers. When the exercise repository is connected, running or
+						failed CI checks must be resolved before review can be requested. If
+						GitHub checks are unavailable, the manual review flow remains
+						available. Approved challenges can be submitted again for a new
 						review cycle. Challenges already in review or awaiting changes
 						cannot be selected.
 					</DialogDescription>

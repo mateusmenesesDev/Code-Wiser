@@ -13,6 +13,7 @@ import {
 	updateTaskSchema
 } from '~/features/workspace/schemas/task.schema';
 import { protectedProcedure } from '~/server/api/trpc';
+import { tryRecordFirstLearningAction } from '~/server/services/learningJourney/learningJourney.service';
 import { completeMentorAttention } from '~/server/services/mentorAttention/mentorAttention.service';
 import {
 	notifyTaskAssigned,
@@ -23,6 +24,7 @@ import {
 	type ResourceAccessContext,
 	assertProjectIsActive,
 	assertProjectResourceAccess,
+	assertProjectTemplateIsEditable,
 	userHasAccessToProject,
 	userHasAccessToProjectTemplate
 } from '~/server/utils/auth';
@@ -177,7 +179,7 @@ export const taskMutations = {
 			}
 
 			if (isTemplate) {
-				await userHasAccessToProjectTemplate(ctx, projectId);
+				await assertProjectTemplateIsEditable(ctx, projectId);
 			} else {
 				await userHasAccessToProject(ctx, projectId);
 			}
@@ -426,6 +428,12 @@ export const taskMutations = {
 					message: 'A subtask must keep its parent task'
 				});
 			}
+			if (isTemplate && existingTask.projectTemplateId) {
+				await assertProjectTemplateIsEditable(
+					ctx,
+					existingTask.projectTemplateId
+				);
+			}
 			if (
 				projectId &&
 				(existingTask.projectId ?? existingTask.projectTemplateId) !== projectId
@@ -587,6 +595,9 @@ export const taskMutations = {
 						}
 					}
 				});
+				if (isMovingIntoProgress) {
+					await tryRecordFirstLearningAction(tx, ctx.session.userId);
+				}
 				if (oldBlocked && rest.blocked === false) {
 					await completeMentorAttention(
 						tx,
@@ -1046,6 +1057,9 @@ export const taskMutations = {
 
 			for (const task of tasks) {
 				await assertProjectResourceAccess(ctx, task);
+				if (task.projectTemplateId) {
+					await assertProjectTemplateIsEditable(ctx, task.projectTemplateId);
+				}
 				if (task.projectId) {
 					await assertProjectIsActive(ctx.db, task.projectId);
 				}
@@ -1116,6 +1130,12 @@ export const taskMutations = {
 			}
 
 			await assertProjectResourceAccess(ctx, existingTask);
+			if (existingTask.projectTemplateId) {
+				await assertProjectTemplateIsEditable(
+					ctx,
+					existingTask.projectTemplateId
+				);
+			}
 			if (existingTask.projectId) {
 				await assertProjectIsActive(ctx.db, existingTask.projectId);
 			}

@@ -4,6 +4,7 @@ import { WORK_NAV_ITEMS, isNavigationItemVisible } from './menuItem';
 const visibility = {
 	isSignedIn: true,
 	hasMentorship: false,
+	hasProjectMentorship: false,
 	hasAdminRole: () => false,
 	hasPermission: (permission: ClerkAuthorization['permission']) =>
 		permission === 'org:project:create'
@@ -17,8 +18,16 @@ describe('navigation item visibility', () => {
 		(item) => item.href === '/my-projects'
 	);
 	const mentorship = WORK_NAV_ITEMS.find((item) => item.href === '/mentorship');
+	const followUp = WORK_NAV_ITEMS.find((item) => item.href === '/follow-up');
 
-	if (!dashboard || !catalog || !exercises || !myProjects || !mentorship) {
+	if (
+		!dashboard ||
+		!catalog ||
+		!exercises ||
+		!myProjects ||
+		!mentorship ||
+		!followUp
+	) {
 		throw new Error('Expected work navigation items are missing');
 	}
 
@@ -31,6 +40,16 @@ describe('navigation item visibility', () => {
 
 	it('hides mentorship without an active mentorship', () => {
 		expect(isNavigationItemVisible(mentorship, visibility)).toBe(false);
+	});
+
+	it('shows follow-up only for project mentors', () => {
+		expect(isNavigationItemVisible(followUp, visibility)).toBe(false);
+		expect(
+			isNavigationItemVisible(followUp, {
+				...visibility,
+				hasProjectMentorship: true
+			})
+		).toBe(true);
 	});
 
 	it('shows admin destinations for users with the admin role', () => {

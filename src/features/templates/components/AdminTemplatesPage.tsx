@@ -38,7 +38,6 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '~/common/components/ui/select';
-import { Switch } from '~/common/components/ui/switch';
 import {
 	Table,
 	TableBody,
@@ -114,7 +113,12 @@ function SortableTemplateRow({
 			</TableCell>
 			<TableCell>
 				<div>
-					<div className="font-medium">{template.title}</div>
+					<div className="font-medium">
+						{template.title}{' '}
+						<span className="font-normal text-muted-foreground text-xs">
+							v{template.version}
+						</span>
+					</div>
 					<div className="line-clamp-1 text-muted-foreground text-sm">
 						{template.description}
 					</div>
@@ -139,18 +143,20 @@ function SortableTemplateRow({
 				</Badge>
 			</TableCell>
 			<TableCell>
-				<div className="flex items-center gap-2">
-					<Switch
-						checked={isPublished}
-						onCheckedChange={() =>
-							onTogglePublish(template.id, template.status)
-						}
+				{isPublished ? (
+					<span className="text-muted-foreground text-sm">Published</span>
+				) : (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => onTogglePublish(template.id, template.status)}
 						disabled={isToggling}
-					/>
-					<span className="text-sm">
-						{isPublished ? 'Published' : 'Draft'}
-					</span>
-				</div>
+					>
+						{template.status === 'SEND_FOR_APPROVAL'
+							? 'Publish'
+							: 'Send for review'}
+					</Button>
+				)}
 			</TableCell>
 			<TableCell className="text-muted-foreground text-sm">
 				{new Date(template.createdAt).toLocaleDateString()}
@@ -345,6 +351,9 @@ export default function AdminTemplatesPage() {
 									<SelectItem value="all">All Status</SelectItem>
 									<SelectItem value="APPROVED">Published</SelectItem>
 									<SelectItem value="PENDING">Draft</SelectItem>
+									<SelectItem value="SEND_FOR_APPROVAL">
+										Awaiting review
+									</SelectItem>
 									<SelectItem value="REJECTED">Rejected</SelectItem>
 									<SelectItem value="REQUESTED_CHANGES">
 										Changes Requested

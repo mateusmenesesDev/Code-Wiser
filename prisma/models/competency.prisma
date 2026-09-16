@@ -31,10 +31,10 @@ model CompetencyExerciseChallenge {
 }
 
 model CompetencyLearningOutcome {
-  competencyId     String
+  competencyId      String
   learningOutcomeId String
 
-  competency     Competency     @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  competency      Competency      @relation(fields: [competencyId], references: [id], onDelete: Cascade)
   learningOutcome LearningOutcome @relation(fields: [learningOutcomeId], references: [id], onDelete: Cascade)
 
   @@id([competencyId, learningOutcomeId])
@@ -65,12 +65,12 @@ model CompetencyReviewCategory {
 }
 
 model CompetencyMentorAssessment {
-  id          String                 @id @default(cuid())
-  state       CompetencyProgressState
-  note        String?
-  assessedAt  DateTime               @default(now())
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
+  id           String                  @id @default(cuid())
+  state        CompetencyProgressState
+  note         String?
+  assessedAt   DateTime                @default(now())
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
   competencyId String
   learnerId    String
   bookingId    String

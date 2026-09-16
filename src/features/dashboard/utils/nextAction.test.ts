@@ -11,7 +11,8 @@ const emptyOverview = (): DashboardOverview =>
 		latestDecision: null,
 		booking: null,
 		notifications: [],
-		learningRecommendation: null
+		learningRecommendation: null,
+		learningRecommendationKey: null
 	}) as DashboardOverview;
 
 describe('getNextAction', () => {

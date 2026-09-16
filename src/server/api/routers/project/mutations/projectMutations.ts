@@ -12,6 +12,7 @@ import { generatePublicCode } from '~/lib/publicTaskId';
 import { KANBAN_RANK_STEP } from '~/server/api/routers/task/mutations/taskOrderUpdates';
 import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { applyCreditTransaction } from '~/server/services/creditLedger';
+import { tryRecordFirstLearningAction } from '~/server/services/learningJourney/learningJourney.service';
 import { createNotification } from '~/server/services/notification/base';
 import {
 	assertProjectIsActive,
@@ -94,8 +95,8 @@ export const projectMutations = {
 							epics: true,
 							tasks: true,
 							productVersions: true,
-							milestones: true,
-							learningOutcomes: true,
+							milestones: { include: { competencies: true } },
+							learningOutcomes: { include: { competencies: true } },
 							technologies: true
 						}
 					})
@@ -114,6 +115,24 @@ export const projectMutations = {
 					throw new TRPCError({
 						code: 'NOT_FOUND',
 						message: 'Project template not found'
+					});
+				}
+
+				const latestApprovedTemplate = await ctx.db.projectTemplate.findFirst({
+					where: {
+						templateKey: projectTemplate.templateKey,
+						status: 'APPROVED'
+					},
+					orderBy: { version: 'desc' },
+					select: { id: true }
+				});
+				if (
+					projectTemplate.status !== 'APPROVED' ||
+					latestApprovedTemplate?.id !== projectTemplate.id
+				) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'Project template is not the current approved version'
 					});
 				}
 
@@ -219,17 +238,57 @@ export const projectMutations = {
 									};
 								})
 							});
+
+							const competencyMilestoneRows = templateMilestones.flatMap(
+								(milestone) => {
+									const milestoneId = milestoneIdMap[milestone.id];
+									if (!milestoneId) return [];
+									return (milestone.competencies ?? []).map(
+										({ competencyId }) => ({
+											competencyId,
+											milestoneId
+										})
+									);
+								}
+							);
+							if (competencyMilestoneRows.length > 0) {
+								await prisma.competencyMilestone.createMany({
+									data: competencyMilestoneRows
+								});
+							}
 						}
 
+						const learningOutcomeIdMap: Record<string, string> = {};
 						if (templateLearningOutcomes.length > 0) {
 							await prisma.learningOutcome.createMany({
-								data: templateLearningOutcomes.map((outcome) => ({
-									id: randomUUID(),
-									value: outcome.value,
-									projectId: newProject.id,
-									projectTemplateId: null
-								}))
+								data: templateLearningOutcomes.map((outcome) => {
+									const newId = randomUUID();
+									learningOutcomeIdMap[outcome.id] = newId;
+									return {
+										id: newId,
+										value: outcome.value,
+										projectId: newProject.id,
+										projectTemplateId: null
+									};
+								})
 							});
+
+							const competencyLearningOutcomeRows =
+								templateLearningOutcomes.flatMap((outcome) => {
+									const learningOutcomeId = learningOutcomeIdMap[outcome.id];
+									if (!learningOutcomeId) return [];
+									return (outcome.competencies ?? []).map(
+										({ competencyId }) => ({
+											competencyId,
+											learningOutcomeId
+										})
+									);
+								});
+							if (competencyLearningOutcomeRows.length > 0) {
+								await prisma.competencyLearningOutcome.createMany({
+									data: competencyLearningOutcomeRows
+								});
+							}
 						}
 
 						const sprintIdMap: Record<string, string> = {};
@@ -378,6 +437,11 @@ export const projectMutations = {
 							}
 						}
 
+						await tryRecordFirstLearningAction(
+							prisma,
+							user.id,
+							newProject.createdAt
+						);
 						return newProject;
 					},
 					{ timeout: CREATE_PROJECT_TRANSACTION_TIMEOUT_MS }

@@ -1,0 +1,152 @@
+model Cohort {
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  name        String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  status      CohortStatus @default(DRAFT)
+
+  createdById String
+  createdBy   User               @relation("CohortCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  memberships CohortMembership[]
+  peerReviews CohortPeerReview[]
+  projects    CohortProject[]
+  calibrations CohortPeerReviewCalibration[]
+  events      CohortEvent[]
+
+  @@index([status, startsAt])
+  @@index([createdById])
+  @@schema("public")
+}
+
+model CohortEvent {
+  id          String            @id @default(cuid())
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  type        CohortEventType
+  status      CohortEventStatus @default(PLANNED)
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+
+  cohortId   String
+  cohort     Cohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User   @relation("CohortEventCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([cohortId, startsAt])
+  @@index([status, startsAt])
+  @@schema("public")
+}
+
+model CohortMembership {
+  id        String                 @id @default(cuid())
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  status    CohortMembershipStatus @default(ACTIVE)
+
+  cohortId String
+  cohort   Cohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cohortId, userId])
+  @@index([userId, status])
+  @@index([cohortId, status])
+  @@schema("public")
+}
+
+model CohortProject {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  cohortId     String
+  projectId    String
+  assignedById String
+
+  cohort     Cohort  @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedBy User    @relation("CohortProjectAssigner", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@unique([projectId])
+  @@index([cohortId])
+  @@schema("public")
+}
+
+model CohortPeerReviewCalibration {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  version      Int
+  attemptCount Int      @default(0)
+  score        Int      @default(0)
+  total        Int
+  passed       Boolean  @default(false)
+  completedAt  DateTime?
+
+  cohortId   String
+  cohort     Cohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User   @relation("CohortPeerReviewCalibrationReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([cohortId, reviewerId, version])
+  @@index([reviewerId, passed])
+  @@schema("public")
+}
+
+model CohortPeerReviewReport {
+  id             String                       @id @default(cuid())
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  reason         String
+  status         CohortPeerReviewReportStatus @default(OPEN)
+  resolutionNote String?
+  resolvedAt     DateTime?
+
+  assignmentId String
+  assignment   CohortPeerReview @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  reporterId   String
+  reporter     User              @relation("CohortPeerReviewReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedById String?
+  resolvedBy   User?             @relation("CohortPeerReviewReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@unique([assignmentId, reporterId])
+  @@index([status, createdAt])
+  @@index([reporterId, status])
+  @@schema("public")
+}
+
+model CohortPeerReview {
+  id          String                 @id @default(cuid())
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  status      CohortPeerReviewStatus @default(ASSIGNED)
+  feedback    String?
+  submittedAt DateTime?
+  dismissedAt DateTime?
+
+  cohortId String
+  cohort   Cohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+
+  pullRequestReviewId String
+  pullRequestReview   PullRequestReview @relation(fields: [pullRequestReviewId], references: [id], onDelete: Cascade)
+
+  reviewerId String
+  reviewer   User   @relation("CohortPeerReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("CohortPeerReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  dismissedById String?
+  dismissedBy   User?   @relation("CohortPeerReviewDismissal", fields: [dismissedById], references: [id], onDelete: SetNull)
+  reports       CohortPeerReviewReport[]
+
+  @@unique([cohortId, pullRequestReviewId, reviewerId])
+  @@index([reviewerId, status])
+  @@index([authorId, status])
+  @@index([cohortId, status])
+  @@schema("public")
+}

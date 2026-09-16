@@ -155,7 +155,7 @@ async function main() {
 
 	try {
 		// Check for duplicate title before opening a transaction
-		const existing = await prisma.projectTemplate.findUnique({
+		const existing = await prisma.projectTemplate.findFirst({
 			where: { title: wip.metadata.title },
 			select: { id: true }
 		});

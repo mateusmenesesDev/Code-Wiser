@@ -7,6 +7,7 @@ import { protectedProcedure } from '~/server/api/trpc';
 
 const MAX_AGENDA_TASKS = 500;
 const MAX_AGENDA_ACTIONS = 100;
+const MAX_AGENDA_COHORT_EVENTS = 100;
 
 export const agendaRouter = {
 	getOverview: protectedProcedure
@@ -24,7 +25,7 @@ export const agendaRouter = {
 				...(dateRange.from ? { gte: dateRange.from } : {}),
 				...(dateRange.to ? { lt: dateRange.to } : {})
 			};
-			const [projects, user] = await Promise.all([
+			const [projects, user, cohortEvents] = await Promise.all([
 				ctx.db.project.findMany({
 					where: {
 						canceledAt: null,
@@ -50,6 +51,33 @@ export const agendaRouter = {
 				ctx.db.user.findUnique({
 					where: { id: userId },
 					select: { taskDeadlineRemindersEnabled: true }
+				}),
+				ctx.db.cohortEvent.findMany({
+					where: {
+						status: 'PLANNED',
+						startsAt: {
+							...(dateRange.from ? { gte: dateRange.from } : {}),
+							...(dateRange.to ? { lt: dateRange.to } : {})
+						},
+						cohort: {
+							status: { in: ['ACTIVE', 'COMPLETED'] },
+							memberships: {
+								some: { userId, status: 'ACTIVE' }
+							}
+						}
+					},
+					orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
+					take: MAX_AGENDA_COHORT_EVENTS + 1,
+					select: {
+						id: true,
+						type: true,
+						status: true,
+						title: true,
+						description: true,
+						startsAt: true,
+						endsAt: true,
+						cohort: { select: { id: true, name: true } }
+					}
 				})
 			]);
 
@@ -130,6 +158,9 @@ export const agendaRouter = {
 			);
 
 			const hasMoreTasks = tasks.length > MAX_AGENDA_TASKS;
+			const visibleCohortEvents = cohortEvents
+				.slice(0, MAX_AGENDA_COHORT_EVENTS)
+				.map(({ cohort, ...event }) => ({ ...event, cohort }));
 
 			return {
 				tasks: hasMoreTasks ? tasks.slice(0, MAX_AGENDA_TASKS) : tasks,
@@ -140,6 +171,8 @@ export const agendaRouter = {
 						: remediationActions,
 				hasMoreRemediationActions:
 					remediationActions.length > MAX_AGENDA_ACTIONS,
+				cohortEvents: visibleCohortEvents,
+				hasMoreCohortEvents: cohortEvents.length > MAX_AGENDA_COHORT_EVENTS,
 				projects: projects.map(({ id, title }) => ({ id, title })),
 				sprints: [...sprintById.values()],
 				assignees: [...assigneesById.values()],

@@ -2,7 +2,9 @@ model ProjectTemplate {
   id               String                 @id @default(cuid())
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
-  title            String                 @unique
+  templateKey      String                 @default(cuid())
+  version          Int                    @default(1)
+  title            String
   description      String
   methodology      ProjectMethodologyEnum @default(SCRUM)
   minParticipants  Int
@@ -10,6 +12,9 @@ model ProjectTemplate {
   credits          Int?
   accessType       ProjectAccessTypeEnum
   status           ProjectStatusEnum      @default(PENDING)
+  publishedAt      DateTime?
+  changeSummary    String?
+  reviewNote       String?
   difficulty       ProjectDifficultyEnum
   figmaProjectUrl  String?
   publicCode       String?
@@ -30,6 +35,8 @@ model ProjectTemplate {
   sprints         Sprint[]
   startedProjects Project[] @relation("ProjectSourceTemplate")
 
+  @@unique([templateKey, version])
+  @@index([templateKey, version])
   @@index([status, sortOrder, createdAt])
   @@index([status, createdAt])
   @@index([status, categoryId, sortOrder])

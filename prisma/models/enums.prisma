@@ -109,6 +109,56 @@ enum PullRequestReviewStatusEnum {
   @@schema("public")
 }
 
+enum CohortStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+
+  @@schema("public")
+}
+
+enum CohortMembershipStatus {
+  ACTIVE
+  INACTIVE
+
+  @@schema("public")
+}
+
+enum CohortEventType {
+  KICKOFF
+  CHECKPOINT
+  DELIVERY
+  CLOSURE
+  RETROSPECTIVE
+
+  @@schema("public")
+}
+
+enum CohortEventStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum CohortPeerReviewStatus {
+  ASSIGNED
+  SUBMITTED
+  DISMISSED
+
+  @@schema("public")
+}
+
+enum CohortPeerReviewReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+
+  @@schema("public")
+}
+
 enum PRReviewAnalysisStatus {
   QUEUED
   RUNNING
@@ -156,6 +206,26 @@ enum CompetencyProgressState {
 enum PlanningPokerSessionStatusEnum {
   ACTIVE
   COMPLETED
+
+  @@schema("public")
+}
+
+enum LearningPlanItemStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+
+  @@schema("public")
+}
+
+enum LearningPlanItemTargetType {
+  TASK
+  EXERCISE
+  REMEDIATION
+  MENTORSHIP
+  COHORT_EVENT
+  CUSTOM
 
   @@schema("public")
 }

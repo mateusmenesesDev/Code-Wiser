@@ -18,6 +18,7 @@ import {
 import { Textarea } from '~/common/components/ui/textarea';
 import { api } from '~/trpc/react';
 import { DIFFICULTY_LABELS, difficultyBadgeVariant } from '../lib/difficulty';
+import { ExerciseChecksStatus } from './ExerciseChecksStatus';
 
 type AdminExerciseReviewDetailPageProps = {
 	submissionId: string;
@@ -27,8 +28,11 @@ export default function AdminExerciseReviewDetailPage({
 	submissionId
 }: AdminExerciseReviewDetailPageProps) {
 	const utils = api.useUtils();
-	const { data: submission, isLoading, error } =
-		api.exercise.adminGetReviewSubmission.useQuery({ id: submissionId });
+	const {
+		data: submission,
+		isLoading,
+		error
+	} = api.exercise.adminGetReviewSubmission.useQuery({ id: submissionId });
 	const [comments, setComments] = useState<Record<string, string>>({});
 
 	const decideMutation = api.exercise.decideChallengeReview.useMutation({
@@ -91,6 +95,7 @@ export default function AdminExerciseReviewDetailPage({
 						{submission.prUrl}
 						<ExternalLink className="h-4 w-4" />
 					</a>
+					<ExerciseChecksStatus status={submission.githubChecksStatus} />
 					{submission.updateNote && (
 						<div className="rounded-md border bg-muted/40 p-3 text-sm">
 							<p className="mb-1 font-medium">Mentee update note</p>

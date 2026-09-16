@@ -279,6 +279,7 @@ model PullRequestReview {
   analyses            PrReviewAnalysis[]
   remediationActions  RemediationAction[] @relation("RemediationActionSourceReview")
   reassessmentActions RemediationAction[] @relation("RemediationActionReassessmentReview")
+  cohortPeerReviews   CohortPeerReview[]
 
   @@index([taskId, requestedById, isActive])
   @@index([reviewedById])

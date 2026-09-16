@@ -7,6 +7,11 @@ const authState = vi.hoisted(() => ({
 	userId: 'user-1' as string | null
 }));
 
+const githubMocks = vi.hoisted(() => ({
+	isGitHubAppConfigured: vi.fn(() => false),
+	getPullRequestSnapshotForRepository: vi.fn()
+}));
+
 vi.mock('@clerk/nextjs/server', () => ({
 	auth: () => ({
 		userId: authState.userId,
@@ -23,6 +28,13 @@ vi.mock('~/server/db', () => ({
 
 vi.mock('~/server/realtime', () => ({
 	getRealtimeService: () => ({})
+}));
+
+vi.mock('~/server/services/github/github', () => ({
+	GitHubServiceError: class GitHubServiceError extends Error {},
+	getPullRequestSnapshotForRepository:
+		githubMocks.getPullRequestSnapshotForRepository,
+	isGitHubAppConfigured: githubMocks.isGitHubAppConfigured
 }));
 
 vi.mock('~/server/services/notification/exerciseNotifications', () => ({
@@ -43,6 +55,8 @@ describe('exercise notifyPrUpdated', () => {
 
 	beforeEach(async () => {
 		authState.userId = 'user-1';
+		githubMocks.isGitHubAppConfigured.mockReturnValue(false);
+		githubMocks.getPullRequestSnapshotForRepository.mockReset();
 		caller = createCaller(
 			await createTRPCContext({
 				headers: new Headers()
@@ -119,6 +133,58 @@ describe('exercise notifyPrUpdated', () => {
 			}
 		});
 		expect(result.needsAttention).toBe(true);
+	});
+
+	it('keeps a PR update out of review while GitHub checks are pending', async () => {
+		githubMocks.isGitHubAppConfigured.mockReturnValue(true);
+		mockDb.user.findUnique.mockResolvedValue({
+			mentorshipStatus: 'ACTIVE'
+		} as never);
+		mockDb.exerciseReviewSubmission.findFirst.mockResolvedValue({
+			id: submissionId,
+			submittedById: 'user-1',
+			prUrl: 'https://github.com/org/repo/pull/1',
+			track: {
+				name: 'React',
+				githubRepository: {
+					id: 'repository-1',
+					owner: 'org',
+					name: 'repo',
+					installation: {
+						githubInstallationId: 'installation-1',
+						active: true
+					}
+				}
+			},
+			submittedBy: { name: 'Ada' },
+			decisions: [
+				{
+					id: decisionChanges,
+					status: 'CHANGES_REQUESTED',
+					challengeId: challengeChanges,
+					challenge: { title: 'Todo' }
+				}
+			]
+		} as never);
+		githubMocks.getPullRequestSnapshotForRepository.mockResolvedValue({
+			number: 1,
+			htmlUrl: 'https://github.com/org/repo/pull/1',
+			title: 'Exercise',
+			state: 'OPEN',
+			authorLogin: 'ada',
+			commitCount: 2,
+			headSha: 'sha-2',
+			checksStatus: 'PENDING'
+		});
+
+		await expect(
+			caller.notifyPrUpdated({ submissionId })
+		).rejects.toMatchObject({
+			code: 'PRECONDITION_FAILED',
+			message:
+				'GitHub checks are still running. Wait for tests and lint to finish before requesting review.'
+		});
+		expect(mockDb.$transaction).not.toHaveBeenCalled();
 	});
 
 	it('rejects notifyPrUpdated without active mentorship', async () => {

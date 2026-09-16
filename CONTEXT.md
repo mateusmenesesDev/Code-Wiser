@@ -5,7 +5,7 @@ This context defines the product language for the authenticated navigation and t
 ## Navigation
 
 **Work**:
-The user's day-to-day product areas: Exercises, My Projects, and Mentorship when the user has access.
+The user's day-to-day product areas: Exercises, My Projects, Mentorship when the user has access, and Acompanhamento when the user is a Mentor de projeto.
 _Avoid_: User menu, Main menu
 
 **Administration**:
@@ -145,3 +145,99 @@ _Avoid_: Fabricar uma série histórica a partir de dados incompletos
 **Planejamento incompleto**:
 Uma Sprint pode iniciar com objetivo vazio ou itens não estimados; o painel permite o início e sinaliza essas lacunas. Capacidade individual por aluno não faz parte desta etapa.
 _Avoid_: Transformar lacunas de planejamento em bloqueios invisíveis
+
+## Mentorship
+
+**Mentor de projeto**:
+A pessoa responsável por acompanhar um ou mais mentorandos dentro de projetos específicos. Sua visão de trabalho é limitada aos projetos e mentorandos sob sua responsabilidade.
+_Avoid_: Admin, mentor global
+
+**Mentorando**:
+O aluno acompanhado por um Mentor de projeto dentro de um projeto. A mesma pessoa pode ser mentorando em um projeto e ter outra relação em outro.
+_Avoid_: Aluno como papel de mentoria, usuário sem contexto
+
+**Acompanhamento**:
+O espaço de trabalho do Mentor de projeto, organizado por mentorando e orientado a pendências objetivas que exigem uma ação curta ou levam ao fluxo adequado. Cada mentorando aparece uma vez, mesmo quando compartilha mais de um projeto com o mentor; pendências sem mentorando identificável ficam agrupadas por projeto, e a próxima sessão é contexto, não uma pendência por si só.
+_Avoid_: Dashboard, Mentor Dashboard, Administração
+
+**Resumo operacional**:
+O contexto breve de um mentorando no Acompanhamento: última atividade relevante, progresso atual, próxima sessão e pendência prioritária, com o projeto identificado em cada pendência.
+_Avoid_: Dashboard do aluno, perfil completo
+
+**Fila de pendências**:
+A lista ordenada de pendências de acompanhamento dos mentorandos sob responsabilidade do mentor. Na primeira versão, inclui apenas pendências vencidas ou revisões ativas aguardando retorno, ordenadas pela idade; cada item leva ao fluxo original que pode resolvê-lo.
+_Avoid_: Ranking opaco, painel de métricas, checklist de preparação
+
+**Pendência de acompanhamento**:
+Um evento verificável que pede atenção do Mentor de projeto: revisão ativa de Pull Request aguardando retorno, revisão de exercício com vínculo de projeto, ou tarefa ou Sprint atrasada. Todos os Mentores ativos do projeto podem vê-la; a pendência não possui status paralelo ao fluxo que a originou e não pode ser dispensada no Acompanhamento.
+_Avoid_: Métrica, alerta genérico, sinal de risco
+
+## Mentorship scheduling
+
+**Mentor da sessão**:
+A pessoa explicitamente responsável por uma sessão e pelas janelas de disponibilidade que a tornam reservável. A primeira versão pode operar com um único mentor ativo, mas a sessão não fica implicitamente ligada ao sistema externo.
+_Avoid_: Host, dono implícito da agenda
+
+**Disponibilidade do mentor**:
+O conjunto de janelas semanais recorrentes e exceções específicas por data em que o mentor aceita sessões, sempre definido no timezone do mentor.
+_Avoid_: Horários livres, slots importados
+
+**Agendamento**:
+Uma reserva confirmada de uma sessão de mentoria entre um aluno e um mentor.
+_Avoid_: Booking quando o contexto for o produto
+
+**Sessão de mentoria**:
+Um encontro de duração fixa entre um aluno e o mentor da sessão; seu horário é um instante único, exibido em cada timezone participante.
+_Avoid_: Evento Cal.com, horário local como identidade da sessão
+
+**Cota semanal**:
+O limite de reservas futuras confirmadas que um aluno pode manter dentro de uma semana de mentoria.
+_Avoid_: Saldo mutable sem período, sessões realizadas
+
+**Timezone do usuário**:
+O timezone IANA salvo para cada usuário e usado para apresentar seus agendamentos; ele não altera o instante reservado nem as janelas definidas pelo mentor.
+_Avoid_: Offset fixo, timezone apenas do navegador
+
+## Cohorts and peer review
+
+**Turma**:
+Um grupo de alunos administrado explicitamente, com período e estado próprios. Ser membro de uma turma não concede acesso ao workspace ou ao repositório privado de outro aluno.
+_Avoid_: Grupo como permissão implícita de projeto
+
+**Revisão entre pares**:
+Um feedback textual consultivo atribuído por um administrador a um membro da turma sobre um Pull Request existente. Ele não altera o status da revisão do mentor, não gera remediação e não é evidência aprovada de competência.
+_Avoid_: Tratar feedback entre pares como decisão de mentor ou aprovação automática
+
+**Projeto colaborativo de turma**:
+Um projeto gratuito vinculado a uma turma pelo administrador. Os membros ativos da turma entram como participantes Learner, respeitando o limite de participantes do projeto.
+_Avoid_: Conceder acesso automático a projetos pagos, privados ou fora da turma
+
+**Denúncia de peer review**:
+Um relato do autor sobre feedback entre pares inadequado, sujeito a decisão administrativa. Resolver a denúncia removendo o feedback também remove sua contribuição para a reputação do reviewer.
+_Avoid_: Permitir denúncia anônima sem contexto ou remover feedback sem decisão administrativa
+
+**Reputação de peer review**:
+A contagem derivada de feedbacks entre pares submetidos e mantidos após moderação. Ela não é aprovação de competência nem substitui a avaliação do mentor.
+_Avoid_: Transformar reputação em nota pedagógica ou autorização de merge
+
+**Calibração de peer review**:
+Uma etapa curta, versionada por cohort, em que o reviewer consulta a rubrica, exemplos e checklist e classifica cenários antes de poder enviar feedback. O resultado libera apenas o envio de peer review naquela cohort.
+_Avoid_: Usar calibração para alterar review de mentor, competência, remediação ou merge
+
+**Rubrica de peer review**:
+Orientação por categoria de finding — correção, segurança, performance, design, testes e legibilidade — com exemplos de feedback útil e de feedback pouco acionável.
+_Avoid_: Transformar a rubrica em uma nota automática de competência
+
+## Plano de aprendizagem
+
+**Plano de aprendizagem**:
+A sequência explícita atual de ações escolhidas pelo aluno ou pelo mentor, com um objetivo, prazo opcional, motivo e dependências. O plano organiza o trabalho, mas não substitui o status real de tarefas, exercícios ou remediações.
+_Avoid_: Transformar a recomendação automática em obrigação ou duplicar o workflow de execução
+
+**Ação do plano**:
+Um compromisso planejado que pode apontar para uma tarefa, exercício, remediação, mentoria ou ação personalizada. Seu status mede o compromisso no plano, não o status do recurso apontado.
+_Avoid_: Criar um segundo status implícito para o recurso original
+
+**Dependência do plano**:
+Uma ação que precisa ser concluída antes de outra poder começar. Dependências pertencem ao mesmo plano e não podem formar ciclos.
+_Avoid_: Usar datas ou posição como substituto silencioso de uma dependência

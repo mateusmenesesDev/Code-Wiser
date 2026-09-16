@@ -18,6 +18,23 @@
 		"saveLanguageError": "Não foi possível salvar sua preferência de idioma.",
 		"viewPricing": "Ver preços e fazer upgrade"
 	},
+	"exerciseChecks": {
+		"title": "Checks de CI",
+		"status": {
+			"SUCCESS": "Aprovados",
+			"FAILURE": "Falharam",
+			"PENDING": "Em execução",
+			"NONE": "Nenhum check encontrado",
+			"UNAVAILABLE": "Indisponíveis"
+		},
+		"description": {
+			"SUCCESS": "Todos os checks reportados passaram. A avaliação do mentor ainda é necessária.",
+			"FAILURE": "Um ou mais checks falharam. Corrija os testes ou o lint antes de continuar.",
+			"PENDING": "Os checks ainda estão em execução. Aguarde a conclusão antes de continuar.",
+			"NONE": "Nenhum check foi reportado para este commit. A avaliação do mentor continua manual.",
+			"UNAVAILABLE": "Os checks do GitHub estão indisponíveis. Você pode continuar pelo fluxo manual de avaliação."
+		}
+	},
 	"notifications": {
 		"title": "Notificações",
 		"markAllAsRead": "Marcar todas como lidas",
@@ -59,8 +76,11 @@
 		"projectCatalog": "Catálogo de projetos",
 		"exercises": "Exercícios",
 		"myProjects": "Meus projetos",
+		"cohorts": "Turmas",
+		"learningPlans": "Planos de aprendizagem",
 		"taskAgenda": "Agenda de tarefas",
 		"mentorship": "Mentoria",
+		"followUp": "Acompanhamento",
 		"people": "Pessoas",
 		"templates": "Templates",
 		"exerciseManagement": "Gestão de exercícios",
@@ -92,12 +112,78 @@
 		"closeSidebar": "Fechar barra lateral",
 		"openSidebar": "Abrir barra lateral"
 	},
+	"mentorFollowUp": {
+		"title": "Acompanhamento de projetos",
+		"description": "Veja o que precisa da sua atenção entre os mentorandos que você acompanha.",
+		"searchPlaceholder": "Buscar por mentorando",
+		"projectFilter": "Todos os projetos",
+		"empty": "Nada precisa da sua atenção agora.",
+		"emptyDescription": "Suas próximas sessões e o contexto dos projetos aparecerão aqui quando houver algo disponível.",
+		"unavailable": "Acompanhamento indisponível",
+		"unavailableDescription": "Não foi possível carregar seu acompanhamento de projetos. Tente novamente.",
+		"tryAgain": "Tentar novamente",
+		"lastActivity": "Última atividade",
+		"noActivity": "Ainda sem atividade",
+		"nextSession": "Próxima sessão",
+		"noUpcomingSession": "Nenhuma sessão próxima",
+		"tasksComplete": "{completed} de {total} tarefas",
+		"pending": "Pendências",
+		"noPending": "Nenhuma pendência",
+		"projectItems": "Pendências do projeto",
+		"overdue": "Atrasada",
+		"pullRequestReview": "Review de Pull Request",
+		"overdueTask": "Tarefa atrasada",
+		"overdueSprint": "Sprint atrasada",
+		"sessionObjective": "Objetivo: {objective}",
+		"truncated": "Alguns resultados não aparecem. Refine por nome ou projeto."
+	},
 	"auth": {
 		"welcomeBack": "Bem-vindo de volta",
 		"signInDescription": "Entre na sua conta para continuar. Escolha abaixo o método de autenticação de sua preferência.",
 		"signInWithGoogle": "Entrar com Google",
 		"signInWithGitHub": "Entrar com GitHub",
 		"secureAuthentication": "Autenticação segura"
+	},
+	"learningPlan": {
+		"title": "Plano de aprendizagem",
+		"description": "Torne os próximos passos explícitos sem substituir o trabalho ao qual eles apontam.",
+		"createDescription": "Crie uma sequência curta de ações com um objetivo claro.",
+		"planTitlePlaceholder": "Título do plano",
+		"objectivePlaceholder": "O que este plano deve ajudar você a alcançar?",
+		"savePlan": "Salvar plano",
+		"addAction": "Adicionar ação",
+		"actionTitlePlaceholder": "Título da ação personalizada (opcional para itens vinculados)",
+		"reasonPlaceholder": "Por que esta ação importa agora?",
+		"targetPlaceholder": "Escolha um destino",
+		"customTarget": "Ação personalizada",
+		"dueDate": "Prazo",
+		"dependsOn": "Depende de",
+		"noDependencies": "Sem pré-requisitos",
+		"saveAction": "Adicionar ao plano",
+		"open": "Abrir",
+		"start": "Iniciar",
+		"complete": "Concluir",
+		"skip": "Pular",
+		"reopen": "Reabrir",
+		"moveUp": "Mover para cima",
+		"moveDown": "Mover para baixo",
+		"saved": "Plano salvo",
+		"actionSaved": "Ação adicionada ao plano",
+		"statusUpdated": "Ação do plano atualizada",
+		"status": {
+			"PLANNED": "Planejada",
+			"IN_PROGRESS": "Em andamento",
+			"COMPLETED": "Concluída",
+			"SKIPPED": "Pulada"
+		},
+		"target": {
+			"TASK": "Tarefa",
+			"EXERCISE": "Exercício",
+			"REMEDIATION": "Remediação",
+			"MENTORSHIP": "Mentoria",
+			"COHORT_EVENT": "Evento da turma",
+			"CUSTOM": "Personalizada"
+		}
 	},
 	"dashboard": {
 		"nextAction": {
@@ -269,19 +355,19 @@
 	},
 	"userPreview": {
 		"badge": "Visualização",
-		"title": "Testar experiência do aluno",
-		"description": "Veja a navegação e o acesso do aluno. Os dados e as ações continuam na sua conta de administrador.",
 		"activeAs": "Vendo como {profile}",
-		"creditsAccess": "{credits} créditos disponíveis",
-		"mentorshipAccess": "Acesso à mentoria ativa",
 		"exit": "Sair da visualização",
-		"free": {
-			"label": "aluno free com créditos",
-			"button": "Aluno free · 500 créditos"
+		"selectLabel": "Trocar visão",
+		"views": {
+			"admin": "Admin",
+			"mentor": "Mentor",
+			"student": "Aluno"
 		},
-		"mentorship": {
-			"label": "aluno de mentoria",
-			"button": "Aluno de mentoria"
+		"mentor": {
+			"label": "mentor"
+		},
+		"student": {
+			"label": "aluno"
 		}
 	},
 	"onboarding": {

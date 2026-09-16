@@ -3,13 +3,15 @@ import {
 	BookOpen,
 	Calendar,
 	ClipboardCheck,
+	ClipboardList,
 	Clock3,
 	FolderOpen,
 	GitPullRequest,
 	LayoutDashboard,
 	MessageSquare,
 	Search,
-	UserCog
+	UserCog,
+	UsersRound
 } from 'lucide-react';
 
 export type NavigationItem = {
@@ -18,12 +20,16 @@ export type NavigationItem = {
 	labelKey: string;
 	loginRequired?: boolean;
 	requiresMentorship?: boolean;
+	requiresProjectMentorship?: boolean;
 	permission?: ClerkAuthorization['permission'];
 };
+
+export type NavigationAudience = 'admin' | 'mentor';
 
 export type NavigationGroup = {
 	labelKey: string;
 	Icon: LucideIcon;
+	audience: NavigationAudience;
 	items: NavigationItem[];
 };
 
@@ -51,6 +57,12 @@ export const WORK_NAV_ITEMS: NavigationItem[] = [
 		loginRequired: true
 	},
 	{
+		href: '/cohorts',
+		Icon: UsersRound,
+		labelKey: 'cohorts',
+		loginRequired: true
+	},
+	{
 		href: '/agenda',
 		Icon: Calendar,
 		labelKey: 'taskAgenda',
@@ -62,6 +74,13 @@ export const WORK_NAV_ITEMS: NavigationItem[] = [
 		labelKey: 'mentorship',
 		loginRequired: true,
 		requiresMentorship: true
+	},
+	{
+		href: '/follow-up',
+		Icon: ClipboardCheck,
+		labelKey: 'followUp',
+		loginRequired: true,
+		requiresProjectMentorship: true
 	}
 ];
 
@@ -69,11 +88,24 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
 		labelKey: 'people',
 		Icon: UserCog,
+		audience: 'admin',
 		items: [
 			{
 				href: '/admin/users',
 				Icon: UserCog,
 				labelKey: 'people',
+				permission: 'org:project:create'
+			},
+			{
+				href: '/admin/cohorts',
+				Icon: UsersRound,
+				labelKey: 'cohorts',
+				permission: 'org:project:create'
+			},
+			{
+				href: '/admin/learning-plans',
+				Icon: ClipboardList,
+				labelKey: 'learningPlans',
 				permission: 'org:project:create'
 			}
 		]
@@ -81,6 +113,7 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
 		labelKey: 'content',
 		Icon: FolderOpen,
+		audience: 'admin',
 		items: [
 			{
 				href: '/admin/templates',
@@ -99,6 +132,7 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
 		labelKey: 'reviews',
 		Icon: ClipboardCheck,
+		audience: 'mentor',
 		items: [
 			{
 				href: '/admin/attention',
@@ -129,6 +163,7 @@ export const ADMIN_NAV_GROUPS: NavigationGroup[] = [
 	{
 		labelKey: 'feedbackGroup',
 		Icon: MessageSquare,
+		audience: 'admin',
 		items: [
 			{
 				href: '/admin/feedback',
@@ -152,16 +187,19 @@ export const isNavigationItemVisible = (
 	{
 		isSignedIn,
 		hasMentorship,
+		hasProjectMentorship,
 		hasAdminRole,
 		hasPermission
 	}: {
 		isSignedIn: boolean;
 		hasMentorship: boolean;
+		hasProjectMentorship: boolean;
 		hasAdminRole: () => boolean;
 		hasPermission: (permission: ClerkAuthorization['permission']) => boolean;
 	}
 ) => {
 	if (item.loginRequired && !isSignedIn) return false;
 	if (item.requiresMentorship && !hasMentorship) return false;
+	if (item.requiresProjectMentorship && !hasProjectMentorship) return false;
 	return !item.permission || hasAdminRole() || hasPermission(item.permission);
 };

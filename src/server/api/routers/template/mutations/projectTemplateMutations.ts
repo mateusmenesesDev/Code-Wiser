@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Prisma } from '@prisma/client';
+import { Prisma, ProjectStatusEnum } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { UTApi } from 'uploadthing/server';
 import { z } from 'zod';
@@ -7,13 +7,18 @@ import { bulkCreateSchema } from '~/features/templates/schemas/bulkCreate.schema
 import {
 	cloneTemplateSchema,
 	createProjectTemplateSchema,
+	createTemplateVersionSchema,
 	deleteTemplateSchema,
 	updateTemplateBasicInfoInputSchema,
 	updateTemplateStatusSchema
 } from '~/features/templates/schemas/template.schema';
-import { generatePublicCode } from '~/lib/publicTaskId';
 import { KANBAN_RANK_STEP } from '~/server/api/routers/task/mutations/taskOrderUpdates';
 import { adminProcedure } from '~/server/api/trpc';
+import { assertProjectTemplateIsEditable } from '~/server/utils/auth';
+import {
+	cloneProjectTemplate,
+	templateCloneInclude
+} from '../actions/cloneProjectTemplate';
 import {
 	createProjectTemplateData,
 	getNextTemplateSortOrder
@@ -24,6 +29,16 @@ export const projectTemplateMutations = {
 		.input(createProjectTemplateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
+				const existingTemplate = await ctx.db.projectTemplate.findFirst({
+					where: { title: input.title }
+				});
+				if (existingTemplate) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'Project with this name already exists'
+					});
+				}
+
 				return await ctx.db.$transaction(async (prisma) => {
 					const sortOrder = await getNextTemplateSortOrder(prisma);
 					const projectTemplate = await prisma.projectTemplate.create({
@@ -72,6 +87,7 @@ export const projectTemplateMutations = {
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { projectTemplateId, images } = input;
+			await assertProjectTemplateIsEditable(ctx, projectTemplateId);
 
 			const result = await ctx.db.projectTemplate.update({
 				where: { id: projectTemplateId },
@@ -104,6 +120,7 @@ export const projectTemplateMutations = {
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { projectTemplateId, items } = input;
+			await assertProjectTemplateIsEditable(ctx, projectTemplateId);
 
 			const images = await ctx.db.projectImage.findMany({
 				where: {
@@ -178,6 +195,7 @@ export const projectTemplateMutations = {
 		.input(deleteTemplateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
+				await assertProjectTemplateIsEditable(ctx, input.id);
 				const deleted = await ctx.db.projectTemplate.delete({
 					where: { id: input.id }
 				});
@@ -185,6 +203,7 @@ export const projectTemplateMutations = {
 				return deleted.id;
 			} catch (error) {
 				console.error('Error deleting project template:', error);
+				if (error instanceof TRPCError) throw error;
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
 					message: 'Failed to delete project template'
@@ -198,7 +217,12 @@ export const projectTemplateMutations = {
 			const { id } = input;
 
 			const image = await ctx.db.projectImage.findUnique({
-				where: { id }
+				where: { id },
+				select: {
+					id: true,
+					url: true,
+					projectTemplateId: true
+				}
 			});
 
 			if (!image) {
@@ -206,6 +230,9 @@ export const projectTemplateMutations = {
 					code: 'NOT_FOUND',
 					message: 'Image not found'
 				});
+			}
+			if (image.projectTemplateId) {
+				await assertProjectTemplateIsEditable(ctx, image.projectTemplateId);
 			}
 
 			const fileKey = image.url.split('/').pop();
@@ -235,13 +262,68 @@ export const projectTemplateMutations = {
 		.input(updateTemplateStatusSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
+				const current = await ctx.db.projectTemplate.findUnique({
+					where: { id: input.id },
+					select: { id: true, title: true, status: true, version: true }
+				});
+				if (!current) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'Template not found'
+					});
+				}
+				if (current.status === ProjectStatusEnum.APPROVED) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Published template versions are immutable'
+					});
+				}
+				if (
+					input.status === ProjectStatusEnum.APPROVED &&
+					current.status !== ProjectStatusEnum.SEND_FOR_APPROVAL
+				) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Only templates sent for approval can be published'
+					});
+				}
+				if (
+					input.status === ProjectStatusEnum.SEND_FOR_APPROVAL &&
+					current.status !== ProjectStatusEnum.PENDING &&
+					current.status !== ProjectStatusEnum.REQUESTED_CHANGES
+				) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Only drafts can be sent for approval'
+					});
+				}
+				if (
+					input.status === ProjectStatusEnum.REQUESTED_CHANGES &&
+					current.status !== ProjectStatusEnum.SEND_FOR_APPROVAL
+				) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message:
+							'Only templates awaiting review can receive requested changes'
+					});
+				}
 				const updated = await ctx.db.projectTemplate.update({
 					where: { id: input.id },
-					data: { status: input.status },
+					data: {
+						status: input.status,
+						publishedAt:
+							input.status === ProjectStatusEnum.APPROVED ? new Date() : null,
+						...(input.reviewNote !== undefined && {
+							reviewNote: input.reviewNote || null
+						})
+					},
 					select: {
 						id: true,
 						title: true,
-						status: true
+						version: true,
+						status: true,
+						publishedAt: true,
+						reviewNote: true
 					}
 				});
 
@@ -264,6 +346,7 @@ export const projectTemplateMutations = {
 		.input(updateTemplateBasicInfoInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
+				await assertProjectTemplateIsEditable(ctx, input.id);
 				const {
 					id,
 					category,
@@ -273,6 +356,32 @@ export const projectTemplateMutations = {
 					images,
 					...data
 				} = input;
+
+				const currentTemplate = await ctx.db.projectTemplate.findUnique({
+					where: { id },
+					select: { templateKey: true }
+				});
+				if (!currentTemplate) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'Template not found'
+					});
+				}
+				if (data.title) {
+					const duplicate = await ctx.db.projectTemplate.findFirst({
+						where: {
+							title: data.title,
+							NOT: { templateKey: currentTemplate.templateKey }
+						},
+						select: { id: true }
+					});
+					if (duplicate) {
+						throw new TRPCError({
+							code: 'CONFLICT',
+							message: 'Project with this name already exists'
+						});
+					}
+				}
 
 				const updated = await ctx.db.projectTemplate.update({
 					where: { id },
@@ -325,6 +434,9 @@ export const projectTemplateMutations = {
 			} catch (error) {
 				console.error('Error updating project template:', error);
 
+				if (error instanceof TRPCError) {
+					throw error;
+				}
 				if (error instanceof Prisma.PrismaClientKnownRequestError) {
 					if (error.code === 'P2002') {
 						throw new TRPCError({
@@ -358,6 +470,7 @@ export const projectTemplateMutations = {
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { projectTemplateId, data } = input;
+			await assertProjectTemplateIsEditable(ctx, projectTemplateId);
 
 			return await ctx.db.$transaction(
 				async (prisma) => {
@@ -516,7 +629,7 @@ export const projectTemplateMutations = {
 		.input(cloneTemplateSchema)
 		.mutation(async ({ ctx, input }) => {
 			try {
-				const existingTemplate = await ctx.db.projectTemplate.findUnique({
+				const existingTemplate = await ctx.db.projectTemplate.findFirst({
 					where: { title: input.newTitle }
 				});
 
@@ -529,19 +642,7 @@ export const projectTemplateMutations = {
 
 				const originalTemplate = await ctx.db.projectTemplate.findUnique({
 					where: { id: input.id },
-					include: {
-						sprints: true,
-						epics: true,
-						tasks: true,
-						productVersions: true,
-						technologies: true,
-						learningOutcomes: true,
-						milestones: true,
-						images: {
-							orderBy: { order: 'asc' }
-						},
-						category: true
-					}
+					include: templateCloneInclude
 				});
 
 				if (!originalTemplate) {
@@ -551,212 +652,13 @@ export const projectTemplateMutations = {
 					});
 				}
 
-				return await ctx.db.$transaction(
-					async (prisma) => {
-						const {
-							id: _originalId,
-							createdAt: _createdAt,
-							updatedAt: _updatedAt,
-							title: _originalTitle,
-							categoryId: _categoryId,
-							sortOrder: _sortOrder,
-							sprints,
-							epics,
-							tasks,
-							productVersions: templateProductVersions = [],
-							technologies,
-							learningOutcomes,
-							milestones,
-							images: _images,
-							category,
-							...templateData
-						} = originalTemplate;
-
-						const sortOrder = await getNextTemplateSortOrder(prisma);
-
-						const newTemplate = await prisma.projectTemplate.create({
-							data: {
-								...templateData,
-								title: input.newTitle,
-								publicCode: generatePublicCode(input.newTitle),
-								status: 'PENDING',
-								sortOrder,
-								category: {
-									connect: { id: category.id }
-								},
-								technologies: {
-									connect: technologies.map((tech) => ({ id: tech.id }))
-								}
-							}
-						});
-
-						const productVersionIdMap: Record<string, string> = {};
-						if (templateProductVersions.length > 0) {
-							await prisma.productVersion.createMany({
-								data: templateProductVersions.map((version) => {
-									const id = randomUUID();
-									productVersionIdMap[version.id] = id;
-									return {
-										id,
-										name: version.name,
-										description: version.description,
-										order: version.order,
-										status: null,
-										projectTemplateId: newTemplate.id,
-										projectId: null
-									};
-								})
-							});
-						}
-
-						const milestoneIdMap: Record<string, string> = {};
-						if (learningOutcomes.length > 0) {
-							await prisma.learningOutcome.createMany({
-								data: learningOutcomes.map((outcome) => ({
-									id: randomUUID(),
-									value: outcome.value,
-									projectTemplateId: newTemplate.id,
-									projectId: null
-								}))
-							});
-						}
-						if (milestones.length > 0) {
-							await prisma.milestone.createMany({
-								data: milestones.map((milestone) => {
-									const id = randomUUID();
-									milestoneIdMap[milestone.id] = id;
-									return {
-										id,
-										title: milestone.title,
-										description: milestone.description,
-										order: milestone.order,
-										status: milestone.status,
-										completed: milestone.completed,
-										projectTemplateId: newTemplate.id,
-										projectId: null
-									};
-								})
-							});
-						}
-
-						const sprintIdMap: Record<string, string> = {};
-						if (sprints.length > 0) {
-							await prisma.sprint.createMany({
-								data: sprints.map((sprint) => {
-									const {
-										id: oldId,
-										projectTemplateId: _projectTemplateId,
-										projectId: _projectId,
-										milestoneId,
-										createdAt: _sprintCreatedAt,
-										updatedAt: _sprintUpdatedAt,
-										...sprintData
-									} = sprint;
-									const newId = randomUUID();
-									sprintIdMap[oldId] = newId;
-									return {
-										...sprintData,
-										id: newId,
-										projectTemplateId: newTemplate.id,
-										projectId: null,
-										milestoneId: milestoneId
-											? (milestoneIdMap[milestoneId] ?? null)
-											: null
-									};
-								})
-							});
-						}
-
-						const epicIdMap: Record<string, string> = {};
-						if (epics.length > 0) {
-							await prisma.epic.createMany({
-								data: epics.map((epic) => {
-									const {
-										id: oldId,
-										projectTemplateId: _projectTemplateId,
-										projectId: _projectId,
-										milestoneId,
-										createdAt: _epicCreatedAt,
-										updatedAt: _epicUpdatedAt,
-										...epicData
-									} = epic;
-									const newId = randomUUID();
-									epicIdMap[oldId] = newId;
-									return {
-										...epicData,
-										id: newId,
-										projectTemplateId: newTemplate.id,
-										projectId: null,
-										milestoneId: milestoneId
-											? (milestoneIdMap[milestoneId] ?? null)
-											: null
-									};
-								})
-							});
-						}
-
-						if (tasks.length > 0) {
-							const taskIdMap = new Map(
-								tasks.map((task) => [task.id, randomUUID()])
-							);
-							const taskRows = tasks.map((task) => {
-								const {
-									id: _taskId,
-									epicId,
-									sprintId,
-									milestoneId,
-									productVersionId,
-									parentTaskId,
-									kanbanRank: sourceKanbanRank,
-									projectTemplateId: _projectTemplateId,
-									projectId: _projectId,
-									createdAt: _taskCreatedAt,
-									updatedAt: _taskUpdatedAt,
-									...taskData
-								} = task;
-
-								return {
-									...taskData,
-									id: taskIdMap.get(task.id) as string,
-									projectTemplateId: newTemplate.id,
-									parentTaskId: parentTaskId
-										? (taskIdMap.get(parentTaskId) ?? null)
-										: null,
-									kanbanRank:
-										sourceKanbanRank ??
-										BigInt((taskData.order ?? 0) + 1) * KANBAN_RANK_STEP,
-									epicId: epicId ? (epicIdMap[epicId] ?? null) : null,
-									sprintId: sprintId ? (sprintIdMap[sprintId] ?? null) : null,
-									milestoneId: milestoneId
-										? (milestoneIdMap[milestoneId] ?? null)
-										: null,
-									productVersionId: productVersionId
-										? (productVersionIdMap[productVersionId] ?? null)
-										: null,
-									projectId: null
-								};
-							});
-
-							const topLevelTaskRows = taskRows.filter(
-								(task) => task.parentTaskId === null
-							);
-							const subtaskRows = taskRows.filter(
-								(task) => task.parentTaskId !== null
-							);
-							if (topLevelTaskRows.length > 0) {
-								await prisma.task.createMany({ data: topLevelTaskRows });
-							}
-							if (subtaskRows.length > 0) {
-								await prisma.task.createMany({ data: subtaskRows });
-							}
-						}
-
-						return newTemplate.id;
-					},
-					{
-						maxWait: 30000,
-						timeout: 60000
-					}
+				return await ctx.db.$transaction(async (prisma) =>
+					cloneProjectTemplate(prisma, originalTemplate, {
+						templateKey: randomUUID(),
+						version: 1,
+						status: ProjectStatusEnum.PENDING,
+						sortOrder: await getNextTemplateSortOrder(prisma)
+					})
 				);
 			} catch (error) {
 				console.error('Clone template error:', error);
@@ -780,6 +682,63 @@ export const projectTemplateMutations = {
 					message: 'Failed to clone template',
 					cause: error
 				});
+			}
+		}),
+
+	createVersion: adminProcedure
+		.input(createTemplateVersionSchema)
+		.mutation(async ({ ctx, input }) => {
+			const source = await ctx.db.projectTemplate.findUnique({
+				where: { id: input.id },
+				select: { templateKey: true }
+			});
+			if (!source) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Template not found'
+				});
+			}
+
+			const latest = await ctx.db.projectTemplate.findFirst({
+				where: { templateKey: source.templateKey },
+				orderBy: { version: 'desc' },
+				include: templateCloneInclude
+			});
+			if (!latest) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Template version not found'
+				});
+			}
+			if (latest.status !== ProjectStatusEnum.APPROVED) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Only an approved template can start a new version'
+				});
+			}
+
+			try {
+				return await ctx.db.$transaction(async (prisma) =>
+					cloneProjectTemplate(prisma, latest, {
+						templateKey: latest.templateKey,
+						version: latest.version + 1,
+						status: ProjectStatusEnum.PENDING,
+						sortOrder: latest.sortOrder,
+						changeSummary: input.changeSummary
+					})
+				);
+			} catch (error) {
+				if (
+					error instanceof Prisma.PrismaClientKnownRequestError &&
+					error.code === 'P2002'
+				) {
+					throw new TRPCError({
+						code: 'CONFLICT',
+						message: 'A new version is being created concurrently',
+						cause: error
+					});
+				}
+				throw error;
 			}
 		})
 };

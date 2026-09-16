@@ -9,8 +9,8 @@ import { protectedProcedure } from '~/server/api/trpc';
 import {
 	assertProjectIsActive,
 	assertProjectResourceAccess,
-	userHasAccessToProject,
-	userHasAccessToProjectTemplate
+	assertProjectTemplateIsEditable,
+	userHasAccessToProject
 } from '~/server/utils/auth';
 
 export const epicMutations = {
@@ -28,7 +28,7 @@ export const epicMutations = {
 			} = input;
 
 			if (isTemplate) {
-				await userHasAccessToProjectTemplate(ctx, projectId);
+				await assertProjectTemplateIsEditable(ctx, projectId);
 			} else {
 				await userHasAccessToProject(ctx, projectId);
 			}
@@ -70,8 +70,7 @@ export const epicMutations = {
 
 			// Verify access through existing epic
 			const existingEpic = await ctx.db.epic.findUnique({
-				where: { id },
-
+				where: { id }
 			});
 
 			if (!existingEpic) {
@@ -82,6 +81,12 @@ export const epicMutations = {
 			}
 
 			await assertProjectResourceAccess(ctx, existingEpic);
+			if (existingEpic.projectTemplateId) {
+				await assertProjectTemplateIsEditable(
+					ctx,
+					existingEpic.projectTemplateId
+				);
+			}
 			if (existingEpic.projectId) {
 				await assertProjectIsActive(ctx.db, existingEpic.projectId);
 			}
@@ -103,8 +108,7 @@ export const epicMutations = {
 
 			// Verify access through existing epic
 			const existingEpic = await ctx.db.epic.findUnique({
-				where: { id },
-
+				where: { id }
 			});
 
 			if (!existingEpic) {
@@ -115,6 +119,12 @@ export const epicMutations = {
 			}
 
 			await assertProjectResourceAccess(ctx, existingEpic);
+			if (existingEpic.projectTemplateId) {
+				await assertProjectTemplateIsEditable(
+					ctx,
+					existingEpic.projectTemplateId
+				);
+			}
 			if (existingEpic.projectId) {
 				await assertProjectIsActive(ctx.db, existingEpic.projectId);
 			}

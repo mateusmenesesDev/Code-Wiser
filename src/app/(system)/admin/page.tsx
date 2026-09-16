@@ -42,6 +42,16 @@ import { Textarea } from '~/common/components/ui/textarea';
 import { toast } from 'sonner';
 import { api } from '~/trpc/react';
 
+function formatRate(value: number | null) {
+	return value === null ? '—' : `${value}%`;
+}
+
+function formatMinutes(value: number | null) {
+	if (value === null) return '—';
+	if (value < 60) return `${value} min`;
+	return `${(value / 60).toFixed(1)} h`;
+}
+
 function StudentAvatar({
 	userId,
 	name,
@@ -72,6 +82,7 @@ function MentorDashboardContent() {
 	const [cancellationReason, setCancellationReason] = useState('');
 	const [cancellationConfirmed, setCancellationConfirmed] = useState(false);
 	const utils = api.useUtils();
+	const { data: learningMetrics } = api.dashboard.getLearningMetrics.useQuery();
 
 	const {
 		data: projectsData,
@@ -202,6 +213,123 @@ function MentorDashboardContent() {
 					</Select>
 				</div>
 			</div>
+
+			{learningMetrics && (
+				<>
+					<Card className="mb-4">
+						<CardContent className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
+							<div>
+								<p className="font-semibold text-2xl">
+									{learningMetrics.diagnosedLearners}
+								</p>
+								<p className="text-sm">Diagnosed learners</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{learningMetrics.learnersWithDemonstratedCompetency}
+								</p>
+								<p className="text-sm">Learners with demonstrated competency</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{learningMetrics.remediationReassessments}
+								</p>
+								<p className="text-sm">Approved remediation reassessments</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{learningMetrics.overdueMentorAttentionItems}
+								</p>
+								<p className="text-sm">Overdue mentor items</p>
+							</div>
+						</CardContent>
+					</Card>
+					<Card className="mb-8">
+						<CardContent className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
+							<div>
+								<p className="font-semibold text-2xl">
+									{formatRate(
+										learningMetrics.journeyRates.diagnosisToFirstAction
+									)}
+								</p>
+								<p className="text-sm">Diagnosis to first action</p>
+								<p className="text-muted-foreground text-xs">
+									{learningMetrics.journeyFunnel.firstActionLearners} learners
+								</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{formatRate(
+										learningMetrics.journeyRates.recommendationImpressionToStart
+									)}
+								</p>
+								<p className="text-sm">Recommendation start rate</p>
+								<p className="text-muted-foreground text-xs">
+									{learningMetrics.journeyFunnel.recommendationStarts} learners
+									started
+								</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{formatRate(
+										learningMetrics.journeyRates.remediationCompletion
+									)}
+								</p>
+								<p className="text-sm">Remediation completion</p>
+								<p className="text-muted-foreground text-xs">
+									{learningMetrics.journeyFunnel.remediationCompleted} completed
+								</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{formatRate(
+										learningMetrics.journeyRates.secondEvaluationApproval
+									)}
+								</p>
+								<p className="text-sm">Second evaluation approval</p>
+								<p className="text-muted-foreground text-xs">
+									{learningMetrics.journeyFunnel.secondEvaluationsApproved}{' '}
+									approved
+								</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{formatMinutes(
+										learningMetrics.journeyTiming
+											.averageSignupToFirstActionMinutes
+									)}
+								</p>
+								<p className="text-sm">Signup to first action</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{formatMinutes(
+										learningMetrics.journeyTiming
+											.averageDiagnosisToEvidenceMinutes
+									)}
+								</p>
+								<p className="text-sm">Diagnosis to evidence</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{formatMinutes(
+										learningMetrics.journeyTiming.averageReviewResponseMinutes
+									)}
+								</p>
+								<p className="text-sm">Average review response</p>
+							</div>
+							<div>
+								<p className="font-semibold text-2xl">
+									{formatMinutes(
+										learningMetrics.journeyTiming.averageReviewCompletionMinutes
+									)}
+								</p>
+								<p className="text-sm">Average review completion</p>
+							</div>
+						</CardContent>
+					</Card>
+				</>
+			)}
 
 			{isLoading ? (
 				<Card>

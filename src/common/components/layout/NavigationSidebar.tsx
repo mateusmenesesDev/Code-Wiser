@@ -290,7 +290,7 @@ export default function NavigationSidebar() {
 	const [desktopExpanded, setDesktopExpanded] = useState(true);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
-	const { mode: previewMode } = useUserPreview();
+	const { mode: previewMode, view: userView } = useUserPreview();
 	const { data: mentorshipStatus } = api.user.getMentorshipStatus.useQuery(
 		undefined,
 		{
@@ -298,39 +298,60 @@ export default function NavigationSidebar() {
 		}
 	);
 	const hasActiveMentorship =
-		previewMode === 'mentorship' ||
-		mentorshipStatus?.mentorshipStatus === 'ACTIVE';
+		userView === 'mentor' ||
+		(!previewMode && mentorshipStatus?.mentorshipStatus === 'ACTIVE');
+	const { data: hasProjectMentorship } = api.mentorFollowUp.getAccess.useQuery(
+		undefined,
+		{
+			enabled: !!isSignedIn && !previewMode
+		}
+	);
 
+	const isAdminAccount =
+		isLoaded &&
+		!!isSignedIn &&
+		(String(orgRole) === 'admin' ||
+			orgRole === 'org:admin' ||
+			has({ role: 'org:admin' }));
 	const visibility = useMemo(
 		() => ({
 			isSignedIn: !!isSignedIn,
 			hasMentorship: hasActiveMentorship,
-			hasAdminRole: () =>
-				!previewMode &&
-				isLoaded &&
-				(String(orgRole) === 'admin' ||
-					orgRole === 'org:admin' ||
-					has({ role: 'org:admin' })),
+			hasProjectMentorship: !previewMode && hasProjectMentorship === true,
+			hasAdminRole: () => isAdminAccount && userView !== 'student',
 			hasPermission: (permission: ClerkAuthorization['permission']) =>
-				!previewMode && isLoaded && has({ permission })
+				isAdminAccount && userView !== 'student' && has({ permission })
 		}),
-		[has, hasActiveMentorship, isLoaded, isSignedIn, orgRole, previewMode]
+		[
+			has,
+			hasActiveMentorship,
+			hasProjectMentorship,
+			isAdminAccount,
+			isSignedIn,
+			previewMode,
+			userView
+		]
 	);
 	const workItems = WORK_NAV_ITEMS.filter((item) =>
 		isNavigationItemVisible(item, visibility)
 	);
 	const adminDashboard =
+		userView === 'admin' &&
 		isLoaded &&
 		isSignedIn &&
 		isNavigationItemVisible(ADMIN_DASHBOARD, visibility)
 			? ADMIN_DASHBOARD
 			: undefined;
-	const adminGroups = ADMIN_NAV_GROUPS.map((group) => ({
-		group,
-		items: group.items.filter((item) =>
-			isNavigationItemVisible(item, visibility)
-		)
-	})).filter(({ items }) => items.length > 0);
+	const adminGroups = ADMIN_NAV_GROUPS.filter(
+		({ audience }) => userView === 'admin' || audience === 'mentor'
+	)
+		.map((group) => ({
+			group,
+			items: group.items.filter((item) =>
+				isNavigationItemVisible(item, visibility)
+			)
+		}))
+		.filter(({ items }) => items.length > 0);
 	const searchableItems = [
 		...workItems,
 		...(adminDashboard ? [adminDashboard] : []),

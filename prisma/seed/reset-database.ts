@@ -11,6 +11,12 @@ async function resetDatabase() {
 
 	try {
 		// Delete in reverse dependency order to avoid foreign key constraint errors
+		console.log('🧹 Clearing learning plans and analytics...');
+		await prisma.learningPlanItemDependency.deleteMany();
+		await prisma.learningPlanItem.deleteMany();
+		await prisma.learningPlan.deleteMany();
+		await prisma.learningJourneyEvent.deleteMany();
+
 		console.log('🧹 Clearing competencies...');
 		await prisma.competencyMentorAssessment.deleteMany();
 		await prisma.competencyExerciseChallenge.deleteMany();
@@ -18,6 +24,14 @@ async function resetDatabase() {
 		await prisma.competencyMilestone.deleteMany();
 		await prisma.competencyReviewCategory.deleteMany();
 		await prisma.competency.deleteMany();
+
+		console.log('🧹 Clearing cohorts and peer reviews...');
+		await prisma.cohortPeerReviewCalibration.deleteMany();
+		await prisma.cohortPeerReviewReport.deleteMany();
+		await prisma.cohortPeerReview.deleteMany();
+		await prisma.cohortProject.deleteMany();
+		await prisma.cohortMembership.deleteMany();
+		await prisma.cohort.deleteMany();
 
 		console.log('🧹 Clearing comments...');
 		await prisma.exerciseReviewDecision.deleteMany();

@@ -67,16 +67,26 @@ describe('project.createProject', () => {
 			figmaProjectUrl: null,
 			publicCode: 'PROJECTALPHA',
 			nextTaskNumber: 3,
+			templateKey: 'template-family',
+			version: 1,
+			status: 'APPROVED',
 			categoryId: null,
 			milestones: [
 				{
 					id: 'template-milestone-id',
 					title: 'Milestone 1',
 					description: 'First delivery',
-					order: 0
+					order: 0,
+					competencies: [{ competencyId: 'competency-1' }]
 				}
 			],
-			learningOutcomes: [{ id: 'outcome-1', value: 'Ship a working feature' }],
+			learningOutcomes: [
+				{
+					id: 'outcome-1',
+					value: 'Ship a working feature',
+					competencies: [{ competencyId: 'competency-2' }]
+				}
+			],
 			sprints: [
 				{
 					id: 'template-sprint-id',
@@ -111,11 +121,20 @@ describe('project.createProject', () => {
 				}
 			]
 		} as never);
+		mockDb.projectTemplate.findFirst.mockResolvedValue({
+			id: 'template-id'
+		} as never);
 		mockDb.project.findFirst.mockResolvedValue(null);
 		mockDb.project.findUnique.mockResolvedValue(null);
 		mockDb.project.create.mockResolvedValue({ id: 'project-id' } as never);
 		mockDb.milestone.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.learningOutcome.createMany.mockResolvedValue({ count: 1 } as never);
+		mockDb.competencyMilestone.createMany.mockResolvedValue({
+			count: 1
+		} as never);
+		mockDb.competencyLearningOutcome.createMany.mockResolvedValue({
+			count: 1
+		} as never);
 		mockDb.sprint.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.epic.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.task.createMany.mockResolvedValue({ count: 2 } as never);
@@ -155,6 +174,22 @@ describe('project.createProject', () => {
 					value: 'Ship a working feature',
 					projectId: 'project-id',
 					projectTemplateId: null
+				})
+			]
+		});
+		expect(mockDb.competencyMilestone.createMany).toHaveBeenCalledWith({
+			data: [
+				expect.objectContaining({
+					competencyId: 'competency-1',
+					milestoneId: expect.any(String)
+				})
+			]
+		});
+		expect(mockDb.competencyLearningOutcome.createMany).toHaveBeenCalledWith({
+			data: [
+				expect.objectContaining({
+					competencyId: 'competency-2',
+					learningOutcomeId: expect.any(String)
 				})
 			]
 		});
@@ -255,10 +290,16 @@ describe('project.createProject', () => {
 			figmaProjectUrl: null,
 			publicCode: 'PAIDPROJECT',
 			nextTaskNumber: 1,
+			templateKey: 'paid-template-family',
+			version: 1,
+			status: 'APPROVED',
 			categoryId: null,
 			sprints: [],
 			epics: [],
 			tasks: []
+		} as never);
+		mockDb.projectTemplate.findFirst.mockResolvedValue({
+			id: 'template-id'
 		} as never);
 		mockDb.project.findUnique.mockResolvedValue(null);
 		mockDb.project.findFirst.mockResolvedValue(null);

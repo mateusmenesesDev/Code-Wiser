@@ -1,7 +1,7 @@
 'use client';
 
-import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -14,11 +14,14 @@ import { useDialog } from '~/common/hooks/useDialog';
 import SignInDialog from '~/features/auth/components/Signin/SigninDialog';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { NotificationBell } from '~/features/notifications/components/NotificationBell';
+import {
+	UserPreviewSelector,
+	useUserPreview
+} from '~/features/userPreview/UserPreviewProvider';
 import { getUserPreviewProfile } from '~/features/userPreview/userPreview';
-import { useUserPreview } from '~/features/userPreview/UserPreviewProvider';
-import { LanguageSwitcher } from '../LanguageSwitcher';
 import { api } from '~/trpc/react';
 import CodeWiseIcon from '../../icons/CodeWiseIcon';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import HeaderAvatarMenu from './HeaderAvatarMenu';
 
 const Header = () => {
@@ -56,22 +59,25 @@ const Header = () => {
 		mentorshipStatus?.mentorshipStatus === 'ACTIVE';
 	const shouldShowCreditsBadge =
 		isLoggedIn &&
-		(previewMode === 'free' ||
+		(previewMode === 'student' ||
 			(!previewMode &&
 				(mentorshipStatus?.mentorshipStatus === 'INACTIVE' ||
 					mentorshipStatusErrored)));
 
 	return (
-		<header className="border-b bg-background/80 backdrop-blur-md">
+		<header className="overflow-x-hidden border-b bg-background/80 backdrop-blur-md">
 			<div className="w-full px-4 py-2 sm:px-6 lg:px-8">
-				<div className="flex items-center justify-between gap-6">
+				<div className="flex items-center justify-between gap-2 sm:gap-6">
 					<Link href="/" className="shrink-0">
 						<CodeWiseIcon />
 					</Link>
 
-					<div className="flex shrink-0 items-center gap-4">
-						<LanguageSwitcher />
-						<div className="flex items-center gap-2">
+					<div className="flex shrink-0 items-center gap-2 sm:gap-4">
+						<div className="hidden sm:block">
+							<LanguageSwitcher />
+						</div>
+						{isLoggedIn ? <UserPreviewSelector /> : null}
+						<div className="hidden items-center gap-2 sm:flex">
 							<Sun className="h-4 w-4" aria-hidden="true" />
 							{mounted ? (
 								<Switch
@@ -130,7 +136,7 @@ const Header = () => {
 								<Button
 									onClick={() => openDialog('signIn')}
 									size="sm"
-									className="bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+									className="hidden bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 sm:inline-flex"
 								>
 									{t('getStarted')}
 								</Button>

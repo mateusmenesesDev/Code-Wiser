@@ -9,9 +9,10 @@ import {
 } from '~/common/components/ui/tabs';
 
 import { ProjectAccessTypeEnum, ProjectMethodologyEnum } from '@prisma/client';
-import { ArrowLeft, FileJson } from 'lucide-react';
+import { ArrowLeft, FileJson, FilePlus2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import Backlog from '~/features/backlog/components/Backlog';
 import EpicList from '~/features/epics/components/EpicList/EpicList';
 import ProductVersionList from '~/features/productVersions/components/ProductVersionList';
@@ -26,8 +27,16 @@ const AdminProjectEdit = () => {
 	const router = useRouter();
 	const [showJsonDialog, setShowJsonDialog] = useState(false);
 
+	const templateId = id as string;
 	const { data: template, isLoading } = api.projectTemplate.getById.useQuery({
-		id: id as string
+		id: templateId
+	});
+	const createVersionMutation = api.projectTemplate.createVersion.useMutation({
+		onSuccess: (newVersionId) => {
+			toast.success('Draft version created');
+			router.push(`/admin/templates/${newVersionId}/edit`);
+		},
+		onError: (error) => toast.error(error.message)
 	});
 
 	if (isLoading) {
@@ -77,10 +86,22 @@ const AdminProjectEdit = () => {
 						</h1>
 					</div>
 				</div>
-				<Button variant="outline" onClick={() => setShowJsonDialog(true)}>
-					<FileJson className="mr-2 h-4 w-4" />
-					Add from JSON
-				</Button>
+				<div className="flex gap-2">
+					{template.status === 'APPROVED' && (
+						<Button
+							variant="outline"
+							onClick={() => createVersionMutation.mutate({ id: templateId })}
+							disabled={createVersionMutation.isPending}
+						>
+							<FilePlus2 className="mr-2 h-4 w-4" />
+							Create draft version
+						</Button>
+					)}
+					<Button variant="outline" onClick={() => setShowJsonDialog(true)}>
+						<FileJson className="mr-2 h-4 w-4" />
+						Add from JSON
+					</Button>
+				</div>
 			</div>
 
 			<Tabs defaultValue="backlog" className="space-y-6">

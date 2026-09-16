@@ -7,6 +7,11 @@ const authState = vi.hoisted(() => ({
 	userId: 'user-1' as string | null
 }));
 
+const githubMocks = vi.hoisted(() => ({
+	isGitHubAppConfigured: vi.fn(() => false),
+	getPullRequestSnapshotForRepository: vi.fn()
+}));
+
 vi.mock('@clerk/nextjs/server', () => ({
 	auth: () => ({
 		userId: authState.userId,
@@ -23,6 +28,13 @@ vi.mock('~/server/db', () => ({
 
 vi.mock('~/server/realtime', () => ({
 	getRealtimeService: () => ({})
+}));
+
+vi.mock('~/server/services/github/github', () => ({
+	GitHubServiceError: class GitHubServiceError extends Error {},
+	getPullRequestSnapshotForRepository:
+		githubMocks.getPullRequestSnapshotForRepository,
+	isGitHubAppConfigured: githubMocks.isGitHubAppConfigured
 }));
 
 vi.mock('~/server/services/notification/exerciseNotifications', () => ({
@@ -42,6 +54,8 @@ describe('exercise requestReview', () => {
 
 	beforeEach(async () => {
 		authState.userId = 'user-1';
+		githubMocks.isGitHubAppConfigured.mockReturnValue(false);
+		githubMocks.getPullRequestSnapshotForRepository.mockReset();
 		caller = createCaller(
 			await createTRPCContext({
 				headers: new Headers()
@@ -107,6 +121,162 @@ describe('exercise requestReview', () => {
 		);
 		expect(mockDb.userChallengeProgress.upsert).toHaveBeenCalledTimes(2);
 		expect(result.prUrl).toBe(prUrl);
+	});
+
+	it.each(['PENDING', 'FAILURE'] as const)(
+		'blocks review requests when GitHub checks are %s',
+		async (checksStatus) => {
+			githubMocks.isGitHubAppConfigured.mockReturnValue(true);
+			mockDb.user.findUnique.mockResolvedValue({
+				mentorshipStatus: 'ACTIVE'
+			} as never);
+			mockDb.exerciseTrack.findFirst.mockResolvedValue({
+				id: trackId,
+				name: 'React',
+				repoUrl: 'https://github.com/org/react-exercises',
+				githubRepository: {
+					id: 'repository-1',
+					owner: 'org',
+					name: 'react-exercises',
+					installation: {
+						githubInstallationId: 'installation-1',
+						active: true
+					}
+				}
+			} as never);
+			mockDb.exerciseChallenge.findMany.mockResolvedValue([
+				{ id: challengeA, trackId, title: 'Counter' }
+			] as never);
+			mockDb.userChallengeProgress.findMany.mockResolvedValue([] as never);
+			githubMocks.getPullRequestSnapshotForRepository.mockResolvedValue({
+				number: 12,
+				htmlUrl: prUrl,
+				title: 'Exercise',
+				state: 'OPEN',
+				authorLogin: 'ada',
+				commitCount: 1,
+				headSha: 'sha-1',
+				checksStatus
+			});
+
+			await expect(
+				caller.requestReview({
+					trackId,
+					prUrl,
+					challengeIds: [challengeA]
+				})
+			).rejects.toMatchObject({
+				code: 'PRECONDITION_FAILED',
+				message:
+					checksStatus === 'PENDING'
+						? 'GitHub checks are still running. Wait for tests and lint to finish before requesting review.'
+						: 'GitHub checks failed. Fix the failing tests or lint checks before requesting review.'
+			});
+			expect(mockDb.exerciseReviewSubmission.create).not.toHaveBeenCalled();
+		}
+	);
+
+	it.each(['SUCCESS', 'NONE'] as const)(
+		'allows a review when GitHub checks are %s and stores the status',
+		async (checksStatus) => {
+			githubMocks.isGitHubAppConfigured.mockReturnValue(true);
+			mockDb.user.findUnique.mockResolvedValue({
+				mentorshipStatus: 'ACTIVE'
+			} as never);
+			mockDb.exerciseTrack.findFirst.mockResolvedValue({
+				id: trackId,
+				name: 'React',
+				repoUrl: 'https://github.com/org/react-exercises',
+				githubRepository: {
+					id: 'repository-1',
+					owner: 'org',
+					name: 'react-exercises',
+					installation: {
+						githubInstallationId: 'installation-1',
+						active: true
+					}
+				}
+			} as never);
+			mockDb.exerciseChallenge.findMany.mockResolvedValue([
+				{ id: challengeA, trackId, title: 'Counter' }
+			] as never);
+			mockDb.userChallengeProgress.findMany.mockResolvedValue([] as never);
+			mockDb.$transaction.mockImplementation(async (fn: unknown) => {
+				if (typeof fn === 'function') return fn(mockDb);
+				return fn;
+			});
+			mockDb.exerciseReviewSubmission.create.mockResolvedValue({
+				id: 'submission-1',
+				prUrl,
+				decisions: [{ challengeId: challengeA, status: 'PENDING' }]
+			} as never);
+			githubMocks.getPullRequestSnapshotForRepository.mockResolvedValue({
+				number: 12,
+				htmlUrl: prUrl,
+				title: 'Exercise',
+				state: 'OPEN',
+				authorLogin: 'ada',
+				commitCount: 1,
+				headSha: 'sha-1',
+				checksStatus
+			});
+
+			await caller.requestReview({
+				trackId,
+				prUrl,
+				challengeIds: [challengeA]
+			});
+
+			expect(mockDb.exerciseReviewSubmission.create).toHaveBeenCalledWith(
+				expect.objectContaining({
+					data: expect.objectContaining({ githubChecksStatus: checksStatus })
+				})
+			);
+		}
+	);
+
+	it('keeps the manual flow when a linked repository exists but the App is not configured', async () => {
+		mockDb.user.findUnique.mockResolvedValue({
+			mentorshipStatus: 'ACTIVE'
+		} as never);
+		mockDb.exerciseTrack.findFirst.mockResolvedValue({
+			id: trackId,
+			name: 'React',
+			repoUrl: 'https://github.com/org/react-exercises',
+			githubRepository: {
+				id: 'repository-1',
+				owner: 'org',
+				name: 'react-exercises',
+				installation: {
+					githubInstallationId: 'installation-1',
+					active: true
+				}
+			}
+		} as never);
+		mockDb.exerciseChallenge.findMany.mockResolvedValue([
+			{ id: challengeA, trackId, title: 'Counter' }
+		] as never);
+		mockDb.userChallengeProgress.findMany.mockResolvedValue([] as never);
+		mockDb.$transaction.mockImplementation(async (fn: unknown) => {
+			if (typeof fn === 'function') return fn(mockDb);
+			return fn;
+		});
+		mockDb.exerciseReviewSubmission.create.mockResolvedValue({
+			id: 'submission-1',
+			prUrl,
+			decisions: [{ challengeId: challengeA, status: 'PENDING' }]
+		} as never);
+
+		await caller.requestReview({
+			trackId,
+			prUrl,
+			challengeIds: [challengeA]
+		});
+
+		expect(
+			githubMocks.getPullRequestSnapshotForRepository
+		).not.toHaveBeenCalled();
+		expect(mockDb.exerciseReviewSubmission.create).toHaveBeenCalled();
 	});
 
 	it('rejects requestReview without active mentorship', async () => {

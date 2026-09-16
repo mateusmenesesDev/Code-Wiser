@@ -35,6 +35,10 @@ describe('projectTemplate.bulkCreateTasksSprintsEpics', () => {
 			await createTRPCContext({ headers: new Headers() })
 		);
 
+		mockDb.projectTemplate.findUnique.mockResolvedValue({
+			id: 'template-id',
+			status: 'PENDING'
+		} as never);
 		mockDb.epic.createMany.mockResolvedValue({ count: 1 } as never);
 		mockDb.sprint.count.mockResolvedValue(0);
 		mockDb.sprint.createMany.mockResolvedValue({ count: 1 } as never);

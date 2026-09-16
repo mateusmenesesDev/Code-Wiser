@@ -137,6 +137,38 @@ export const userHasAccessToProjectTemplate = async (
 	return true;
 };
 
+export const assertProjectTemplateIsEditable = async (
+	ctx: ResourceAccessContext,
+	projectTemplateId: string
+): Promise<void> => {
+	if (!ctx.isAdmin) {
+		throw new TRPCError({
+			code: 'FORBIDDEN',
+			message: 'Only administrators can access project templates'
+		});
+	}
+
+	const template = await ctx.db.projectTemplate.findUnique({
+		where: { id: projectTemplateId },
+		select: { id: true, status: true }
+	});
+
+	if (!template) {
+		throw new TRPCError({
+			code: 'NOT_FOUND',
+			message: 'Project template not found'
+		});
+	}
+
+	if (template.status === 'APPROVED') {
+		throw new TRPCError({
+			code: 'BAD_REQUEST',
+			message:
+				'Published template versions are immutable. Create a new version first.'
+		});
+	}
+};
+
 export const assertProjectResourceAccess = async (
 	ctx: ResourceAccessContext,
 	resource: { projectId: string | null; projectTemplateId: string | null }

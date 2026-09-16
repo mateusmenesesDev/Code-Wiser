@@ -45,6 +45,7 @@ describe('agenda procedures', () => {
 			taskDeadlineRemindersEnabled: true
 		} as never);
 		mockDb.remediationAction.findMany.mockResolvedValue([]);
+		mockDb.cohortEvent.findMany.mockResolvedValue([]);
 		mockDb.task.findMany.mockResolvedValue([
 			{
 				id: 'task-1',
@@ -143,6 +144,43 @@ describe('agenda procedures', () => {
 
 		expect(result.tasks).toEqual([]);
 		expect(mockDb.task.findMany).not.toHaveBeenCalled();
+	});
+
+	it('returns planned cohort events in the selected period', async () => {
+		mockDb.cohortEvent.findMany.mockResolvedValue([
+			{
+				id: 'event-1',
+				type: 'DELIVERY',
+				status: 'PLANNED',
+				title: 'First delivery',
+				description: 'Share the first increment.',
+				startsAt: new Date('2026-08-13T18:00:00.000Z'),
+				endsAt: null,
+				cohort: { id: 'cohort-1', name: 'August cohort' }
+			}
+		] as never);
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.getOverview({ period: 'today', date: '2026-08-13' })
+		).resolves.toMatchObject({
+			cohortEvents: [
+				expect.objectContaining({ id: 'event-1', type: 'DELIVERY' })
+			]
+		});
+		expect(mockDb.cohortEvent.findMany).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: expect.objectContaining({
+					status: 'PLANNED',
+					startsAt: {
+						gte: new Date('2026-08-13T00:00:00.000Z'),
+						lt: new Date('2026-08-14T00:00:00.000Z')
+					}
+				})
+			})
+		);
 	});
 
 	it('updates the authenticated user reminder preference', async () => {

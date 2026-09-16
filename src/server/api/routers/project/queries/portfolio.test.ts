@@ -28,6 +28,15 @@ beforeEach(() => {
 
 describe('project.getPublicPortfolio', () => {
 	it('does not expose a private repository through a published portfolio', async () => {
+		mockDb.competency.findMany.mockResolvedValue([
+			{
+				slug: 'testing',
+				name: 'Testing',
+				description: 'Protect behavior with tests.',
+				sortOrder: 1,
+				reviewCategories: [{ category: 'TESTS' }]
+			}
+		] as never);
 		mockDb.project.findFirst.mockResolvedValue({
 			id: 'project-1',
 			title: 'Project Alpha',
@@ -42,6 +51,23 @@ describe('project.getPublicPortfolio', () => {
 			updatedAt: new Date('2026-08-17T00:00:00.000Z'),
 			category: { name: 'Web' },
 			technologies: [{ id: 'tech-1', name: 'TypeScript' }],
+			learningOutcomes: [
+				{
+					id: 'outcome-1',
+					value: 'Ship a working feature',
+					updatedAt: new Date('2026-08-16T00:00:00.000Z'),
+					competencies: [
+						{
+							competency: {
+								slug: 'testing',
+								name: 'Testing',
+								description: 'Protect behavior with tests.',
+								sortOrder: 1
+							}
+						}
+					]
+				}
+			],
 			githubRepository: {
 				htmlUrl: 'https://github.com/private/project',
 				private: true
@@ -54,7 +80,24 @@ describe('project.getPublicPortfolio', () => {
 					status: 'DONE',
 					portfolioRelevant: true,
 					milestoneId: 'milestone-1',
-					reviews: []
+					reviews: [
+						{
+							status: 'APPROVED',
+							updatedAt: new Date('2026-08-17T00:00:00.000Z'),
+							githubTitle: 'Add tests',
+							prUrl: 'https://github.com/example/project/pull/1',
+							analyses: [
+								{
+									findings: [
+										{
+											category: 'TESTS',
+											editedCategory: null
+										}
+									]
+								}
+							]
+						}
+					]
 				}
 			],
 			milestones: [
@@ -62,8 +105,20 @@ describe('project.getPublicPortfolio', () => {
 					id: 'milestone-1',
 					title: 'First delivery',
 					description: 'Ship it',
+					completed: true,
+					updatedAt: new Date('2026-08-16T00:00:00.000Z'),
 					reviewedAt: new Date('2026-08-17T00:00:00.000Z'),
-					reviewedBy: { name: 'Mentor' }
+					reviewedBy: { name: 'Mentor' },
+					competencies: [
+						{
+							competency: {
+								slug: 'testing',
+								name: 'Testing',
+								description: 'Protect behavior with tests.',
+								sortOrder: 1
+							}
+						}
+					]
 				}
 			]
 		} as never);
@@ -84,6 +139,31 @@ describe('project.getPublicPortfolio', () => {
 			}
 		]);
 		expect(result.completion.isComplete).toBe(true);
+		expect(result.competencies).toEqual([
+			{
+				slug: 'testing',
+				name: 'Testing',
+				description: 'Protect behavior with tests.',
+				state: 'DEMONSTRATED',
+				evidence: expect.arrayContaining([
+					expect.objectContaining({
+						source: 'PROJECT',
+						title: 'First delivery',
+						state: 'DEMONSTRATED'
+					}),
+					expect.objectContaining({
+						source: 'PROJECT',
+						title: 'Ship a working feature',
+						state: 'DEMONSTRATED'
+					}),
+					expect.objectContaining({
+						source: 'PR_REVIEW',
+						title: 'Add tests',
+						state: 'DEMONSTRATED'
+					})
+				])
+			}
+		]);
 	});
 
 	it('hides unpublished portfolios', async () => {

@@ -1,27 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import {
+	USER_PREVIEW_PROFILES,
 	getUserPreviewProfile,
 	isUserPreviewMode,
-	USER_PREVIEW_PROFILES
+	isUserViewMode
 } from './userPreview';
 
 describe('user preview profiles', () => {
-	it('provides credits for the free learner and active mentorship access for the mentorship learner', () => {
-		expect(getUserPreviewProfile('free')).toEqual({
+	it('provides a credit-based student view and an active mentor view', () => {
+		expect(getUserPreviewProfile('student')).toEqual({
 			credits: 500,
 			hasMentorship: false
 		});
-		expect(getUserPreviewProfile('mentorship')).toEqual({
-			credits: 0,
+		expect(getUserPreviewProfile('mentor')).toEqual({
+			credits: null,
 			hasMentorship: true
 		});
 	});
 
 	it('accepts only supported preview modes from storage', () => {
-		expect(isUserPreviewMode('free')).toBe(true);
-		expect(isUserPreviewMode('mentorship')).toBe(true);
+		expect(isUserPreviewMode('student')).toBe(true);
+		expect(isUserPreviewMode('mentor')).toBe(true);
 		expect(isUserPreviewMode('admin')).toBe(false);
 		expect(isUserPreviewMode(null)).toBe(false);
-		expect(Object.keys(USER_PREVIEW_PROFILES)).toEqual(['free', 'mentorship']);
+		expect(Object.keys(USER_PREVIEW_PROFILES)).toEqual(['mentor', 'student']);
+		expect(isUserViewMode('admin')).toBe(true);
+		expect(isUserViewMode('student')).toBe(true);
+		expect(isUserViewMode('unknown')).toBe(false);
 	});
 });

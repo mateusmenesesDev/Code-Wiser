@@ -1,4 +1,5 @@
 import {
+	LearningJourneyEventType,
 	RemediationActionStatus,
 	RemediationActionTargetType
 } from '@prisma/client';
@@ -8,6 +9,11 @@ import {
 	notifyRemediationActionCompleted,
 	notifyRemediationActionSubmitted
 } from '~/server/services/notification/notificationService';
+import {
+	tryRecordFirstLearningAction,
+	tryRecordLearningJourneyEvent,
+	remediationCompletionEventKey
+} from '~/server/services/learningJourney/learningJourney.service';
 import { getBaseUrl } from '~/server/utils/getBaseUrl';
 import {
 	adminProcedure,
@@ -72,13 +78,20 @@ export const remediationRouter = createTRPCRouter({
 	start: protectedProcedure
 		.input(actionIdInput)
 		.mutation(async ({ ctx, input }) => {
-			const updated = await ctx.db.remediationAction.updateMany({
-				where: {
-					id: input.actionId,
-					learnerId: ctx.session.userId,
-					status: RemediationActionStatus.OPEN
-				},
-				data: { status: RemediationActionStatus.IN_PROGRESS }
+			const startedAt = new Date();
+			const updated = await ctx.db.$transaction(async (tx) => {
+				const result = await tx.remediationAction.updateMany({
+					where: {
+						id: input.actionId,
+						learnerId: ctx.session.userId,
+						status: RemediationActionStatus.OPEN
+					},
+					data: { status: RemediationActionStatus.IN_PROGRESS }
+				});
+				if (result.count === 1) {
+					await tryRecordFirstLearningAction(tx, ctx.session.userId, startedAt);
+				}
+				return result;
 			});
 			if (updated.count !== 1) {
 				throw new TRPCError({
@@ -122,22 +135,33 @@ export const remediationRouter = createTRPCRouter({
 				});
 			}
 
-			const updated = await ctx.db.remediationAction.updateMany({
-				where: {
-					id: action.id,
-					learnerId: ctx.session.userId,
-					status: {
-						in: [
-							RemediationActionStatus.OPEN,
-							RemediationActionStatus.IN_PROGRESS
-						]
+			const submittedAt = new Date();
+			const updated = await ctx.db.$transaction(async (tx) => {
+				const result = await tx.remediationAction.updateMany({
+					where: {
+						id: action.id,
+						learnerId: ctx.session.userId,
+						status: {
+							in: [
+								RemediationActionStatus.OPEN,
+								RemediationActionStatus.IN_PROGRESS
+							]
+						}
+					},
+					data: {
+						status: RemediationActionStatus.SUBMITTED,
+						evidenceNote: input.evidenceNote,
+						submittedAt
 					}
-				},
-				data: {
-					status: RemediationActionStatus.SUBMITTED,
-					evidenceNote: input.evidenceNote,
-					submittedAt: new Date()
+				});
+				if (result.count === 1) {
+					await tryRecordFirstLearningAction(
+						tx,
+						ctx.session.userId,
+						submittedAt
+					);
 				}
+				return result;
 			});
 			if (updated.count !== 1) {
 				throw new TRPCError({
@@ -201,17 +225,31 @@ export const remediationRouter = createTRPCRouter({
 			}
 
 			const completed = input.status === RemediationActionStatus.COMPLETED;
-			const updated = await ctx.db.remediationAction.updateMany({
-				where: {
-					id: action.id,
-					status: { not: RemediationActionStatus.CANCELLED }
-				},
-				data: {
-					status: input.status,
-					reviewerNote: input.reviewerNote ?? null,
-					completedAt: completed ? new Date() : null,
-					completedById: completed ? ctx.session.userId : null
+			const completedAt = completed ? new Date() : null;
+			const updated = await ctx.db.$transaction(async (tx) => {
+				const result = await tx.remediationAction.updateMany({
+					where: {
+						id: action.id,
+						status: { not: RemediationActionStatus.CANCELLED }
+					},
+					data: {
+						status: input.status,
+						reviewerNote: input.reviewerNote ?? null,
+						completedAt,
+						completedById: completed ? ctx.session.userId : null
+					}
+				});
+				if (result.count === 1 && completedAt) {
+					await tryRecordLearningJourneyEvent(tx, {
+						userId: action.learnerId,
+						eventType: LearningJourneyEventType.REMEDIATION_COMPLETED,
+						eventKey: remediationCompletionEventKey(action.id),
+						entityType: 'REMEDIATION_ACTION',
+						entityId: action.id,
+						occurredAt: completedAt
+					});
 				}
+				return result;
 			});
 			if (updated.count !== 1) {
 				throw new TRPCError({

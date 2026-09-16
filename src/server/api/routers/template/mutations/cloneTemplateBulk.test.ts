@@ -35,89 +35,88 @@ describe('projectTemplate.clone bulk inserts', () => {
 			await createTRPCContext({ headers: new Headers() })
 		);
 
-		mockDb.projectTemplate.findUnique
-			.mockResolvedValueOnce(null)
-			.mockResolvedValueOnce({
-				id: 'template-id',
-				title: 'Original',
-				description: 'Desc',
-				methodology: 'SCRUM',
-				minParticipants: 1,
-				maxParticipants: 4,
-				credits: 10,
-				accessType: 'FREE',
-				status: 'APPROVED',
-				difficulty: 'BEGINNER',
-				figmaProjectUrl: null,
-				publicCode: 'ORIG',
-				nextTaskNumber: 3,
-				sortOrder: 0,
-				preRequisites: [],
-				expectedDuration: null,
-				categoryId: 'cat-1',
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				category: { id: 'cat-1', name: 'Fullstack' },
-				technologies: [{ id: 'tech-1' }],
-				learningOutcomes: [{ value: 'Learn X' }],
-				milestones: [{ title: 'M1', description: null, order: 0 }],
-				images: [],
-				sprints: [
-					{
-						id: 'sprint-old',
-						title: 'Sprint 1',
-						description: null,
-						order: 0,
-						status: 'PLANNING',
-						startDate: null,
-						endDate: null,
-						projectTemplateId: 'template-id',
-						projectId: null,
-						createdAt: new Date(),
-						updatedAt: new Date()
-					}
-				],
-				epics: [
-					{
-						id: 'epic-old',
-						title: 'Epic 1',
-						description: null,
-						status: null,
-						progress: null,
-						startDate: null,
-						endDate: null,
-						projectTemplateId: 'template-id',
-						projectId: null,
-						createdAt: new Date(),
-						updatedAt: new Date()
-					}
-				],
-				tasks: [
-					{
-						id: 'task-old',
-						title: 'Task 1',
-						description: null,
-						type: 'USER_STORY',
-						tags: [],
-						priority: null,
-						status: 'BACKLOG',
-						order: 0,
-						dueDate: null,
-						publicNumber: 1,
-						blocked: false,
-						blockedReason: null,
-						storyPoints: null,
-						projectId: null,
-						projectTemplateId: 'template-id',
-						epicId: 'epic-old',
-						sprintId: 'sprint-old',
-						createdAt: new Date(),
-						updatedAt: new Date(),
-						epic: { id: 'epic-old', title: 'Epic 1' },
-						sprint: { id: 'sprint-old', title: 'Sprint 1' }
-					}
-				]
-			} as never);
+		mockDb.projectTemplate.findFirst.mockResolvedValue(null);
+		mockDb.projectTemplate.findUnique.mockResolvedValue({
+			id: 'template-id',
+			title: 'Original',
+			description: 'Desc',
+			methodology: 'SCRUM',
+			minParticipants: 1,
+			maxParticipants: 4,
+			credits: 10,
+			accessType: 'FREE',
+			status: 'APPROVED',
+			difficulty: 'BEGINNER',
+			figmaProjectUrl: null,
+			publicCode: 'ORIG',
+			nextTaskNumber: 3,
+			sortOrder: 0,
+			preRequisites: [],
+			expectedDuration: null,
+			categoryId: 'cat-1',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			category: { id: 'cat-1', name: 'Fullstack' },
+			technologies: [{ id: 'tech-1' }],
+			learningOutcomes: [{ value: 'Learn X' }],
+			milestones: [{ title: 'M1', description: null, order: 0 }],
+			images: [],
+			sprints: [
+				{
+					id: 'sprint-old',
+					title: 'Sprint 1',
+					description: null,
+					order: 0,
+					status: 'PLANNING',
+					startDate: null,
+					endDate: null,
+					projectTemplateId: 'template-id',
+					projectId: null,
+					createdAt: new Date(),
+					updatedAt: new Date()
+				}
+			],
+			epics: [
+				{
+					id: 'epic-old',
+					title: 'Epic 1',
+					description: null,
+					status: null,
+					progress: null,
+					startDate: null,
+					endDate: null,
+					projectTemplateId: 'template-id',
+					projectId: null,
+					createdAt: new Date(),
+					updatedAt: new Date()
+				}
+			],
+			tasks: [
+				{
+					id: 'task-old',
+					title: 'Task 1',
+					description: null,
+					type: 'USER_STORY',
+					tags: [],
+					priority: null,
+					status: 'BACKLOG',
+					order: 0,
+					dueDate: null,
+					publicNumber: 1,
+					blocked: false,
+					blockedReason: null,
+					storyPoints: null,
+					projectId: null,
+					projectTemplateId: 'template-id',
+					epicId: 'epic-old',
+					sprintId: 'sprint-old',
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					epic: { id: 'epic-old', title: 'Epic 1' },
+					sprint: { id: 'sprint-old', title: 'Sprint 1' }
+				}
+			]
+		} as never);
 
 		mockDb.projectTemplate.aggregate.mockResolvedValue({
 			_max: { sortOrder: 0 }

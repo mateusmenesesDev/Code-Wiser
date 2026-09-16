@@ -49,6 +49,7 @@ model Project {
   planningPokerSessions PlanningPokerSession[]
   invitations           ProjectInvitation[]
   retrospectives        Retrospective[]
+  cohortProjects        CohortProject[]
 
   @@index([canceledAt])
   @@index([sourceProjectTemplateId])

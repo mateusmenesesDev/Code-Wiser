@@ -1,7 +1,16 @@
+import {
+	LearningJourneyEventType,
+	MentorAttentionSourceType
+} from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { protectedProcedure } from '~/server/api/trpc';
+import { adminProcedure, protectedProcedure } from '~/server/api/trpc';
 import { getCompetencyLearningContext } from '~/server/services/competency/competencyMatrix';
+import {
+	tryRecordFirstLearningAction,
+	tryRecordLearningJourneyEvent,
+	recommendationEventKey
+} from '~/server/services/learningJourney/learningJourney.service';
 import { buildLearningRecommendation } from '~/server/utils/learningRecommendation';
 import { buildEnrolledProjectStats } from '../project/queries/enrolledProjectStats';
 
@@ -9,7 +18,272 @@ const dashboardOverviewProcedure = protectedProcedure.input(
 	z.object({ userId: z.string().min(1) }).optional()
 );
 
+const MAX_JOURNEY_TIMING_ROWS = 10000;
+
+function percentage(numerator: number, denominator: number) {
+	return denominator === 0 ? null : Math.round((numerator / denominator) * 100);
+}
+
+function averageMinutesBetween(rows: Array<{ start: Date | null; end: Date }>) {
+	const durations: number[] = [];
+	for (const row of rows) {
+		if (!row.start || row.end < row.start) continue;
+		durations.push(
+			Math.floor((row.end.getTime() - row.start.getTime()) / 60_000)
+		);
+	}
+	if (durations.length === 0) return null;
+	return Math.round(
+		durations.reduce((total, duration) => total + duration, 0) /
+			durations.length
+	);
+}
+
 export const dashboardRouter = {
+	recordRecommendationEvent: protectedProcedure
+		.input(
+			z.object({
+				eventType: z.enum(['IMPRESSION', 'STARTED']),
+				recommendationKey: z.string().trim().min(1).max(500)
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			const eventType =
+				input.eventType === 'IMPRESSION'
+					? LearningJourneyEventType.RECOMMENDATION_IMPRESSION
+					: LearningJourneyEventType.RECOMMENDATION_STARTED;
+			await tryRecordLearningJourneyEvent(ctx.db, {
+				userId: ctx.session.userId,
+				eventType,
+				eventKey: recommendationEventKey(
+					eventType,
+					ctx.session.userId,
+					input.recommendationKey
+				),
+				entityType: 'RECOMMENDATION',
+				entityId: input.recommendationKey,
+				recommendationKey: input.recommendationKey
+			});
+			if (input.eventType === 'STARTED') {
+				await tryRecordFirstLearningAction(ctx.db, ctx.session.userId);
+			}
+			return { success: true };
+		}),
+
+	getLearningMetrics: adminProcedure.query(async ({ ctx }) => {
+		const now = new Date();
+		const [
+			diagnosedLearners,
+			learnersWithDemonstratedCompetency,
+			remediationByStatus,
+			remediationReassessments,
+			totalReassessmentActions,
+			attentionItems,
+			attentionResponseCount,
+			attentionCompletionCount,
+			responseAverage,
+			completionAverage,
+			peerReviewsByStatus,
+			recommendationImpressionLearners,
+			recommendationStartedLearners,
+			secondEvaluationsApproved,
+			firstActionLearnerRows,
+			firstActionEvents,
+			demonstratedEvidence
+		] = await Promise.all([
+			ctx.db.user.count({ where: { diagnosisCompletedAt: { not: null } } }),
+			ctx.db.competencyMentorAssessment.findMany({
+				where: { state: 'DEMONSTRATED' },
+				distinct: ['learnerId'],
+				take: MAX_JOURNEY_TIMING_ROWS,
+				select: { learnerId: true }
+			}),
+			ctx.db.remediationAction.groupBy({
+				by: ['status'],
+				_count: { _all: true }
+			}),
+			ctx.db.remediationAction.count({
+				where: {
+					reassessmentReviewId: { not: null },
+					status: 'COMPLETED'
+				}
+			}),
+			ctx.db.remediationAction.count({
+				where: {
+					reassessmentReviewId: { not: null },
+					status: { not: 'CANCELLED' }
+				}
+			}),
+			ctx.db.mentorAttentionAssignment.count({
+				where: { completedAt: null, dueAt: { lt: now } }
+			}),
+			ctx.db.mentorAttentionAssignment.count({
+				where: {
+					sourceType: {
+						in: [
+							MentorAttentionSourceType.PR_REVIEW,
+							MentorAttentionSourceType.EXERCISE_REVIEW
+						]
+					},
+					firstResponseAt: { not: null }
+				}
+			}),
+			ctx.db.mentorAttentionAssignment.count({
+				where: {
+					sourceType: {
+						in: [
+							MentorAttentionSourceType.PR_REVIEW,
+							MentorAttentionSourceType.EXERCISE_REVIEW
+						]
+					},
+					completedAt: { not: null }
+				}
+			}),
+			ctx.db.mentorAttentionAssignment.aggregate({
+				where: {
+					sourceType: {
+						in: [
+							MentorAttentionSourceType.PR_REVIEW,
+							MentorAttentionSourceType.EXERCISE_REVIEW
+						]
+					},
+					firstResponseMinutes: { not: null }
+				},
+				_avg: { firstResponseMinutes: true }
+			}),
+			ctx.db.mentorAttentionAssignment.aggregate({
+				where: {
+					sourceType: {
+						in: [
+							MentorAttentionSourceType.PR_REVIEW,
+							MentorAttentionSourceType.EXERCISE_REVIEW
+						]
+					},
+					completionMinutes: { not: null }
+				},
+				_avg: { completionMinutes: true }
+			}),
+			ctx.db.cohortPeerReview.groupBy({
+				by: ['status'],
+				_count: { _all: true }
+			}),
+			ctx.db.learningJourneyEvent.findMany({
+				where: { eventType: 'RECOMMENDATION_IMPRESSION' },
+				distinct: ['userId'],
+				take: MAX_JOURNEY_TIMING_ROWS,
+				select: { userId: true }
+			}),
+			ctx.db.learningJourneyEvent.findMany({
+				where: { eventType: 'RECOMMENDATION_STARTED' },
+				distinct: ['userId'],
+				take: MAX_JOURNEY_TIMING_ROWS,
+				select: { userId: true }
+			}),
+			ctx.db.learningJourneyEvent.count({
+				where: { eventType: 'SECOND_EVALUATION_APPROVED' }
+			}),
+			ctx.db.learningJourneyEvent.findMany({
+				where: { eventType: 'FIRST_ACTION' },
+				distinct: ['userId'],
+				take: MAX_JOURNEY_TIMING_ROWS,
+				select: { userId: true }
+			}),
+			ctx.db.learningJourneyEvent.findMany({
+				where: { eventType: 'FIRST_ACTION' },
+				orderBy: { occurredAt: 'asc' },
+				take: MAX_JOURNEY_TIMING_ROWS,
+				select: {
+					occurredAt: true,
+					user: { select: { createdAt: true } }
+				}
+			}),
+			ctx.db.competencyMentorAssessment.findMany({
+				where: { state: 'DEMONSTRATED' },
+				orderBy: { assessedAt: 'asc' },
+				take: MAX_JOURNEY_TIMING_ROWS,
+				select: {
+					learnerId: true,
+					assessedAt: true,
+					learner: { select: { diagnosisCompletedAt: true } }
+				}
+			})
+		]);
+
+		const remediationCompleted =
+			remediationByStatus.find((row) => row.status === 'COMPLETED')?._count
+				._all ?? 0;
+		const firstEvidenceByLearner = new Map<
+			string,
+			{ start: Date | null; end: Date }
+		>();
+		for (const evidence of demonstratedEvidence) {
+			if (!firstEvidenceByLearner.has(evidence.learnerId)) {
+				firstEvidenceByLearner.set(evidence.learnerId, {
+					start: evidence.learner.diagnosisCompletedAt,
+					end: evidence.assessedAt
+				});
+			}
+		}
+
+		return {
+			diagnosedLearners,
+			learnersWithDemonstratedCompetency:
+				learnersWithDemonstratedCompetency.length,
+			remediationByStatus: Object.fromEntries(
+				remediationByStatus.map((row) => [row.status, row._count._all])
+			),
+			remediationReassessments,
+			overdueMentorAttentionItems: attentionItems,
+			peerReviewsByStatus: Object.fromEntries(
+				peerReviewsByStatus.map((row) => [row.status, row._count._all])
+			),
+			journeyFunnel: {
+				firstActionLearners: firstActionLearnerRows.length,
+				recommendationImpressions: recommendationImpressionLearners.length,
+				recommendationStarts: recommendationStartedLearners.length,
+				remediationCompleted,
+				secondEvaluationsApproved
+			},
+			journeyRates: {
+				diagnosisToFirstAction: percentage(
+					firstActionLearnerRows.length,
+					diagnosedLearners
+				),
+				recommendationImpressionToStart: percentage(
+					recommendationStartedLearners.length,
+					recommendationImpressionLearners.length
+				),
+				remediationCompletion: percentage(
+					remediationCompleted,
+					remediationByStatus
+						.filter((row) => row.status !== 'CANCELLED')
+						.reduce((total, row) => total + row._count._all, 0)
+				),
+				secondEvaluationApproval: percentage(
+					secondEvaluationsApproved,
+					totalReassessmentActions
+				)
+			},
+			journeyTiming: {
+				averageSignupToFirstActionMinutes: averageMinutesBetween(
+					firstActionEvents.map((event) => ({
+						start: event.user.createdAt,
+						end: event.occurredAt
+					}))
+				),
+				averageDiagnosisToEvidenceMinutes: averageMinutesBetween([
+					...firstEvidenceByLearner.values()
+				]),
+				averageReviewResponseMinutes:
+					responseAverage._avg.firstResponseMinutes ?? null,
+				averageReviewCompletionMinutes:
+					completionAverage._avg.completionMinutes ?? null,
+				reviewResponseCount: attentionResponseCount,
+				reviewCompletionCount: attentionCompletionCount
+			}
+		};
+	}),
+
 	getOverview: dashboardOverviewProcedure.query(async ({ ctx, input }) => {
 		const requestedUserId = input?.userId;
 		const isViewingAnotherUser = Boolean(
@@ -371,6 +645,14 @@ export const dashboardRouter = {
 					: null
 			}
 		});
+		const learningRecommendationKey = learningRecommendation
+			? [
+					learningRecommendation.kind,
+					learningRecommendation.reason,
+					learningRecommendation.href,
+					learningRecommendation.competency?.slug ?? ''
+				].join('|')
+			: null;
 
 		return {
 			...(viewedUser ? { viewedUser } : {}),
@@ -434,6 +716,7 @@ export const dashboardRouter = {
 				};
 			}),
 			learningRecommendation,
+			learningRecommendationKey,
 			exercise,
 			activeReview,
 			latestDecision,

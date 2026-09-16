@@ -40,6 +40,19 @@ export const approvedCatalogInputSchema = z
 
 export type ApprovedCatalogSort = 'relevance' | 'newest' | 'difficulty';
 
+export function keepLatestTemplateVersions<
+	T extends { templateKey: string; version: number }
+>(templates: T[]): T[] {
+	const latestByTemplateKey = new Map<string, T>();
+	for (const template of templates) {
+		const current = latestByTemplateKey.get(template.templateKey);
+		if (!current || template.version > current.version) {
+			latestByTemplateKey.set(template.templateKey, template);
+		}
+	}
+	return [...latestByTemplateKey.values()];
+}
+
 export const approvedCatalogOrderBy = [
 	{ sortOrder: 'asc' as const },
 	{ createdAt: 'asc' as const }
@@ -49,7 +62,12 @@ export function getApprovedCatalogOrderBy(
 	sort: ApprovedCatalogSort
 ): Prisma.ProjectTemplateOrderByWithRelationInput[] {
 	if (sort === 'newest') {
-		return [{ createdAt: 'desc' }, { sortOrder: 'asc' }, { id: 'asc' }];
+		return [
+			{ publishedAt: 'desc' },
+			{ createdAt: 'desc' },
+			{ sortOrder: 'asc' },
+			{ id: 'asc' }
+		];
 	}
 
 	return approvedCatalogOrderBy;

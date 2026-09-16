@@ -34,9 +34,11 @@ describe('projectTemplate.reorderImages', () => {
 			return Promise.all(ops);
 		});
 
-		caller = createCaller(
-			await createTRPCContext({ headers: new Headers() })
-		);
+		mockDb.projectTemplate.findUnique.mockResolvedValue({
+			id: 'tpl-1',
+			status: 'PENDING'
+		} as never);
+		caller = createCaller(await createTRPCContext({ headers: new Headers() }));
 	});
 
 	it('updates order for each image belonging to the template', async () => {

@@ -21,6 +21,7 @@ import {
 	Plus,
 	Trash2
 } from 'lucide-react';
+import { useQueryState } from 'nuqs';
 import { useEffect, useState } from 'react';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Badge } from '~/common/components/ui/badge';
@@ -28,7 +29,6 @@ import { Button } from '~/common/components/ui/button';
 import { Dialog } from '~/common/components/ui/dialog';
 import { Progress } from '~/common/components/ui/progress';
 import { useDialog } from '~/common/hooks/useDialog';
-import { useQueryState } from 'nuqs';
 import EpicDialog from '~/features/epics/components/EpicDialog';
 import { useEpicMutations } from '~/features/epics/hooks/useEpicMutations';
 import type { EpicsApiOutput } from '~/features/epics/types/Epic.type';

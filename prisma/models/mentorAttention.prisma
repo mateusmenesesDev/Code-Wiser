@@ -17,18 +17,18 @@ model MentorAttentionAssignment {
   sourceId        String
   sourceCreatedAt DateTime
 
-  assignedMentorId String?
-  assignedMentor   User?   @relation("MentorAttentionAssignments", fields: [assignedMentorId], references: [id], onDelete: SetNull)
-  claimedAt        DateTime?
-  firstResponseAt  DateTime?
+  assignedMentorId     String?
+  assignedMentor       User?     @relation("MentorAttentionAssignments", fields: [assignedMentorId], references: [id], onDelete: SetNull)
+  claimedAt            DateTime?
+  firstResponseAt      DateTime?
   firstResponseMinutes Int?
 
-  dueAt          DateTime
-  escalatedAt    DateTime?
-  completedAt    DateTime?
+  dueAt             DateTime
+  escalatedAt       DateTime?
+  completedAt       DateTime?
   completionMinutes Int?
-  completedById  String?
-  completedBy    User?     @relation("MentorAttentionCompletions", fields: [completedById], references: [id], onDelete: SetNull)
+  completedById     String?
+  completedBy       User?     @relation("MentorAttentionCompletions", fields: [completedById], references: [id], onDelete: SetNull)
 
   @@unique([sourceType, sourceId])
   @@index([assignedMentorId, completedAt])

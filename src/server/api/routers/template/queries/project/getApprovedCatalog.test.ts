@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
 import { projectTemplateRouter } from '../../projectTemplate';
-import { sortApprovedCatalog } from './approvedCatalogQuery';
+import {
+	keepLatestTemplateVersions,
+	sortApprovedCatalog
+} from './approvedCatalogQuery';
 
 vi.mock('@clerk/nextjs/server', () => ({
 	auth: () => ({
@@ -46,6 +49,9 @@ describe('projectTemplate.getApproved', () => {
 			categoryId: 'cat-1',
 			createdAt: new Date(),
 			updatedAt: new Date(),
+			templateKey: 'family-1',
+			version: 1,
+			publishedAt: new Date(),
 			sortOrder: 0,
 			figmaProjectUrl: null,
 			publicCode: 'LEAN',
@@ -57,14 +63,19 @@ describe('projectTemplate.getApproved', () => {
 			_count: { tasks: 12 }
 		};
 
-		mockDb.projectTemplate.findMany.mockResolvedValue([leanRow] as never);
+		mockDb.projectTemplate.findMany
+			.mockResolvedValueOnce([
+				{ id: 'template-1', templateKey: 'family-1', version: 1 }
+			] as never)
+			.mockResolvedValueOnce([leanRow] as never);
 
 		const result = await caller.getApproved();
 
 		expect(result).toEqual([leanRow]);
-		expect(mockDb.projectTemplate.findMany).toHaveBeenCalledWith(
+		expect(mockDb.projectTemplate.findMany).toHaveBeenNthCalledWith(
+			2,
 			expect.objectContaining({
-				where: { status: 'APPROVED' },
+				where: expect.objectContaining({ id: { in: ['template-1'] } }),
 				include: expect.objectContaining({
 					category: true,
 					technologies: true,
@@ -74,7 +85,7 @@ describe('projectTemplate.getApproved', () => {
 			})
 		);
 
-		const call = mockDb.projectTemplate.findMany.mock.calls[0]?.[0] as {
+		const call = mockDb.projectTemplate.findMany.mock.calls[1]?.[0] as {
 			include: Record<string, unknown>;
 		};
 		expect(call.include.tasks).toBeUndefined();
@@ -85,7 +96,11 @@ describe('projectTemplate.getApproved', () => {
 	});
 
 	it('pushes catalog filters into the approved-template query', async () => {
-		mockDb.projectTemplate.findMany.mockResolvedValue([]);
+		mockDb.projectTemplate.findMany
+			.mockResolvedValueOnce([
+				{ id: 'template-1', templateKey: 'family-1', version: 1 }
+			] as never)
+			.mockResolvedValueOnce([]);
 
 		await caller.getApproved({
 			search: '  react  ',
@@ -97,9 +112,11 @@ describe('projectTemplate.getApproved', () => {
 			sort: 'newest'
 		});
 
-		expect(mockDb.projectTemplate.findMany).toHaveBeenCalledWith(
+		expect(mockDb.projectTemplate.findMany).toHaveBeenNthCalledWith(
+			2,
 			expect.objectContaining({
 				where: expect.objectContaining({
+					id: { in: ['template-1'] },
 					status: 'APPROVED',
 					OR: [
 						{ title: { contains: 'react', mode: 'insensitive' } },
@@ -125,9 +142,27 @@ describe('projectTemplate.getApproved', () => {
 					methodology: 'KANBAN',
 					accessType: 'FREE'
 				}),
-				orderBy: [{ createdAt: 'desc' }, { sortOrder: 'asc' }, { id: 'asc' }]
+				orderBy: [
+					{ publishedAt: 'desc' },
+					{ createdAt: 'desc' },
+					{ sortOrder: 'asc' },
+					{ id: 'asc' }
+				]
 			})
 		);
+	});
+
+	it('keeps only the newest approved version in each template family', () => {
+		expect(
+			keepLatestTemplateVersions([
+				{ id: 'v1', templateKey: 'family-1', version: 1 },
+				{ id: 'v2', templateKey: 'family-1', version: 2 },
+				{ id: 'v3', templateKey: 'family-2', version: 1 }
+			])
+		).toEqual([
+			{ id: 'v2', templateKey: 'family-1', version: 2 },
+			{ id: 'v3', templateKey: 'family-2', version: 1 }
+		]);
 	});
 
 	it('sorts by relevance, newest, and learner-friendly difficulty order', () => {
@@ -172,23 +207,33 @@ describe('projectTemplate.getApproved', () => {
 	});
 
 	it('returns only filter options used by approved templates', async () => {
-		mockDb.category.findMany.mockResolvedValue([
-			{ name: 'Backend' },
-			{ name: 'Frontend' }
-		] as never);
-		mockDb.technology.findMany.mockResolvedValue([
-			{ name: 'React' },
-			{ name: 'TypeScript' }
+		mockDb.projectTemplate.findMany.mockResolvedValue([
+			{
+				templateKey: 'family-1',
+				version: 1,
+				category: { name: 'Backend' },
+				technologies: [{ name: 'React' }]
+			},
+			{
+				templateKey: 'family-2',
+				version: 1,
+				category: { name: 'Frontend' },
+				technologies: [{ name: 'TypeScript' }]
+			}
 		] as never);
 
 		await expect(caller.getFilterOptions()).resolves.toEqual({
 			categories: ['Backend', 'Frontend'],
 			technologies: ['React', 'TypeScript']
 		});
-		expect(mockDb.category.findMany).toHaveBeenCalledWith({
-			where: { ProjectTemplate: { some: { status: 'APPROVED' } } },
-			orderBy: { name: 'asc' },
-			select: { name: true }
+		expect(mockDb.projectTemplate.findMany).toHaveBeenCalledWith({
+			where: { status: 'APPROVED' },
+			select: {
+				templateKey: true,
+				version: true,
+				category: { select: { name: true } },
+				technologies: { select: { name: true } }
+			}
 		});
 	});
 });

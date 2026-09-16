@@ -73,6 +73,7 @@ function statusLabel(status: string | null) {
 type AgendaOverview = RouterOutputs['agenda']['getOverview'];
 type AgendaTask = AgendaOverview['tasks'][number];
 type AgendaRemediationAction = AgendaOverview['remediationActions'][number];
+type AgendaCohortEvent = AgendaOverview['cohortEvents'][number];
 
 function AgendaTaskRow({ task }: { task: AgendaTask }) {
 	return (
@@ -140,6 +141,30 @@ function AgendaRemediationRow({
 						Open action
 						<ArrowRight className="ml-2 h-4 w-4" />
 					</Link>
+				</Button>
+			</div>
+		</div>
+	);
+}
+
+function AgendaCohortEventRow({ event }: { event: AgendaCohortEvent }) {
+	return (
+		<div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="min-w-0 space-y-1">
+				<div className="flex flex-wrap items-center gap-2">
+					<p className="font-medium">{event.title}</p>
+					<Badge variant="outline">{statusLabel(event.type)}</Badge>
+				</div>
+				<p className="text-muted-foreground text-sm">
+					{event.cohort.name} · {event.description ?? 'Cohort milestone'}
+				</p>
+			</div>
+			<div className="flex shrink-0 items-center gap-3">
+				<span className="text-muted-foreground text-sm">
+					{formatDueDate(event.startsAt)}
+				</span>
+				<Button asChild variant="outline" size="sm">
+					<Link href={`/cohorts?eventId=${event.id}`}>Open cohort</Link>
 				</Button>
 			</div>
 		</div>
@@ -338,6 +363,29 @@ export default function AgendaPage() {
 					)}
 				</CardContent>
 			</Card>
+
+			{data?.cohortEvents.length ? (
+				<Card>
+					<CardHeader>
+						<CardTitle level={2} className="text-lg">
+							Cohort milestones
+						</CardTitle>
+						<CardDescription>
+							Upcoming cohort events included in your learning schedule.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-3">
+						{data.cohortEvents.map((event) => (
+							<AgendaCohortEventRow key={event.id} event={event} />
+						))}
+						{data.hasMoreCohortEvents && (
+							<p className="text-muted-foreground text-sm">
+								More cohort events match this period.
+							</p>
+						)}
+					</CardContent>
+				</Card>
+			) : null}
 
 			{data?.remediationActions.length ? (
 				<Card>

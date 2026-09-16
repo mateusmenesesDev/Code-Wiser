@@ -22,6 +22,7 @@ import {
 	PROGRESS_STATUS_LABELS,
 	progressStatusBadgeVariant
 } from '../lib/progressStatus';
+import { ExerciseChecksStatus } from './ExerciseChecksStatus';
 import { NotifyPrUpdatedDialog } from './NotifyPrUpdatedDialog';
 import { RequestExerciseReviewDialog } from './RequestExerciseReviewDialog';
 
@@ -248,7 +249,7 @@ export default function ExerciseChallengePage({
 									: 'Update the same PR, then notify your mentor.'}
 							</CardDescription>
 						</CardHeader>
-						<CardContent>
+						<CardContent className="space-y-3">
 							<a
 								href={challenge.activePrUrl}
 								target="_blank"
@@ -257,6 +258,9 @@ export default function ExerciseChallengePage({
 							>
 								{challenge.activePrUrl}
 							</a>
+							<ExerciseChecksStatus
+								status={challenge.activeGithubChecksStatus}
+							/>
 						</CardContent>
 					</Card>
 				)}

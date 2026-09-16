@@ -8,7 +8,13 @@ import { z } from 'zod';
 
 export const updateTemplateStatusSchema = z.object({
 	id: z.string(),
-	status: z.nativeEnum(ProjectStatusEnum)
+	status: z.nativeEnum(ProjectStatusEnum),
+	reviewNote: z.string().trim().max(1000).optional()
+});
+
+export const createTemplateVersionSchema = z.object({
+	id: z.string(),
+	changeSummary: z.string().trim().max(1000).optional()
 });
 
 export const deleteTemplateSchema = z.object({
@@ -80,10 +86,10 @@ export const createProjectTemplateSchema = baseTemplateSchema
 	);
 
 export const updateTemplateBasicInfoInputSchema = baseTemplateSchema
+	.partial()
 	.extend({
 		id: z.string()
 	})
-	.partial()
 	.refine(
 		(data) => {
 			if (!data.accessType) return true;

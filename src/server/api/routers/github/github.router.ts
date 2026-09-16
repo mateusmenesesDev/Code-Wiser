@@ -43,6 +43,15 @@ function githubError(error: unknown): never {
 	throw error;
 }
 
+function requireGitHubAppConfigured() {
+	if (!isGitHubAppConfigured()) {
+		throw new TRPCError({
+			code: 'PRECONDITION_FAILED',
+			message: 'GitHub integration is not configured'
+		});
+	}
+}
+
 async function getInstallationForUser(
 	ctx: { db: PrismaClient },
 	userId: string,
@@ -99,6 +108,7 @@ async function resolveRepository(
 	ctx: ResourceAccessContext,
 	input: z.infer<typeof repositoryInputSchema>
 ) {
+	requireGitHubAppConfigured();
 	const installation = await getInstallationForUser(
 		ctx,
 		ctx.session.userId,
@@ -177,6 +187,7 @@ export const githubRouter = createTRPCRouter({
 	listRepositories: protectedProcedure
 		.input(z.object({ installationId: z.string().min(1) }))
 		.query(async ({ ctx, input }) => {
+			requireGitHubAppConfigured();
 			const installation = await getInstallationForUser(
 				ctx,
 				ctx.session.userId,
@@ -195,6 +206,7 @@ export const githubRouter = createTRPCRouter({
 		.input(z.object({ repositoryId: z.string().min(1) }))
 		.query(async ({ ctx, input }) => {
 			const repository = await verifyRepositoryAccess(ctx, input.repositoryId);
+			requireGitHubAppConfigured();
 			try {
 				return await listPullRequests(
 					repository.installation.githubInstallationId,
@@ -215,6 +227,7 @@ export const githubRouter = createTRPCRouter({
 		)
 		.query(async ({ ctx, input }) => {
 			const repository = await verifyRepositoryAccess(ctx, input.repositoryId);
+			requireGitHubAppConfigured();
 			try {
 				return await getPullRequestSnapshot(
 					repository.installation.githubInstallationId,

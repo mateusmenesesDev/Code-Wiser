@@ -28,9 +28,7 @@ export function useAdminTemplates() {
 	} = useAdminProjectFilter();
 
 	const utils = api.useUtils();
-	const [orderedTemplates, setOrderedTemplates] = useState<AdminTemplate[]>(
-		[]
-	);
+	const [orderedTemplates, setOrderedTemplates] = useState<AdminTemplate[]>([]);
 
 	// Queries
 	const templatesQuery = api.projectTemplate.getAll.useQuery();
@@ -56,8 +54,8 @@ export function useAdminTemplates() {
 		onSuccess: (data) => {
 			toast.success(
 				data.status === 'APPROVED'
-					? 'Template published successfully'
-					: 'Template unpublished successfully'
+					? 'Template version published successfully'
+					: 'Template submitted for editorial review'
 			);
 			utils.projectTemplate.getAll.invalidate();
 		},
@@ -112,7 +110,9 @@ export function useAdminTemplates() {
 			}
 		];
 
-		return filters.every((filterConfig) => createFilter(template, filterConfig));
+		return filters.every((filterConfig) =>
+			createFilter(template, filterConfig)
+		);
 	});
 
 	const canReorder = !hasActiveFilters;
@@ -123,7 +123,9 @@ export function useAdminTemplates() {
 	};
 
 	const togglePublishStatus = (id: string, currentStatus: string) => {
-		const newStatus = currentStatus === 'APPROVED' ? 'PENDING' : 'APPROVED';
+		if (currentStatus === 'APPROVED') return;
+		const newStatus =
+			currentStatus === 'SEND_FOR_APPROVAL' ? 'APPROVED' : 'SEND_FOR_APPROVAL';
 		togglePublishMutation.mutate({ id, status: newStatus });
 	};
 

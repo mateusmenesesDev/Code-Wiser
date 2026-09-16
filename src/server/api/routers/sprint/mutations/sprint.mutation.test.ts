@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SprintStatusEnum } from '@prisma/client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
 import { sprintRouter } from '../sprint.router';
@@ -55,6 +55,39 @@ describe('sprint mutations', () => {
 			],
 			canceledAt: null
 		} as never);
+	});
+
+	it('creates a sprint in an active project for a sprint manager', async () => {
+		mockDb.sprint.count.mockResolvedValue(2);
+		mockDb.sprint.create.mockResolvedValue({
+			id: 'sprint-2',
+			projectId: 'project-1',
+			projectTemplateId: null
+		} as never);
+
+		const sprint = await (await caller()).create({
+			title: '  Sprint 3  ',
+			description: 'Ship the next slice',
+			startDate: '2026-08-20',
+			endDate: '2026-09-02',
+			projectId: 'project-1',
+			isTemplate: false
+		});
+
+		expect(sprint).toMatchObject({ id: 'sprint-2' });
+		expect(mockDb.sprint.count).toHaveBeenCalledWith({
+			where: { projectId: 'project-1' }
+		});
+		expect(mockDb.sprint.create).toHaveBeenCalledWith({
+			data: {
+				title: 'Sprint 3',
+				description: 'Ship the next slice',
+				startDate: new Date('2026-08-20'),
+				endDate: new Date('2026-09-02'),
+				order: 2,
+				project: { connect: { id: 'project-1' } }
+			}
+		});
 	});
 
 	it('requires mentor or owner access for lifecycle changes', async () => {
