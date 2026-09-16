@@ -75,11 +75,18 @@ describe('kanban.getKanbanData', () => {
 
 		const tasks = await caller.getKanbanData({ projectId: 'project-1' });
 		const args = mockDb.task.findMany.mock.calls[0]?.[0] as {
-			select: Record<string, unknown>;
+			select: Record<string, unknown> & {
+				subtasks?: {
+					select?: { assignees?: { select?: unknown } };
+				};
+			};
 		};
 
 		expect(args.select.productVersionId).toBe(true);
-		expect(args.select.subtasks).toBeTruthy();
+		expect(args.select.subtasks?.select?.assignees?.select).toEqual({
+			id: true,
+			name: true
+		});
 		expect(tasks[0]).toMatchObject({ productVersionId: 'version-1' });
 	});
 });

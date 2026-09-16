@@ -68,7 +68,13 @@ export const getKanbanQueries = {
 						select: {
 							id: true,
 							title: true,
-							status: true
+							status: true,
+							assignees: {
+								select: {
+									id: true,
+									name: true
+								}
+							}
 						}
 					}
 				},

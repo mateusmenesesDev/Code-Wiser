@@ -21,11 +21,13 @@ import {
 } from '~/common/components/ui/dropdown-menu';
 import { Input } from '~/common/components/ui/input';
 import { api } from '~/trpc/react';
+import { AssigneeAvatars } from './AssigneeAvatars';
 
 type TaskSubtask = {
 	id: string;
 	title: string;
 	status: TaskStatusEnum | null;
+	assignees?: { id: string; name: string | null }[];
 };
 
 interface TaskSubtasksProps {
@@ -237,6 +239,7 @@ export function TaskSubtasks({
 								) : (
 									<span className="min-w-0 flex-1 truncate">{subtask.title}</span>
 								)}
+								<AssigneeAvatars assignees={subtask.assignees} maxVisible={2} />
 								<div className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
