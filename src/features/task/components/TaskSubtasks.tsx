@@ -183,7 +183,7 @@ export function TaskSubtasks({
 
 	return (
 		<div
-			className="space-y-2 border-border/60 border-t pt-2"
+			className="min-w-0 space-y-2 border-border/60 border-t pt-2"
 			onClick={(event) => event.stopPropagation()}
 			onKeyDown={(event) => event.stopPropagation()}
 			onPointerDown={(event) => event.stopPropagation()}
