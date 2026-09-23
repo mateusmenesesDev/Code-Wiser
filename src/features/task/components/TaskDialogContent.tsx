@@ -6,7 +6,15 @@ import {
 	TaskStatusEnum,
 	TaskTypeEnum
 } from '@prisma/client';
-import { ChevronRight, Clock, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import {
+	Check,
+	ChevronRight,
+	ChevronsUpDown,
+	Clock,
+	Loader2,
+	Sparkles,
+	Trash2
+} from 'lucide-react';
 import { useQueryState } from 'nuqs';
 import { useEffect, useRef, useState } from 'react';
 import type { FieldErrors } from 'react-hook-form';
@@ -15,6 +23,14 @@ import { toast } from 'sonner';
 import type { z } from 'zod';
 import ConfirmationDialog from '~/common/components/ConfirmationDialog';
 import { Button } from '~/common/components/ui/button';
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList
+} from '~/common/components/ui/command';
 import { DialogHeader, DialogTitle } from '~/common/components/ui/dialog';
 import {
 	FormControl,
@@ -40,6 +56,11 @@ import {
 } from '~/features/workspace/schemas/task.schema';
 import { cn } from '~/lib/utils';
 
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger
+} from '~/common/components/ui/popover';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import RichText from '~/common/components/RichText';
@@ -156,6 +177,8 @@ export function TaskDialogContent({
 
 	const [stagedFiles, setStagedFiles] = useState<File[]>([]);
 	const [isUploadingStaged, setIsUploadingStaged] = useState(false);
+	const [isBlockingTaskPickerOpen, setIsBlockingTaskPickerOpen] =
+		useState(false);
 	const [stagedUploadProgress, setStagedUploadProgress] = useState(0);
 
 	const { data: projectMembers, isLoading: isLoadingMembers } =
@@ -317,9 +340,15 @@ export function TaskDialogContent({
 		storyPointsWatch == null ||
 		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
 	const parentTask = task?.parentTask;
+	const selectedBlockingTaskId = form.watch('blockedByTaskId');
 	const availableBlockingTasks = projectTasks.filter(
-		(projectTask) => projectTask.id !== task?.id
+		(projectTask) =>
+			projectTask.id !== task?.id && projectTask.status !== TaskStatusEnum.DONE
 	);
+	const selectedBlockingTask =
+		availableBlockingTasks.find(
+			(projectTask) => projectTask.id === selectedBlockingTaskId
+		) ?? task?.blockedByTask;
 
 	return (
 		<FormProvider {...form}>
@@ -841,36 +870,87 @@ export function TaskDialogContent({
 												>
 													Blocked by another task
 												</Label>
-												<Select
-													value={form.watch('blockedByTaskId') ?? 'none'}
-													onValueChange={(value) => {
-														form.setValue(
-															'blockedByTaskId',
-															value === 'none' ? null : value,
-															{ shouldDirty: true }
-														);
-													}}
+												<Popover
+													open={isBlockingTaskPickerOpen}
+													onOpenChange={setIsBlockingTaskPickerOpen}
 												>
-													<SelectTrigger
-														id="blockedByTaskId"
-														className="h-9 text-sm"
+													<PopoverTrigger asChild>
+														<Button
+															id="blockedByTaskId"
+															variant="outline"
+															role="combobox"
+															aria-expanded={isBlockingTaskPickerOpen}
+															className="h-9 w-full justify-between text-sm font-normal"
+														>
+															<span className="truncate">
+																{selectedBlockingTask?.title ??
+																	'No specific task'}
+															</span>
+															<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+														</Button>
+													</PopoverTrigger>
+													<PopoverContent
+														align="start"
+														className="w-[var(--radix-popover-trigger-width)] p-0"
 													>
-														<SelectValue placeholder="No specific task" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="none">
-															No specific task
-														</SelectItem>
-														{availableBlockingTasks.map((blockingTask) => (
-															<SelectItem
-																key={blockingTask.id}
-																value={blockingTask.id}
-															>
-																{blockingTask.title}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+														<Command>
+															<CommandInput placeholder="Search active tasks..." />
+															<CommandList>
+																<CommandEmpty>
+																	No active task found.
+																</CommandEmpty>
+																<CommandGroup>
+																	<CommandItem
+																		value="none"
+																		onSelect={() => {
+																			form.setValue('blockedByTaskId', null, {
+																				shouldDirty: true
+																			});
+																			setIsBlockingTaskPickerOpen(false);
+																		}}
+																	>
+																		<Check
+																			className={cn(
+																				'mr-2 h-4 w-4',
+																				!selectedBlockingTaskId
+																					? 'opacity-100'
+																					: 'opacity-0'
+																			)}
+																		/>
+																		No specific task
+																	</CommandItem>
+																	{availableBlockingTasks.map(
+																		(blockingTask) => (
+																			<CommandItem
+																				key={blockingTask.id}
+																				value={`${blockingTask.title} ${blockingTask.publicNumber ?? ''}`}
+																				onSelect={() => {
+																					form.setValue(
+																						'blockedByTaskId',
+																						blockingTask.id,
+																						{ shouldDirty: true }
+																					);
+																					setIsBlockingTaskPickerOpen(false);
+																				}}
+																			>
+																				<Check
+																					className={cn(
+																						'mr-2 h-4 w-4',
+																						selectedBlockingTaskId ===
+																							blockingTask.id
+																							? 'opacity-100'
+																							: 'opacity-0'
+																					)}
+																				/>
+																				{blockingTask.title}
+																			</CommandItem>
+																		)
+																	)}
+																</CommandGroup>
+															</CommandList>
+														</Command>
+													</PopoverContent>
+												</Popover>
 												<p className="text-muted-foreground text-xs">
 													Select the task that must finish first.
 												</p>

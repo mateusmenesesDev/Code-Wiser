@@ -50,6 +50,20 @@ const createRelationshipUpdate = (
 	return id ? { connect: { id } } : { disconnect: true };
 };
 
+const clearTasksBlockedByTask = async (
+	tx: Prisma.TransactionClient,
+	blockingTaskId: string
+) => {
+	await tx.task.updateMany({
+		where: { blockedByTaskId: blockingTaskId },
+		data: {
+			blocked: false,
+			blockedReason: null,
+			blockedByTaskId: null
+		}
+	});
+};
+
 const assertTaskParentBelongsToResource = async (
 	ctx: ResourceAccessContext,
 	parentTaskId: string,
@@ -659,6 +673,9 @@ export const taskMutations = {
 						}
 					}
 				});
+				if (rest.status === TaskStatusEnum.DONE) {
+					await clearTasksBlockedByTask(tx, id as string);
+				}
 				if (isMovingIntoProgress) {
 					await tryRecordFirstLearningAction(tx, ctx.session.userId);
 				}
@@ -1051,6 +1068,9 @@ export const taskMutations = {
 									})
 							}
 						});
+						if (input.targetStatus === TaskStatusEnum.DONE) {
+							await clearTasksBlockedByTask(tx, input.taskId);
+						}
 
 						if (
 							currentTask.sprint?.status === SprintStatusEnum.ACTIVE &&

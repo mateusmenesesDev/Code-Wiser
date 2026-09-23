@@ -172,6 +172,49 @@ describe('task blocking relationships', () => {
 			})
 		);
 	});
+
+	it('clears tasks blocked by a task when it reaches done', async () => {
+		mockDb.task.findUnique.mockResolvedValueOnce({
+			id: 'task-1',
+			projectId: 'project-1',
+			projectTemplateId: null,
+			parentTaskId: null,
+			status: TaskStatusEnum.IN_PROGRESS,
+			blocked: false,
+			storyPoints: null,
+			sprintId: null,
+			type: TaskTypeEnum.TASK,
+			productVersionId: null,
+			title: 'Task 1',
+			sprint: null,
+			project: null,
+			assignees: []
+		} as never);
+		mockDb.task.update.mockResolvedValue({
+			id: 'task-1',
+			assignees: [],
+			project: null
+		} as never);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.update({
+			id: 'task-1',
+			isTemplate: false,
+			status: TaskStatusEnum.DONE
+		});
+
+		expect(mockDb.task.updateMany).toHaveBeenCalledWith({
+			where: { blockedByTaskId: 'task-1' },
+			data: {
+				blocked: false,
+				blockedReason: null,
+				blockedByTaskId: null
+			}
+		});
+	});
 });
 
 describe('task status transitions', () => {
@@ -181,6 +224,49 @@ describe('task status transitions', () => {
 		mockDb.$transaction.mockImplementation(async (callback) =>
 			callback(mockDb)
 		);
+	});
+
+	it('clears tasks blocked by a task moved to done', async () => {
+		mockDb.task.findUnique
+			.mockResolvedValueOnce({
+				id: 'task-1',
+				projectId: 'project-1',
+				projectTemplateId: null,
+				status: TaskStatusEnum.IN_PROGRESS,
+				kanbanRank: 1_000_000n,
+				sprint: null
+			} as never)
+			.mockResolvedValueOnce({
+				id: 'task-1',
+				projectId: 'project-1',
+				status: TaskStatusEnum.IN_PROGRESS,
+				kanbanRank: 1_000_000n,
+				sprint: null
+			} as never);
+		mockDb.project.findUnique.mockResolvedValue({
+			memberships: [{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
+		} as never);
+		mockDb.task.findFirst.mockResolvedValue(null);
+		mockDb.task.update.mockResolvedValue({} as never);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.moveTask({
+			projectId: 'project-1',
+			taskId: 'task-1',
+			targetStatus: TaskStatusEnum.DONE
+		});
+
+		expect(mockDb.task.updateMany).toHaveBeenCalledWith({
+			where: { blockedByTaskId: 'task-1' },
+			data: {
+				blocked: false,
+				blockedReason: null,
+				blockedByTaskId: null
+			}
+		});
 	});
 
 	it('assigns the user moving a task into In Progress', async () => {

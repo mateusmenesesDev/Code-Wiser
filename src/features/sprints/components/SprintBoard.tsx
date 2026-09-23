@@ -145,6 +145,10 @@ export default function SprintBoard({ sprint, projectId }: SprintBoardProps) {
 				projectId,
 				filters: { sprintId: sprint.id }
 			});
+			utils.task.getAllByProjectId.invalidate({
+				projectId,
+				isTemplate: false
+			});
 			utils.sprint.getMetrics.invalidate({ projectId, sprintId: sprint.id });
 		}
 	});

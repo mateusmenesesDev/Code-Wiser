@@ -38,6 +38,10 @@ export const useKanbanMutations = (projectId: string) => {
 		},
 		onSettled: () => {
 			utils.kanban.getKanbanData.invalidate({ projectId });
+			utils.task.getAllByProjectId.invalidate({
+				projectId,
+				isTemplate: false
+			});
 			utils.project.getRoadmap.invalidate({ projectId });
 		}
 	});
