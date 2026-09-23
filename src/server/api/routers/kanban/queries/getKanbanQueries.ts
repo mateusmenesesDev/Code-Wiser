@@ -41,6 +41,16 @@ export const getKanbanQueries = {
 					kanbanRank: true,
 					priority: true,
 					storyPoints: true,
+					blocked: true,
+					blockedReason: true,
+					blockedByTask: {
+						select: {
+							id: true,
+							title: true,
+							publicNumber: true
+						}
+					},
+					_count: { select: { blockingTasks: true } },
 					publicNumber: true,
 					createdAt: true,
 					project: { select: { publicCode: true } },

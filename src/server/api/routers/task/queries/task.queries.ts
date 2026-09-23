@@ -22,6 +22,21 @@ export const taskQueries = {
 							title: true
 						}
 					},
+					blockedByTask: {
+						select: {
+							id: true,
+							title: true,
+							publicNumber: true
+						}
+					},
+					blockingTasks: {
+						orderBy: { title: 'asc' },
+						select: {
+							id: true,
+							title: true,
+							publicNumber: true
+						}
+					},
 					project: { select: { publicCode: true } },
 					projectTemplate: { select: { publicCode: true } },
 					assignees: {

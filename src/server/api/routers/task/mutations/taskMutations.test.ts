@@ -82,6 +82,98 @@ describe('task subtasks', () => {
 	});
 });
 
+describe('task blocking relationships', () => {
+	const createCaller = createCallerFactory(taskRouter);
+
+	beforeEach(() => {
+		mockDb.project.findUnique.mockResolvedValue({
+			memberships: [{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
+		} as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+	});
+
+	it('rejects a task from blocking itself', async () => {
+		mockDb.task.findUnique.mockResolvedValueOnce({
+			id: 'task-1',
+			projectId: 'project-1',
+			projectTemplateId: null,
+			parentTaskId: null,
+			status: TaskStatusEnum.BACKLOG,
+			blocked: false,
+			storyPoints: null,
+			sprintId: null,
+			type: TaskTypeEnum.TASK,
+			productVersionId: null,
+			title: 'Task 1',
+			sprint: null,
+			project: null,
+			assignees: []
+		} as never);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await expect(
+			caller.update({
+				id: 'task-1',
+				isTemplate: false,
+				blockedByTaskId: 'task-1'
+			})
+		).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+	});
+
+	it('persists the blocking task and marks the task as blocked', async () => {
+		mockDb.task.findUnique
+			.mockResolvedValueOnce({
+				id: 'task-1',
+				projectId: 'project-1',
+				projectTemplateId: null,
+				parentTaskId: null,
+				status: TaskStatusEnum.BACKLOG,
+				blocked: false,
+				storyPoints: null,
+				sprintId: null,
+				type: TaskTypeEnum.TASK,
+				productVersionId: null,
+				title: 'Task 1',
+				sprint: null,
+				project: null,
+				assignees: []
+			} as never)
+			.mockResolvedValueOnce({
+				projectId: 'project-1',
+				projectTemplateId: null
+			} as never);
+		mockDb.task.update.mockResolvedValue({
+			id: 'task-1',
+			assignees: [],
+			project: null
+		} as never);
+
+		const caller = createCaller(
+			await createTRPCContext({ headers: new Headers() })
+		);
+
+		await caller.update({
+			id: 'task-1',
+			isTemplate: false,
+			blockedByTaskId: 'task-2'
+		});
+
+		expect(mockDb.task.update).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					blocked: true,
+					blockedByTask: { connect: { id: 'task-2' } }
+				})
+			})
+		);
+	});
+});
+
 describe('task status transitions', () => {
 	const createCaller = createCallerFactory(taskRouter);
 

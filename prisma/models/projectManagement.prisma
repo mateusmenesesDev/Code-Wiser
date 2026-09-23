@@ -30,6 +30,7 @@ model Task {
 
   blocked           Boolean? @default(false)
   blockedReason     String?
+  blockedByTaskId   String?
   portfolioRelevant Boolean  @default(false)
 
   storyPoints Int?
@@ -43,6 +44,9 @@ model Task {
   parentTaskId String?
   parentTask   Task?  @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
   subtasks     Task[] @relation("TaskSubtasks")
+
+  blockedByTask Task?  @relation("TaskBlockedBy", fields: [blockedByTaskId], references: [id], onDelete: SetNull)
+  blockingTasks Task[] @relation("TaskBlockedBy")
 
   epicId      String?
   epic        Epic?      @relation(fields: [epicId], references: [id])
@@ -64,6 +68,7 @@ model Task {
   @@unique([projectTemplateId, publicNumber])
   @@unique([projectId, publicNumber])
   @@index([blocked, updatedAt])
+  @@index([blockedByTaskId])
   @@index([projectId, status, kanbanRank])
   @@index([projectTemplateId, status, kanbanRank])
   @@index([parentTaskId])

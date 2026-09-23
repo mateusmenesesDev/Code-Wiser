@@ -28,7 +28,9 @@ import {
 } from '~/common/components/ui/table';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import { columns } from '~/features/kanban/constants';
+import { TaskBlockingStatus } from '~/features/task/components/TaskBlockingStatus';
 import { formatPublicTaskId } from '~/lib/publicTaskId';
+import { cn } from '~/lib/utils';
 import {
 	type ProjectListDirection,
 	type ProjectListGroupBy,
@@ -104,7 +106,10 @@ const TaskRow = ({ task }: { task: ProjectListTask }) => {
 			tabIndex={0}
 			role="button"
 			aria-label={`Open task ${task.title}`}
-			className="cursor-pointer focus-visible:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+			className={cn(
+				'cursor-pointer focus-visible:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+				(task.blocked || task.blockedByTask) && 'bg-warning-muted/20'
+			)}
 			onClick={openTask}
 			onKeyDown={(event) => {
 				if (event.key === 'Enter' || event.key === ' ') {
@@ -117,8 +122,17 @@ const TaskRow = ({ task }: { task: ProjectListTask }) => {
 				{publicTaskId ?? '—'}
 			</TableCell>
 			<TableCell className="min-w-[240px] max-w-[360px] font-medium">
-				<div className="truncate" title={task.title}>
-					{task.title}
+				<div className="flex min-w-0 flex-col gap-1">
+					<div className="truncate" title={task.title}>
+						{task.title}
+					</div>
+					<TaskBlockingStatus
+						blocked={task.blocked}
+						blockedReason={task.blockedReason}
+						blockedByTask={task.blockedByTask}
+						blockingTaskCount={task._count?.blockingTasks}
+						compact
+					/>
 				</div>
 			</TableCell>
 			<TableCell className="whitespace-nowrap">

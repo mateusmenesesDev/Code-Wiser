@@ -7,7 +7,9 @@ import { Badge } from '~/common/components/ui/badge';
 import { getBadgeTaskPriorityColor } from '~/common/utils/colorUtils';
 import { bucketTasksByStatus } from '~/common/utils/kanbanReorder';
 import { columns } from '~/features/kanban/constants';
+import { TaskBlockingStatus } from '~/features/task/components/TaskBlockingStatus';
 import { formatPublicTaskId } from '~/lib/publicTaskId';
+import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 
 type KanbanTask = RouterOutputs['kanban']['getKanbanData'][number];
@@ -40,15 +42,25 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 		<button
 			type="button"
 			onClick={() => setTaskId(task.id)}
-			className="flex w-full items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left transition-colors hover:border-border hover:bg-muted/30"
+			className={cn(
+				'flex w-full items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left transition-colors hover:border-border hover:bg-muted/30',
+				(task.blocked || task.blockedByTask) && 'bg-warning-muted/20'
+			)}
 		>
 			{publicTaskId && (
 				<span className="font-mono text-muted-foreground text-xs">
 					{publicTaskId}
 				</span>
 			)}
-			<span className="min-w-0 flex-1 truncate font-medium text-sm">
-				{task.title}
+			<span className="flex min-w-0 flex-1 flex-col gap-1 font-medium text-sm">
+				<span className="truncate">{task.title}</span>
+				<TaskBlockingStatus
+					blocked={task.blocked}
+					blockedReason={task.blockedReason}
+					blockedByTask={task.blockedByTask}
+					blockingTaskCount={task._count?.blockingTasks}
+					compact
+				/>
 			</span>
 			<div className="flex shrink-0 items-center gap-2">
 				{task.priority && (
@@ -60,7 +72,7 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 					</Badge>
 				)}
 				{(task.assignees?.length ?? 0) > 0 && (
-					<div className="flex items-center -space-x-1">
+					<div className="-space-x-1 flex items-center">
 						{(task.assignees ?? []).slice(0, 3).map((assignee) => (
 							<div
 								key={assignee.id}

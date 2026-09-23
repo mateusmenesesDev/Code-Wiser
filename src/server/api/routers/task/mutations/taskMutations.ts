@@ -86,6 +86,40 @@ const assertTaskParentBelongsToResource = async (
 	}
 };
 
+const assertTaskBlockerBelongsToResource = async (
+	ctx: ResourceAccessContext,
+	blockedTaskId: string | undefined,
+	blockingTaskId: string | null | undefined,
+	projectId: string,
+	isTemplate: boolean
+) => {
+	if (blockingTaskId === undefined || blockingTaskId === null) return;
+
+	if (blockedTaskId && blockedTaskId === blockingTaskId) {
+		throw new TRPCError({
+			code: 'BAD_REQUEST',
+			message: 'A task cannot block itself'
+		});
+	}
+
+	const blockingTask = await ctx.db.task.findUnique({
+		where: { id: blockingTaskId },
+		select: { projectId: true, projectTemplateId: true }
+	});
+	const belongsToResource = isTemplate
+		? blockingTask?.projectTemplateId === projectId &&
+			blockingTask.projectId === null
+		: blockingTask?.projectId === projectId &&
+			blockingTask.projectTemplateId === null;
+
+	if (!blockingTask || !belongsToResource) {
+		throw new TRPCError({
+			code: 'BAD_REQUEST',
+			message: 'The blocking task must belong to this project'
+		});
+	}
+};
+
 const assertTaskRelationsBelongToResource = async (
 	ctx: ResourceAccessContext,
 	projectId: string,
@@ -161,6 +195,7 @@ export const taskMutations = {
 				type,
 				productVersionId,
 				parentTaskId,
+				blockedByTaskId,
 				...rest
 			} = input;
 			const taskType = type ?? TaskTypeEnum.USER_STORY;
@@ -201,6 +236,13 @@ export const taskMutations = {
 				sprintId,
 				productVersionId,
 				taskType
+			);
+			await assertTaskBlockerBelongsToResource(
+				ctx,
+				undefined,
+				blockedByTaskId,
+				projectId,
+				isTemplate
 			);
 
 			if (sprintId) {
@@ -265,6 +307,10 @@ export const taskMutations = {
 						const task = await prisma.task.create({
 							data: {
 								...rest,
+								...(blockedByTaskId && {
+									blocked: true,
+									blockedByTask: { connect: { id: blockedByTaskId } }
+								}),
 								kanbanRank:
 									(lastKanbanTask?.kanbanRank ?? 0n) + KANBAN_RANK_STEP,
 								publicNumber: counter.nextTaskNumber - 1,
@@ -350,6 +396,7 @@ export const taskMutations = {
 				isTemplate,
 				productVersionId,
 				type,
+				blockedByTaskId,
 				...rest
 			} = input;
 
@@ -469,6 +516,13 @@ export const taskMutations = {
 					: productVersionId,
 				nextType
 			);
+			await assertTaskBlockerBelongsToResource(
+				ctx,
+				id,
+				blockedByTaskId,
+				resourceId,
+				isTemplate
+			);
 
 			const targetSprint = sprintId
 				? await ctx.db.sprint.findUnique({
@@ -512,6 +566,14 @@ export const taskMutations = {
 			const oldAssigneeIds = existingTask.assignees.map((a) => a.id);
 			const oldStatus = existingTask.status;
 			const oldBlocked = existingTask.blocked;
+			const blockingTaskUpdate =
+				rest.blocked === false
+					? { disconnect: true }
+					: blockedByTaskId !== undefined
+						? createRelationshipUpdate(blockedByTaskId)
+						: undefined;
+			const normalizedBlocked =
+				rest.blocked === false ? false : blockedByTaskId ? true : rest.blocked;
 			const isMovingIntoProgress =
 				Boolean(existingTask.projectId) &&
 				rest.status === TaskStatusEnum.IN_PROGRESS &&
@@ -522,6 +584,8 @@ export const taskMutations = {
 
 			const updateData = {
 				...rest,
+				...(normalizedBlocked !== undefined && { blocked: normalizedBlocked }),
+				...(blockingTaskUpdate && { blockedByTask: blockingTaskUpdate }),
 				...(type !== undefined && { type }),
 				...(createRelationshipUpdate(productVersionId) && {
 					productVersion: createRelationshipUpdate(productVersionId)

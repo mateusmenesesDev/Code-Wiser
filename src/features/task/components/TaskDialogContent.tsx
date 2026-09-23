@@ -70,6 +70,7 @@ import { AssigneesInput } from './AssigneesInput';
 import { PullRequest } from './PullRequest';
 import { TagsInput } from './TagsInput';
 import { TaskAttachments } from './TaskAttachments';
+import { TaskBlockingStatus } from './TaskBlockingStatus';
 import { TaskComments } from './TaskComments';
 import { TaskSubtasks } from './TaskSubtasks';
 
@@ -131,6 +132,10 @@ export function TaskDialogContent({
 		projectId,
 		isTemplate
 	});
+	const { data: projectTasks = [] } = api.task.getAllByProjectId.useQuery({
+		projectId,
+		isTemplate
+	});
 	const { data: productVersionData } = api.productVersion.getAll.useQuery({
 		projectId,
 		isTemplate
@@ -167,6 +172,7 @@ export function TaskDialogContent({
 			status: TaskStatusEnum.BACKLOG,
 			priority: TaskPriorityEnum.MEDIUM,
 			blocked: false,
+			blockedByTaskId: undefined,
 			tags: [],
 			assigneeIds: []
 		}
@@ -311,6 +317,9 @@ export function TaskDialogContent({
 		storyPointsWatch == null ||
 		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
 	const parentTask = task?.parentTask;
+	const availableBlockingTasks = projectTasks.filter(
+		(projectTask) => projectTask.id !== task?.id
+	);
 
 	return (
 		<FormProvider {...form}>
@@ -806,7 +815,10 @@ export function TaskDialogContent({
 													shouldDirty: true
 												});
 												if (!checked) {
-													form.setValue('blockedReason', undefined, {
+													form.setValue('blockedReason', null, {
+														shouldDirty: true
+													});
+													form.setValue('blockedByTaskId', null, {
 														shouldDirty: true
 													});
 												}
@@ -821,20 +833,73 @@ export function TaskDialogContent({
 									</p>
 
 									{form.watch('blocked') && (
-										<div className="space-y-2">
-											<Label
-												htmlFor="blockedReason"
-												className="font-medium text-sm"
-											>
-												Blocked Reason
-											</Label>
-											<Textarea
-												id="blockedReason"
-												{...form.register('blockedReason')}
-												placeholder="Explain why this task is blocked..."
-												className="min-h-[80px]"
-											/>
+										<div className="space-y-4">
+											<div className="space-y-2">
+												<Label
+													htmlFor="blockedByTaskId"
+													className="font-medium text-sm"
+												>
+													Blocked by another task
+												</Label>
+												<Select
+													value={form.watch('blockedByTaskId') ?? 'none'}
+													onValueChange={(value) => {
+														form.setValue(
+															'blockedByTaskId',
+															value === 'none' ? null : value,
+															{ shouldDirty: true }
+														);
+													}}
+												>
+													<SelectTrigger
+														id="blockedByTaskId"
+														className="h-9 text-sm"
+													>
+														<SelectValue placeholder="No specific task" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="none">
+															No specific task
+														</SelectItem>
+														{availableBlockingTasks.map((blockingTask) => (
+															<SelectItem
+																key={blockingTask.id}
+																value={blockingTask.id}
+															>
+																{blockingTask.title}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												<p className="text-muted-foreground text-xs">
+													Select the task that must finish first.
+												</p>
+											</div>
+
+											<div className="space-y-2">
+												<Label
+													htmlFor="blockedReason"
+													className="font-medium text-sm"
+												>
+													Blocked reason
+												</Label>
+												<Textarea
+													id="blockedReason"
+													{...form.register('blockedReason')}
+													placeholder="Explain why this task is blocked..."
+													className="min-h-[80px]"
+												/>
+											</div>
 										</div>
+									)}
+
+									{isEditing && task && (
+										<TaskBlockingStatus
+											blocked={task.blocked}
+											blockedReason={task.blockedReason}
+											blockedByTask={task.blockedByTask}
+											blockingTaskCount={task.blockingTasks.length}
+										/>
 									)}
 								</div>
 
