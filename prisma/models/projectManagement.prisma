@@ -30,7 +30,6 @@ model Task {
 
   blocked           Boolean? @default(false)
   blockedReason     String?
-  blockedByTaskId   String?
   portfolioRelevant Boolean  @default(false)
 
   storyPoints Int?
@@ -45,8 +44,8 @@ model Task {
   parentTask   Task?  @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
   subtasks     Task[] @relation("TaskSubtasks")
 
-  blockedByTask Task?  @relation("TaskBlockedBy", fields: [blockedByTaskId], references: [id], onDelete: SetNull)
-  blockingTasks Task[] @relation("TaskBlockedBy")
+  blockedByLinks TaskBlocker[] @relation("TaskBlockerBlockedTask")
+  blockingLinks TaskBlocker[] @relation("TaskBlockerBlockingTask")
 
   epicId      String?
   epic        Epic?      @relation(fields: [epicId], references: [id])
@@ -68,10 +67,24 @@ model Task {
   @@unique([projectTemplateId, publicNumber])
   @@unique([projectId, publicNumber])
   @@index([blocked, updatedAt])
-  @@index([blockedByTaskId])
   @@index([projectId, status, kanbanRank])
   @@index([projectTemplateId, status, kanbanRank])
   @@index([parentTaskId])
+  @@schema("public")
+}
+
+model TaskBlocker {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  blockedTaskId  String
+  blockedTask    Task   @relation("TaskBlockerBlockedTask", fields: [blockedTaskId], references: [id], onDelete: Cascade)
+  blockingTaskId String
+  blockingTask  Task   @relation("TaskBlockerBlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([blockedTaskId, blockingTaskId])
+  @@index([blockedTaskId])
+  @@index([blockingTaskId])
   @@schema("public")
 }
 

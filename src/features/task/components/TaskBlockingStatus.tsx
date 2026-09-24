@@ -7,7 +7,7 @@ import { cn } from '~/lib/utils';
 type TaskBlockingStatusProps = {
 	blocked?: boolean | null;
 	blockedReason?: string | null;
-	blockedByTask?: { id: string; title: string } | null;
+	blockedByTasks?: { id: string; title: string }[];
 	blockingTaskCount?: number;
 	compact?: boolean;
 };
@@ -15,11 +15,11 @@ type TaskBlockingStatusProps = {
 export function TaskBlockingStatus({
 	blocked,
 	blockedReason,
-	blockedByTask,
+	blockedByTasks = [],
 	blockingTaskCount = 0,
 	compact = false
 }: TaskBlockingStatusProps) {
-	const isBlocked = Boolean(blocked || blockedByTask);
+	const isBlocked = Boolean(blocked || blockedByTasks.length);
 	if (!isBlocked && blockingTaskCount === 0) return null;
 
 	return (
@@ -32,12 +32,12 @@ export function TaskBlockingStatus({
 					Blocked
 				</Badge>
 			)}
-			{blockedByTask && (
+			{blockedByTasks.length > 0 && (
 				<span
 					className="max-w-full truncate text-warning-muted-foreground text-xs"
-					title={`Waiting for: ${blockedByTask.title}`}
+					title={`Waiting for: ${blockedByTasks.map((task) => task.title).join(', ')}`}
 				>
-					Waiting for: {blockedByTask.title}
+					Waiting for: {blockedByTasks.map((task) => task.title).join(', ')}
 				</span>
 			)}
 			{blockingTaskCount > 0 && (

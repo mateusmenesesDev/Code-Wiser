@@ -23,7 +23,7 @@ export default function KanbanCardContent({
 		task.project?.publicCode,
 		task.publicNumber
 	);
-	const isBlocked = Boolean(task.blocked || task.blockedByTask);
+	const isBlocked = Boolean(task.blocked || task.blockedByTasks?.length);
 
 	return (
 		<KanbanCard
@@ -55,7 +55,7 @@ export default function KanbanCardContent({
 				<TaskBlockingStatus
 					blocked={task.blocked}
 					blockedReason={task.blockedReason}
-					blockedByTask={task.blockedByTask}
+					blockedByTasks={task.blockedByTasks}
 					blockingTaskCount={task._count?.blockingTasks}
 				/>
 				<div className="flex items-center justify-between gap-2">

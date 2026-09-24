@@ -54,12 +54,21 @@ const clearTasksBlockedByTask = async (
 	tx: Prisma.TransactionClient,
 	blockingTaskId: string
 ) => {
+	const blockedTaskLinks = await tx.taskBlocker.findMany({
+		where: { blockingTaskId },
+		select: { blockedTaskId: true }
+	});
+	if (blockedTaskLinks.length === 0) return;
+
+	await tx.taskBlocker.deleteMany({ where: { blockingTaskId } });
 	await tx.task.updateMany({
-		where: { blockedByTaskId: blockingTaskId },
+		where: {
+			id: { in: blockedTaskLinks.map((link) => link.blockedTaskId) },
+			blockedByLinks: { none: {} }
+		},
 		data: {
 			blocked: false,
-			blockedReason: null,
-			blockedByTaskId: null
+			blockedReason: null
 		}
 	});
 };
@@ -100,36 +109,47 @@ const assertTaskParentBelongsToResource = async (
 	}
 };
 
-const assertTaskBlockerBelongsToResource = async (
+const assertTaskBlockersBelongToResource = async (
 	ctx: ResourceAccessContext,
 	blockedTaskId: string | undefined,
-	blockingTaskId: string | null | undefined,
+	blockingTaskIds: string[] | undefined,
 	projectId: string,
 	isTemplate: boolean
 ) => {
-	if (blockingTaskId === undefined || blockingTaskId === null) return;
+	if (!blockingTaskIds || blockingTaskIds.length === 0) return;
 
-	if (blockedTaskId && blockedTaskId === blockingTaskId) {
+	const uniqueBlockingTaskIds = [...new Set(blockingTaskIds)];
+	if (uniqueBlockingTaskIds.length !== blockingTaskIds.length) {
+		throw new TRPCError({
+			code: 'BAD_REQUEST',
+			message: 'A task cannot have the same blocker more than once'
+		});
+	}
+	if (blockedTaskId && blockingTaskIds.includes(blockedTaskId)) {
 		throw new TRPCError({
 			code: 'BAD_REQUEST',
 			message: 'A task cannot block itself'
 		});
 	}
 
-	const blockingTask = await ctx.db.task.findUnique({
-		where: { id: blockingTaskId },
+	const blockingTasks = await ctx.db.task.findMany({
+		where: { id: { in: blockingTaskIds } },
 		select: { projectId: true, projectTemplateId: true }
 	});
-	const belongsToResource = isTemplate
-		? blockingTask?.projectTemplateId === projectId &&
-			blockingTask.projectId === null
-		: blockingTask?.projectId === projectId &&
-			blockingTask.projectTemplateId === null;
+	const hasInvalidBlocker =
+		blockingTasks.length !== blockingTaskIds.length ||
+		blockingTasks.some((blockingTask) =>
+			isTemplate
+				? blockingTask.projectTemplateId !== projectId ||
+					blockingTask.projectId !== null
+				: blockingTask.projectId !== projectId ||
+					blockingTask.projectTemplateId !== null
+		);
 
-	if (!blockingTask || !belongsToResource) {
+	if (hasInvalidBlocker) {
 		throw new TRPCError({
 			code: 'BAD_REQUEST',
-			message: 'The blocking task must belong to this project'
+			message: 'All blocking tasks must belong to this project'
 		});
 	}
 };
@@ -209,7 +229,7 @@ export const taskMutations = {
 				type,
 				productVersionId,
 				parentTaskId,
-				blockedByTaskId,
+				blockedByTaskIds,
 				...rest
 			} = input;
 			const taskType = type ?? TaskTypeEnum.USER_STORY;
@@ -251,10 +271,10 @@ export const taskMutations = {
 				productVersionId,
 				taskType
 			);
-			await assertTaskBlockerBelongsToResource(
+			await assertTaskBlockersBelongToResource(
 				ctx,
 				undefined,
-				blockedByTaskId,
+				blockedByTaskIds,
 				projectId,
 				isTemplate
 			);
@@ -321,9 +341,13 @@ export const taskMutations = {
 						const task = await prisma.task.create({
 							data: {
 								...rest,
-								...(blockedByTaskId && {
+								...(blockedByTaskIds?.length && {
 									blocked: true,
-									blockedByTask: { connect: { id: blockedByTaskId } }
+									blockedByLinks: {
+										create: blockedByTaskIds.map((blockingTaskId) => ({
+											blockingTask: { connect: { id: blockingTaskId } }
+										}))
+									}
 								}),
 								kanbanRank:
 									(lastKanbanTask?.kanbanRank ?? 0n) + KANBAN_RANK_STEP,
@@ -410,7 +434,7 @@ export const taskMutations = {
 				isTemplate,
 				productVersionId,
 				type,
-				blockedByTaskId,
+				blockedByTaskIds,
 				...rest
 			} = input;
 
@@ -530,10 +554,10 @@ export const taskMutations = {
 					: productVersionId,
 				nextType
 			);
-			await assertTaskBlockerBelongsToResource(
+			await assertTaskBlockersBelongToResource(
 				ctx,
 				id,
-				blockedByTaskId,
+				blockedByTaskIds,
 				resourceId,
 				isTemplate
 			);
@@ -580,14 +604,24 @@ export const taskMutations = {
 			const oldAssigneeIds = existingTask.assignees.map((a) => a.id);
 			const oldStatus = existingTask.status;
 			const oldBlocked = existingTask.blocked;
-			const blockingTaskUpdate =
-				rest.blocked === false
-					? { disconnect: true }
-					: blockedByTaskId !== undefined
-						? createRelationshipUpdate(blockedByTaskId)
-						: undefined;
+			const blockingTasksUpdate =
+				rest.blocked === false || blockedByTaskIds !== undefined
+					? {
+							deleteMany: {},
+							...(rest.blocked !== false &&
+								blockedByTaskIds?.length && {
+									create: blockedByTaskIds.map((blockingTaskId) => ({
+										blockingTask: { connect: { id: blockingTaskId } }
+									}))
+								})
+						}
+					: undefined;
 			const normalizedBlocked =
-				rest.blocked === false ? false : blockedByTaskId ? true : rest.blocked;
+				rest.blocked === false
+					? false
+					: blockedByTaskIds?.length
+						? true
+						: rest.blocked;
 			const isMovingIntoProgress =
 				Boolean(existingTask.projectId) &&
 				rest.status === TaskStatusEnum.IN_PROGRESS &&
@@ -599,7 +633,7 @@ export const taskMutations = {
 			const updateData = {
 				...rest,
 				...(normalizedBlocked !== undefined && { blocked: normalizedBlocked }),
-				...(blockingTaskUpdate && { blockedByTask: blockingTaskUpdate }),
+				...(blockingTasksUpdate && { blockedByLinks: blockingTasksUpdate }),
 				...(type !== undefined && { type }),
 				...(createRelationshipUpdate(productVersionId) && {
 					productVersion: createRelationshipUpdate(productVersionId)

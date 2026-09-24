@@ -108,7 +108,7 @@ const TaskRow = ({ task }: { task: ProjectListTask }) => {
 			aria-label={`Open task ${task.title}`}
 			className={cn(
 				'cursor-pointer focus-visible:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-				(task.blocked || task.blockedByTask) && 'bg-warning-muted/20'
+				(task.blocked || task.blockedByTasks?.length) && 'bg-warning-muted/20'
 			)}
 			onClick={openTask}
 			onKeyDown={(event) => {
@@ -129,7 +129,7 @@ const TaskRow = ({ task }: { task: ProjectListTask }) => {
 					<TaskBlockingStatus
 						blocked={task.blocked}
 						blockedReason={task.blockedReason}
-						blockedByTask={task.blockedByTask}
+						blockedByTasks={task.blockedByTasks}
 						blockingTaskCount={task._count?.blockingTasks}
 						compact
 					/>

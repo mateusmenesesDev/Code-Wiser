@@ -47,7 +47,9 @@ describe('task subtasks', () => {
 	it('connects a new subtask to a parent in the same project', async () => {
 		mockDb.project.findUnique
 			.mockResolvedValueOnce({
-				memberships: [{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }]
+				memberships: [
+					{ role: 'LEARNER', status: 'ACTIVE', joinedAt: new Date() }
+				]
 			} as never)
 			.mockResolvedValueOnce({ canceledAt: null } as never);
 		mockDb.task.findUnique.mockResolvedValue({
@@ -57,7 +59,10 @@ describe('task subtasks', () => {
 		} as never);
 		mockDb.project.update.mockResolvedValue({ nextTaskNumber: 2 } as never);
 		mockDb.task.findFirst.mockResolvedValue(null);
-		mockDb.task.create.mockResolvedValue({ id: 'subtask-1', storyPoints: null } as never);
+		mockDb.task.create.mockResolvedValue({
+			id: 'subtask-1',
+			storyPoints: null
+		} as never);
 		mockDb.$transaction.mockImplementation(async (callback) =>
 			callback(mockDb)
 		);
@@ -120,33 +125,31 @@ describe('task blocking relationships', () => {
 			caller.update({
 				id: 'task-1',
 				isTemplate: false,
-				blockedByTaskId: 'task-1'
+				blockedByTaskIds: ['task-1']
 			})
 		).rejects.toMatchObject({ code: 'BAD_REQUEST' });
 	});
 
 	it('persists the blocking task and marks the task as blocked', async () => {
-		mockDb.task.findUnique
-			.mockResolvedValueOnce({
-				id: 'task-1',
-				projectId: 'project-1',
-				projectTemplateId: null,
-				parentTaskId: null,
-				status: TaskStatusEnum.BACKLOG,
-				blocked: false,
-				storyPoints: null,
-				sprintId: null,
-				type: TaskTypeEnum.TASK,
-				productVersionId: null,
-				title: 'Task 1',
-				sprint: null,
-				project: null,
-				assignees: []
-			} as never)
-			.mockResolvedValueOnce({
-				projectId: 'project-1',
-				projectTemplateId: null
-			} as never);
+		mockDb.task.findUnique.mockResolvedValueOnce({
+			id: 'task-1',
+			projectId: 'project-1',
+			projectTemplateId: null,
+			parentTaskId: null,
+			status: TaskStatusEnum.BACKLOG,
+			blocked: false,
+			storyPoints: null,
+			sprintId: null,
+			type: TaskTypeEnum.TASK,
+			productVersionId: null,
+			title: 'Task 1',
+			sprint: null,
+			project: null,
+			assignees: []
+		} as never);
+		mockDb.task.findMany.mockResolvedValue([
+			{ projectId: 'project-1', projectTemplateId: null }
+		] as never);
 		mockDb.task.update.mockResolvedValue({
 			id: 'task-1',
 			assignees: [],
@@ -160,14 +163,17 @@ describe('task blocking relationships', () => {
 		await caller.update({
 			id: 'task-1',
 			isTemplate: false,
-			blockedByTaskId: 'task-2'
+			blockedByTaskIds: ['task-2']
 		});
 
 		expect(mockDb.task.update).toHaveBeenCalledWith(
 			expect.objectContaining({
 				data: expect.objectContaining({
 					blocked: true,
-					blockedByTask: { connect: { id: 'task-2' } }
+					blockedByLinks: {
+						deleteMany: {},
+						create: [{ blockingTask: { connect: { id: 'task-2' } } }]
+					}
 				})
 			})
 		);
@@ -200,18 +206,28 @@ describe('task blocking relationships', () => {
 			await createTRPCContext({ headers: new Headers() })
 		);
 
+		mockDb.taskBlocker.findMany.mockResolvedValue([
+			{ blockedTaskId: 'task-2' },
+			{ blockedTaskId: 'task-3' }
+		] as never);
+
 		await caller.update({
 			id: 'task-1',
 			isTemplate: false,
 			status: TaskStatusEnum.DONE
 		});
 
+		expect(mockDb.taskBlocker.deleteMany).toHaveBeenCalledWith({
+			where: { blockingTaskId: 'task-1' }
+		});
 		expect(mockDb.task.updateMany).toHaveBeenCalledWith({
-			where: { blockedByTaskId: 'task-1' },
+			where: {
+				id: { in: ['task-2', 'task-3'] },
+				blockedByLinks: { none: {} }
+			},
 			data: {
 				blocked: false,
-				blockedReason: null,
-				blockedByTaskId: null
+				blockedReason: null
 			}
 		});
 	});
@@ -248,6 +264,9 @@ describe('task status transitions', () => {
 		} as never);
 		mockDb.task.findFirst.mockResolvedValue(null);
 		mockDb.task.update.mockResolvedValue({} as never);
+		mockDb.taskBlocker.findMany.mockResolvedValue([
+			{ blockedTaskId: 'task-2' }
+		] as never);
 
 		const caller = createCaller(
 			await createTRPCContext({ headers: new Headers() })
@@ -259,12 +278,17 @@ describe('task status transitions', () => {
 			targetStatus: TaskStatusEnum.DONE
 		});
 
+		expect(mockDb.taskBlocker.deleteMany).toHaveBeenCalledWith({
+			where: { blockingTaskId: 'task-1' }
+		});
 		expect(mockDb.task.updateMany).toHaveBeenCalledWith({
-			where: { blockedByTaskId: 'task-1' },
+			where: {
+				id: { in: ['task-2'] },
+				blockedByLinks: { none: {} }
+			},
 			data: {
 				blocked: false,
-				blockedReason: null,
-				blockedByTaskId: null
+				blockedReason: null
 			}
 		});
 	});

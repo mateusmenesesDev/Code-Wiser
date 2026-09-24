@@ -202,7 +202,7 @@ export const createOptimisticKanbanTask = (
 		storyPoints: null,
 		blocked: false,
 		blockedReason: null,
-		blockedByTask: null,
+		blockedByTasks: [],
 		_count: { blockingTasks: 0 },
 		publicNumber: null,
 		project: null,

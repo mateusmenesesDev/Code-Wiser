@@ -43,14 +43,18 @@ export const getKanbanQueries = {
 					storyPoints: true,
 					blocked: true,
 					blockedReason: true,
-					blockedByTask: {
+					blockedByLinks: {
 						select: {
-							id: true,
-							title: true,
-							publicNumber: true
+							blockingTask: {
+								select: {
+									id: true,
+									title: true,
+									publicNumber: true
+								}
+							}
 						}
 					},
-					_count: { select: { blockingTasks: true } },
+					_count: { select: { blockingLinks: true } },
 					publicNumber: true,
 					createdAt: true,
 					project: { select: { publicCode: true } },
@@ -96,6 +100,11 @@ export const getKanbanQueries = {
 					{ id: 'asc' }
 				]
 			});
-			return kanbanData;
+
+			return kanbanData.map(({ blockedByLinks, _count, ...task }) => ({
+				...task,
+				blockedByTasks: blockedByLinks.map((link) => link.blockingTask),
+				_count: { blockingTasks: _count.blockingLinks }
+			}));
 		})
 };

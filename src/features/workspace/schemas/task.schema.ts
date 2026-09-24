@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 /** Allowed task story point values (planning poker / Fibonacci). */
 export const FIBONACCI_STORY_POINTS = [1, 2, 3, 5, 8, 13, 21] as const;
+export const MAX_BLOCKING_TASKS = 10;
 
 /** Radix / DOM often send `""` for cleared selects; coerce so nativeEnum does not fail. */
 const preprocessEmptyToUndefined = <S extends z.ZodTypeAny>(schema: S) =>
@@ -46,7 +47,7 @@ export const baseTaskSchema = z.object({
 	productVersionId: z.string().nullable().optional(),
 	blocked: z.boolean().optional(),
 	blockedReason: z.string().nullable().optional(),
-	blockedByTaskId: z.string().nullable().optional(),
+	blockedByTaskIds: z.array(z.string()).max(MAX_BLOCKING_TASKS).optional(),
 	assigneeIds: z.array(z.string()).optional(),
 	status: preprocessEmptyToUndefined(z.nativeEnum(TaskStatusEnum).optional()),
 	order: z.number().optional(),

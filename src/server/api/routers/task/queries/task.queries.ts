@@ -22,19 +22,26 @@ export const taskQueries = {
 							title: true
 						}
 					},
-					blockedByTask: {
+					blockedByLinks: {
 						select: {
-							id: true,
-							title: true,
-							publicNumber: true
+							blockingTask: {
+								select: {
+									id: true,
+									title: true,
+									publicNumber: true
+								}
+							}
 						}
 					},
-					blockingTasks: {
-						orderBy: { title: 'asc' },
+					blockingLinks: {
 						select: {
-							id: true,
-							title: true,
-							publicNumber: true
+							blockedTask: {
+								select: {
+									id: true,
+									title: true,
+									publicNumber: true
+								}
+							}
 						}
 					},
 					project: { select: { publicCode: true } },
@@ -73,7 +80,13 @@ export const taskQueries = {
 					}
 				}
 			});
-			return task;
+			if (!task) return task;
+
+			return {
+				...task,
+				blockedByTasks: task.blockedByLinks.map((link) => link.blockingTask),
+				blockingTasks: task.blockingLinks.map((link) => link.blockedTask)
+			};
 		}),
 	getAllByProjectId: protectedProcedure
 		.input(

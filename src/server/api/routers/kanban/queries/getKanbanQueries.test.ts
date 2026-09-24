@@ -29,7 +29,9 @@ describe('kanban.getKanbanData', () => {
 		mockDb.task.findMany.mockResolvedValue([
 			{
 				id: 'task-1',
-				productVersionId: 'version-1'
+				productVersionId: 'version-1',
+				blockedByLinks: [],
+				_count: { blockingLinks: 0 }
 			}
 		] as never);
 	});

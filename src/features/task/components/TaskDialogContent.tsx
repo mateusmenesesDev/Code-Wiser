@@ -195,7 +195,7 @@ export function TaskDialogContent({
 			status: TaskStatusEnum.BACKLOG,
 			priority: TaskPriorityEnum.MEDIUM,
 			blocked: false,
-			blockedByTaskId: undefined,
+			blockedByTaskIds: [],
 			tags: [],
 			assigneeIds: []
 		}
@@ -340,15 +340,20 @@ export function TaskDialogContent({
 		storyPointsWatch == null ||
 		(FIBONACCI_STORY_POINTS as readonly number[]).includes(storyPointsWatch);
 	const parentTask = task?.parentTask;
-	const selectedBlockingTaskId = form.watch('blockedByTaskId');
+	const selectedBlockingTaskIds = form.watch('blockedByTaskIds') ?? [];
 	const availableBlockingTasks = projectTasks.filter(
 		(projectTask) =>
 			projectTask.id !== task?.id && projectTask.status !== TaskStatusEnum.DONE
 	);
-	const selectedBlockingTask =
-		availableBlockingTasks.find(
-			(projectTask) => projectTask.id === selectedBlockingTaskId
-		) ?? task?.blockedByTask;
+	const selectedBlockingTasks = availableBlockingTasks.filter((projectTask) =>
+		selectedBlockingTaskIds.includes(projectTask.id)
+	);
+	const blockingTaskPickerLabel =
+		selectedBlockingTaskIds.length === 0
+			? 'No specific task'
+			: selectedBlockingTasks.length === 1
+				? selectedBlockingTasks[0]?.title
+				: `${selectedBlockingTaskIds.length} tasks selected`;
 
 	return (
 		<FormProvider {...form}>
@@ -847,7 +852,7 @@ export function TaskDialogContent({
 													form.setValue('blockedReason', null, {
 														shouldDirty: true
 													});
-													form.setValue('blockedByTaskId', null, {
+													form.setValue('blockedByTaskIds', [], {
 														shouldDirty: true
 													});
 												}
@@ -865,10 +870,10 @@ export function TaskDialogContent({
 										<div className="space-y-4">
 											<div className="space-y-2">
 												<Label
-													htmlFor="blockedByTaskId"
+													htmlFor="blockedByTaskIds"
 													className="font-medium text-sm"
 												>
-													Blocked by another task
+													Blocked by task(s)
 												</Label>
 												<Popover
 													open={isBlockingTaskPickerOpen}
@@ -876,15 +881,14 @@ export function TaskDialogContent({
 												>
 													<PopoverTrigger asChild>
 														<Button
-															id="blockedByTaskId"
+															id="blockedByTaskIds"
 															variant="outline"
 															role="combobox"
 															aria-expanded={isBlockingTaskPickerOpen}
-															className="h-9 w-full justify-between text-sm font-normal"
+															className="h-9 w-full justify-between font-normal text-sm"
 														>
 															<span className="truncate">
-																{selectedBlockingTask?.title ??
-																	'No specific task'}
+																{blockingTaskPickerLabel}
 															</span>
 															<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 														</Button>
@@ -902,17 +906,16 @@ export function TaskDialogContent({
 																<CommandGroup>
 																	<CommandItem
 																		value="none"
-																		onSelect={() => {
-																			form.setValue('blockedByTaskId', null, {
+																		onSelect={() =>
+																			form.setValue('blockedByTaskIds', [], {
 																				shouldDirty: true
-																			});
-																			setIsBlockingTaskPickerOpen(false);
-																		}}
+																			})
+																		}
 																	>
 																		<Check
 																			className={cn(
 																				'mr-2 h-4 w-4',
-																				!selectedBlockingTaskId
+																				selectedBlockingTaskIds.length === 0
 																					? 'opacity-100'
 																					: 'opacity-0'
 																			)}
@@ -920,31 +923,45 @@ export function TaskDialogContent({
 																		No specific task
 																	</CommandItem>
 																	{availableBlockingTasks.map(
-																		(blockingTask) => (
-																			<CommandItem
-																				key={blockingTask.id}
-																				value={`${blockingTask.title} ${blockingTask.publicNumber ?? ''}`}
-																				onSelect={() => {
-																					form.setValue(
-																						'blockedByTaskId',
-																						blockingTask.id,
-																						{ shouldDirty: true }
-																					);
-																					setIsBlockingTaskPickerOpen(false);
-																				}}
-																			>
-																				<Check
-																					className={cn(
-																						'mr-2 h-4 w-4',
-																						selectedBlockingTaskId ===
-																							blockingTask.id
-																							? 'opacity-100'
-																							: 'opacity-0'
-																					)}
-																				/>
-																				{blockingTask.title}
-																			</CommandItem>
-																		)
+																		(blockingTask) => {
+																			const isSelected =
+																				selectedBlockingTaskIds.includes(
+																					blockingTask.id
+																				);
+																			return (
+																				<CommandItem
+																					key={blockingTask.id}
+																					value={`${blockingTask.title} ${blockingTask.publicNumber ?? ''}`}
+																					onSelect={() => {
+																						const nextIds = isSelected
+																							? selectedBlockingTaskIds.filter(
+																									(id) => id !== blockingTask.id
+																								)
+																							: [
+																									...selectedBlockingTaskIds,
+																									blockingTask.id
+																								];
+																						form.setValue(
+																							'blockedByTaskIds',
+																							nextIds,
+																							{
+																								shouldDirty: true
+																							}
+																						);
+																					}}
+																				>
+																					<Check
+																						className={cn(
+																							'mr-2 h-4 w-4',
+																							isSelected
+																								? 'opacity-100'
+																								: 'opacity-0'
+																						)}
+																					/>
+																					{blockingTask.title}
+																				</CommandItem>
+																			);
+																		}
 																	)}
 																</CommandGroup>
 															</CommandList>
@@ -952,7 +969,7 @@ export function TaskDialogContent({
 													</PopoverContent>
 												</Popover>
 												<p className="text-muted-foreground text-xs">
-													Select the task that must finish first.
+													Select every task that must finish first.
 												</p>
 											</div>
 
@@ -977,7 +994,7 @@ export function TaskDialogContent({
 										<TaskBlockingStatus
 											blocked={task.blocked}
 											blockedReason={task.blockedReason}
-											blockedByTask={task.blockedByTask}
+											blockedByTasks={task.blockedByTasks}
 											blockingTaskCount={task.blockingTasks.length}
 										/>
 									)}

@@ -44,7 +44,7 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 			onClick={() => setTaskId(task.id)}
 			className={cn(
 				'flex w-full items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left transition-colors hover:border-border hover:bg-muted/30',
-				(task.blocked || task.blockedByTask) && 'bg-warning-muted/20'
+				(task.blocked || task.blockedByTasks?.length) && 'bg-warning-muted/20'
 			)}
 		>
 			{publicTaskId && (
@@ -57,7 +57,7 @@ const TaskRow = ({ task }: { task: KanbanTask }) => {
 				<TaskBlockingStatus
 					blocked={task.blocked}
 					blockedReason={task.blockedReason}
-					blockedByTask={task.blockedByTask}
+					blockedByTasks={task.blockedByTasks}
 					blockingTaskCount={task._count?.blockingTasks}
 					compact
 				/>
