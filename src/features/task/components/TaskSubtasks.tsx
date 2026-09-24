@@ -231,13 +231,13 @@ export function TaskSubtasks({
 								{openSubtasks ? (
 									<button
 										type="button"
-										className="min-w-0 flex-1 truncate text-left hover:text-foreground"
+										className="w-0 min-w-0 flex-1 truncate text-left hover:text-foreground"
 										onClick={() => openSubtask(subtask.id)}
 									>
 										{subtask.title}
 									</button>
 								) : (
-									<span className="min-w-0 flex-1 truncate">{subtask.title}</span>
+									<span className="w-0 min-w-0 flex-1 truncate">{subtask.title}</span>
 								)}
 								<AssigneeAvatars assignees={subtask.assignees} maxVisible={2} />
 								<div className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
