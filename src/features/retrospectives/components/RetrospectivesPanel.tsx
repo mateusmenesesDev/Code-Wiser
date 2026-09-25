@@ -1,7 +1,20 @@
 'use client';
 
-import { RetrospectiveCategoryEnum, SprintStatusEnum } from '@prisma/client';
-import { Check, Circle, ListChecks, Plus, Trash2 } from 'lucide-react';
+import { useUser as useClerkUser } from '@clerk/nextjs';
+import {
+	RetrospectiveCategoryEnum,
+	RetrospectiveReactionType,
+	SprintStatusEnum
+} from '@prisma/client';
+import {
+	Check,
+	Circle,
+	ListChecks,
+	Plus,
+	ThumbsDown,
+	ThumbsUp,
+	Trash2
+} from 'lucide-react';
 import {
 	type FormEvent,
 	useCallback,
@@ -43,6 +56,7 @@ const retrospectiveEvents = [
 	'retrospective-created',
 	'retrospective-item-added',
 	'retrospective-item-toggled',
+	'retrospective-item-reacted',
 	'retrospective-item-deleted'
 ] as const;
 
@@ -97,6 +111,7 @@ export default function RetrospectivesPanel({
 	sprints,
 	canManageRetrospectives
 }: RetrospectivesPanelProps) {
+	const { user } = useClerkUser();
 	const utils = api.useUtils();
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -170,6 +185,10 @@ export default function RetrospectivesPanel({
 	});
 	const deleteItem = api.retrospective.deleteItem.useMutation({
 		onSuccess: () => void invalidateRetrospectives(),
+		onError: (error) => toast.error(error.message)
+	});
+	const toggleReaction = api.retrospective.toggleReaction.useMutation({
+		onSettled: () => void invalidateRetrospectives(),
 		onError: (error) => toast.error(error.message)
 	});
 
@@ -294,53 +313,121 @@ export default function RetrospectivesPanel({
 													</CardDescription>
 												</CardHeader>
 												<CardContent className="space-y-3">
-													{items.map((item) => (
-														<div
-															key={item.id}
-															className="group flex items-start gap-2 rounded-md border bg-background/80 p-3"
-														>
-															{category.id ===
-															RetrospectiveCategoryEnum.ACTION ? (
-																<button
-																	type="button"
-																	className="mt-0.5 shrink-0 text-muted-foreground"
-																	aria-label={`${item.completed ? 'Reopen' : 'Complete'} action: ${item.content}`}
+													{items.map((item) => {
+														const userReaction = item.reactions.find(
+															(reaction) => reaction.userId === user?.id
+														)?.type;
+														const likeCount = item.reactions.filter(
+															(reaction) =>
+																reaction.type === RetrospectiveReactionType.LIKE
+														).length;
+														const dislikeCount = item.reactions.filter(
+															(reaction) =>
+																reaction.type ===
+																RetrospectiveReactionType.DISLIKE
+														).length;
+
+														return (
+															<div
+																key={item.id}
+																className="group flex items-start gap-2 rounded-md border bg-background/80 p-3"
+															>
+																{category.id ===
+																RetrospectiveCategoryEnum.ACTION ? (
+																	<button
+																		type="button"
+																		className="mt-0.5 shrink-0 text-muted-foreground"
+																		aria-label={`${item.completed ? 'Reopen' : 'Complete'} action: ${item.content}`}
+																		onClick={() =>
+																			toggleItem.mutate({
+																				itemId: item.id,
+																				completed: !item.completed
+																			})
+																		}
+																	>
+																		{item.completed ? (
+																			<Check className="h-4 w-4 text-success" />
+																		) : (
+																			<Circle className="h-4 w-4" />
+																		)}
+																	</button>
+																) : null}
+																<p
+																	className={cn(
+																		'flex-1 whitespace-pre-wrap text-sm',
+																		item.completed &&
+																			'text-muted-foreground line-through'
+																	)}
+																>
+																	{item.content}
+																</p>
+																<div className="flex shrink-0 items-center gap-1">
+																	<Button
+																		variant={
+																			userReaction ===
+																			RetrospectiveReactionType.LIKE
+																				? 'secondary'
+																				: 'ghost'
+																		}
+																		size="sm"
+																		className="h-7 gap-1 px-2"
+																		aria-label="Like note"
+																		aria-pressed={
+																			userReaction ===
+																			RetrospectiveReactionType.LIKE
+																		}
+																		onClick={() =>
+																			toggleReaction.mutate({
+																				itemId: item.id,
+																				reaction: RetrospectiveReactionType.LIKE
+																			})
+																		}
+																		disabled={toggleReaction.isPending}
+																	>
+																		<ThumbsUp className="h-3.5 w-3.5" />
+																		{likeCount}
+																	</Button>
+																	<Button
+																		variant={
+																			userReaction ===
+																			RetrospectiveReactionType.DISLIKE
+																				? 'secondary'
+																				: 'ghost'
+																		}
+																		size="sm"
+																		className="h-7 gap-1 px-2"
+																		aria-label="Dislike note"
+																		aria-pressed={
+																			userReaction ===
+																			RetrospectiveReactionType.DISLIKE
+																		}
+																		onClick={() =>
+																			toggleReaction.mutate({
+																				itemId: item.id,
+																				reaction:
+																					RetrospectiveReactionType.DISLIKE
+																			})
+																		}
+																		disabled={toggleReaction.isPending}
+																	>
+																		<ThumbsDown className="h-3.5 w-3.5" />
+																		{dislikeCount}
+																	</Button>
+																</div>
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100"
+																	aria-label={`Delete note: ${item.content}`}
 																	onClick={() =>
-																		toggleItem.mutate({
-																			itemId: item.id,
-																			completed: !item.completed
-																		})
+																		deleteItem.mutate({ itemId: item.id })
 																	}
 																>
-																	{item.completed ? (
-																		<Check className="h-4 w-4 text-success" />
-																	) : (
-																		<Circle className="h-4 w-4" />
-																	)}
-																</button>
-															) : null}
-															<p
-																className={cn(
-																	'flex-1 whitespace-pre-wrap text-sm',
-																	item.completed &&
-																		'text-muted-foreground line-through'
-																)}
-															>
-																{item.content}
-															</p>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100"
-																aria-label={`Delete note: ${item.content}`}
-																onClick={() =>
-																	deleteItem.mutate({ itemId: item.id })
-																}
-															>
-																<Trash2 className="h-3.5 w-3.5 text-destructive" />
-															</Button>
-														</div>
-													))}
+																	<Trash2 className="h-3.5 w-3.5 text-destructive" />
+																</Button>
+															</div>
+														);
+													})}
 													<form
 														className="space-y-2"
 														onSubmit={(event) =>

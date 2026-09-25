@@ -4,7 +4,8 @@ import {
 	addRetrospectiveItemSchema,
 	createRetrospectiveSchema,
 	deleteRetrospectiveItemSchema,
-	toggleRetrospectiveItemSchema
+	toggleRetrospectiveItemSchema,
+	toggleRetrospectiveReactionSchema
 } from '~/features/retrospectives/schemas/retrospective.schema';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
 import type { IRealtimeService } from '~/server/realtime';
@@ -43,7 +44,8 @@ const retrospectiveWithItems = {
 			{ createdAt: 'asc' as const }
 		],
 		include: {
-			author: { select: { id: true, name: true, imageUrl: true } }
+			author: { select: { id: true, name: true, imageUrl: true } },
+			reactions: { select: { userId: true, type: true } }
 		}
 	}
 };
@@ -254,6 +256,65 @@ export const retrospectiveRouter = createTRPCRouter({
 				}
 			);
 			return updatedItem;
+		}),
+
+	toggleReaction: protectedProcedure
+		.input(toggleRetrospectiveReactionSchema)
+		.mutation(async ({ ctx, input }) => {
+			const item = await assertItemAccess(ctx, input.itemId, true);
+			const reaction = await ctx.db.$transaction(async (tx) => {
+				const current = await tx.retrospectiveItemReaction.findUnique({
+					where: {
+						itemId_userId: {
+							itemId: input.itemId,
+							userId: ctx.session.userId
+						}
+					}
+				});
+
+				if (current) {
+					if (current.type === input.reaction) {
+						await tx.retrospectiveItemReaction.delete({
+							where: { id: current.id }
+						});
+						return null;
+					}
+
+					return tx.retrospectiveItemReaction.update({
+						where: { id: current.id },
+						data: { type: input.reaction }
+					});
+				}
+
+				return tx.retrospectiveItemReaction.upsert({
+					where: {
+						itemId_userId: {
+							itemId: input.itemId,
+							userId: ctx.session.userId
+						}
+					},
+					create: {
+						itemId: input.itemId,
+						userId: ctx.session.userId,
+						type: input.reaction
+					},
+					update: { type: input.reaction }
+				});
+			});
+
+			publishRetrospectiveEvent(
+				ctx,
+				item.retrospective.projectId,
+				'retrospective-item-reacted',
+				{
+					projectId: item.retrospective.projectId,
+					retrospectiveId: item.retrospective.id,
+					itemId: input.itemId,
+					userId: ctx.session.userId,
+					reaction: reaction?.type ?? null
+				}
+			);
+			return reaction;
 		}),
 
 	deleteItem: protectedProcedure

@@ -1,3 +1,4 @@
+import { RetrospectiveReactionType } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
@@ -108,6 +109,80 @@ describe('retrospective router', () => {
 			message: 'Retrospectives can only be started for completed sprints'
 		});
 		expect(mockDb.retrospective.create).not.toHaveBeenCalled();
+	});
+
+	it('lets project members react to notes and toggle their reaction', async () => {
+		mockDb.retrospectiveItem.findUnique.mockResolvedValue({
+			id: 'item-1',
+			authorId: 'user-2',
+			category: 'IMPROVE',
+			retrospective: { id: 'retro-1', projectId: 'project-1' }
+		} as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+		mockDb.retrospectiveItemReaction.findUnique
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce({
+				id: 'reaction-1',
+				itemId: 'item-1',
+				userId: 'user-1',
+				type: RetrospectiveReactionType.LIKE
+			} as never)
+			.mockResolvedValueOnce({
+				id: 'reaction-1',
+				itemId: 'item-1',
+				userId: 'user-1',
+				type: RetrospectiveReactionType.DISLIKE
+			} as never);
+		mockDb.retrospectiveItemReaction.upsert.mockResolvedValue({
+			id: 'reaction-1',
+			type: RetrospectiveReactionType.LIKE
+		} as never);
+		mockDb.retrospectiveItemReaction.update.mockResolvedValue({
+			id: 'reaction-1',
+			type: RetrospectiveReactionType.DISLIKE
+		} as never);
+
+		const api = await caller();
+		await api.toggleReaction({
+			itemId: 'item-1',
+			reaction: RetrospectiveReactionType.LIKE
+		});
+		await api.toggleReaction({
+			itemId: 'item-1',
+			reaction: RetrospectiveReactionType.DISLIKE
+		});
+		await api.toggleReaction({
+			itemId: 'item-1',
+			reaction: RetrospectiveReactionType.DISLIKE
+		});
+
+		expect(mockDb.retrospectiveItemReaction.upsert).toHaveBeenCalledWith({
+			where: { itemId_userId: { itemId: 'item-1', userId: 'user-1' } },
+			create: {
+				itemId: 'item-1',
+				userId: 'user-1',
+				type: RetrospectiveReactionType.LIKE
+			},
+			update: { type: RetrospectiveReactionType.LIKE }
+		});
+		expect(mockDb.retrospectiveItemReaction.update).toHaveBeenCalledWith({
+			where: { id: 'reaction-1' },
+			data: { type: RetrospectiveReactionType.DISLIKE }
+		});
+		expect(mockDb.retrospectiveItemReaction.delete).toHaveBeenCalledWith({
+			where: { id: 'reaction-1' }
+		});
+		expect(realtime.trigger).toHaveBeenCalledWith(
+			'presence-retrospective-project-project-1',
+			'retrospective-item-reacted',
+			expect.objectContaining({
+				itemId: 'item-1',
+				reaction: null,
+				userId: 'user-1'
+			})
+		);
 	});
 
 	it('lets project members add notes and complete action items', async () => {

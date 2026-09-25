@@ -1,4 +1,7 @@
-import { RetrospectiveCategoryEnum } from '@prisma/client';
+import {
+	RetrospectiveCategoryEnum,
+	RetrospectiveReactionType
+} from '@prisma/client';
 import { z } from 'zod';
 
 export const createRetrospectiveSchema = z.object({
@@ -23,4 +26,9 @@ export const toggleRetrospectiveItemSchema = z.object({
 
 export const deleteRetrospectiveItemSchema = z.object({
 	itemId: z.string().min(1)
+});
+
+export const toggleRetrospectiveReactionSchema = z.object({
+	itemId: z.string().min(1),
+	reaction: z.nativeEnum(RetrospectiveReactionType)
 });

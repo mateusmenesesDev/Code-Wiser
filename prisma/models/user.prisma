@@ -74,6 +74,7 @@ model User {
   createdPlanningPokerSessions PlanningPokerSession[]     @relation("PlanningPokerSessionCreator")
   retrospectivesHosted         Retrospective[]            @relation("RetrospectiveCreator")
   retrospectiveItems           RetrospectiveItem[]        @relation("RetrospectiveItemAuthor")
+  retrospectiveItemReactions   RetrospectiveItemReaction[]
   planningPokerVotes           PlanningPokerVote[]
   notifications                Notification[]
   projectInvitationsReceived   ProjectInvitation[]        @relation("ProjectInvitationsReceived")

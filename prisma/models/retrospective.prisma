@@ -6,6 +6,13 @@ enum RetrospectiveCategoryEnum {
   @@schema("public")
 }
 
+enum RetrospectiveReactionType {
+  LIKE
+  DISLIKE
+
+  @@schema("public")
+}
+
 model Retrospective {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -42,6 +49,26 @@ model RetrospectiveItem {
   authorId String?
   author   User?   @relation("RetrospectiveItemAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
+  reactions RetrospectiveItemReaction[]
+
   @@index([retrospectiveId, category, order])
+  @@schema("public")
+}
+
+model RetrospectiveItemReaction {
+  id        String                    @id @default(cuid())
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+  type      RetrospectiveReactionType
+
+  itemId String
+  item   RetrospectiveItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, userId])
+  @@index([itemId, type])
+  @@index([userId])
   @@schema("public")
 }
