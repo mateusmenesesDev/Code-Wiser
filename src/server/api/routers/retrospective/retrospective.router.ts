@@ -1,9 +1,14 @@
-import { Prisma, RetrospectiveCategoryEnum } from '@prisma/client';
+import {
+	Prisma,
+	RetrospectiveCategoryEnum,
+	RetrospectiveTimerStatus
+} from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import {
 	addRetrospectiveItemSchema,
 	createRetrospectiveSchema,
 	deleteRetrospectiveItemSchema,
+	setRetrospectiveTimerSchema,
 	toggleRetrospectiveItemSchema,
 	toggleRetrospectiveReactionSchema
 } from '~/features/retrospectives/schemas/retrospective.schema';
@@ -63,6 +68,26 @@ const getRetrospective = async (ctx: ResourceAccessContext, id: string) => {
 	}
 	return retrospective;
 };
+
+const assertRetrospectiveAccess = async (
+	ctx: ResourceAccessContext,
+	id: string
+) => {
+	const retrospective = await getRetrospective(ctx, id);
+	await assertProjectIsActive(ctx.db, retrospective.projectId);
+	await userHasAccessToProject(ctx, retrospective.projectId);
+	return retrospective;
+};
+
+const getRemainingTimerSeconds = (
+	remainingSeconds: number,
+	startedAt: Date,
+	now: Date
+) =>
+	Math.max(
+		0,
+		remainingSeconds - Math.floor((now.getTime() - startedAt.getTime()) / 1000)
+	);
 
 const canManageRetrospective = async (
 	ctx: ResourceAccessContext,
@@ -191,12 +216,126 @@ export const retrospectiveRouter = createTRPCRouter({
 			}
 		}),
 
+	setTimer: protectedProcedure
+		.input(setRetrospectiveTimerSchema)
+		.mutation(async ({ ctx, input }) => {
+			const retrospective = await assertRetrospectiveAccess(
+				ctx,
+				input.retrospectiveId
+			);
+			const timer = await ctx.db.$transaction(async (tx) => {
+				const current = await tx.retrospective.findUnique({
+					where: { id: input.retrospectiveId },
+					select: {
+						timerStatus: true,
+						timerDurationSeconds: true,
+						timerRemainingSeconds: true,
+						timerStartedAt: true,
+						timerPausedAt: true
+					}
+				});
+				if (!current) {
+					throw new TRPCError({
+						code: 'NOT_FOUND',
+						message: 'Retrospective not found'
+					});
+				}
+
+				const now = new Date();
+				if (input.action === 'RESET') {
+					return tx.retrospective.update({
+						where: { id: input.retrospectiveId },
+						data: {
+							timerStatus: RetrospectiveTimerStatus.IDLE,
+							timerRemainingSeconds: current.timerDurationSeconds,
+							timerStartedAt: null,
+							timerPausedAt: null
+						}
+					});
+				}
+
+				if (input.action === 'START') {
+					if (
+						current.timerStatus === RetrospectiveTimerStatus.RUNNING &&
+						current.timerStartedAt
+					) {
+						const remainingSeconds = getRemainingTimerSeconds(
+							current.timerRemainingSeconds,
+							current.timerStartedAt,
+							now
+						);
+						if (remainingSeconds === 0) {
+							return tx.retrospective.update({
+								where: { id: input.retrospectiveId },
+								data: {
+									timerStatus: RetrospectiveTimerStatus.COMPLETED,
+									timerRemainingSeconds: 0,
+									timerStartedAt: null,
+									timerPausedAt: now
+								}
+							});
+						}
+						return current;
+					}
+					if (current.timerStatus === RetrospectiveTimerStatus.COMPLETED) {
+						return current;
+					}
+
+					return tx.retrospective.update({
+						where: { id: input.retrospectiveId },
+						data: {
+							timerStatus: RetrospectiveTimerStatus.RUNNING,
+							timerStartedAt: now,
+							timerPausedAt: null
+						}
+					});
+				}
+
+				if (
+					current.timerStatus !== RetrospectiveTimerStatus.RUNNING ||
+					!current.timerStartedAt
+				) {
+					return current;
+				}
+
+				const remainingSeconds = getRemainingTimerSeconds(
+					current.timerRemainingSeconds,
+					current.timerStartedAt,
+					now
+				);
+				return tx.retrospective.update({
+					where: { id: input.retrospectiveId },
+					data: {
+						timerStatus:
+							remainingSeconds === 0
+								? RetrospectiveTimerStatus.COMPLETED
+								: RetrospectiveTimerStatus.PAUSED,
+						timerRemainingSeconds: remainingSeconds,
+						timerStartedAt: null,
+						timerPausedAt: now
+					}
+				});
+			});
+
+			publishRetrospectiveEvent(
+				ctx,
+				retrospective.projectId,
+				'retrospective-timer-updated',
+				{
+					projectId: retrospective.projectId,
+					retrospectiveId: input.retrospectiveId
+				}
+			);
+			return timer;
+		}),
+
 	addItem: protectedProcedure
 		.input(addRetrospectiveItemSchema)
 		.mutation(async ({ ctx, input }) => {
-			const retrospective = await getRetrospective(ctx, input.retrospectiveId);
-			await assertProjectIsActive(ctx.db, retrospective.projectId);
-			await userHasAccessToProject(ctx, retrospective.projectId);
+			const retrospective = await assertRetrospectiveAccess(
+				ctx,
+				input.retrospectiveId
+			);
 
 			const order = await ctx.db.retrospectiveItem.count({
 				where: {

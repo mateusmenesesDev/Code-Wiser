@@ -1,5 +1,8 @@
-import { RetrospectiveReactionType } from '@prisma/client';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+	RetrospectiveReactionType,
+	RetrospectiveTimerStatus
+} from '@prisma/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import mockDb from '~/server/__mocks__/db';
 import { createCallerFactory, createTRPCContext } from '~/server/api/trpc';
 import { retrospectiveRouter } from './retrospective.router';
@@ -43,6 +46,10 @@ const managerMembership = {
 beforeEach(() => {
 	mockDb.project.findUnique.mockResolvedValue(managerMembership as never);
 	realtime.trigger.mockResolvedValue(undefined);
+});
+
+afterEach(() => {
+	vi.useRealTimers();
 });
 
 describe('retrospective router', () => {
@@ -182,6 +189,79 @@ describe('retrospective router', () => {
 				reaction: null,
 				userId: 'user-1'
 			})
+		);
+	});
+
+	it('starts, pauses, and resets the shared retrospective timer', async () => {
+		vi.useFakeTimers();
+		const startedAt = new Date('2026-09-25T10:00:00.000Z');
+		vi.setSystemTime(startedAt);
+		mockDb.retrospective.findUnique
+			.mockResolvedValueOnce({ id: 'retro-1', projectId: 'project-1' } as never)
+			.mockResolvedValueOnce({
+				timerStatus: RetrospectiveTimerStatus.IDLE,
+				timerDurationSeconds: 300,
+				timerRemainingSeconds: 300,
+				timerStartedAt: null,
+				timerPausedAt: null
+			} as never)
+			.mockResolvedValueOnce({ id: 'retro-1', projectId: 'project-1' } as never)
+			.mockResolvedValueOnce({
+				timerStatus: RetrospectiveTimerStatus.RUNNING,
+				timerDurationSeconds: 300,
+				timerRemainingSeconds: 300,
+				timerStartedAt: startedAt,
+				timerPausedAt: null
+			} as never)
+			.mockResolvedValueOnce({ id: 'retro-1', projectId: 'project-1' } as never)
+			.mockResolvedValueOnce({
+				timerStatus: RetrospectiveTimerStatus.PAUSED,
+				timerDurationSeconds: 300,
+				timerRemainingSeconds: 210,
+				timerStartedAt: null,
+				timerPausedAt: new Date('2026-09-25T10:01:30.000Z')
+			} as never);
+		mockDb.$transaction.mockImplementation(async (callback) =>
+			callback(mockDb)
+		);
+		mockDb.retrospective.update.mockResolvedValue({ id: 'retro-1' } as never);
+
+		const api = await caller();
+		await api.setTimer({ retrospectiveId: 'retro-1', action: 'START' });
+		vi.advanceTimersByTime(90_000);
+		await api.setTimer({ retrospectiveId: 'retro-1', action: 'PAUSE' });
+		await api.setTimer({ retrospectiveId: 'retro-1', action: 'RESET' });
+
+		expect(mockDb.retrospective.update).toHaveBeenNthCalledWith(1, {
+			where: { id: 'retro-1' },
+			data: {
+				timerStatus: RetrospectiveTimerStatus.RUNNING,
+				timerStartedAt: startedAt,
+				timerPausedAt: null
+			}
+		});
+		expect(mockDb.retrospective.update).toHaveBeenNthCalledWith(2, {
+			where: { id: 'retro-1' },
+			data: {
+				timerStatus: RetrospectiveTimerStatus.PAUSED,
+				timerRemainingSeconds: 210,
+				timerStartedAt: null,
+				timerPausedAt: new Date('2026-09-25T10:01:30.000Z')
+			}
+		});
+		expect(mockDb.retrospective.update).toHaveBeenNthCalledWith(3, {
+			where: { id: 'retro-1' },
+			data: {
+				timerStatus: RetrospectiveTimerStatus.IDLE,
+				timerRemainingSeconds: 300,
+				timerStartedAt: null,
+				timerPausedAt: null
+			}
+		});
+		expect(realtime.trigger).toHaveBeenCalledWith(
+			'presence-retrospective-project-project-1',
+			'retrospective-timer-updated',
+			expect.objectContaining({ retrospectiveId: 'retro-1' })
 		);
 	});
 

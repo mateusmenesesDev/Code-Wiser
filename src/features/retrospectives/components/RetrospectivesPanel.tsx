@@ -4,15 +4,20 @@ import { useUser as useClerkUser } from '@clerk/nextjs';
 import {
 	RetrospectiveCategoryEnum,
 	RetrospectiveReactionType,
+	RetrospectiveTimerStatus,
 	SprintStatusEnum
 } from '@prisma/client';
 import {
 	Check,
 	Circle,
 	ListChecks,
+	Pause,
+	Play,
 	Plus,
+	RotateCcw,
 	ThumbsDown,
 	ThumbsUp,
+	Timer,
 	Trash2
 } from 'lucide-react';
 import {
@@ -57,6 +62,7 @@ const retrospectiveEvents = [
 	'retrospective-item-added',
 	'retrospective-item-toggled',
 	'retrospective-item-reacted',
+	'retrospective-timer-updated',
 	'retrospective-item-deleted'
 ] as const;
 
@@ -94,6 +100,14 @@ interface RetrospectivesPanelProps {
 	sprints: Sprint[];
 	canManageRetrospectives: boolean;
 }
+
+const formatTimer = (seconds: number) => {
+	const minutes = Math.floor(seconds / 60)
+		.toString()
+		.padStart(2, '0');
+	const remainingSeconds = (seconds % 60).toString().padStart(2, '0');
+	return `${minutes}:${remainingSeconds}`;
+};
 
 const formatDateRange = (startDate: Date | null, endDate: Date | null) => {
 	if (!startDate && !endDate) return 'Dates not set';
@@ -136,6 +150,19 @@ export default function RetrospectivesPanel({
 	const selectedRetrospective = (retrospectives ?? []).find(
 		(retrospective) => retrospective.id === selectedId
 	);
+	const [now, setNow] = useState<number | null>(null);
+	const timerId = selectedRetrospective?.id;
+	const timerStatus = selectedRetrospective?.timerStatus;
+
+	useEffect(() => {
+		if (!timerId || timerStatus !== RetrospectiveTimerStatus.RUNNING) {
+			setNow(null);
+			return;
+		}
+		setNow(Date.now());
+		const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
+		return () => window.clearInterval(intervalId);
+	}, [timerId, timerStatus]);
 
 	useEffect(() => {
 		if (selectedId && retrospectives?.some((item) => item.id === selectedId)) {
@@ -191,6 +218,10 @@ export default function RetrospectivesPanel({
 		onSettled: () => void invalidateRetrospectives(),
 		onError: (error) => toast.error(error.message)
 	});
+	const setTimer = api.retrospective.setTimer.useMutation({
+		onSettled: () => void invalidateRetrospectives(),
+		onError: (error) => toast.error(error.message)
+	});
 
 	const handleCreate = () => {
 		if (!sprintToRetrospect) return;
@@ -212,6 +243,28 @@ export default function RetrospectivesPanel({
 			content: drafts[category]
 		});
 	};
+
+	const timerRemainingSeconds = selectedRetrospective
+		? Math.max(
+				0,
+				selectedRetrospective.timerRemainingSeconds -
+					(selectedRetrospective.timerStatus ===
+						RetrospectiveTimerStatus.RUNNING &&
+					selectedRetrospective.timerStartedAt &&
+					now !== null
+						? Math.floor(
+								(now - selectedRetrospective.timerStartedAt.getTime()) / 1000
+							)
+						: 0)
+			)
+		: 0;
+	const timerIsRunning =
+		selectedRetrospective?.timerStatus === RetrospectiveTimerStatus.RUNNING &&
+		timerRemainingSeconds > 0;
+	const timerIsExpired =
+		selectedRetrospective?.timerStatus === RetrospectiveTimerStatus.COMPLETED ||
+		(selectedRetrospective?.timerStatus === RetrospectiveTimerStatus.RUNNING &&
+			timerRemainingSeconds === 0);
 
 	if (isLoading) {
 		return (
@@ -292,6 +345,75 @@ export default function RetrospectivesPanel({
 										<Badge variant="secondary">
 											{selectedRetrospective.items.length} notes
 										</Badge>
+									</div>
+									<div className="flex items-center gap-3 rounded-md border bg-muted/30 px-3 py-2">
+										<Timer className="h-4 w-4 text-info" />
+										<div className="min-w-20">
+											<p className="font-medium text-sm">Retro timer</p>
+											<p
+												className="font-mono text-muted-foreground text-xs"
+												aria-live="polite"
+											>
+												{timerIsExpired
+													? "Time's up"
+													: formatTimer(timerRemainingSeconds)}
+											</p>
+										</div>
+										<Button
+											variant="outline"
+											size="sm"
+											className="gap-1"
+											aria-label={
+												timerIsRunning
+													? 'Pause timer'
+													: timerIsExpired
+														? 'Reset timer'
+														: 'Start timer'
+											}
+											onClick={() =>
+												setTimer.mutate({
+													retrospectiveId: selectedRetrospective.id,
+													action: timerIsRunning
+														? 'PAUSE'
+														: timerIsExpired
+															? 'RESET'
+															: 'START'
+												})
+											}
+											disabled={setTimer.isPending}
+										>
+											{timerIsRunning ? (
+												<Pause className="h-3.5 w-3.5" />
+											) : timerIsExpired ? (
+												<RotateCcw className="h-3.5 w-3.5" />
+											) : (
+												<Play className="h-3.5 w-3.5" />
+											)}
+											{timerIsRunning
+												? 'Pause'
+												: timerIsExpired
+													? 'Reset'
+													: 'Start'}
+										</Button>
+										{selectedRetrospective.timerStatus !==
+											RetrospectiveTimerStatus.IDLE &&
+											!timerIsExpired && (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8"
+													aria-label="Reset timer"
+													onClick={() =>
+														setTimer.mutate({
+															retrospectiveId: selectedRetrospective.id,
+															action: 'RESET'
+														})
+													}
+													disabled={setTimer.isPending}
+												>
+													<RotateCcw className="h-3.5 w-3.5" />
+												</Button>
+											)}
 									</div>
 								</CardHeader>
 								<CardContent className="grid gap-4 lg:grid-cols-3">

@@ -13,6 +13,15 @@ enum RetrospectiveReactionType {
   @@schema("public")
 }
 
+enum RetrospectiveTimerStatus {
+  IDLE
+  RUNNING
+  PAUSED
+  COMPLETED
+
+  @@schema("public")
+}
+
 model Retrospective {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -26,6 +35,12 @@ model Retrospective {
 
   createdById String?
   createdBy   User?   @relation("RetrospectiveCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  timerStatus          RetrospectiveTimerStatus @default(IDLE)
+  timerDurationSeconds Int                      @default(300)
+  timerRemainingSeconds Int                     @default(300)
+  timerStartedAt       DateTime?
+  timerPausedAt        DateTime?
 
   items RetrospectiveItem[]
 

@@ -32,3 +32,8 @@ export const toggleRetrospectiveReactionSchema = z.object({
 	itemId: z.string().min(1),
 	reaction: z.nativeEnum(RetrospectiveReactionType)
 });
+
+export const setRetrospectiveTimerSchema = z.object({
+	retrospectiveId: z.string().min(1),
+	action: z.enum(['START', 'PAUSE', 'RESET'])
+});
